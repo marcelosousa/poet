@@ -1,0 +1,21 @@
+cpu time             : 0.000
+max memory (rss)     : 13
+histories            : 147
+events               : 147
+conditions           : 498
+generating cond.     : 301
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 21.90
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 10.12
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 53
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/reader_writer_2.ll_net

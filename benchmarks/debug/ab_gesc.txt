@@ -1,0 +1,21 @@
+cpu time             : 0.008
+max memory (rss)     : 13
+histories            : 465
+events               : 465
+conditions           : 1266
+generating cond.     : 606
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 33.29
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 12.03
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 174
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/ab_gesc.ll_net

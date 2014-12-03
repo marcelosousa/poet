@@ -1,0 +1,21 @@
+cpu time             : 0.008
+max memory (rss)     : 14
+histories            : 132
+events               : 132
+conditions           : 375
+generating cond.     : 346
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 93.20
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 36.92
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 0
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/sdl_example.ll_net

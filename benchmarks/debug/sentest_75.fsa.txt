@@ -1,0 +1,21 @@
+cpu time             : 0.008
+max memory (rss)     : 15
+histories            : 267
+events               : 267
+conditions           : 534
+generating cond.     : 302
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 52.54
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 80.30
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 41
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/sentest_75.fsa.ll_net

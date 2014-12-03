@@ -1,0 +1,21 @@
+cpu time             : 0.004
+max memory (rss)     : 13
+histories            : 696
+events               : 696
+conditions           : 1464
+generating cond.     : 568
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 58.73
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 20.93
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 392
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/eisenbahn.ll_net

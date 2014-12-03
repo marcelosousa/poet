@@ -1,0 +1,21 @@
+cpu time             : 0.000
+max memory (rss)     : 12
+histories            : 16
+events               : 16
+conditions           : 40
+generating cond.     : 36
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 3.89
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 3.88
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 1
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/recursion.ll_net

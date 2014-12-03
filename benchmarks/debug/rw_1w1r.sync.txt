@@ -1,0 +1,21 @@
+cpu time             : 0.004
+max memory (rss)     : 13
+histories            : 296
+events               : 296
+conditions           : 568
+generating cond.     : 502
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 29.71
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 11.04
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 32
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/rw_1w1r.sync.ll_net

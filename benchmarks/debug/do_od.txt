@@ -1,0 +1,21 @@
+cpu time             : 0.000
+max memory (rss)     : 12
+histories            : 11
+events               : 11
+conditions           : 20
+generating cond.     : 18
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 1.11
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 2.00
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 1
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/do_od.ll_net

@@ -1,0 +1,21 @@
+cpu time             : 0.000
+max memory (rss)     : 13
+histories            : 167
+events               : 167
+conditions           : 337
+generating cond.     : 225
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 8.92
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 6.04
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 56
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/abp_1.fsa.ll_net

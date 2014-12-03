@@ -1,0 +1,22 @@
+digraph unfolding {
+subgraph cluster1 {
+rank=same;
+1 [label="bot,1"];
+2 [label="t1,1"];
+4 [label="t2,1"];
+
+}
+5 -> 6;
+4 -> 5;
+1 -> 4;
+2 -> 3;
+1 -> 2;
+subgraph Clf {
+  edge [dir=none]
+2 -> 6 [style=dotted];
+3 -> 6 [style=dotted];
+2 -> 5 [style=dotted];
+3 -> 5 [style=dotted];
+2 -> 4 [style=dotted];
+3 -> 4 [style=dotted];
+}}

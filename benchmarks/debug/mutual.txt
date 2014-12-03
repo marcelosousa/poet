@@ -1,0 +1,21 @@
+cpu time             : 0.004
+max memory (rss)     : 13
+histories            : 495
+events               : 495
+conditions           : 884
+generating cond.     : 726
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 22.74
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 9.02
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 79
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/mutual.ll_net

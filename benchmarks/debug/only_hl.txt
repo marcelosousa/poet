@@ -1,0 +1,21 @@
+cpu time             : 0.000
+max memory (rss)     : 12
+histories            : 41
+events               : 41
+conditions           : 75
+generating cond.     : 73
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 4.52
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 3.85
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 0
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/only_hl.ll_net

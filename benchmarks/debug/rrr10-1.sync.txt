@@ -1,0 +1,21 @@
+cpu time             : 0.000
+max memory (rss)     : 12
+histories            : 57
+events               : 57
+conditions           : 124
+generating cond.     : 76
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 56.34
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 22.30
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 19
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/rrr10-1.sync.ll_net

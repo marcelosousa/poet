@@ -1,0 +1,21 @@
+cpu time             : 0.064
+max memory (rss)     : 26
+histories            : 587
+events               : 587
+conditions           : 1630
+generating cond.     : 1368
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 361.58
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 85.78
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 82
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/byzagr4_0b.ll_net

@@ -1,0 +1,21 @@
+cpu time             : 0.012
+max memory (rss)     : 19
+histories            : 125
+events               : 125
+conditions           : 401
+generating cond.     : 381
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 305.00
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 85.71
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 4
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/byzagr4_2a.sync.ll_net

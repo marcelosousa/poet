@@ -1,0 +1,21 @@
+cpu time             : 0.008
+max memory (rss)     : 14
+histories            : 827
+events               : 827
+conditions           : 1562
+generating cond.     : 896
+reading cond.        : 0
+compound cond.       : 0
+vector r(h) [avg]    : 0.00
+vector s(h) [avg]    : 0.00
+vector co(r) [avg]   : 8.98
+vector rco(r) [avg]  : 0.00
+vector mrk(h) [avg]  : 5.01
+pre-set(e) [avg]     : 0.00
+context(e) [avg]     : 0.00
+post-set(e) [avg]    : 0.00
+cutoffs              : 331
+white events         : 0
+gray events          : 0
+black events         : 0
+net                  : examples/plain/small/elevator_2.ll_net
