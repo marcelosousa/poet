@@ -1,7 +1,7 @@
 module Main where
 
-import Unfolderful
-import Unfolderless
+--import Unfolderful
+--import Unfolderless
 import Printer
 import Examples
 import Benchmark
@@ -9,6 +9,7 @@ import Model
 import PetriNet
 import qualified Data.Map as M
 
+{-
 writeUnf :: (System, UIndependence) -> IO ()
 writeUnf (sys,ind) =
     let unf@(pes@(events,_,_), cfs) = unfolder (sys,ind)
@@ -22,6 +23,7 @@ writeUnf (sys,ind) =
      putStrLn $ printConfigurations cfs
      putStrLn "List of Events"
      putStrLn $ M.foldWithKey (printEvent []) "" events
+-}
 
 main :: IO ()
 main =  run "benchmarks/debug/sdl_example.pt"
@@ -40,7 +42,7 @@ runPT file = do
 run :: FilePath -> IO ()
 run file = do
   (sys@(trs,i),ind) <- getSysInd file
-  print $ stateless sys ind
+  print "stateless sys ind"
 
 show' :: [String] -> String
 show' [] = ""

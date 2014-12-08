@@ -3,6 +3,7 @@ module Model where
 import qualified Data.Map as M
 import Data.Map hiding (foldr, filter, map)
 import Data.List
+import Data.Judy
 
 type System = ([Transition], ISigma)
 type ISigma = Sigma

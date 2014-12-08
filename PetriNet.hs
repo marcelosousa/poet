@@ -26,7 +26,7 @@ getSysInd :: FilePath -> IO (ML.System, ML.UIndependence)
 getSysInd file = do
   net <- parse file
   let sys = convert net
-      ind = retrieveIndRel net
+      ind = nub $ retrieveIndRel net
   return (sys, ind)
 
 parse :: FilePath -> IO Net 
@@ -83,7 +83,7 @@ convert (ps,tr) =
 
 retrieveIndRel :: Net -> ML.UIndependence
 retrieveIndRel (_, tr) = 
-  let l = [ (t,t) | t <- tr, t' <- tr, check t t' ]
+  let l = [ (t,t') | t <- tr, t' <- tr, check t t' ]
   in map (\(a,b) -> (fst3 a, fst3 b)) l
 
 check :: Transition -> Transition -> Bool

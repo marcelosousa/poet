@@ -22,7 +22,9 @@ ievID = 0
 --stateless :: System -> UIndependence -> IO ()
 --stateless sys indep = evalState explore' (initialState sys indep) 
 stateless :: System -> UIndependence -> UnfolderState
-stateless sys indep = snd $ runState explore' (initialState sys indep) 
+stateless sys indep = 
+ -- ptrace ("Independence relation is\n" ++ show indep) $
+  snd $ runState explore' (initialState sys indep) 
 
 explore' :: State UnfolderState ()
 explore' = do 
@@ -31,10 +33,10 @@ explore' = do
     
 explore :: ConfigurationID -> EventID -> Alternative -> State UnfolderState ()
 explore conf ê alt = ptrace ("\nEXPLORE: NEW ITERATION with confid=" ++ show conf ++ ", ê=" ++ show ê ++ ", alt=" ++ show alt) $ do
-  k <- return () -- $ unsafePerformIO getChar 
+  k <- return $ () -- unsafePerformIO getChar 
   s <- get
   let oldConf = configurations s
-  (en,cext) <- ptrace (show $ enable s) $ k `seq` extensions conf 
+  (en,cext) <- ptrace ("Events: " ++ show (events s) ++ "\nEnabled:" ++ show (enable s) ++ "\nCnfls:" ++ show (immediateConflicts s)) $ k `seq` extensions conf 
   config@Configuration{..} <- getConfiguration conf
   if null en           -- conf is maximal
   then do 
@@ -42,7 +44,7 @@ explore conf ê alt = ptrace ("\nEXPLORE: NEW ITERATION with confid=" ++ show co
     trace ("computing V(e) for all events in conf id " ++ show conf ++ " =" ++ show cevs ) $ mapM_ (computeJustifications config cext) cevs -- forall events e in the configuration compute V(e) 
     ptrace ("configuration id=" ++ show conf ++ " is maximal with extensions:" ++ show cext) $ return () 
   else trace ("configuration id=" ++ show conf ++ " is not maximal: " ++ show cevs) $ do
-    e' <- return $ unsafePerformIO getChar
+    e' <- return $ () -- unsafePerformIO getChar
     let e = if null alt
             then head en
             else head $ en `intersect` alt
@@ -53,7 +55,7 @@ explore conf ê alt = ptrace ("\nEXPLORE: NEW ITERATION with confid=" ++ show co
     let oldDisable = disable sb
     explore nconf e (alt \\ [e])
     -- TODO: Reset the state to make it stateless
-    k2 <- return () -- $ unsafePerformIO getChar 
+    k2 <- return $ () -- unsafePerformIO getChar 
     s@UnfolderState{..} <- k2 `seq` get
     -- let s' = gc s
     --   
