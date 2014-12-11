@@ -1,7 +1,9 @@
+{-#LANGUAGE RecordWildCards, TypeSynonymInstances, FlexibleInstances #-}
 module Model where
 
 import Control.Monad.ST.Safe
 import Control.Monad
+import Control.Monad.Trans.Maybe
 
 -- Data Structures
 import qualified Data.Map as M
@@ -17,9 +19,16 @@ import qualified Data.Word as W
 import qualified Data.Set as S
 import Data.Maybe 
 
+import Debug.Trace
+
 -- System is a vector of transitions and an initial state
 -- We use vector because we just want to query. 
-type System s = (V.Vector (Transition s), ISigma s)
+data System s = 
+  System {
+    transitions :: V.Vector (Transition s),
+    initialState :: ISigma s
+  }
+
 type ISigma s = Sigma s
 -- A state is an Hash Table
 type HashTable s k v = C.HashTable s k v
@@ -33,7 +42,7 @@ type ProcessID = BS.ByteString
 type TransitionID = Int 
 type TransitionsID = V.Vector TransitionID
 type Transition s = (ProcessID, TransitionID, TransitionFn s)
-type TransitionFn s = Sigma s -> Maybe (Sigma s)
+type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
 
 -- This type class is important to define for each model of 
 -- computation the enabled function that computes the transitions
@@ -41,19 +50,21 @@ type TransitionFn s = Sigma s -> Maybe (Sigma s)
 -- The default enabled function is given below (enabledTransitions).
 -- However, this function is very inefficient because it relies on 
 -- actually computing the result for every transition.
-class Executable s where
-  enabled :: System s -> Sigma s -> TransitionsID
 
--- | hard core enabledTransitions - very inefficient! 
-enabledTransitions :: System s -> Sigma s -> TransitionsID
-enabledTransitions sys@(trans,_) s = 
-    let tr = V.filter (\(_,_,t) -> maybe False (const True) $ t s) trans
-    in V.map snd3 tr
+-- | enabledTransitions 
+enabledTransitions :: System s -> Sigma s -> ST s TransitionsID
+enabledTransitions sys@System{..} s = do
+  s' <- copy s
+  tr <- V.filterM (\(_,_,t) -> t s' >>= return . maybe False (const True)) transitions  
+  V.mapM (return . snd3) tr
 
 -- An independence relation is an irreflexive and symmetric relation
 -- Triangular Matrix to exploit symmetry of independence relation
 -- The irreflexivity can be simply checked with equality which is O(1) 
 type UIndep = V.Vector (V.Vector Bool)
+
+snd3 :: (a,b,c) -> b
+snd3 (a,b,c) = b
 
 -- END OF TYPES 
 -- It is many times the case that we run mutually exclusive functions
@@ -77,52 +88,63 @@ botID = -1
 
 -- | bottom transition is simply: return . id
 bot :: TransitionFn s
-bot s = Just s    
+bot s = return $ Just return    
 
 -- GETTERS
 
--- | getInitialState - get the initial state of a system
-getInitialState :: System s -> ISigma s
-getInitialState = snd
-
 -- | getTransition - 
 getTransition :: System s -> TransitionID -> TransitionFn s
-getTransition (trs,_) trIdx
+getTransition sys@System{..} trIdx
   | trIdx == botID = bot
   | otherwise = 
-      case trs V.!? trIdx of
+      case transitions V.!? trIdx of
         Nothing -> error $ "getTransition fail: " ++ show trIdx
         Just (_,_,tr) -> tr
 
-snd3 :: (a,b,c) -> b
-snd3 (a,b,c) = b
-
 -- | Runs the system in a dfs fashion
-runSystem :: Executable s => System s -> ST s [Sigma s]
-runSystem sys@(_,i) = runSys sys [i] []
+runSystem :: System s -> ST s [Sigma s]
+runSystem sys@System{..} = runSys 1 sys [initialState] []
 
-runSys :: Executable s => System s -> [Sigma s] -> [Sigma s] -> ST s [Sigma s]
-runSys sys []     sts = return sts
-runSys sys (s:rest) sts = do 
-  let ys = runTrs sys s
-      nsts = s:sts
-  stack' <- foldM (\a v -> add v a) rest ys -- I can fuse these two lines
-  stack  <- filterM (\s -> isElem s nsts >>= return . not) stack'
-  runSys sys stack nsts
+runSys :: Int -> System s -> [Sigma s] -> [Sigma s] -> ST s [Sigma s]
+runSys c sys [] sts = return sts
+runSys c sys (s:rest) sts = trace ("runSys: " ++ show c) $ do
+  contained <- isElem s sts 
+  if contained 
+  then runSys c sys rest sts 
+  else do 
+    ys <- runTrs sys s
+    let stack = ys ++ rest 
+ -- stack' <- foldM (\a v -> add v a) rest ys -- I can fuse these two lines
+--  stack  <- filterM (\s -> isElem s nsts >>= return . not) stack'
+    runSys (c+1) sys stack (s:sts)
 
-runTrs :: Executable s => System s -> Sigma s -> [Sigma s]
-runTrs sys s = 
-  let trs = V.toList $ enabled sys s 
-  in map (\tr -> fromJust $ getTransition sys tr s) trs
- 
+runTrs :: System s -> Sigma s -> ST s [Sigma s]
+runTrs sys s = do
+  trs <- enabledTransitions sys s
+  V.foldM runTrs' [] trs
+  where 
+    runTrs' acc tr = do
+      s' <- copy s                     -- copy the state
+      v <- (getTransition sys tr) s'     -- gets the transition and applies it
+      ns <- fromJust v $ s'            -- now I actually apply it
+      return $ ns:acc
+
+-- This needs to be more efficient
+copy :: Sigma s -> ST s (Sigma s)
+copy s = do 
+  kv <- H.toList s
+  H.fromList kv 
+
 -- Add a state to a list of states if that state is not already in the list
 add :: Sigma s -> [Sigma s] -> ST s [Sigma s]
 add s sts = do
-  isEl <- isElem s sts
-  if isEl
-  then return sts
-  else return $ s:sts
+    return $ s:sts
+--  isEl <- isElem s sts
+--  if isEl
+--  then return sts
+--  else return $ s:sts
 
+-- This is the bottleneck
 isElem :: Sigma s -> [Sigma s] -> ST s Bool
 isElem s [] = return False
 isElem s (x:xs) = do
@@ -136,7 +158,11 @@ isEqual :: Sigma s -> Sigma s -> ST s Bool
 isEqual s1 s2 = do
   l1 <- H.toList s1
   l2 <- H.toList s2
-  return $ l1 == l2  
+  return $ isEqual' l1 l2  
+
+isEqual' :: [(Var,Value)] -> [(Var,Value)] -> Bool
+isEqual' [] [] = True
+isEqual' ((x,v):xs) ((y,t):ys) = x == y && v == t && isEqual' xs ys
 
 {-
 sortSigmas :: [Sigma s] -> [Sigma s]

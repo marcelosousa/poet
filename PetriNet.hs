@@ -1,7 +1,14 @@
 module PetriNet where
 
+import Control.Monad
+import Control.Monad.ST.Safe
+import Control.Monad.Trans
+
 import qualified Model as ML
-import qualified Data.Map as M
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
+import qualified Data.HashTable.Class as H
+import qualified Data.Vector as V
 import Data.List
 
 -- conceptual view of a Petri Net
@@ -14,21 +21,23 @@ import Data.List
 
 type Net = (Places, Transitions)
 type Places = [Place]
-type Place = (Id, Int)
+type Place = (ML.Var, ML.Value)
 type Transitions = [Transition]
-type Transition = (Id, [Id], [Id])
-type Id = String 
+type Transition = (ML.Var, [ML.Var], [ML.Var])
 
 fst3 :: (a, b, c) -> a 
 fst3 (a,b,c) = a
 
-getSysInd :: FilePath -> IO (ML.System, ML.UIndependence)
+-- | getSysInd - Given a file path to a petri net, parse and converts 
+-- it into the model of computation of the net and computes the indep. rel.
+getSysInd :: FilePath -> IO (ST s (ML.System s), ML.UIndep)
 getSysInd file = do
   net <- parse file
-  let sys = convert net
-      ind = nub $ retrieveIndRel net
+  sys <- return $ convert net
+  let ind = retrieveIndRel net -- nub
   return (sys, ind)
 
+-- | These functions take care of the parsing of the net
 parse :: FilePath -> IO Net 
 parse file = do
   f <- readFile file
@@ -52,7 +61,7 @@ parsePlace s =
   case words s of
     [name,sm] -> 
       let m = read sm :: Int
-      in (name, m)
+      in (BS8.pack name, m)
     _ -> error $ "parsePlace " ++ s
 
 parseTransition :: Places -> String -> Transition 
@@ -64,24 +73,22 @@ parseTransition p s =
           rest' = map (getPlace p) rest 
           (pre,pos) = splitAt npre rest'
       in if length pos == npos
-         then (name, pre, pos)
+         then (BS8.pack name, pre, pos)
          else error "parseTransition: length pos is not correct"
     _ -> error $ "parseTransition " ++ s
 
-getPlace :: Places -> String -> Id
+getPlace :: Places -> String -> ML.Var
 getPlace ps s = 
   let i = read s :: Int
   in if length ps >= i
      then fst $ ps !! i
      else error "getPlace"     
 
-convert :: Net -> ML.System
-convert (ps,tr) = 
-  let i = M.fromList ps
-      t = map toTransition tr
-  in (t, i)
-
-retrieveIndRel :: Net -> ML.UIndependence
+-- Retrieve the independence relation
+-- This has to change.
+retrieveIndRel :: Net -> ML.UIndep
+retrieveIndRel = undefined
+{-
 retrieveIndRel (_, tr) = 
   let l = [ (t,t') | t <- tr, t' <- tr, check t t' ]
   in map (\(a,b) -> (fst3 a, fst3 b)) l
@@ -91,32 +98,44 @@ check (t1,pre,pos) (t2,pre',pos') =
   let b1 = pos `intersect` pre'
       b2 = pos' `intersect` pre
   in t1 /= t2 && null b1 && null b2
+-}
+-- Conversion section
+convert :: Net -> ST s (ML.System s)
+convert net@(ps,tr) = do
+  i <- H.fromList ps 
+  trs <- mapM toTransition $ zip tr [0..]
+  return $ ML.System (V.fromList trs) i
 
-toTransition :: Transition -> ML.Transition
-toTransition (n,pre,pos) = 
+toTransition :: (Transition, ML.TransitionID) -> ST s (ML.Transition s)
+toTransition ((n,pre,pos),tID) =  do
   let fn = buildFn pre pos
-  in (n,n,fn) 
+  return (n,tID,fn) 
 
-buildFn :: [Id] -> [Id] -> ML.TransitionFn
-buildFn pre pos = \s -> 
-  let pre' = map (\p -> lookup' p s) pre
-      spre = foldr updatePre s pre
-      spos = foldr updatePos spre pos
-  in if all (>0) pre'
-     then Just spos
-     else Nothing
+buildFn :: [ML.Var] -> [ML.Var] -> ML.TransitionFn s
+buildFn pre pos = \s -> do 
+  pre' <- mapM (\p -> H.lookup s p >>= return . checkLookup) pre -- prem :: ST s [ML.Value]
+  if all (>0) pre'
+  then do
+    return $ Just $ \s -> do
+      foldM updatePre s pre
+      foldM updatePos s pos
+  else return Nothing 
 
-lookup' :: Id -> ML.Sigma -> Int
-lookup' s m = case M.lookup s m of
-  Nothing -> error "lookup'"
-  Just i  -> i
+getValue :: [ML.Var] -> ML.Sigma s -> ST s Bool
+getValue pre s = do 
+  prem <- mapM (\p -> H.lookup s p >>= return . checkLookup) pre
+  return $ all (>0) prem
+ 
+checkLookup :: Maybe ML.Value -> ML.Value
+checkLookup Nothing  = error "checkLookup"
+checkLookup (Just i) = i
 
-updatePre :: Id -> ML.Sigma -> ML.Sigma
-updatePre p s = M.alter update' p s
-  where update' Nothing  = error "updatePre"
-        update' (Just i) = Just $ i-1
+updatePre :: ML.Sigma s -> ML.Var -> ST s (ML.Sigma s)
+updatePre s p = do
+  H.insert s p 0
+  return s  
 
-updatePos :: Id -> ML.Sigma -> ML.Sigma
-updatePos p s = M.alter update' p s
-  where update' Nothing  = Just 1
-        update' (Just i) = Just $ i+1
+updatePos :: ML.Sigma s -> ML.Var -> ST s (ML.Sigma s)
+updatePos s p = do 
+  H.insert s p 1
+  return s 

@@ -23,28 +23,26 @@ ievID = 0
 --stateless sys indep = evalState explore' (initialState sys indep) 
 stateless :: System -> UIndependence -> UnfolderState
 stateless sys indep = 
- -- ptrace ("Independence relation is\n" ++ show indep) $
   snd $ runState explore' (initialState sys indep) 
 
 explore' :: State UnfolderState ()
 explore' = do 
     i <- icomputeExtensions ievID
     explore i ievID []
-    
+
+--  
 explore :: ConfigurationID -> EventID -> Alternative -> State UnfolderState ()
-explore conf ê alt = ptrace ("\nEXPLORE: NEW ITERATION with confid=" ++ show conf ++ ", ê=" ++ show ê ++ ", alt=" ++ show alt) $ do
-  k <- return $ () -- unsafePerformIO getChar 
+explore conf ê alt = do
   s <- get
   let oldConf = configurations s
-  (en,cext) <- ptrace ("Events: " ++ show (events s) ++ "\nEnabled:" ++ show (enable s) ++ "\nCnfls:" ++ show (immediateConflicts s)) $ k `seq` extensions conf 
+  (en,cext) <- extensions conf     -- compute the extensions of a configuration  
   config@Configuration{..} <- getConfiguration conf
-  if null en           -- conf is maximal
+  if null en -- conf is maximal
   then do 
     -- mapM_ addImmediateConflict $ conf ++ cext
     trace ("computing V(e) for all events in conf id " ++ show conf ++ " =" ++ show cevs ) $ mapM_ (computeJustifications config cext) cevs -- forall events e in the configuration compute V(e) 
     ptrace ("configuration id=" ++ show conf ++ " is maximal with extensions:" ++ show cext) $ return () 
   else trace ("configuration id=" ++ show conf ++ " is not maximal: " ++ show cevs) $ do
-    e' <- return $ () -- unsafePerformIO getChar
     let e = if null alt
             then head en
             else head $ en `intersect` alt
@@ -55,15 +53,13 @@ explore conf ê alt = ptrace ("\nEXPLORE: NEW ITERATION with confid=" ++ show co
     let oldDisable = disable sb
     explore nconf e (alt \\ [e])
     -- TODO: Reset the state to make it stateless
-    k2 <- return $ () -- unsafePerformIO getChar 
-    s@UnfolderState{..} <- k2 `seq` get
+    s@UnfolderState{..} <- get
     -- let s' = gc s
-    --   
-    let ns = s{ disable = oldDisable, configurations = oldConf }
+    let ns = s{ disable = oldDisable, configurations = oldConf } -- not sure why this makes sense
     put ns
-    malt <- trace ("BACKTRACK TO conf=" ++ show conf ++ ", (ê,e)=" ++ show (ê,e) ++ "\n" ++ show ns) $ computeAlternatives config e
+    malt <- computeAlternatives config e
     if null malt
-    then ptrace ("finishing because " ++ show e ++ " has no alternatives") $ return () -- $ print $ "Event: " ++ show e
+    then ptrace ("finishing because " ++ show e ++ " has no alternatives") $ return () 
     else do 
       let alt' = head malt
       addDisable ê e
@@ -117,9 +113,6 @@ isStillEnabled e e' = do
     ev' <- getEvent e'
     return $ not $ dependent indep (etr ev) (etr ev')
     
--- Garbage collection!
--- Optimize!
-
 -- add event to the unfolding prefix
 -- in general, we need to add several events 
 addEvents :: EventsID -> EventID -> Configuration -> TransitionID -> State UnfolderState EventsID

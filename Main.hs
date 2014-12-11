@@ -2,12 +2,14 @@ module Main where
 
 --import Unfolderful
 --import Unfolderless
-import Printer
-import Examples
-import Benchmark
+--import Printer
+--import Examples
+--import Benchmark
 import Model
 import PetriNet
 import qualified Data.Map as M
+
+import Control.Monad.ST.Safe
 
 {-
 writeUnf :: (System, UIndependence) -> IO ()
@@ -26,19 +28,24 @@ writeUnf (sys,ind) =
 -}
 
 main :: IO ()
-main =  run "benchmarks/debug/sdl_example.pt"
+main =  runPT "benchmarks/debug/sdl_example.pt"
 --  print $ stateless fib_bench_false ind_fib_bench_false 
 
 runPT :: FilePath -> IO ()
 runPT file = do
-  (sys@(trs,i),ind) <- getSysInd file
-  let sts = runSys' sys [i] []
-      sts' = map (fst . unzip . M.toList) $ sortSigmas sts
-      s = foldr (\s r -> init (show' s) ++ "\n" ++ r) "" sts'
-  putStrLn s
-  writeFile (file++".debug") s
+  net <- parse file -- net :: Net
+  let k = runST (convert net >>= runSystem >>= return . length) 
+  --(sys,_) <- getSysInd file
+  --sts <- return $ runSystem sys
+  print k
+--  let sts = runSystem sys [i] []
+--      sts' = map (fst . unzip . M.toList) $ sortSigmas sts
+--      s = foldr (\s r -> init (show' s) ++ "\n" ++ r) "" sts'
+--  putStrLn s
+--  writeFile (file++".debug") s
   -- print $ stateless sys ind
 
+{-
 run :: FilePath -> IO ()
 run file = do
   (sys@(trs,i),ind) <- getSysInd file
@@ -47,3 +54,4 @@ run file = do
 show' :: [String] -> String
 show' [] = ""
 show' ((c:x):xs) = (init x) ++ " " ++ show' xs
+-}
