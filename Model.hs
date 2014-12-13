@@ -54,7 +54,7 @@ type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
 -- | enabledTransitions 
 enabledTransitions :: System s -> Sigma s -> ST s TransitionsID
 enabledTransitions sys@System{..} s = do
-  s' <- copy s
+  s' <- copy s -- this is not necessary if the first part of the transition does not modify the state
   tr <- V.filterM (\(_,_,t) -> t s' >>= return . maybe False (const True)) transitions  
   V.mapM (return . snd3) tr
 

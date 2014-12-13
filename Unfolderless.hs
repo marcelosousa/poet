@@ -2,46 +2,74 @@
 module Unfolderless where
 
 import Control.Monad.State.Strict
+import Control.Monad.ST.Safe
+
 import Data.List
 import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Set (isSubsetOf)
+import qualified Data.Vector as V
+
 import APIStateless
 import Model
-import Examples
-import Benchmark
+
+--import Examples
+--import Benchmark
+
 import qualified Debug.Trace as T
 import System.IO.Unsafe
 
 trace a b = b -- T.trace
 ptrace= T.trace
 
-ievID = 0
+stateless :: System s -> UIndep -> ST s (UnfolderState s)
+stateless sys indep = do 
+  (a,s) <- runStateT botExplore $ iUnfState sys indep 
+  return s
 
---stateless :: System -> UIndependence -> IO ()
---stateless sys indep = evalState explore' (initialState sys indep) 
-stateless :: System -> UIndependence -> UnfolderState
-stateless sys indep = 
-  snd $ runState explore' (initialState sys indep) 
+-- This is the beginning of the exploration
+-- where we construct the initial unfolding prefix 
+-- with the bottom event
+botExplore :: UnfolderOp s () 
+botExplore = do 
+  iConf <- initialExtensions botEID 
+  explore iConf botEID []
 
-explore' :: State UnfolderState ()
-explore' = do 
-    i <- icomputeExtensions ievID
-    explore i ievID []
+-- The extensions from the the bottom event
+-- After this function, the unfolding prefix denotes
+-- the execution of bottom, and contains all extensions from it.
+initialExtensions :: EventID -> UnfolderOp s (Configuration s)
+initialExtensions e = do
+    s@UnfolderState{..} <- get
+    let nconfes = [e]
+        st = initialState system
+    nconfID <- freshCounter $ Right ()
+    trs <- lift $ enabledTransitions system st
+    enabledE <- V.foldM (\en tr -> addEvents [] 0 nconfes tr >>= \es -> return (es++en)) [] trs
+    let iConf = Conf st nconfes enabledE []
+        -- nconfigs = M.insert nconfID nconf configurations
+        -- nconfigs = nconf 
+    put s{previousConf = iConf }
+    return iConf
 
 --  
-explore :: ConfigurationID -> EventID -> Alternative -> State UnfolderState ()
-explore conf ê alt = do
+explore :: Configuration s -> EventID -> Alternative -> UnfolderOp s ()
+explore c@Conf{..} ê alt = do
   s <- get
-  let oldConf = configurations s
-  (en,cext) <- extensions conf     -- compute the extensions of a configuration  
-  config@Configuration{..} <- getConfiguration conf
-  if null en -- conf is maximal
+  -- let prevConf = configurations s
+  --(en,cext) <- extensions conf     -- compute the extensions of a configuration  
+  --config@Configuration{..} <- getConfiguration conf
+  -- @ configuration is maximal?
+  if null enevs 
+  then do
+    -- @ forall special events e in the configuration compute V(e)
+    computePotentialAlternatives maxevs cevs 
+    return () 
+  else undefined
+
+{-
   then do 
-    -- mapM_ addImmediateConflict $ conf ++ cext
-    trace ("computing V(e) for all events in conf id " ++ show conf ++ " =" ++ show cevs ) $ mapM_ (computeJustifications config cext) cevs -- forall events e in the configuration compute V(e) 
-    ptrace ("configuration id=" ++ show conf ++ " is maximal with extensions:" ++ show cext) $ return () 
   else trace ("configuration id=" ++ show conf ++ " is not maximal: " ++ show cevs) $ do
     let e = if null alt
             then head en
@@ -64,24 +92,9 @@ explore conf ê alt = do
       let alt' = head malt
       addDisable ê e
       explore conf ê (alt' \\ cevs)
+-}
 
-icomputeExtensions :: EventID -> State UnfolderState ConfigurationID
-icomputeExtensions e = do
-    s@UnfolderState{..} <- get
-    let nconfevs = [e]
-        st = getIState system
-    nconfID <- freshCounter $ Right ()
-    let nconf = Configuration nconfevs st
-        -- nconfigs = M.insert nconfID nconf configurations
-        nconfigs = nconf -- M.insert nconfID nconf configurations
-        trs = enabledTransitions system st
-    menabledE <- mapM (addEvents [] 0 nconf) trs
-    let enabledE = foldl (++) [] menabledE
-        enabled' = M.insert nconfID enabledE enable
-    s@UnfolderState{..} <- get
-    put s{configurations = nconfigs, enable = enabled'}
-    return nconfID
-
+{-
 -- We are going to add event e to configuration conf
 -- Need to update enable, and immediateConflicts
 -- computeExtensions
@@ -112,10 +125,14 @@ isStillEnabled e e' = do
     ev <- getEvent e
     ev' <- getEvent e'
     return $ not $ dependent indep (etr ev) (etr ev')
+
+-}
     
 -- add event to the unfolding prefix
 -- in general, we need to add several events 
-addEvents :: EventsID -> EventID -> Configuration -> TransitionID -> State UnfolderState EventsID
+addEvents :: EventsID -> EventID -> EventsID -> TransitionID -> UnfolderOp s EventsID
+addEvents es eID maxConf tr = undefined
+{-
 addEvents es eID conf@Configuration{..} tr = do
   s@UnfolderState{..} <- get
   maxConf <- filterM (isMaximal conf) cevs    -- computes the maximal events of a configuration 
@@ -234,13 +251,46 @@ extensions conf = do
     let cext' = nub cext
     trace ("conflicting extensions of conf id " ++ show conf ++ "=" ++ show cext') $ return (en,cext')
 
-computeJustifications :: Configuration -> EventsID -> EventID -> State UnfolderState ()
-computeJustifications conf cext e = do
-    s@UnfolderState{..} <- get
-    let cfle = fromMaybe [] $ M.lookup e immediateConflicts -- #^(e)
-        es' = cfle `intersect` cext                         -- #^(e) intersect cex(C)
-    mapM_ (computeJustification conf e) es'                 -- forall e \in C, e' \in #^(e) intersect cex(C)
+-}
 
+-- Let e be an event of a configuration C.
+--   Let cext be the conflicting extensions of C, 
+--    ie. all events e' such that |-e'-| is a subset of C
+--        but there is another event ê' such that e' #^ ê'
+-- Let ê be the events such that e #^ ê.
+-- Can ê intersect cext =!= ê? Yes. There may be immediate conflicts of 
+-- e whose roots are not in C.
+computePotentialAlternatives :: EventsID -> EventsID -> UnfolderOp s ()
+computePotentialAlternatives maxevs evs = do
+  s@UnfolderState{..} <- get
+  foldM_ (computePotentialAlternative causality) S.empty evs where
+    -- computePotentialAlternative :: Causality -> S.Set EventID -> EventID -> UnfolderOp s (S.Set EventID)
+    -- @ V(e) where e is an event that has at least one imm conflict
+    computePotentialAlternative causa cext e = do
+      -- @ compute the events of the configuration
+      let confEvs = allEventsOfConf causa maxevs
+      -- @ #^(e)
+      cfle <- getImmediateConflicts e
+      -- @ #^(e) intersect cex(C)
+      let ext = filter (isCExtension causa confEvs cext) cfle
+      -- @ checks if for all e' \in ext, the alternative of e given by e' is valid
+      de <- getDisabled e
+      mapM_ (computeV causa maxevs de e) ext 
+      return $ S.union cext $ S.fromList ext
+    -- isCExtension :: Causality -> S.Set EventID -> S.Set EventID -> EventID -> Bool
+    -- @ checks if a particular event is a conflicting extension: TODO: expensive
+    --   verifies if there is a path from every immediate predecessor of the event
+    --   to a maximal event of the configuration.
+    --   Possible optimisation: compute the actual configuration! (done) 
+    --    Improve the path computation based on the number of the event.
+    isCExtension causa confevs cext e = 
+      let prede = [ i | (i,j) <- causa, j == e] 
+          check = all (\e -> S.member e confevs) prede  
+      in S.member e cext || check 
+    -- computeV :: Causality -> S.Set EventID -> EventsID -> EventsID -> EventID -> EventID -> UnfolderOp s ()
+    computeV = undefined  
+
+{-
 computeJustification :: Configuration -> EventID -> EventID -> State UnfolderState ()
 computeJustification conf@Configuration{..} e e' = trace ("computingJustification of " ++ show e ++ " and "++ show e') $ do
     succe <- successors e
@@ -330,4 +380,4 @@ addV alte e = do
           Just a  -> Just $ alte:a
         alt = M.alter aux e alternatives
     put s{ alternatives = alt}
-
+-}
