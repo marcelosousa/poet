@@ -67,6 +67,7 @@ snd3 :: (a,b,c) -> b
 snd3 (a,b,c) = b
 
 -- END OF TYPES 
+
 -- It is many times the case that we run mutually exclusive functions
 -- like what i have below (min, max). Program consolidation could 
 -- optimisize this code.

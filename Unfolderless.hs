@@ -124,12 +124,7 @@ unfold conf@Conf{..} e = do
   put s{ pcnf = nconf }
   return nconf
     
--- TODO: add event to the unfolding prefix
--- in general, we need to add several events 
--- es: enabled events \ [eID]
--- eID: the last event added 
--- tr: the transition that is enabled
--- addEvents only adds events that have eID in the history
+-- expandWith only adds events that have e in the history
 expandWith :: EventID -> EventsID -> ML.TransitionID -> UnfolderOp s EventsID
 expandWith e maxevs tr = do
   s@UnfolderState{..} <- get 

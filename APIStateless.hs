@@ -108,22 +108,6 @@ execute cst e = do
   fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
   lift $ fn cst
 
--- Check if two events are concurrent
--- Need to optimise this function: this is very inneficient!
--- The standard definition is: e || e' iff not (e < e' || e' < e || e # e')
--- TODO: FIX THIS FUNCTION
-isConcurrent :: EventID -> EventID -> UnfolderOp s Bool
-isConcurrent e e' = do
-  s@UnfolderState{..} <- get
-  prede  <- lift $ predecessors e  evts
-  prede' <- lift $ predecessors e' evts
-  let eprede  = e:prede
-      eprede' = e':prede' 
-      -- imd conflicts of all prede cfle = fromMaybe [] $ M.lookup e immediateConflicts
-      -- imd conflicts of all prede'
-      -- check that e is not an imd clf of any prede' and vice versa
-  return $ not $ e' `elem` prede || e `elem` prede' -- missing cnfl part
-
 isDependent_te :: ML.UIndep -> ML.TransitionID -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
 isDependent_te indep tr e events = do
@@ -167,7 +151,9 @@ getEvent s e events =
 
 -- @ getConfEvs - retrieves all the events of a configuration
 getConfEvs :: EventsID -> Events s -> ST s EventsID
-getConfEvs maxevs events = undefined
+getConfEvs maxevs events = do
+  preds <- mapM (\e -> predecessors e events) maxevs
+  return $ nub $ concat preds 
     
 getImmediateConflicts :: EventID -> Events s -> ST s EventsID
 getImmediateConflicts e events = do
