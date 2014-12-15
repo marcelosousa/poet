@@ -6,13 +6,12 @@ import Control.Monad.ST.Safe
 
 import Data.List
 import Data.Maybe
-import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Set (isSubsetOf)
 import qualified Data.Vector as V
 
 import APIStateless
-import Model
+import qualified Model as ML
 
 --import Examples
 --import Benchmark
@@ -23,9 +22,10 @@ import System.IO.Unsafe
 trace a b = b -- T.trace
 ptrace= T.trace
 
-stateless :: System s -> UIndep -> ST s (UnfolderState s)
-stateless sys indep = do 
-  (a,s) <- runStateT botExplore $ iUnfState sys indep 
+stateless :: ML.System s -> ML.UIndep -> ST s (UnfolderState s)
+stateless sys indep = do
+  is <- iState sys indep 
+  (a,s) <- runStateT botExplore is 
   return s
 
 -- This is the beginning of the exploration
@@ -41,17 +41,14 @@ botExplore = do
 -- the execution of bottom, and contains all extensions from it.
 initialExtensions :: EventID -> UnfolderOp s (Configuration s)
 initialExtensions e = do
-    s@UnfolderState{..} <- get
-    let nconfes = [e]
-        st = initialState system
-    nconfID <- freshCounter $ Right ()
-    trs <- lift $ enabledTransitions system st
-    enabledE <- V.foldM (\en tr -> addEvents [] 0 nconfes tr >>= \es -> return (es++en)) [] trs
-    let iConf = Conf st nconfes enabledE []
-        -- nconfigs = M.insert nconfID nconf configurations
-        -- nconfigs = nconf 
-    put s{previousConf = iConf }
-    return iConf
+  s@UnfolderState{..} <- get
+  let nconfes = [e]
+      st = ML.initialState syst
+  trs <- lift $ ML.enabledTransitions syst st
+  enabledE <- V.foldM (\en tr -> addEvents [] 0 nconfes tr >>= \es -> return (es++en)) [] trs
+  let iConf = Conf st nconfes enabledE []
+  put s{ pcnf = iConf }
+  return iConf
 
 --  
 explore :: Configuration s -> EventID -> Alternative -> UnfolderOp s ()
@@ -130,36 +127,51 @@ isStillEnabled e e' = do
     
 -- add event to the unfolding prefix
 -- in general, we need to add several events 
-addEvents :: EventsID -> EventID -> EventsID -> TransitionID -> UnfolderOp s EventsID
-addEvents es eID maxConf tr = undefined
-{-
-addEvents es eID conf@Configuration{..} tr = do
-  s@UnfolderState{..} <- get
-  maxConf <- filterM (isMaximal conf) cevs    -- computes the maximal events of a configuration 
-  history <- filterM (isDependent tr) maxConf -- computes the set of maximal events that are dependent with tr
-  if null history                             -- i suppose this shouldn't happen ever!
-  then trace (show tr ++ " has empty history with maxConf: " ++ show maxConf ++ " and cevs: " ++ show cevs) $ return [] 
+-- es: enabled events \ [eID]
+-- eID: the last event added 
+-- tr: the transition that is enabled
+addEvents :: EventsID -> EventID -> EventsID -> ML.TransitionID -> UnfolderOp s EventsID
+addEvents es eID maxevs tr = do
+  s@UnfolderState{..} <- get 
+  -- @ computes the history: set of maximal events that are dependent with tr
+  history <- lift $ filterM (isDependent inde evts tr) maxevs
+  if null history
+  then trace (show tr ++ " has empty history with max_events: " ++ show maxevs) $ return [] 
   else do
+    -- eID should be a valid maximal event
     if eID `elem` history
     then if history == [eID]
          then addEvent tr history
          else do
+           -- @ compute all possible histories based on the assumption that
+           --   a transition cannot disable another transition. 
+           --   This means that if eID is the event that enabled tr (to be checked after),
+           --   then all subsequences of the history which contain eID are valid histories. 
            let history' = eID `delete` history
-               histories' = map (eID:) $ subsequences history' -- all posible histories
+               histories' = map (eID:) $ subsequences history' 
                histories = history `delete` histories'
-           ges <- mapM getEvent es
-           let ges' = snd $ unzip $ filter (\(e,_) -> etr e == tr) $ zip ges es -- filtering from the enabled events the ones that have transition tr
-           if not $ null ges' 
-           then do -- we know that this transition was already enabled and we need to filter the histories which dont allow this particular transition
-             let hges'' = map (\e -> [e' | (e',e2) <- causality, e2 == e]) ges' -- taking the immediate predecessors of the event enabled with the same transition
-             hges' <- mapM (filterH tr) hges''
-             let histories' = filter (\h -> any (\hges -> all (\e -> e `elem` h) hges) hges') histories
-             mapM (addEvent tr) histories'
-           else do -- we know that it is because of the current event that tr is enabled. hence, all subsequences are valid histories.
-             trace ("addEvents with history: " ++ show history ++ " and histories " ++ show histories ) $ mapM (addEvent tr) histories
+           -- @ retrieve all enabled events except eID
+           evs <- lift $ mapM (\e -> getEvent "addEvents" e evts) es
+           -- @ filter the events whose transition is *tr*
+           let evsWtr = snd $ unzip $ filter (\(e,_) -> evtr e == tr) $ zip evs es 
+           if null evsWtr
+           then do 
+             -- @ It is because of eID that *tr* is enabled. 
+             --   Hence, all subsequences are valid histories.
+             mapM (addEvent tr) histories
+           else do 
+             -- @ *tr* was already enabled before eID.
+             --   Hence, we need to filter the histories which disable *tr* 
+             -- @ compute the immediate predecessors of *evsWtr*
+             -- let hges'' = map (\e -> [e' | (e',e2) <- causality, e2 == e]) ges' 
+             -- hges' <- mapM (filterH tr) hges''
+             -- let histories' = filter (\h -> any (\hges -> all (\e -> e `elem` h) hges) hges') histories
+             -- mapM (addEvent tr) histories'
+             undefined
            addEvent tr history
-    else error "My intution tells me that we this shouldnt happen"  
+    else error "Unreachability to be proved"  
 
+{-
 filterH :: TransitionID -> EventsID -> State UnfolderState EventsID 
 filterH tr pred = do
   s@UnfolderState{..} <- get
@@ -176,63 +188,61 @@ isValidHistory tr hist candidate = do
         es = foldr intersect (head histcfls) $ tail histcfls
     ges <- mapM getEvent es
     return $ any (\e -> etr e == tr) ges || ges == [] 
+-}
 
-addEvent' :: TransitionID -> EventsID -> State UnfolderState () 
-addEvent' tr history = do
-    s@UnfolderState{..} <- get
-    let es = M.filterWithKey (\e _ -> all (\e2 -> (e2,e) `elem` causality) history) events 
-        ges = M.filterWithKey (\_ e -> etr e == tr) es
-        ges' = M.filterWithKey (\e _ -> (S.fromList [e1 | (e1,e2) <- causality, e2 == e]) == (S.fromList history)) ges 
-    if not $ M.null ges' -- any (\e -> etr e == tr) ges 
-    then return ()
-    else do 
-      neID <- freshCounter $ Left ()            -- the new event ID
-      let e = Event tr 
-          causes = [(e',neID) | e' <- history]  -- causality 
-      prede <- mapM predecessors history        -- retrieves the predecessors of the history
-      let predneID = concat prede ++ history    -- predneID is the local configuration of e
-          -- computes the immediate predecessors of all events in the local configuration
-          pcfns = nub $ concatMap (\e -> fromMaybe [] $ M.lookup e immediateConflicts) predneID
-      fevents <- filterM (isImmediateConflict pcfns . fst) $ M.toList events
-      let cfns = fst $ unzip $ filter (\(eID',e') -> (not $ eID' `elem` (0:predneID)) && dependent indep tr (etr e')) fevents
-          immcnf = M.insert neID cfns immediateConflicts
-          immcnfUp = foldr (M.update (\a -> Just $ neID:a)) immcnf cfns
-          events' = M.insert neID e events
-          ncausality  = causes ++ causality
-      put s{events = events', causality = ncausality, immediateConflicts = immcnfUp}
-
-addEvent :: TransitionID -> EventsID -> State UnfolderState EventsID 
+-- @ addEvent: Given a transition id and the history
+--   adds the correspondent event.
+--   *Pre-condition*: The event to be added is not in the unf prefix
+--   *Flow*: 
+--     1. Generate a fresh event counter: neID
+--     2. Compute the set of immediate conflicts
+--     3. Insert the new event in the hashtable
+--     4. Update all events in the history to include neID as their successor
+--     5. Update all events in the immediate conflicts to include neID as one
+addEvent :: ML.TransitionID -> EventsID -> UnfolderOp s EventsID 
 addEvent tr history =  do
-    s@UnfolderState{..} <- get
-    let es = M.filterWithKey (\e _ -> all (\e2 -> (e2,e) `elem` causality) history) events 
-        ges = M.filterWithKey (\_ e -> etr e == tr) es
-        ges' = M.filterWithKey (\e _ -> (S.fromList [e1 | (e1,e2) <- causality, e2 == e]) == (S.fromList history)) ges 
-    if not $ M.null ges' -- any (\e -> etr e == tr) ges 
-    then return $ M.keys ges'
-    else do 
-      neID <- freshCounter $ Left ()            -- the new event ID
-      let e = Event tr 
-          causes = [(e',neID) | e' <- history]  -- causality 
-      prede <- mapM predecessors history        -- retrieves the predecessors of the history
-      s@UnfolderState{..} <- get
-      let predneID = concat prede ++ history    -- predneID is the local configuration of e
-          -- computes the immediate predecessors of all events in the local configuration
-          pcfns = nub $ concatMap (\e -> fromMaybe [] $ M.lookup e immediateConflicts) predneID
-      fevents <- filterM (isImmediateConflict pcfns . fst) $ M.toList events
-      let cfns = fst $ unzip $ filter (\(eID',e') -> (not $ eID' `elem` (0:predneID)) && dependent indep tr (etr e')) fevents
-          immcnf = M.insert neID cfns immediateConflicts
-          immcnfUp = foldr (M.update (\a -> Just $ neID:a)) immcnf cfns
-          events' = M.insert neID e events
-          ncausality  = causes ++ causality
-      put s{events = events', causality = ncausality, immediateConflicts = immcnfUp}
-      return [neID]
+  s@UnfolderState{..} <- get
+  -- @ 1. Fresh event id 
+  neID <- freshCounter
+  -- @ 2. Compute the immediate conflicts
+  -- @  a) Computes the local history of the new event 
+  prede <- lift $ mapM (\e -> predecessors e evts) history        
+  let localHistory = nub $ concat prede ++ history 
+  -- @  b) Computes the immediate conflicts of all events in the local configuration
+  lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
+  -- @  c) Compute the immediate conflicts
+  cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts
+  -- @ 3. Insert the new event in the hash table
+  let e = Event tr history [] cnfls [] []
+  lift $ setEvent neID e evts 
+  -- @ 4. Update all events in the history to include neID as their successor
+  lift $ mapM (\e -> setSuccessor neID e evts) history
+  -- @ 5. Update all events in the immediate conflicts to include neID as one 
+  lift $ mapM (\e -> setConflict neID e evts) cnfls 
+  return [neID]
 
-
-isImmediateConflict :: EventsID -> EventID -> State UnfolderState Bool
-isImmediateConflict cfls e' = do 
-    pred <- predecessors e'
-    return $ not $ any (\e -> e `elem` cfls) $ e':pred
-  
+-- @ Compute conflicts  
+--  DFS of the unf prefix from bottom stopping when the event:
+--  . Is in the local configuration
+--  . Is an immediate conflict of an event in the local configuration
+--  . Is dependent with tr
+computeConflicts :: ML.UIndep -> ML.TransitionID -> EventsID -> EventsID -> Events s -> ST s EventsID
+computeConflicts uidep tr lh lhCnfls events = do 
+  ev@Event{..} <- getEvent "computeConflicts" botEID events
+  evs <- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
+  return $ nub evs
+  where 
+    computeConflict e = 
+      if e `elem` lh || e `elem` lhCnfls
+      then return []
+      else do
+        ev@Event{..} <- getEvent "computeConflict" e events
+        if ML.isDependent uidep tr evtr
+        then return [e]
+        else do 
+          evs <- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
+          return $ nub evs 
+{-  
 -- Compute the conflicting extensions of a configuration:
 cex :: EventsID -> State UnfolderState EventsID
 cex es = do 
@@ -261,7 +271,8 @@ extensions conf = do
 -- Can ê intersect cext =!= ê? Yes. There may be immediate conflicts of 
 -- e whose roots are not in C.
 computePotentialAlternatives :: EventsID -> EventsID -> UnfolderOp s ()
-computePotentialAlternatives maxevs evs = do
+computePotentialAlternatives maxevs evs = undefined
+{- do
   s@UnfolderState{..} <- get
   foldM_ (computePotentialAlternative causality) S.empty evs where
     -- computePotentialAlternative :: Causality -> S.Set EventID -> EventID -> UnfolderOp s (S.Set EventID)
@@ -289,6 +300,7 @@ computePotentialAlternatives maxevs evs = do
       in S.member e cext || check 
     -- computeV :: Causality -> S.Set EventID -> EventsID -> EventsID -> EventID -> EventID -> UnfolderOp s ()
     computeV = undefined  
+-}
 
 {-
 computeJustification :: Configuration -> EventID -> EventID -> State UnfolderState ()
