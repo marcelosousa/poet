@@ -100,6 +100,7 @@ gc s@UnfolderState{..} =
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
 execute :: ML.Sigma s -> EventID -> UnfolderOp s (ML.Sigma s)
+{-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
@@ -123,12 +124,18 @@ isConcurrent e e' = do
       -- check that e is not an imd clf of any prede' and vice versa
   return $ not $ e' `elem` prede || e `elem` prede' -- missing cnfl part
 
--- This can be removed
-isDependent :: ML.UIndep -> Events s -> ML.TransitionID -> EventID -> ST s Bool
-{-# INLINE isDependent #-}
-isDependent indep events tr e = do
-    ev@Event{..} <- getEvent "isDependent" e events
-    return $ ML.isDependent indep tr evtr
+isDependent_te :: ML.UIndep -> ML.TransitionID -> EventID -> Events s -> ST s Bool
+{-# INLINE isDependent_te #-}
+isDependent_te indep tr e events = do
+  ev@Event{..} <- getEvent "isDependent" e events
+  return $ ML.isDependent indep tr evtr
+
+isIndependent :: ML.UIndep -> EventID -> EventID -> Events s -> ST s Bool
+{-# INLINE isIndependent #-}
+isIndependent indep e ê events = do
+  ev <- getEvent "isIndependent" e events 
+  êv <- getEvent "isIndependent" ê events
+  return $ ML.isIndependent indep (evtr ev) (evtr êv) 
 
 -- Useful Functions
 predecessors, successors :: EventID -> Events s -> ST s EventsID
@@ -151,11 +158,6 @@ successors e events = do
      ev@Event{..} <- getEvent "successors" e events 
      foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
 
- 
--- path from e to e' in the causality
--- path :: Causality -> EventID -> EventID -> Bool
--- path = undefined
-
 -- GETTERS
 -- retrieves the event associated with the event id 
 getEvent :: String -> EventID -> Events s -> ST s Event
@@ -168,10 +170,24 @@ getConfEvs :: EventsID -> Events s -> ST s EventsID
 getConfEvs maxevs events = undefined
     
 getImmediateConflicts :: EventID -> Events s -> ST s EventsID
-getImmediateConflicts = undefined 
+getImmediateConflicts e events = do
+  ev@Event{..} <- getEvent "getImmediateConflicts" e events
+  return icnf 
 
-getDisabled :: EventID -> UnfolderOp s EventsID
-getDisabled = undefined
+getIPred :: EventID -> Events s -> ST s EventsID
+getIPred e events = do
+  ev@Event{..} <- getEvent "getIPred" e events
+  return pred 
+
+getDisabled :: EventID -> Events s -> ST s EventsID
+getDisabled e events = do 
+  ev@Event{..} <- getEvent "getIPred" e events
+  return disa
+
+getAlternatives :: EventID -> Events s -> ST s Alternatives 
+getAlternatives e events = do 
+  ev@Event{..} <- getEvent "getAlternatives" e events
+  return alte 
 
 -- SETTERS
 
@@ -193,8 +209,26 @@ setConflict e e' events = do
       ev' = ev{ icnf = icnfEv }
   setEvent e' ev' events 
 
-addDisable :: EventID -> EventID -> UnfolderOp s ()
-addDisable = undefined
+setDisabled :: EventID -> EventsID -> Events s -> ST s ()
+setDisabled e de events = do
+  ev@Event{..} <- getEvent "setDisabled" e events
+  let ev' = ev{ disa = de }
+  setEvent e ev' events 
+
+addAlternative :: EventID -> Alternative -> Events s -> ST s ()
+addAlternative e v events = do 
+  ev@Event{..} <- getEvent "addAlternative" e events
+  let altEv = v:alte
+      ev' = ev{ alte = altEv }
+  setEvent e ev' events 
+
+addDisabled :: EventID -> EventID -> Events s -> ST s ()
+addDisabled e ê events = do
+  ev@Event{..} <- getEvent "addDisabled" ê events
+  let disaEv = e:disa
+      ev' = ev{ disa = disaEv }
+  setEvent e ev' events 
+   
 {-
 addDisable :: EventID -> EventID -> State (UnfolderState s) ()
 addDisable ê e = do  -- trace ("addDisable: " ++ show ê ++ " " ++ show e) $ do
@@ -206,6 +240,14 @@ addDisableAux :: EventID -> Maybe EventsID -> Maybe EventsID
 addDisableAux e Nothing = Just $ [e]
 addDisableAux e (Just d) = Just $ e:d
 -}
+
+-- @ set previous configuration
+setPreviousConfiguration :: Configuration s -> UnfolderOp s ()
+setPreviousConfiguration conf = do
+  s@UnfolderState{..} <- get
+  let ns = s{ pcnf = conf } 
+  put ns
+
 -- @ freshCounter - updates the counter of events
 freshCounter :: UnfolderOp s Counter
 freshCounter = do
