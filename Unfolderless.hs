@@ -211,7 +211,7 @@ addEvent tr history =  do
   -- @  b) Computes the immediate conflicts of all events in the local configuration
   lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
   -- @  c) Compute the immediate conflicts
-  cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts
+  cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts >>= return . nub
   -- @ 3. Insert the new event in the hash table
   let e = Event tr history [] cnfls [] []
   lift $ setEvent neID e evts 
@@ -229,8 +229,7 @@ addEvent tr history =  do
 computeConflicts :: ML.UIndep -> ML.TransitionID -> EventsID -> EventsID -> Events s -> ST s EventsID
 computeConflicts uidep tr lh lhCnfls events = do 
   ev@Event{..} <- getEvent "computeConflicts" botEID events
-  evs <- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
-  return $ nub evs
+  foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
   where 
     computeConflict e = 
       if e `elem` lh || e `elem` lhCnfls
@@ -239,9 +238,7 @@ computeConflicts uidep tr lh lhCnfls events = do
         ev@Event{..} <- getEvent "computeConflict" e events
         if ML.isDependent uidep tr evtr
         then return [e]
-        else do 
-          evs <- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
-          return $ nub evs 
+        else foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
 {-  
 -- Compute the conflicting extensions of a configuration:
 cex :: EventsID -> State UnfolderState EventsID
