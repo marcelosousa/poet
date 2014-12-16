@@ -68,6 +68,14 @@ snd3 (a,b,c) = b
 
 -- END OF TYPES 
 
+-- safeLookup: lookup :: (Eq k, Hashable k) => h s k v -> k -> ST s (Maybe v)
+safeLookup :: String -> Sigma s -> Var -> ST s Value
+safeLookup err ht k = do
+  mv <- H.lookup ht k
+  case mv of 
+    Nothing -> error $ "safeLookup: " ++ err
+    Just v  -> return v
+
 -- It is many times the case that we run mutually exclusive functions
 -- like what i have below (min, max). Program consolidation could 
 -- optimisize this code.

@@ -19,11 +19,10 @@ import qualified Model as ML
 import qualified Debug.Trace as T
 import System.IO.Unsafe
 
-trace a b = b -- T.trace
-ptrace= T.trace
+trace = T.trace
 
 stateless :: ML.System s -> ML.UIndep -> ST s (UnfolderState s)
-stateless sys indep = do
+stateless sys indep = trace "stateless" $ do
   is <- iState sys indep 
   (a,s) <- runStateT botExplore is 
   return s
@@ -47,13 +46,14 @@ initialExtensions = do
       st = ML.initialState syst
   trs <- lift $ ML.enabledTransitions syst st
   enevs <- V.foldM (\en tr -> expandWith e cevs tr >>= \es -> return (es++en)) [] trs
+  s@UnfolderState{..} <- get
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
   return iConf
 
 -- @@ main function 
 explore :: Configuration s -> EventID -> Alternative -> UnfolderOp s ()
-explore c@Conf{..} ê alt = do
+explore c@Conf{..} ê alt = trace ("explore: ê = " ++ show ê) $ do
   is@UnfolderState{..} <- get
   -- @ configuration is maximal?
   if null enevs 
@@ -95,7 +95,7 @@ explore c@Conf{..} ê alt = do
 --    and returns the new configuration with that event
 --    Build the configuration step by step
 unfold :: Configuration s -> EventID -> UnfolderOp s (Configuration s)
-unfold conf@Conf{..} e = do
+unfold conf@Conf{..} e = trace "unfold" $ do
   s@UnfolderState{..} <- get
   -- @ 1. compute the new state after executing the event e
   -- copy the state otherwise it will go wrong 
@@ -126,7 +126,7 @@ unfold conf@Conf{..} e = do
     
 -- expandWith only adds events that have e in the history
 expandWith :: EventID -> EventsID -> ML.TransitionID -> UnfolderOp s EventsID
-expandWith e maxevs tr = do
+expandWith e maxevs tr = trace ("expandWith: " ++ show e) $ do
   s@UnfolderState{..} <- get 
   -- @ computes the history: set of maximal events that are dependent with tr
   history <- lift $ filterM (\e -> isDependent_te inde tr e evts) maxevs
@@ -160,14 +160,14 @@ expandWith e maxevs tr = do
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
 addEvent :: ML.TransitionID -> EventsID -> UnfolderOp s EventsID 
-addEvent tr history =  do
+addEvent tr history = trace "addEvent" $ do
   s@UnfolderState{..} <- get
   -- @ 1. Fresh event id 
   neID <- freshCounter
   -- @ 2. Compute the immediate conflicts
   -- @  a) Computes the local history of the new event 
-  prede <- lift $ mapM (\e -> predecessors e evts) history        
-  let localHistory = nub $ concat prede ++ history 
+  prede <- trace ("adding event " ++ show neID ++ " with history " ++ show history) lift $ mapM (\e -> predecessors e evts) history        
+  let localHistory = prede `seq` nub $ concat prede ++ history 
   -- @  b) Computes the immediate conflicts of all events in the local configuration
   lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
   -- @  c) Compute the immediate conflicts
@@ -209,7 +209,7 @@ computeConflicts uidep tr lh lhCnfls events = do
 -- e whose roots are not in C.
 -- @@ compute potential alternatives 
 computePotentialAlternatives :: EventsID -> EventsID -> UnfolderOp s ()
-computePotentialAlternatives maxevs evs = do
+computePotentialAlternatives maxevs evs = trace "computePotentialAlternatives" $ do
   s@UnfolderState{..} <- get
   lift $ foldM_ (computePotentialAlternative evts) S.empty evs where
     -- @ V(e) where e is an event that has at least one imm conflict
@@ -270,7 +270,7 @@ initializeDisabled events e ê = do
 
 -- @@ filter alternatives
 filterAlternatives :: EventsID -> EventID -> UnfolderOp s Alternatives
-filterAlternatives maxevs e = do 
+filterAlternatives maxevs e = trace "filterAlternatives" $ do 
   s@UnfolderState{..} <- get
   -- @ compute all the events of the configuration
   confEvs <- lift $ getConfEvs maxevs evts

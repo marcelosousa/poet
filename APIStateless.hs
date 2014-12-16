@@ -81,7 +81,7 @@ iState sys indep = do
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
 instance Show (UnfolderState s) where
-    show (u@UnfolderState{..}) = "" 
+    show (u@UnfolderState{..}) = show cntr 
 --        beg ++ "UIndep: " ++ show indep ++ "\nEvents: " ++ show events ++ "\nCausality: " ++ show causality 
 --     ++ "\n" ++ show (cevs configurations) ++ "\nEnabled: " ++ show enable 
 --     ++ "\nDisable: " ++ show disable ++ "\nAlternatives: " ++ show alternatives  ++ "\nImmConflicts: " ++ show immediateConflicts ++ "\nCounters: " 
@@ -124,7 +124,7 @@ isIndependent indep e ê events = do
 -- Useful Functions
 predecessors, successors :: EventID -> Events s -> ST s EventsID
 {-# INLINABLE predecessors #-}
-predecessors e events = do
+predecessors e events = trace "predecessors" $ do
   preds <- predecessors' e events
   return $ nub preds 
  where
@@ -156,7 +156,7 @@ getConfEvs maxevs events = do
   return $ nub $ concat preds 
     
 getImmediateConflicts :: EventID -> Events s -> ST s EventsID
-getImmediateConflicts e events = do
+getImmediateConflicts e events = trace "getIConflicts" $ do
   ev@Event{..} <- getEvent "getImmediateConflicts" e events
   return icnf 
 

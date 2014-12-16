@@ -1,41 +1,63 @@
 module Examples where
 
 import Model 
-import qualified Data.Map as M
+
+import Control.Monad.ST.Safe
+
+import qualified Data.Vector as V
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.HashTable.ST.Cuckoo as C
+import qualified Data.HashTable.Class as H
+
 import Data.Maybe
 
 -- Example 1
-t1' :: Sigma -> Maybe Sigma
-t1' s = case M.lookup "pcp" s of
-    Nothing -> Nothing
-    Just 1  -> 
-      let s' = M.insert "x" 1 $ M.insert "pcp" 2 s
-      in Just s'
-    Just _  -> Nothing
-        
-t1 :: Transition
-t1 = ("p", "t1", t1')
 
-t2' :: Sigma -> Maybe Sigma
-t2' s = case M.lookup "pcq" s of
-    Nothing -> Nothing
-    Just 1  -> 
-      let s' = M.insert "y" 1 $ M.insert "pcq" 2 s
-      in Just s'
-    Just _  -> Nothing
+-- Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
+t1' :: TransitionFn s 
+t1' s = do
+  v <- safeLookup "t1" s (BS.pack "pcp")
+  case v of
+    1 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcp") 2
+      H.insert s (BS.pack "x") 1
+      return s 
+    _ -> return Nothing
 
-t2 :: Transition
-t2 = ("q", "t2", t2')
+t1 :: Transition s
+t1 = (BS.pack "p", 0, t1')
 
-s1 :: Sigma
-s1 = M.insert "pcp" 1 $ M.singleton "pcq" 1
+t2' :: TransitionFn s 
+t2' s = do
+  v <- safeLookup "t2" s (BS.pack "pcq")
+  case v of
+    1 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcq") 2
+      H.insert s (BS.pack "y") 1
+      return s 
+    _ -> return Nothing
 
-sys1 :: System 
-sys1 = ([t1,t2], s1)
+t2 :: Transition s
+t2 = (BS.pack "q", 1, t2')
 
-ind1 :: UIndependence
-ind1 = [] --("t1","t2")]
+s1 :: ST s (Sigma s)
+s1 = do 
+  ht <- H.new
+  H.insert ht (BS.pack "pcp") 1 
+  H.insert ht (BS.pack "pcq") 1 
+  H.insert ht (BS.pack "x") 0 
+  H.insert ht (BS.pack "y") 0 
+  return ht
 
+sys1 :: ST s (System s)
+sys1 = do 
+  is <- s1
+  return $ System (V.fromList [t1,t2]) is
+
+ind1 :: UIndep
+ind1 = V.generate 2 (\i -> V.generate 2 (\j -> False))  --("t1","t2")]
+
+{-
 -- Example 2 - paper
 s2 :: Sigma
 s2 = M.fromList [("pcp",1),("pcq",1),("pcr",1),("pcs",1),("x",0),("y",0),("z",0)]
@@ -324,7 +346,7 @@ sys7 = ([t1_7, t2_7], s7)
 
 ind7 :: UIndependence
 ind7 = []
-
+-}
 {-    
 p :: Transition
 p (0, e) = let e' = M.adjust (const 1) "x" e

@@ -85,20 +85,19 @@ getPlace ps s =
      else error "getPlace"     
 
 -- Retrieve the independence relation
--- This has to change.
 retrieveIndRel :: Net -> ML.UIndep
-retrieveIndRel = undefined
-{-
-retrieveIndRel (_, tr) = 
-  let l = [ (t,t') | t <- tr, t' <- tr, check t t' ]
-  in map (\(a,b) -> (fst3 a, fst3 b)) l
+retrieveIndRel (_, tr) =
+  let matrixSize = length tr
+  in V.generate matrixSize (\i -> 
+       V.generate matrixSize (\j -> 
+         check (tr!!i) (tr!!j)))   
 
 check :: Transition -> Transition -> Bool
 check (t1,pre,pos) (t2,pre',pos') = 
   let b1 = pos `intersect` pre'
       b2 = pos' `intersect` pre
   in t1 /= t2 && null b1 && null b2
--}
+
 -- Conversion section
 convert :: Net -> ST s (ML.System s)
 convert net@(ps,tr) = do

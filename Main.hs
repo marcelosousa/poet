@@ -1,9 +1,9 @@
 module Main where
 
 --import Unfolderful
---import Unfolderless
+import Unfolderless
 --import Printer
---import Examples
+import Examples
 --import Benchmark
 import Model
 import PetriNet
@@ -28,7 +28,11 @@ writeUnf (sys,ind) =
 -}
 
 main :: IO ()
-main =  runPT "benchmarks/debug/sdl_example.pt"
+main = do 
+  let unfSt = runST (sys1 >>= \sys -> stateless sys ind1 >>= return . show)
+  print unfSt
+ 
+-- runPT "benchmarks/debug/sdl_example.pt"
 --  print $ stateless fib_bench_false ind_fib_bench_false 
 
 runPT :: FilePath -> IO ()
@@ -45,13 +49,13 @@ runPT file = do
 --  writeFile (file++".debug") s
   -- print $ stateless sys ind
 
-{-
 run :: FilePath -> IO ()
 run file = do
-  (sys@(trs,i),ind) <- getSysInd file
-  print "stateless sys ind"
+  net <- parse file
+  let ind = retrieveIndRel net
+      unfSt = runST (convert net >>= \sys -> stateless sys ind >>= return . show)
+  print unfSt 
 
 show' :: [String] -> String
 show' [] = ""
 show' ((c:x):xs) = (init x) ++ " " ++ show' xs
--}
