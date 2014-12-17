@@ -143,7 +143,7 @@ predecessors e events =  do
      ev@Event{..} <- getEvent "predecessors" e events 
      foldM (\a e -> predecessors' e events >>= \r -> return $ a ++ r) pred pred
 {-# INLINABLE successors #-}
-successors e events = trace ("successors of " ++ show e) $ do 
+successors e events =  do 
   succs <- successors' e events
   return $ nub succs 
  where
@@ -189,38 +189,44 @@ getAlternatives e events = do
 -- SETTERS
 
 setEvent :: EventID -> Event -> Events s -> ST s ()
-setEvent eID e events = trace ("setEvent: " ++ show eID) $ H.insert events eID e
+setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
+  H.insert events eID e
 
 -- @ setSuccessor e -> e'
 setSuccessor :: EventID -> EventID -> Events s -> ST s ()
-setSuccessor e e' events = trace ("setSucc: " ++ show e ++ " of " ++ show e') $ do
+setSuccessor e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e') $ 
+ do
   ev@Event{..} <- getEvent "setSuccessor" e' events
   let succEv = e:succ
       ev' = ev{ succ = succEv } 
   setEvent e' ev' events 
 
 setConflict :: EventID -> EventID -> Events s -> ST s ()
-setConflict e e' events = trace ("setCnfl: " ++ show e ++ " of " ++ show e') $ do
+setConflict e e' events = -- trace ("setCnfl: " ++ show e ++ " of " ++ show e') $ 
+ do
   ev@Event{..} <- getEvent "setConflict" e' events
   let icnfEv = e:icnf
       ev' = ev{ icnf = icnfEv }
   setEvent e' ev' events 
 
 setDisabled :: EventID -> EventsID -> Events s -> ST s ()
-setDisabled e de events = trace ("setDisa: " ++ show de ++ " of " ++ show e) $ do
+setDisabled e de events = -- trace ("setDisa: " ++ show de ++ " of " ++ show e) $ 
+ do
   ev@Event{..} <- getEvent "setDisabled" e events
   let ev' = ev{ disa = de }
   setEvent e ev' events 
 
 addAlternative :: EventID -> Alternative -> Events s -> ST s ()
-addAlternative e v events = trace ("adding alternative " ++ show v ++ " of " ++ show e) $ do 
+addAlternative e v events = trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
+ do
   ev@Event{..} <- getEvent "addAlternative" e events
   let altEv = v:alte
       ev' = ev{ alte = altEv }
   setEvent e ev' events 
 
 addDisabled :: EventID -> EventID -> Events s -> ST s ()
-addDisabled e ê events = trace ("addDisa: " ++ show e ++ " of " ++ show ê) $ do
+addDisabled e ê events = -- trace ("addDisa: " ++ show e ++ " of " ++ show ê) $ 
+ do
   ev@Event{..} <- getEvent "addDisabled" ê events
   let disaEv = e:disa
       ev' = ev{ disa = disaEv }
