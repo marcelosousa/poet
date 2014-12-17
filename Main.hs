@@ -29,7 +29,7 @@ writeUnf (sys,ind) =
 
 main :: IO ()
 main = do 
-  let unfSt = runST (sys1 >>= \sys -> stateless sys ind1 >>= return . show)
+  let unfSt = runST (sys2 >>= \sys -> stateless sys ind2 >>= return . show)
   print unfSt
  
 -- runPT "benchmarks/debug/sdl_example.pt"

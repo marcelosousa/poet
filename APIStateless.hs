@@ -15,7 +15,9 @@ import Data.List
 
 import qualified Model as ML
 
-import Debug.Trace 
+import qualified Debug.Trace as T
+
+trace = T.trace 
 
 -- @ The most basic type is event_id :: Int
 --   Pointer to an event
@@ -51,6 +53,14 @@ data Event = Event {
 --   with a HashTable : EventID -> Event 
 type Events s = ML.HashTable s EventID Event
 
+-- @ Show an 
+showEvents :: Events s -> ST s String
+showEvents evs = do
+  m <- H.toList evs
+  let km = sort m
+      r = foldl (\a m -> show m ++ "\n" ++ a) "" km
+  return r
+ 
 -- @ The state of the unfolder at any moment
 data UnfolderState s = UnfolderState {
     syst :: ML.System s      -- The system being analyzed
@@ -124,7 +134,7 @@ isIndependent indep e ê events = do
 -- Useful Functions
 predecessors, successors :: EventID -> Events s -> ST s EventsID
 {-# INLINABLE predecessors #-}
-predecessors e events = trace "predecessors" $ do
+predecessors e events =  do
   preds <- predecessors' e events
   return $ nub preds 
  where
@@ -133,12 +143,13 @@ predecessors e events = trace "predecessors" $ do
      ev@Event{..} <- getEvent "predecessors" e events 
      foldM (\a e -> predecessors' e events >>= \r -> return $ a ++ r) pred pred
 {-# INLINABLE successors #-}
-successors e events = do 
+successors e events = trace ("successors of " ++ show e) $ do 
   succs <- successors' e events
   return $ nub succs 
  where
   successors' :: EventID -> Events s -> ST s EventsID
   successors' e events = do
+     s <- showEvents events
      ev@Event{..} <- getEvent "successors" e events 
      foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
 
@@ -153,10 +164,10 @@ getEvent s e events =
 getConfEvs :: EventsID -> Events s -> ST s EventsID
 getConfEvs maxevs events = do
   preds <- mapM (\e -> predecessors e events) maxevs
-  return $ nub $ concat preds 
+  return $ maxevs ++ (nub $ concat preds) 
     
 getImmediateConflicts :: EventID -> Events s -> ST s EventsID
-getImmediateConflicts e events = trace "getIConflicts" $ do
+getImmediateConflicts e events = do
   ev@Event{..} <- getEvent "getImmediateConflicts" e events
   return icnf 
 
@@ -178,42 +189,42 @@ getAlternatives e events = do
 -- SETTERS
 
 setEvent :: EventID -> Event -> Events s -> ST s ()
-setEvent eID e events = H.insert events eID e
+setEvent eID e events = trace ("setEvent: " ++ show eID) $ H.insert events eID e
 
 -- @ setSuccessor e -> e'
 setSuccessor :: EventID -> EventID -> Events s -> ST s ()
-setSuccessor e e' events = do
+setSuccessor e e' events = trace ("setSucc: " ++ show e ++ " of " ++ show e') $ do
   ev@Event{..} <- getEvent "setSuccessor" e' events
   let succEv = e:succ
       ev' = ev{ succ = succEv } 
   setEvent e' ev' events 
 
 setConflict :: EventID -> EventID -> Events s -> ST s ()
-setConflict e e' events = do
+setConflict e e' events = trace ("setCnfl: " ++ show e ++ " of " ++ show e') $ do
   ev@Event{..} <- getEvent "setConflict" e' events
   let icnfEv = e:icnf
       ev' = ev{ icnf = icnfEv }
   setEvent e' ev' events 
 
 setDisabled :: EventID -> EventsID -> Events s -> ST s ()
-setDisabled e de events = do
+setDisabled e de events = trace ("setDisa: " ++ show de ++ " of " ++ show e) $ do
   ev@Event{..} <- getEvent "setDisabled" e events
   let ev' = ev{ disa = de }
   setEvent e ev' events 
 
 addAlternative :: EventID -> Alternative -> Events s -> ST s ()
-addAlternative e v events = do 
+addAlternative e v events = trace ("adding alternative " ++ show v ++ " of " ++ show e) $ do 
   ev@Event{..} <- getEvent "addAlternative" e events
   let altEv = v:alte
       ev' = ev{ alte = altEv }
   setEvent e ev' events 
 
 addDisabled :: EventID -> EventID -> Events s -> ST s ()
-addDisabled e ê events = do
+addDisabled e ê events = trace ("addDisa: " ++ show e ++ " of " ++ show ê) $ do
   ev@Event{..} <- getEvent "addDisabled" ê events
   let disaEv = e:disa
       ev' = ev{ disa = disaEv }
-  setEvent e ev' events 
+  setEvent ê ev' events 
    
 {-
 addDisable :: EventID -> EventID -> State (UnfolderState s) ()

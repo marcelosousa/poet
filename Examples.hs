@@ -55,7 +55,65 @@ sys1 = do
   return $ System (V.fromList [t1,t2]) is
 
 ind1 :: UIndep
-ind1 = V.generate 2 (\i -> V.generate 2 (\j -> False))  --("t1","t2")]
+ind1 = V.generate 2 (\i -> V.generate 2 (\j -> if i /= j then True else False))  --("t1","t2")]
+
+-- Example 2 - 1 write, 2 reads
+s2 :: ST s (Sigma s)
+s2 = do 
+  ht <- H.new
+  H.insert ht (BS.pack "pcp") 1 
+  H.insert ht (BS.pack "pcq") 1 
+  H.insert ht (BS.pack "pcr") 1 
+  H.insert ht (BS.pack "x") 0 
+  H.insert ht (BS.pack "l1") 0 
+  H.insert ht (BS.pack "l2") 0 
+  return ht
+
+t1_2, t2_2, t3_2 :: Transition s
+t1_2 = (BS.pack "p",0,t1_2')
+t2_2 = (BS.pack "q",1,t2_2')
+t3_2 = (BS.pack "r",2,t3_2')
+
+t1_2', t2_2', t3_2' :: TransitionFn s 
+t1_2' s = do
+  v <- safeLookup "t1" s (BS.pack "pcp")
+  case v of
+    1 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcp") 2
+      H.insert s (BS.pack "x") 1
+      return s 
+    _ -> return Nothing
+t2_2' s = do
+  v <- safeLookup "t2" s (BS.pack "pcq")
+  case v of
+    1 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcq") 2
+      x <- safeLookup "t2" s (BS.pack "x")
+      H.insert s (BS.pack "l1") x
+      return s 
+    _ -> return Nothing
+t3_2' s = do
+  v <- safeLookup "t3" s (BS.pack "pcr")
+  case v of
+    1 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcr") 2
+      x <- safeLookup "t3" s (BS.pack "x")
+      H.insert s (BS.pack "l2") x
+      return s 
+    _ -> return Nothing
+
+sys2 :: ST s (System s)
+sys2 = do 
+  is <- s2
+  return $ System (V.fromList [t1_2,t2_2,t3_2]) is
+
+ind2 :: UIndep
+ind2 = V.generate 3 (\i -> V.generate 3 (\j -> check2 i j)) 
+
+check2 :: Int -> Int -> Bool
+check2 1 2 = True
+check2 2 1 = True
+check2 _ _ = False
 
 {-
 -- Example 2 - paper
@@ -124,57 +182,9 @@ sys2 = ([t1_2, t2_2, t31_2, t32_2, t41_2, t42_2 ], s2)
 ind2 :: UIndependence
 ind2 = [("t1","t2"),("t1","t31"),("t1","t32"),("t1","t41"),("t2","t32"),("t2","t41"),("t2","t42"),("t31","t41"),("t31","t42"),("t32","t42")]
 
+-}
 
--- Example 3 - 1 write, 2 reads
-s3 :: Sigma
-s3 = M.fromList [("pcp",1),("pcq",1),("pcr",1),("x",0),("l1",0),("l2",0)]
-
-t1_3, t2_3, t3_3 :: Transition
-t1_3 = ("p","t1",t1_3')
-t2_3 = ("q","t2",t2_3')
-t3_3 = ("r","t3",t3_3')
---t32_3 = ("r","t32",t32_3')
-
-t1_3', t2_3', t3_3' :: Sigma -> Maybe Sigma
-t1_3' s = 
-    case M.lookup "pcp" s of
-        Nothing -> Nothing
-        Just 1  -> 
-          let s' = M.insert "x" 1 $ M.insert "pcp" 2 s
-          in Just s'
-        Just _  -> Nothing
-t2_3' s =
-    case M.lookup "pcq" s of
-        Nothing -> Nothing
-        Just 1  -> case M.lookup "x" s of
-            Nothing -> error ""
-            Just k -> 
-              let s' = M.insert "l1" k $ M.insert "pcq" 2 s
-              in Just s'
-        Just _  -> Nothing
-t3_3' s =
-    case M.lookup "pcr" s of
-        Nothing -> Nothing
-        Just 1  -> case M.lookup "x" s of
-            Nothing -> error ""
-            Just k -> 
-              let s' = M.insert "l2" k $ M.insert "pcr" 2 s
-              in Just s'
-        Just _  -> Nothing
---t32_3' s =
---    case M.lookup "pcr" s of
---        Nothing -> Nothing
---        Just 2  -> 
---          let s' = M.insert "x" 1 $ M.insert "pcr" 3 s
---          in Just s'
---        Just _  -> Nothing
-
-sys3 :: System 
-sys3 = ([t1_3, t2_3, t3_3], s3)
-
-ind3 :: UIndependence
-ind3 = [("t2","t3")]
-
+{-
 -- Example 4
 t11_4' :: Sigma -> Maybe Sigma
 t11_4' s = case M.lookup "pcp" s of
