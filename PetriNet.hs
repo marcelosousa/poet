@@ -74,7 +74,7 @@ parseTransition p s =
           (pre,pos) = splitAt npre rest'
       in if length pos == npos
          then (BS8.pack name, pre, pos)
-         else error "parseTransition: length pos is not correct"
+         else error $ "parseTransition: length pos is not correct: " ++ show (pos,npos)
     _ -> error $ "parseTransition " ++ s
 
 getPlace :: Places -> String -> ML.Var

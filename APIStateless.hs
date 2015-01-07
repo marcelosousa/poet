@@ -11,12 +11,14 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
 import qualified Data.Set as S
 import qualified Data.Maybe as M
+import qualified Data.ByteString.Char8 as BS
 import Data.List
 
 import qualified Model as ML
 
 import qualified Debug.Trace as T
 
+--trace a b = b 
 trace = T.trace 
 
 -- @ The most basic type is event_id :: Int
@@ -41,7 +43,7 @@ type Counter = Int
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
 data Event = Event {
-    evtr :: ML.TransitionID  -- Transition id
+    evtr :: (ML.TransitionID, ML.ProcessID)  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
   , icnf :: EventsID         -- Immediate conflicts: #^
@@ -60,6 +62,11 @@ showEvents evs = do
   let km = sort m
       r = foldl (\a m -> show m ++ "\n" ++ a) "" km
   return r
+
+copyEvents :: Events s -> ST s (Events s)
+copyEvents s = do
+  kv <- H.toList s
+  H.fromList kv
  
 -- @ The state of the unfolder at any moment
 data UnfolderState s = UnfolderState {
@@ -78,7 +85,7 @@ botEID :: EventID
 botEID = 0
 
 botEvent :: Event
-botEvent = Event ML.botID [] [] [] [] []
+botEvent = Event (ML.botID, BS.pack "") [] [] [] [] []
 
 -- @ Initial state of the unfolder
 iState :: ML.System s -> ML.UIndep -> ST s (UnfolderState s) 
@@ -114,11 +121,11 @@ execute :: ML.Sigma s -> EventID -> UnfolderOp s (ML.Sigma s)
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
-  let t = ML.getTransition syst evtr
+  let t = ML.getTransition syst $ fst evtr
   fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
   lift $ fn cst
 
-isDependent_te :: ML.UIndep -> ML.TransitionID -> EventID -> Events s -> ST s Bool
+isDependent_te :: ML.UIndep -> (ML.TransitionID, ML.ProcessID) -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
 isDependent_te indep tr e events = do
   ev@Event{..} <- getEvent "isDependent" e events
@@ -153,6 +160,27 @@ successors e events =  do
      ev@Event{..} <- getEvent "successors" e events 
      foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
 
+predecessorWith :: EventID -> ML.ProcessID -> Events s -> ST s EventID
+predecessorWith 0 p events = return ML.botID
+predecessorWith e p events = do
+  pred <- getIPred e events
+  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ snd evtr == p) pred
+  if null epred 
+  then do 
+    res <- mapM (\e -> predecessorWith e p events) pred
+    return $ filterResult res
+  else return $ filterResult epred
+
+filterResult :: EventsID -> EventID 
+filterResult es = 
+  if null es 
+  then error "predecessorWith: shouldn't happen"
+  else let res = filter (/= 0) es
+       in if null res
+          then ML.botID
+          else if all (== (head res)) (tail res)
+               then head res
+               else error "predecessorWith: multiple possibilities"    
 -- GETTERS
 -- retrieves the event associated with the event id 
 getEvent :: String -> EventID -> Events s -> ST s Event
@@ -175,6 +203,11 @@ getIPred :: EventID -> Events s -> ST s EventsID
 getIPred e events = do
   ev@Event{..} <- getEvent "getIPred" e events
   return pred 
+
+getISucc :: EventID -> Events s -> ST s EventsID
+getISucc e events = do
+  ev@Event{..} <- getEvent "getISucc" e events
+  return succ 
 
 getDisabled :: EventID -> Events s -> ST s EventsID
 getDisabled e events = do 
@@ -232,24 +265,22 @@ addDisabled e ê events = -- trace ("addDisa: " ++ show e ++ " of " ++ show ê) 
       ev' = ev{ disa = disaEv }
   setEvent ê ev' events 
    
-{-
-addDisable :: EventID -> EventID -> State (UnfolderState s) ()
-addDisable ê e = do  -- trace ("addDisable: " ++ show ê ++ " " ++ show e) $ do
-    s@UnfolderState{..} <- get
-    let dis = M.alter (addDisableAux e) ê disable
-    put s{ disable = dis}
-
-addDisableAux :: EventID -> Maybe EventsID -> Maybe EventsID
-addDisableAux e Nothing = Just $ [e]
-addDisableAux e (Just d) = Just $ e:d
--}
-
 -- @ set previous configuration
 setPreviousConfiguration :: Configuration s -> UnfolderOp s ()
 setPreviousConfiguration conf = do
   s@UnfolderState{..} <- get
   let ns = s{ pcnf = conf } 
   put ns
+
+-- @ set previous disable set
+setPreviousDisabled :: Events s -> UnfolderOp s ()
+setPreviousDisabled events = do
+  s@UnfolderState{..} <- get
+  kv <- lift $ H.toList events
+  lift $ mapM_ (\(e,ev) -> getEvent "setPDisa" e evts >>= \ev' -> 
+      let nev = ev' { disa = disa ev }
+      in setEvent e nev evts) kv
+  return () 
 
 -- @ freshCounter - updates the counter of events
 freshCounter :: UnfolderOp s Counter

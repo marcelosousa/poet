@@ -52,11 +52,11 @@ type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
 -- actually computing the result for every transition.
 
 -- | enabledTransitions 
-enabledTransitions :: System s -> Sigma s -> ST s TransitionsID
+enabledTransitions :: System s -> Sigma s -> ST s (V.Vector (TransitionID,ProcessID))
 enabledTransitions sys@System{..} s = do
   s' <- copy s -- this is not necessary if the first part of the transition does not modify the state
   tr <- V.filterM (\(_,_,t) -> t s' >>= return . maybe False (const True)) transitions  
-  V.mapM (return . snd3) tr
+  V.mapM (\(a,b,c) -> return (b,a)) tr
 
 -- An independence relation is an irreflexive and symmetric relation
 -- Triangular Matrix to exploit symmetry of independence relation
@@ -80,16 +80,16 @@ safeLookup err ht k = do
 -- like what i have below (min, max). Program consolidation could 
 -- optimisize this code.
 -- | isIndependent -- check if two transitions are uncond. indep.
-isIndependent, isDependent :: UIndep -> TransitionID -> TransitionID -> Bool
-isIndependent uindep t1 t2  
-  | (t1 == botID) || (t2 == botID) || (t1 == t2) = False
+isIndependent, isDependent :: UIndep -> (TransitionID, ProcessID) -> (TransitionID, ProcessID) -> Bool
+isIndependent uindep (t1,p1) (t2,p2)  
+  | (t1 == botID) || (t2 == botID) || (t1 == t2) || (p1 == p2)  = False
   | otherwise = 
       let t  = min t1 t2
           t' = max t1 t2
       in uindep V.! t V.! t'
  
 -- | isDependent - checks if two transitions are dependent
-isDependent uindep t1 t2 = not $ isIndependent uindep t1 t2 
+isDependent uindep t1 t2 = not $ isIndependent uindep t1 t2
 
 -- | botID 0 is the transition id for bottom 
 botID :: TransitionID
@@ -132,7 +132,7 @@ runTrs sys s = do
   trs <- enabledTransitions sys s
   V.foldM runTrs' [] trs
   where 
-    runTrs' acc tr = do
+    runTrs' acc (tr,_) = do
       s' <- copy s                     -- copy the state
       v <- (getTransition sys tr) s'     -- gets the transition and applies it
       ns <- fromJust v $ s'            -- now I actually apply it
