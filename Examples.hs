@@ -53,9 +53,9 @@ sys1 = do
   is <- s1
   return $ System (V.fromList [t1,t2]) is
 
-ind1 :: UIndep
-ind1 = V.generate 2 (\i -> V.generate 2 (\j -> False)) 
---ind1 = V.generate 2 (\i -> V.generate 2 (\j -> if i /= j then True else False)) 
+ind11,ind12 :: UIndep
+ind11 = V.generate 2 (\i -> V.generate 2 (\j -> False)) 
+ind12 = V.generate 2 (\i -> V.generate 2 (\j -> if i /= j then True else False)) 
 
 -- Example 2 - 1 write, 2 reads
 s2 :: ST s (Sigma s)

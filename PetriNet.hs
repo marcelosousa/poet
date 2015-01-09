@@ -23,7 +23,7 @@ type Net = (Places, Transitions)
 type Places = [Place]
 type Place = (ML.Var, ML.Value)
 type Transitions = [Transition]
-type Transition = (ML.Var, [ML.Var], [ML.Var])
+type Transition = (String, [ML.Var], [ML.Var])
 
 fst3 :: (a, b, c) -> a 
 fst3 (a,b,c) = a
@@ -73,7 +73,7 @@ parseTransition p s =
           rest' = map (getPlace p) rest 
           (pre,pos) = splitAt npre rest'
       in if length pos == npos
-         then (BS8.pack name, pre, pos)
+         then (name, pre, pos)
          else error $ "parseTransition: length pos is not correct: " ++ show (pos,npos)
     _ -> error $ "parseTransition " ++ s
 
@@ -98,17 +98,42 @@ check (t1,pre,pos) (t2,pre',pos') =
       b2 = pos' `intersect` pre
   in t1 /= t2 && null b1 && null b2
 
+-- 
+groupTr :: Transitions -> [Transitions]
+groupTr = groupBy (\(n,_,_) (m,_,_) -> dropSuffix n == dropSuffix m)  
+
+dropSuffix :: String -> String
+dropSuffix [] = []
+dropSuffix ('_':'_':xs) = []
+dropSuffix (x:xs) = x:dropSuffix xs 
+
 -- Conversion section
 convert :: Net -> ST s (ML.System s)
 convert net@(ps,tr) = do
-  i <- H.fromList ps 
-  trs <- mapM toTransition $ zip tr [0..]
+  i <- H.fromList ps
+  let trn = groupTr tr 
+  trs <- mapM toTransition $ zip trn [0..]
   return $ ML.System (V.fromList trs) i
 
-toTransition :: (Transition, ML.TransitionID) -> ST s (ML.Transition s)
-toTransition ((n,pre,pos),tID) =  do
-  let fn = buildFn pre pos
-  return (n,tID,fn) 
+toTransition :: (Transitions, ML.TransitionID) -> ST s (ML.Transition s)
+toTransition ([], tID) = error "toTransition"
+toTransition (trs, tID) =  do
+  let (n,_,_) = head trs
+      fn = buildFn' $ zip trs [0..]
+  return (BS8.pack $ dropSuffix n, tID, fn) 
+
+buildFn' :: [(Transition,Int)] -> ML.TransitionFn s
+buildFn' trs = \s -> do 
+  trs' <- mapM (\((na,pre,pos),n) -> mapM (\p -> H.lookup s p >>= return . checkLookup) pre >>= \pre' -> return (pre',n)) trs
+  let ptrs = filter (\(pre',n) -> all (>0) pre') trs'
+  case ptrs of
+    [] -> return Nothing
+    [(_,n)] -> do
+      let ((_,pre,pos),_) = trs !! n
+      return $ Just $ \s -> do
+        foldM updatePre s pre
+        foldM updatePos s pos
+    _ -> error "buildFn': several transitions are enabled"
 
 buildFn :: [ML.Var] -> [ML.Var] -> ML.TransitionFn s
 buildFn pre pos = \s -> do 

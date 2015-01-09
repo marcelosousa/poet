@@ -7,9 +7,12 @@ import Examples
 --import Benchmark
 import Model
 import PetriNet
+import Tests
+
 import qualified Data.Map as M
 
 import Control.Monad.ST.Safe
+import Test.HUnit
 
 {-
 writeUnf :: (System, UIndependence) -> IO ()
@@ -29,8 +32,8 @@ writeUnf (sys,ind) =
 
 main :: IO ()
 main = do 
-  let unfSt = runST (sys3 >>= \sys -> stateless sys ind3 >>= return . show)
-  print unfSt
+  c <- runTestTT tests
+  print c 
  
 -- runPT "benchmarks/debug/sdl_example.pt"
 --  print $ stateless fib_bench_false ind_fib_bench_false 
