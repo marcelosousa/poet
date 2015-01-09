@@ -13,6 +13,7 @@ import qualified Data.Set as S
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
 import Data.List
+import PetriNet
 
 import qualified Model as ML
 

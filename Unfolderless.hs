@@ -179,6 +179,10 @@ expandWith e omaxevs maxevs tr = trace ("expandWith: " ++ show e) $ do
            --   If *e* is not the event that enabled tr, then there must be another event *e'*
            --   immediate conflict of *e* where h(e') = tr, and whose immediate predecessors
            --   are contained in the set of maximal events.
+           --   Nets
+           -- let history' = e `delete` (tail history)
+           --    histories' = map (e:) $ subsequences history'
+           -- Programs
            let parent = head history 
                history' = e `delete` (tail history)
                histories' = if e == parent 
