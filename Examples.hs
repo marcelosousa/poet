@@ -3,6 +3,7 @@ module Examples where
 import Model 
 
 import Control.Monad.ST.Safe
+import Control.Monad.State.Strict
 
 import qualified Data.Vector as V
 import qualified Data.ByteString.Char8 as BS
@@ -20,7 +21,7 @@ t1' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") 2
       H.insert s (BS.pack "x") 1
-      return s 
+      return (s, [(BS.pack "pcp", 2),(BS.pack "x", 1)]) 
     _ -> return Nothing
 
 t1 :: Transition s
@@ -33,7 +34,7 @@ t2' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") 2
       H.insert s (BS.pack "y") 1
-      return s 
+      return (s, [(BS.pack "pcq", 2),(BS.pack "y", 1)]) 
     _ -> return Nothing
 
 t2 :: Transition s
@@ -51,7 +52,8 @@ s1 = do
 sys1 :: ST s (System s)
 sys1 = do 
   is <- s1
-  return $ System (V.fromList [t1,t2]) is
+  lis <- H.toList is 
+  return $ System (V.fromList [t1,t2]) is lis
 
 ind11,ind12 :: UIndep
 ind11 = V.generate 2 (\i -> V.generate 2 (\j -> False)) 
@@ -81,7 +83,7 @@ t1_2' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") 2
       H.insert s (BS.pack "x") 1
-      return s 
+      return (s,[(BS.pack "pcp", 2),(BS.pack "x", 1)]) 
     _ -> return Nothing
 t2_2' s = do
   v <- safeLookup "t2" s (BS.pack "pcq")
@@ -90,7 +92,7 @@ t2_2' s = do
       H.insert s (BS.pack "pcq") 2
       x <- safeLookup "t2" s (BS.pack "x")
       H.insert s (BS.pack "l1") x
-      return s 
+      return (s,[(BS.pack "pcq", 2),(BS.pack "l1", x)]) 
     _ -> return Nothing
 t3_2' s = do
   v <- safeLookup "t3" s (BS.pack "pcr")
@@ -99,13 +101,14 @@ t3_2' s = do
       H.insert s (BS.pack "pcr") 2
       x <- safeLookup "t3" s (BS.pack "x")
       H.insert s (BS.pack "l2") x
-      return s 
+      return (s,[(BS.pack "pcr", 2),(BS.pack "l2", x)]) 
     _ -> return Nothing
 
 sys2 :: ST s (System s)
 sys2 = do 
   is <- s2
-  return $ System (V.fromList [t1_2,t2_2,t3_2]) is
+  lis <- H.toList is
+  return $ System (V.fromList [t1_2,t2_2,t3_2]) is lis
 
 ind2 :: UIndep
 ind2 = V.generate 3 (\i -> V.generate 3 (\j -> check2 i j)) 
@@ -144,7 +147,7 @@ t1_3' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") 2
       H.insert s (BS.pack "x") 1
-      return s 
+      return (s,[(BS.pack "pcp", 2),(BS.pack "x", 1)]) 
     _ -> return Nothing
 t2_3' s = do
   v <- safeLookup "t2" s (BS.pack "pcq")
@@ -152,17 +155,16 @@ t2_3' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") 2
       H.insert s (BS.pack "y") 1
-      return s 
+      return (s,[(BS.pack "pcq", 2),(BS.pack "y", 1)]) 
     _ -> return Nothing
 t31_3' s = do
   v <- safeLookup "t31" s (BS.pack "pcr")
   case v of
     1 -> return $ Just $ \s -> do
       y <- safeLookup "t31" s (BS.pack "y")
-      case y of 
-        0 -> H.insert s (BS.pack "pcr") 2
-        _ -> H.insert s (BS.pack "pcr") 3
-      return s 
+      let pcr = if y == 0 then 2 else 3
+      H.insert s (BS.pack "pcr") pcr
+      return (s,[(BS.pack "pcr", pcr)]) 
     _ -> return Nothing
 t32_3' s = do
   v <- safeLookup "t31" s (BS.pack "pcr")
@@ -170,17 +172,16 @@ t32_3' s = do
     2 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcr") 3
       H.insert s (BS.pack "z") 1
-      return s 
+      return (s,[(BS.pack "pcr", 3),(BS.pack "z", 1)]) 
     _ -> return Nothing
 t41_3' s = do
   v <- safeLookup "t41" s (BS.pack "pcs")
   case v of
     1 -> return $ Just $ \s -> do
       y <- safeLookup "t41" s (BS.pack "z")
-      case y of 
-        1 -> H.insert s (BS.pack "pcs") 2
-        _ -> H.insert s (BS.pack "pcs") 3
-      return s 
+      let pcs = if y == 1 then 2 else 3
+      H.insert s (BS.pack "pcs") pcs
+      return (s,[(BS.pack "pcs", pcs)]) 
     _ -> return Nothing
 t42_3' s = do
   v <- safeLookup "t42" s (BS.pack "pcs")
@@ -188,13 +189,14 @@ t42_3' s = do
     2 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcs") 3
       H.insert s (BS.pack "x") 2
-      return s 
+      return (s,[(BS.pack "pcs", 3),(BS.pack "x", 2)]) 
     _ -> return Nothing
 
 sys3 :: ST s (System s)
 sys3 = do 
   is <- s3
-  return $ System (V.fromList [t1_3,t2_3,t31_3,t32_3,t41_3,t42_3]) is
+  lis <- H.toList is
+  return $ System (V.fromList [t1_3,t2_3,t31_3,t32_3,t41_3,t42_3]) is lis
 
 ind3 :: UIndep
 ind3 = V.generate 6 (\i -> V.generate 6 (\j -> check3 i j)) 
@@ -229,6 +231,9 @@ s4 = do
   ht <- H.new
   H.insert ht (BS.pack "pcp") 1 
   H.insert ht (BS.pack "pcq") 1 
+  H.insert ht (BS.pack "x") 0 
+  H.insert ht (BS.pack "y") 0 
+  H.insert ht (BS.pack "z") 0 
   return ht
 
 t11_4, t12_4, t21_4, t22_4 :: Transition s
@@ -244,7 +249,7 @@ t11_4' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") 2
       H.insert s (BS.pack "y") 1
-      return s 
+      return (s,[(BS.pack "pcp", 2),(BS.pack "y", 1)]) 
     _ -> return Nothing
 t12_4' s = do 
   v <- safeLookup "t12" s (BS.pack "pcp")
@@ -252,7 +257,7 @@ t12_4' s = do
     2 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") 3
       H.insert s (BS.pack "x") 1
-      return s 
+      return (s,[(BS.pack "pcp", 3),(BS.pack "x", 1)]) 
     _ -> return Nothing
 t21_4' s = do 
   v <- safeLookup "t21" s (BS.pack "pcq")
@@ -260,7 +265,7 @@ t21_4' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") 2
       H.insert s (BS.pack "z") 1
-      return s 
+      return (s,[(BS.pack "pcq", 2),(BS.pack "z", 1)]) 
     _ -> return Nothing
 t22_4' s = do 
   v <- safeLookup "t22" s (BS.pack "pcq")
@@ -268,13 +273,14 @@ t22_4' s = do
     2 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") 3
       H.insert s (BS.pack "x") 2
-      return s 
+      return (s,[(BS.pack "pcq", 3),(BS.pack "x", 2)]) 
     _ -> return Nothing
 
 sys4 :: ST s (System s)
 sys4 = do 
   is <- s4
-  return $ System (V.fromList [t11_4,t12_4,t21_4,t22_4]) is
+  lis <- H.toList is
+  return $ System (V.fromList [t11_4,t12_4,t21_4,t22_4]) is lis
 
 ind4 :: UIndep
 ind4 = V.generate 4 (\i -> V.generate 4 (\j -> check4 i j)) 
@@ -297,21 +303,21 @@ t1_5' s = do
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") 2
       H.insert s (BS.pack "x") 1
-      return s 
+      return (s,[(BS.pack "pcp", 2),(BS.pack "x", 1)]) 
     _ -> return Nothing
 t21_5' s = do
   v <- safeLookup "t21" s (BS.pack "pcq")
   case v of
     1 -> return $ Just $ \s -> do
       lock <- safeLookup "t21" s (BS.pack "lock")
-      case lock of
-        0 -> do
-          H.insert s (BS.pack "pcq") 2
-          H.insert s (BS.pack "lock") 1
-          return s 
-        1 -> do 
-          H.insert s (BS.pack "pcq") 3
-          return s 
+      if lock == 0
+      then do
+        H.insert s (BS.pack "pcq") 2
+        H.insert s (BS.pack "lock") 1
+        return (s,[(BS.pack "pcq", 2),(BS.pack "lock", 1)]) 
+      else do
+        H.insert s (BS.pack "pcq") 3
+        return (s,[(BS.pack "pcq", 3)]) 
     _ -> return Nothing
 t22_5' s = do
   v <- safeLookup "t22" s (BS.pack "pcq")
@@ -320,21 +326,21 @@ t22_5' s = do
       x <- safeLookup "t22" s (BS.pack "x")
       H.insert s (BS.pack "pcq") 3
       H.insert s (BS.pack "x2") x
-      return s 
+      return (s,[(BS.pack "pcq", 3),(BS.pack "x2", x)]) 
     _ -> return Nothing
 t31_5' s = do
   v <- safeLookup "t31" s (BS.pack "pcr")
   case v of
     1 -> return $ Just $ \s -> do
       lock <- safeLookup "t31" s (BS.pack "lock")
-      case lock of
-        0 -> do
-          H.insert s (BS.pack "pcr") 2
-          H.insert s (BS.pack "lock") 1
-          return s 
-        1 -> do 
-          H.insert s (BS.pack "pcr") 3
-          return s 
+      if lock == 0
+      then do
+        H.insert s (BS.pack "pcr") 2
+        H.insert s (BS.pack "lock") 1
+        return (s,[(BS.pack "pcr", 2),(BS.pack "lock", 1)]) 
+      else do
+        H.insert s (BS.pack "pcr") 3
+        return (s,[(BS.pack "pcr", 3)]) 
     _ -> return Nothing
 t32_5' s = do
   v <- safeLookup "t32" s (BS.pack "pcr")
@@ -343,7 +349,7 @@ t32_5' s = do
       x <- safeLookup "t32" s (BS.pack "x")
       H.insert s (BS.pack "pcr") 3
       H.insert s (BS.pack "x3") x
-      return s 
+      return (s,[(BS.pack "pcr", 3),(BS.pack "x3", x)]) 
     _ -> return Nothing
 
 
@@ -352,6 +358,8 @@ s5 = do
   ht <- H.new
   H.insert ht (BS.pack "lock") 0 
   H.insert ht (BS.pack "x") 0 
+  H.insert ht (BS.pack "x2") 0 
+  H.insert ht (BS.pack "x3") 0 
   H.insert ht (BS.pack "pcp") 1 
   H.insert ht (BS.pack "pcq") 1 
   H.insert ht (BS.pack "pcr") 1 
@@ -367,7 +375,8 @@ t32_5 = (BS.pack "r", 4, t32_5')
 sys5 :: ST s (System s)
 sys5 = do 
   is <- s5
-  return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is
+  lis <- H.toList is
+  return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is lis
 
 -- [("t1","t2"),("t1","t4"),("t3","t5"),("t2","t5"),("t3","t4")]
 ind5 :: UIndep
@@ -386,6 +395,96 @@ check5 2 3 = True
 check5 3 2 = True
 check5 _ _ = False
 
+{-
+-- Example 6
+s6 :: ST s (Sigma s)
+s6 = do 
+  ht <- H.new
+  H.insert ht (BS.pack "pcp") 1 
+  H.insert ht (BS.pack "pcq") 1 
+  H.insert ht (BS.pack "pcr") 1 
+  H.insert ht (BS.pack "x") 1 
+  return ht
+
+t1_6, t21_6, t22_6, t31_6, t32_6 :: Transition s
+t1_6 = (BS.pack "p",0,t1_6')
+t21_6 = (BS.pack "q",1,t21_6')
+t22_6 = (BS.pack "q",2,t22_6')
+t31_6 = (BS.pack "r",3,t31_6')
+t32_6 = (BS.pack "r",4,t32_6')
+
+t1_6', t21_6', t22_6', t31_6', t32_6' :: TransitionFn s
+t1_6' s = do
+  v <- safeLookup "t1" s (BS.pack "pcp")
+  case v of
+    1 -> return $ Just $ \s -> do
+      x <- safeLookup "t1" s (BS.pack "x")
+      H.insert s (BS.pack "pcp") 2
+      H.insert s (BS.pack "x1") x
+      return s 
+    _ -> return Nothing
+t21_6' s = do
+  v <- safeLookup "t21" s (BS.pack "pcq")
+  case v of
+    1 -> return $ Just $ \s -> do
+      x <- safeLookup "t1" s (BS.pack "x")
+      H.insert s (BS.pack "pcq") 2
+      H.insert s (BS.pack "x2") x
+      return s 
+    _ -> return Nothing
+t22_6' s = do 
+  v <- safeLookup "t22" s (BS.pack "pcq")
+  case v of
+    2 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcq") 3
+      return s 
+    _ -> return Nothing
+t31_6' s = do 
+  v <- safeLookup "t31" s (BS.pack "pcr")
+  case v of
+    1 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcr") 2
+      return s 
+    _ -> return Nothing
+t32_6' s = do
+  v <- safeLookup "t32" s (BS.pack "pcr")
+  case v of
+    2 -> return $ Just $ \s -> do
+      H.insert s (BS.pack "pcr") 3
+      H.insert s (BS.pack "x") 2
+      return s 
+    _ -> return Nothing
+
+sys6 :: ST s (System s)
+sys6 = do 
+  is <- s6
+  lis <- H.toList is
+  return $ System (V.fromList [t1_6,t21_6,t22_6,t31_6,t32_6]) is lis
+
+ind6 :: UIndep
+ind6 = V.generate 5 (\i -> V.generate 5 (\j -> check6 i j)) 
+
+check6 :: Int -> Int -> Bool
+-- R R
+check6 0 1 = True
+check6 1 0 = True
+-- R K
+check6 0 2 = True
+check6 2 0 = True
+-- R K
+check6 0 3 = True
+check6 3 0 = True
+-- R K
+check6 1 3 = True
+check6 3 1 = True
+-- K W
+check6 2 4 = True
+check6 4 2 = True
+-- R K
+check6 2 3 = True
+check6 3 2 = True
+check6 _ _ = False
+-}
 {-
 -- Example 6 - very simple cyclic state space
 t1_6, t2_6 :: Transition

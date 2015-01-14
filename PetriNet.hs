@@ -10,6 +10,7 @@ import qualified Data.ByteString.Char8 as BS8
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
 import Data.List
+import Debug.Trace
 
 -- conceptual view of a Petri Net
 --data Net = Net {
@@ -19,7 +20,7 @@ import Data.List
 --, marking :: Place -> Int
 --}
 
-type Net = (Places, Transitions)
+type Net = (Places, [Transitions])
 type Places = [Place]
 type Place = (ML.Var, ML.Value)
 type Transitions = [Transition]
@@ -52,9 +53,11 @@ parseNet ("PT1":sp:st:rest) =
       (pls, trs) = splitAt np rest 
       ps = map parsePlace pls
       tr = map (parseTransition ps) trs
-  in if length trs == nt
-     then (ps,tr)
-     else error "parseNet"
+      trn = groupTr tr
+  in (ps,trn) 
+--  in if length trs == nt
+--     then (ps,tr)
+--     else error "parseNet"
 
 parsePlace :: String -> Place
 parsePlace s = 
@@ -92,11 +95,20 @@ retrieveIndRel (_, tr) =
        V.generate matrixSize (\j -> 
          check (tr!!i) (tr!!j)))   
 
-check :: Transition -> Transition -> Bool
-check (t1,pre,pos) (t2,pre',pos') = 
-  let b1 = pos `intersect` pre'
+check :: Transitions -> Transitions -> Bool
+check t1s t2s = 
+  let (t1,_,_) = head t1s
+      (t2,_,_) = head t2s
+      (pre,pos)   = foldr (\(_,p1,p2) (r1,r2) -> (nub $ p1 ++ r1, nub $ p2 ++ r2)) ([],[]) t1s
+      (pre',pos') = foldr (\(_,p1,p2) (r1,r2) -> (nub $ p1 ++ r1, nub $ p2 ++ r2)) ([],[]) t2s
+      b1 = pos `intersect` pre'
       b2 = pos' `intersect` pre
-  in t1 /= t2 && null b1 && null b2
+  in t1 /= t2 && null b1 && null b2    
+-- previous check
+-- check (t1,pre,pos) (t2,pre',pos') = 
+--   let b1 = pos `intersect` pre'
+--       b2 = pos' `intersect` pre
+--   in t1 /= t2 && null b1 && null b2
 
 -- 
 groupTr :: Transitions -> [Transitions]
@@ -111,8 +123,7 @@ dropSuffix (x:xs) = x:dropSuffix xs
 convert :: Net -> ST s (ML.System s)
 convert net@(ps,tr) = do
   i <- H.fromList ps
-  let trn = groupTr tr 
-  trs <- mapM toTransition $ zip trn [0..]
+  trs <- mapM toTransition $ zip tr [0..]
   return $ ML.System (V.fromList trs) i
 
 toTransition :: (Transitions, ML.TransitionID) -> ST s (ML.Transition s)
@@ -129,8 +140,8 @@ buildFn' trs = \s -> do
   case ptrs of
     [] -> return Nothing
     [(_,n)] -> do
-      let ((_,pre,pos),_) = trs !! n
-      return $ Just $ \s -> do
+      let ((na,pre,pos),_) = trs !! n
+      return $ Just $ \s -> do -- trace ("going to execute: " ++ show na) $ do
         foldM updatePre s pre
         foldM updatePos s pos
     _ -> error "buildFn': several transitions are enabled"

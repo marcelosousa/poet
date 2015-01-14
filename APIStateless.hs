@@ -13,14 +13,16 @@ import qualified Data.Set as S
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
 import Data.List
-import PetriNet
+-- import PetriNet
 
 import qualified Model as ML
 
 import qualified Debug.Trace as T
 
-trace a b = b 
---trace = T.trace 
+mtrace = T.trace
+-- mtrace a b = b
+-- trace a b = b 
+trace = T.trace 
 
 -- @ The most basic type is event_id :: Int
 --   Pointer to an event
@@ -50,6 +52,7 @@ data Event = Event {
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
+  , lcst :: Maybe ML.LSigma  -- Local state 
 } deriving (Show,Eq,Ord)
 
 -- @ Events represents the unfolding prefix as LPES
@@ -62,6 +65,7 @@ showEvents evs = do
   m <- H.toList evs
   let km = sort m
       r = foldl (\a m -> show m ++ "\n" ++ a) "" km
+      --r = if length km > 54 then show $ [km !! 33, km !! 54] else "" -- foldl (\a m -> show m ++ "\n" ++ a) "" km
   return r
 
 copyEvents :: Events s -> ST s (Events s)
@@ -76,6 +80,7 @@ data UnfolderState s = UnfolderState {
   , evts :: Events s         -- Unfolding prefix 
   , pcnf :: Configuration s  -- Previous configuration
   , cntr :: Counter          -- Event counter
+  , stack :: EventsID        -- Call stack
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -85,16 +90,16 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: Event
-botEvent = Event (ML.botID, BS.pack "") [] [] [] [] []
+botEvent :: ML.LSigma -> Event
+botEvent lst = Event (ML.botID, BS.pack "") [] [] [] [] [] (Just lst) 
 
 -- @ Initial state of the unfolder
 iState :: ML.System s -> ML.UIndep -> ST s (UnfolderState s) 
 iState sys indep = do
   events <- H.new
-  H.insert events 0 botEvent
+  H.insert events 0 $ botEvent $ ML.initialLState sys 
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1
+  return $ UnfolderState sys indep events pconf 1 [0]
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
@@ -117,7 +122,7 @@ gc s@UnfolderState{..} =
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: ML.Sigma s -> EventID -> UnfolderOp s (ML.Sigma s)
+execute :: ML.Sigma s -> EventID -> UnfolderOp s (ML.Sigma s, ML.LSigma)
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
@@ -226,6 +231,16 @@ setEvent :: EventID -> Event -> Events s -> ST s ()
 setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
   H.insert events eID e
 
+setLSigma :: EventID -> ML.LSigma -> Events s -> ST s ()
+setLSigma eID st events = -- trace ("setLSigma: " ++ show eID) $ 
+ do
+  ev@Event{..} <- getEvent "setLSigma" eID events
+  let lcst' = case lcst of
+        Nothing -> Just st
+        Just st' -> if st == st' then Just st else error "setLSigma: different local states"
+      ev' = ev{ lcst = lcst' } 
+  setEvent eID ev' events 
+
 -- @ setSuccessor e -> e'
 setSuccessor :: EventID -> EventID -> Events s -> ST s ()
 setSuccessor e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e') $ 
@@ -254,7 +269,7 @@ addAlternative :: EventID -> Alternative -> Events s -> ST s ()
 addAlternative e v events = trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
  do
   ev@Event{..} <- getEvent "addAlternative" e events
-  let altEv = v:alte
+  let altEv = nub $ v:alte
       ev' = ev{ alte = altEv }
   setEvent e ev' events 
 
@@ -291,3 +306,17 @@ freshCounter = do
       nec = ec + 1
   put s{ cntr = nec }
   return ec
+
+-- @ push 
+push :: EventID -> UnfolderOp s ()
+push e = do 
+  s@UnfolderState{..} <- get
+  let nstack = e:stack
+  put s{ stack = nstack }
+
+-- @ pop
+pop :: UnfolderOp s ()
+pop = do
+  s@UnfolderState{..} <- get
+  let nstack = tail stack
+  put s{ stack = nstack }

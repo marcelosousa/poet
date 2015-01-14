@@ -6,7 +6,7 @@ import Unfolderless
 import Examples
 --import Benchmark
 import Model
-import PetriNet
+-- import PetriNet
 import Tests
 
 import qualified Data.Map as M
@@ -34,7 +34,13 @@ main :: IO ()
 main = do 
   c <- runTestTT tests
   print c 
- 
+
+runTest = do
+  let r1 = runST (sys5 >>= \sys -> stateless sys ind5 >>= return . show)
+  print r1 
+
+{-
+ - Petri Nets 
 -- runPT "benchmarks/debug/sdl_example.pt"
 --  print $ stateless fib_bench_false ind_fib_bench_false 
 
@@ -42,15 +48,7 @@ runPT :: FilePath -> IO ()
 runPT file = do
   net <- parse file -- net :: Net
   let k = runST (convert net >>= runSystem >>= return . length) 
-  --(sys,_) <- getSysInd file
-  --sts <- return $ runSystem sys
   print k
---  let sts = runSystem sys [i] []
---      sts' = map (fst . unzip . M.toList) $ sortSigmas sts
---      s = foldr (\s r -> init (show' s) ++ "\n" ++ r) "" sts'
---  putStrLn s
---  writeFile (file++".debug") s
-  -- print $ stateless sys ind
 
 run :: FilePath -> IO ()
 run file = do
@@ -62,3 +60,4 @@ run file = do
 show' :: [String] -> String
 show' [] = ""
 show' ((c:x):xs) = (init x) ++ " " ++ show' xs
+-}

@@ -26,7 +26,8 @@ import Debug.Trace
 data System s = 
   System {
     transitions :: V.Vector (Transition s),
-    initialState :: ISigma s
+    initialState :: ISigma s,
+    initialLState :: LSigma
   }
 
 type ISigma s = Sigma s
@@ -37,12 +38,15 @@ type Sigma s  = HashTable s Var Value -- We want to add the enabled transitions 
 type Var      = BS.ByteString
 type Value    = Int
 
+-- Local State
+type LSigma = [(Var,Value)] 
+
 --type Process = Map TransitionID Transition
 type ProcessID = BS.ByteString
 type TransitionID = Int 
 type TransitionsID = V.Vector TransitionID
 type Transition s = (ProcessID, TransitionID, TransitionFn s)
-type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
+type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
 
 -- This type class is important to define for each model of 
 -- computation the enabled function that computes the transitions
@@ -97,7 +101,7 @@ botID = -1
 
 -- | bottom transition is simply: return . id
 bot :: TransitionFn s
-bot s = return $ Just return    
+bot s = return $ Just (\s' -> return (s',[]))    
 
 -- GETTERS
 
@@ -111,6 +115,7 @@ getTransition sys@System{..} trIdx
         Just (_,_,tr) -> tr
 
 -- | Runs the system in a dfs fashion
+{-
 runSystem :: System s -> ST s [Sigma s]
 runSystem sys@System{..} = runSys 1 sys [initialState] []
 
@@ -137,13 +142,21 @@ runTrs sys s = do
       v <- (getTransition sys tr) s'     -- gets the transition and applies it
       ns <- fromJust v $ s'            -- now I actually apply it
       return $ ns:acc
-
+-}
 -- This needs to be more efficient
 copy :: Sigma s -> ST s (Sigma s)
 copy s = do 
   kv <- H.toList s
   H.fromList kv 
 
+-- Modifies the current state with some local states
+modify :: Sigma s -> LSigma -> ST s (Sigma s)
+modify s [] = return s
+modify s ((k,v):r) = do 
+  H.insert s k v
+  modify s r
+-- modify s l = trace ("modify: " ++ show l) $ H.fromList l
+   
 -- Add a state to a list of states if that state is not already in the list
 add :: Sigma s -> [Sigma s] -> ST s [Sigma s]
 add s sts = do
