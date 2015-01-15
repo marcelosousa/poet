@@ -124,8 +124,8 @@ convert :: Net -> ST s (ML.System s)
 convert net@(ps,tr) = do
   i <- H.fromList ps
   trs <- mapM toTransition $ zip tr [0..]
-  return $ ML.System (V.fromList trs) i
-
+  return $ ML.System (V.fromList trs) i ps
+ 
 toTransition :: (Transitions, ML.TransitionID) -> ST s (ML.Transition s)
 toTransition ([], tID) = error "toTransition"
 toTransition (trs, tID) =  do
@@ -141,9 +141,10 @@ buildFn' trs = \s -> do
     [] -> return Nothing
     [(_,n)] -> do
       let ((na,pre,pos),_) = trs !! n
-      return $ Just $ \s -> do -- trace ("going to execute: " ++ show na) $ do
+      return $ Just $ \s -> do
         foldM updatePre s pre
         foldM updatePos s pos
+        return (s,map (\v -> (v,1)) pos)
     _ -> error "buildFn': several transitions are enabled"
 
 buildFn :: [ML.Var] -> [ML.Var] -> ML.TransitionFn s
@@ -154,6 +155,7 @@ buildFn pre pos = \s -> do
     return $ Just $ \s -> do
       foldM updatePre s pre
       foldM updatePos s pos
+      return (s,map (\v -> (v,1)) pos)
   else return Nothing 
 
 getValue :: [ML.Var] -> ML.Sigma s -> ST s Bool

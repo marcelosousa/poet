@@ -395,7 +395,6 @@ check5 2 3 = True
 check5 3 2 = True
 check5 _ _ = False
 
-{-
 -- Example 6
 s6 :: ST s (Sigma s)
 s6 = do 
@@ -404,6 +403,8 @@ s6 = do
   H.insert ht (BS.pack "pcq") 1 
   H.insert ht (BS.pack "pcr") 1 
   H.insert ht (BS.pack "x") 1 
+  H.insert ht (BS.pack "x1") 0 
+  H.insert ht (BS.pack "x2") 0 
   return ht
 
 t1_6, t21_6, t22_6, t31_6, t32_6 :: Transition s
@@ -421,7 +422,7 @@ t1_6' s = do
       x <- safeLookup "t1" s (BS.pack "x")
       H.insert s (BS.pack "pcp") 2
       H.insert s (BS.pack "x1") x
-      return s 
+      return (s,[(BS.pack "pcp", 2),(BS.pack "x1", x)]) 
     _ -> return Nothing
 t21_6' s = do
   v <- safeLookup "t21" s (BS.pack "pcq")
@@ -430,21 +431,21 @@ t21_6' s = do
       x <- safeLookup "t1" s (BS.pack "x")
       H.insert s (BS.pack "pcq") 2
       H.insert s (BS.pack "x2") x
-      return s 
+      return (s,[(BS.pack "pcq", 2),(BS.pack "x2", x)]) 
     _ -> return Nothing
 t22_6' s = do 
   v <- safeLookup "t22" s (BS.pack "pcq")
   case v of
     2 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") 3
-      return s 
+      return (s,[(BS.pack "pcq", 3)]) 
     _ -> return Nothing
 t31_6' s = do 
   v <- safeLookup "t31" s (BS.pack "pcr")
   case v of
     1 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcr") 2
-      return s 
+      return (s,[(BS.pack "pcr", 2)]) 
     _ -> return Nothing
 t32_6' s = do
   v <- safeLookup "t32" s (BS.pack "pcr")
@@ -452,7 +453,7 @@ t32_6' s = do
     2 -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcr") 3
       H.insert s (BS.pack "x") 2
-      return s 
+      return (s,[(BS.pack "pcr", 3),(BS.pack "x", 2)]) 
     _ -> return Nothing
 
 sys6 :: ST s (System s)
@@ -484,7 +485,7 @@ check6 4 2 = True
 check6 2 3 = True
 check6 3 2 = True
 check6 _ _ = False
--}
+
 {-
 -- Example 6 - very simple cyclic state space
 t1_6, t2_6 :: Transition

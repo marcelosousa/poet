@@ -30,6 +30,10 @@ test6 =
   let r1 = runST (sys5 >>= \sys -> stateless sys ind5 >>= return . show)
   in TestCase (assertEqual "cesar" "12" r1)
 
+test7 = 
+  let r1 = runST (sys6 >>= \sys -> stateless sys ind6 >>= return . show)
+  in TestCase (assertEqual "histories" "15" r1)
+
 tests = TestList 
   [ TestLabel "test1" test1
   , TestLabel "test2" test2 
@@ -37,4 +41,5 @@ tests = TestList
   , TestLabel "test4" test4 
   , TestLabel "test5" test5 
   , TestLabel "test6" test6 
+  , TestLabel "test7" test7 
   ] 

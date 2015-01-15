@@ -19,10 +19,10 @@ import qualified Model as ML
 
 import qualified Debug.Trace as T
 
-mtrace = T.trace
--- mtrace a b = b
--- trace a b = b 
-trace = T.trace 
+--mtrace = T.trace
+mtrace a b = b
+trace a b = b 
+--trace = T.trace 
 
 -- @ The most basic type is event_id :: Int
 --   Pointer to an event

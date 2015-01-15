@@ -6,7 +6,7 @@ import Unfolderless
 import Examples
 --import Benchmark
 import Model
--- import PetriNet
+import PetriNet
 import Tests
 
 import qualified Data.Map as M
@@ -31,24 +31,24 @@ writeUnf (sys,ind) =
 -}
 
 main :: IO ()
-main = do 
-  c <- runTestTT tests
-  print c 
+--main = do 
+--  c <- runTestTT tests
+--  print c 
+main = run "benchmarks/small-stubborn/only_hl.pt"
 
 runTest = do
-  let r1 = runST (sys5 >>= \sys -> stateless sys ind5 >>= return . show)
+  let r1 = runST (sys6 >>= \sys -> stateless sys ind6 >>= return . show)
   print r1 
 
-{-
- - Petri Nets 
+-- Petri Nets 
 -- runPT "benchmarks/debug/sdl_example.pt"
 --  print $ stateless fib_bench_false ind_fib_bench_false 
 
-runPT :: FilePath -> IO ()
-runPT file = do
-  net <- parse file -- net :: Net
-  let k = runST (convert net >>= runSystem >>= return . length) 
-  print k
+-- runPT :: FilePath -> IO ()
+-- runPT file = do
+--   net <- parse file -- net :: Net
+--   let k = runST (convert net >>= runSystem >>= return . length) 
+--   print k
 
 run :: FilePath -> IO ()
 run file = do
@@ -60,4 +60,3 @@ run file = do
 show' :: [String] -> String
 show' [] = ""
 show' ((c:x):xs) = (init x) ++ " " ++ show' xs
--}
