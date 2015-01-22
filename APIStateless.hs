@@ -19,8 +19,11 @@ import qualified Model as ML
 
 import qualified Debug.Trace as T
 
---mtrace = T.trace
-mtrace a b = b
+mytrace True a b = T.trace a b
+mytrace False a b = b
+
+mtrace = T.trace
+--mtrace a b = b
 trace a b = b 
 --trace = T.trace 
 
@@ -162,7 +165,6 @@ successors e events =  do
  where
   successors' :: EventID -> Events s -> ST s EventsID
   successors' e events = do
-     s <- showEvents events
      ev@Event{..} <- getEvent "successors" e events 
      foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
 

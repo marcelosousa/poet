@@ -149,6 +149,17 @@ copy s = do
   kv <- H.toList s
   H.fromList kv 
 
+showSigma :: Sigma s -> ST s String
+showSigma s = do
+  kv <- H.toList s
+  return $ show kv 
+
+equals :: Sigma s -> Sigma s -> ST s Bool
+equals s1 s2 = do
+  kv1 <- H.toList s1
+  kv2 <- H.toList s2
+  return $ sort kv1 == sort kv2
+
 -- Modifies the current state with some local states
 modify :: Sigma s -> LSigma -> ST s (Sigma s)
 modify s [] = return s

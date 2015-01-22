@@ -144,7 +144,7 @@ buildFn' trs = \s -> do
       return $ Just $ \s -> do
         foldM updatePre s pre
         foldM updatePos s pos
-        return (s,map (\v -> (v,1)) pos)
+        return (s,map (\v -> (v,0)) pre ++ map (\v -> (v,1)) pos)
     _ -> error "buildFn': several transitions are enabled"
 
 buildFn :: [ML.Var] -> [ML.Var] -> ML.TransitionFn s
