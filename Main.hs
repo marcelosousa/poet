@@ -37,7 +37,7 @@ main :: IO ()
 main = run "benchmarks/small-stubborn/only_hl.pt"
 
 runTest = do
-  let r1 = runST (sys3 >>= \sys -> stateless sys ind3 >>= return . show)
+  let r1 = runST (sys1 >>= \sys -> stateless sys ind11 >>= return . show)
   print r1 
 
 -- Petri Nets 

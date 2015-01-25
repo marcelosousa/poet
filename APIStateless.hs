@@ -193,8 +193,13 @@ filterResult es =
 -- retrieves the event associated with the event id 
 getEvent :: String -> EventID -> Events s -> ST s Event
 {-# INLINE getEvent #-}
-getEvent s e events =
-  H.lookup events e >>= return . M.fromMaybe (error $ s ++ "-getEvent:") 
+getEvent s e events = do
+  mv <- H.lookup events e 
+  case mv of
+    Nothing -> do
+      str <- showEvents events 
+      error $ s ++ "-getEvent: " ++ show e ++ "\n" ++ str 
+    Just ev -> return ev 
 
 -- @ getConfEvs - retrieves all the events of a configuration
 getConfEvs :: EventsID -> Events s -> ST s EventsID
@@ -242,6 +247,28 @@ setLSigma eID st events = -- trace ("setLSigma: " ++ show eID) $
         Just st' -> if st == st' then Just st else error "setLSigma: different local states"
       ev' = ev{ lcst = lcst' } 
   setEvent eID ev' events 
+
+-- @ delImmCnfl 
+delImmCnfl :: EventID -> EventID -> Events s -> ST s ()
+delImmCnfl e e' events = -- trace ("delImmCnfl: " ++ show e ++ " of " ++ show e') $ 
+ do
+  ev@Event{..} <- getEvent "setSuccessor" e' events
+  let icnfEv = delete e icnf 
+      altEv = filter (\v -> not $ elem e v) alte 
+      ev' = ev{ icnf = icnfEv, alte = altEv } 
+  setEvent e' ev' events 
+
+-- @ delSuccessor e -> e'
+delSuccessor :: EventID -> EventID -> Events s -> ST s ()
+delSuccessor e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e') $ 
+ do
+  mv <- H.lookup events e' 
+  case mv of 
+   Nothing -> return ()
+   Just ev -> do 
+     let succEv = delete e $ succ ev
+         ev' = ev{ succ = succEv } 
+     setEvent e' ev' events 
 
 -- @ setSuccessor e -> e'
 setSuccessor :: EventID -> EventID -> Events s -> ST s ()

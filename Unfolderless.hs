@@ -94,25 +94,54 @@ explore c@Conf{..} ê alt = do
     --   return a new configuration
     nc <- unfold c e
     ms@UnfolderState{..} <- get
-    -- pevts <- lift $ copyEvents evts 
+    --pevts <- lift $ copyEvents evts 
     -- @ recursive call
     push e
     explore nc e (alt \\ [e])
     pop
     -- @ TODO! Stateless: Garbage collection
     -- @ set the previous disable set
-    -- setPreviousDisabled pevts
+    --setPreviousDisabled pevts
     -- let s' = gc s
     -- @ filter alternatives
     malt <- filterAlternatives maxevs e
     if null malt
-    then return () 
+    then do
+      core <- lift $ computeCore stack evts
+      lift $ prune e core evts
+      return () 
     else do
       let alt' = head malt
       lift $ addDisabled e ê evts
       -- evs <- lift $ getConfEvs maxevs evts
       -- isConfA <- lift $ isConfiguration evts alt'
       explore c ê (alt' \\ stack)
+    --  core <- lift $ computeCore stack evts
+    --  lift $ prune e core evts
+
+computeCore :: EventsID -> Events s -> ST s (EventsID)
+computeCore conf events = do
+  config <- mapM (\e -> predecessors e events >>= return . (e:)) conf
+  evs <- mapM (\e -> getEvent "computeCore" e events) conf
+  disas <- mapM (\ev -> mapM (\e -> predecessors e events >>= return . (e:)) $ disa ev) evs
+  altes <- mapM (\ev -> mapM (\v -> mapM (\e -> predecessors e events >>= return . (e:)) v) $ alte ev) evs
+  let evs = config ++ concat disas ++ (concat $ concat altes)
+  return $ nub $ concat evs 
+
+prune :: EventID -> EventsID -> Events s -> ST s ()
+prune e core events = do
+  ev@Event{..} <- getEvent "prune" e events
+  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
+  if e `elem` core
+  then return ()
+  else deleteEvent e events
+
+deleteEvent :: EventID -> Events s -> ST s ()
+deleteEvent e events = mtrace ("deleting event " ++ show e) $ do
+  ev@Event{..} <- getEvent "deleteEvent" e events
+  mapM_ (\e' -> delSuccessor e e' events) pred
+  mapM_ (\e' -> delImmCnfl e e' events) icnf 
+  H.delete events e
 
 isConfiguration :: Events s -> EventsID -> ST s Bool
 isConfiguration evts conf = do
@@ -451,7 +480,7 @@ computePotentialAlternatives maxevs evs =  do
     computeV stack events de e e' = do
       -- @ Compute the common parts of the configurations that contain e and e': confEvs - (e:succ e) 
       clfe' <- getImmediateConflicts e' events
-      let clfec' = filter (\e -> e `elem` stack) clfe'
+      let clfec' = filter (\e -> e `elem` stack) clfe' -- do this check first so that any e' clfe'
       succes' <- mapM (\ce' -> successors ce' events >>= return . (ce':)) clfec'
       let common = stack \\ (concat succes') 
       -- @ 1 and 2

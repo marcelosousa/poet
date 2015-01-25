@@ -40,4 +40,3 @@ int main(){
 }
 //int printf(const char * restrict format, ...);
 
-//int main(){printf("Hello world\n");return 0;}

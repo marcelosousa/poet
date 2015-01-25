@@ -1,7 +1,7 @@
 module Model.Converter where
 
-import SimpleC.Language
-import SimpleC.Converter
+import Language.SimpleC.AST
+--import SimpleC.Converter
 import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Maybe
@@ -12,11 +12,11 @@ import Debug.Trace
 import Language.C.Syntax.AST (CBinaryOp(..),CUnaryOp(..))
 import qualified Model.Language as L
 
-myMain = do
-    ctu <- parseMyFile "/Users/mabs/Research/tools/unfolds/examples/simple.c"
-    let ast = translate ctu
-        model = converter ast
-    print $ L.exec model
+--myMain = do
+--    ctu <- parseMyFile "/Users/mabs/Research/tools/unfolds/examples/simple.c"
+--    let ast = translate ctu
+--        model = converter ast
+--    print $ L.exec model
 
 {-
 - Assumptions:
@@ -27,7 +27,9 @@ myMain = do
 -  4) Moreover, the names of all local variables are disjoint.
 -}    
 
-converter :: Program -> L.System
+convert :: Program -> L.System
+convert = undefined
+{-
 converter (Program (decls, defs)) = 
     let threads = getThreads defs
         i = foldr initState L.emptyState decls
@@ -80,7 +82,7 @@ convertStat pcName stats =
 hasPC :: PC -> (PC,Statement) -> Bool
 hasPC pc (pc',_) = pc == pc'
 
-{-convertStat pcn _         []     = \s -> (s, V.empty)
+convertStat pcn _         []     = \s -> (s, V.empty)
 convertStat pcn Nothing   [stat] = convertStatement pcn stat (-1) 
 convertStat pcn (Just pc) [stat] = convertStatement pcn stat pc
 convertStat pcn mpc (s1:(pc,s2):r) =
@@ -89,7 +91,7 @@ convertStat pcn mpc (s1:(pc,s2):r) =
     in \s -> let (s1,tags1) = tr1 s
                  (sr,tagsr) = tr2 s1
              in (sr, tags1 V.++ tagsr)
--}
+
 -- type Transition = State -> (State, V.Vector Tag)
 -- type State = (M.Map Var Value, [Var])
 convertStatement :: L.Var -> PC -> Statement -> L.Transition
@@ -99,7 +101,7 @@ convertStatement pcName pcNext stat = case stat of
           tags = V.cons (L.Write i) tags'
           val' = M.adjust (const v) i $ M.adjust (const pcNext) pcName val
       in ((val', procs), tags)
-{-
+
 convertStatement :: L.Var -> (PC,Statement) -> PC -> L.Transition
 convertStatement pcn (pc,stat) pca = case stat of
     Assign i expr -> \s@(val, procs) ->
@@ -152,7 +154,7 @@ convertStatement pcn (pc,stat) pca = case stat of
                tags = V.singleton $ L.Write i
            in ((val', procs), tags)
       else error "undefined in local"
--}
+
 eval :: Expression -> L.Valuation -> (L.Value, V.Vector L.Tag)
 eval expr env = case expr of
     Call i args -> error "no support for call expr"
@@ -189,3 +191,4 @@ eval expr env = case expr of
 boolToInt :: Bool -> Int
 boolToInt True  = 1
 boolToInt False = 0
+-}
