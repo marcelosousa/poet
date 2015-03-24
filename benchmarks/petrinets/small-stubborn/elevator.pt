@@ -1,0 +1,1179 @@
+PT1
+586
+590
+"P59" 1
+"P58" 0
+"P57" 0
+"P56" 0
+"P55" 0
+"P54" 0
+"P53" 0
+"P52" 0
+"P51" 0
+"P49" 0
+"P48" 0
+"P47" 0
+"P46" 1
+"P44" 0
+"P43" 0
+"P42" 1
+"P40" 0
+"P39" 0
+"P38" 1
+"P37" 0
+"P36" 0
+"P35" 0
+"P34" 1
+"P33" 0
+"P31" 0
+"P30" 0
+"P29" 0
+"P28" 0
+"P27" 0
+"P26" 0
+"P25" 0
+"P24" 0
+"P18" 0
+"P17" 0
+"P16" 0
+"P15" 0
+"P14" 0
+"P13" 0
+"P12" 0
+"P11" 0
+"P9" 0
+"P8" 0
+"P7" 0
+"P6" 0
+"P5" 0
+"P4" 0
+"P3" 0
+"aux0_priv_P58_T53" 0
+"aux0_priv_P58_T51" 0
+"aux0_priv_P58_T52" 0
+"aux1_partialfork" 0
+"aux_1_fork" 0
+"aux1_onl" 1
+"aux1_onr" 1
+"aux1_offl" 0
+"aux1_offr" 0
+"aux_2_fork" 0
+"aux2_onl" 1
+"aux2_onr" 1
+"aux2_offl" 0
+"aux2_offr" 0
+"aux3_priv_P57_T50" 0
+"aux3_priv_P57_T48" 0
+"aux3_priv_P57_T49" 0
+"aux4_partialfork" 0
+"aux_4_fork" 0
+"aux4_onl" 1
+"aux4_onr" 1
+"aux4_offl" 0
+"aux4_offr" 0
+"aux_5_fork" 0
+"aux5_onl" 1
+"aux5_onr" 1
+"aux5_offl" 0
+"aux5_offr" 0
+"aux6_priv_P56_T46" 0
+"aux6_priv_P56_T47" 0
+"aux6_priv_P56_T45" 0
+"aux7_partialfork" 0
+"aux_7_fork" 0
+"aux7_onl" 1
+"aux7_onr" 1
+"aux7_offl" 0
+"aux7_offr" 0
+"aux_8_fork" 0
+"aux8_onl" 1
+"aux8_onr" 1
+"aux8_offl" 0
+"aux8_offr" 0
+"aux9_priv_P55_T74" 0
+"aux9_priv_P55_T72" 0
+"aux9_priv_P55_T73" 0
+"aux10_partialfork" 0
+"aux_10_fork" 0
+"aux10_onl" 1
+"aux10_onr" 1
+"aux10_offl" 0
+"aux10_offr" 0
+"aux_11_fork" 0
+"aux11_onl" 1
+"aux11_onr" 1
+"aux11_offl" 0
+"aux11_offr" 0
+"aux12_priv_P51_T59" 0
+"aux12_priv_P51_T60" 0
+"aux12_priv_P51_T58" 0
+"aux13_partialfork" 0
+"aux_13_fork" 0
+"aux13_onl" 1
+"aux13_onr" 1
+"aux13_offl" 0
+"aux13_offr" 0
+"aux_14_fork" 0
+"aux14_onl" 1
+"aux14_onr" 1
+"aux14_offl" 0
+"aux14_offr" 0
+"aux15_priv_P49_T11" 0
+"aux15_priv_P49_T23" 0
+"aux15_priv_P49_T20" 0
+"aux15_priv_P49_T15" 0
+"aux15_priv_P49_T13" 0
+"aux16_partialfork" 0
+"aux_16_fork" 0
+"aux16_onl" 1
+"aux16_onr" 1
+"aux16_offl" 0
+"aux16_offr" 0
+"aux17_partialfork" 0
+"aux_17_fork" 0
+"aux17_onl" 1
+"aux17_onr" 1
+"aux17_offl" 0
+"aux17_offr" 0
+"aux18_partialfork" 0
+"aux_18_fork" 0
+"aux18_onl" 1
+"aux18_onr" 1
+"aux18_offl" 0
+"aux18_offr" 0
+"aux_19_fork" 0
+"aux19_onl" 1
+"aux19_onr" 1
+"aux19_offl" 0
+"aux19_offr" 0
+"aux20_priv_P48_T19" 0
+"aux20_priv_P48_T25" 0
+"aux20_priv_P48_T12" 0
+"aux20_priv_P48_T17" 0
+"aux20_priv_P48_T10" 0
+"aux21_partialfork" 0
+"aux_21_fork" 0
+"aux21_onl" 1
+"aux21_onr" 1
+"aux21_offl" 0
+"aux21_offr" 0
+"aux22_partialfork" 0
+"aux_22_fork" 0
+"aux22_onl" 1
+"aux22_onr" 1
+"aux22_offl" 0
+"aux22_offr" 0
+"aux23_partialfork" 0
+"aux_23_fork" 0
+"aux23_onl" 1
+"aux23_onr" 1
+"aux23_offl" 0
+"aux23_offr" 0
+"aux_24_fork" 0
+"aux24_onl" 1
+"aux24_onr" 1
+"aux24_offl" 0
+"aux24_offr" 0
+"aux25_priv_P47_T21" 0
+"aux25_priv_P47_T9" 0
+"aux25_priv_P47_T16" 0
+"aux25_priv_P47_T14" 0
+"aux25_priv_P47_T24" 0
+"aux26_partialfork" 0
+"aux_26_fork" 0
+"aux26_onl" 1
+"aux26_onr" 1
+"aux26_offl" 0
+"aux26_offr" 0
+"aux27_partialfork" 0
+"aux_27_fork" 0
+"aux27_onl" 1
+"aux27_onr" 1
+"aux27_offl" 0
+"aux27_offr" 0
+"aux28_partialfork" 0
+"aux_28_fork" 0
+"aux28_onl" 1
+"aux28_onr" 1
+"aux28_offl" 0
+"aux28_offr" 0
+"aux_29_fork" 0
+"aux29_onl" 1
+"aux29_onr" 1
+"aux29_offl" 0
+"aux29_offr" 0
+"aux30_priv_P37_T16" 0
+"aux30_priv_P37_T7" 0
+"aux30_priv_P37_T24" 0
+"aux30_priv_P37_T25" 0
+"aux30_priv_P37_T11" 0
+"aux30_priv_P37_T17" 0
+"aux31_partialfork" 0
+"aux_31_fork" 0
+"aux31_onl" 1
+"aux31_onr" 1
+"aux31_offl" 0
+"aux31_offr" 0
+"aux32_partialfork" 0
+"aux_32_fork" 0
+"aux32_onl" 1
+"aux32_onr" 1
+"aux32_offl" 0
+"aux32_offr" 0
+"aux33_partialfork" 0
+"aux_33_fork" 0
+"aux33_onl" 1
+"aux33_onr" 1
+"aux33_offl" 0
+"aux33_offr" 0
+"aux34_partialfork" 0
+"aux_34_fork" 0
+"aux34_onl" 1
+"aux34_onr" 1
+"aux34_offl" 0
+"aux34_offr" 0
+"aux_35_fork" 0
+"aux35_onl" 1
+"aux35_onr" 1
+"aux35_offl" 0
+"aux35_offr" 0
+"aux36_priv_P36_T23" 0
+"aux36_priv_P36_T15" 0
+"aux36_priv_P36_T6" 0
+"aux36_priv_P36_T14" 0
+"aux36_priv_P36_T21" 0
+"aux36_priv_P36_T10" 0
+"aux37_partialfork" 0
+"aux_37_fork" 0
+"aux37_onl" 1
+"aux37_onr" 1
+"aux37_offl" 0
+"aux37_offr" 0
+"aux38_partialfork" 0
+"aux_38_fork" 0
+"aux38_onl" 1
+"aux38_onr" 1
+"aux38_offl" 0
+"aux38_offr" 0
+"aux39_partialfork" 0
+"aux_39_fork" 0
+"aux39_onl" 1
+"aux39_onr" 1
+"aux39_offl" 0
+"aux39_offr" 0
+"aux40_partialfork" 0
+"aux_40_fork" 0
+"aux40_onl" 1
+"aux40_onr" 1
+"aux40_offl" 0
+"aux40_offr" 0
+"aux_41_fork" 0
+"aux41_onl" 1
+"aux41_onr" 1
+"aux41_offl" 0
+"aux41_offr" 0
+"aux42_priv_P35_T9" 0
+"aux42_priv_P35_T5" 0
+"aux42_priv_P35_T20" 0
+"aux42_priv_P35_T19" 0
+"aux42_priv_P35_T13" 0
+"aux42_priv_P35_T12" 0
+"aux43_partialfork" 0
+"aux_43_fork" 0
+"aux43_onl" 1
+"aux43_onr" 1
+"aux43_offl" 0
+"aux43_offr" 0
+"aux44_partialfork" 0
+"aux_44_fork" 0
+"aux44_onl" 1
+"aux44_onr" 1
+"aux44_offl" 0
+"aux44_offr" 0
+"aux45_partialfork" 0
+"aux_45_fork" 0
+"aux45_onl" 1
+"aux45_onr" 1
+"aux45_offl" 0
+"aux45_offr" 0
+"aux46_partialfork" 0
+"aux_46_fork" 0
+"aux46_onl" 1
+"aux46_onr" 1
+"aux46_offl" 0
+"aux46_offr" 0
+"aux_47_fork" 0
+"aux47_onl" 1
+"aux47_onr" 1
+"aux47_offl" 0
+"aux47_offr" 0
+"aux48_priv_P33_T4" 0
+"aux48_priv_P33_T3" 0
+"aux48_priv_P33_T2" 0
+"aux49_partialfork" 0
+"aux_49_fork" 0
+"aux49_onl" 1
+"aux49_onr" 1
+"aux49_offl" 0
+"aux49_offr" 0
+"aux_50_fork" 0
+"aux50_onl" 1
+"aux50_onr" 1
+"aux50_offl" 0
+"aux50_offr" 0
+"aux51_priv_P29_T25" 0
+"aux51_priv_P29_T24" 0
+"aux51_priv_P29_T23" 0
+"aux51_priv_P29_T21" 0
+"aux51_priv_P29_T20" 0
+"aux51_priv_P29_T19" 0
+"aux52_partialfork" 0
+"aux_52_fork" 0
+"aux52_onl" 1
+"aux52_onr" 1
+"aux52_offl" 0
+"aux52_offr" 0
+"aux53_partialfork" 0
+"aux_53_fork" 0
+"aux53_onl" 1
+"aux53_onr" 1
+"aux53_offl" 0
+"aux53_offr" 0
+"aux54_partialfork" 0
+"aux_54_fork" 0
+"aux54_onl" 1
+"aux54_onr" 1
+"aux54_offl" 0
+"aux54_offr" 0
+"aux55_partialfork" 0
+"aux_55_fork" 0
+"aux55_onl" 1
+"aux55_onr" 1
+"aux55_offl" 0
+"aux55_offr" 0
+"aux_56_fork" 0
+"aux56_onl" 1
+"aux56_onr" 1
+"aux56_offl" 0
+"aux56_offr" 0
+"aux57_priv_P26_T9" 0
+"aux57_priv_P26_T16" 0
+"aux57_priv_P26_T15" 0
+"aux57_priv_P26_T10" 0
+"aux57_priv_P26_T14" 0
+"aux57_priv_P26_T13" 0
+"aux57_priv_P26_T12" 0
+"aux57_priv_P26_T11" 0
+"aux57_priv_P26_T17" 0
+"aux58_partialfork" 0
+"aux_58_fork" 0
+"aux58_onl" 1
+"aux58_onr" 1
+"aux58_offl" 0
+"aux58_offr" 0
+"aux59_partialfork" 0
+"aux_59_fork" 0
+"aux59_onl" 1
+"aux59_onr" 1
+"aux59_offl" 0
+"aux59_offr" 0
+"aux60_partialfork" 0
+"aux_60_fork" 0
+"aux60_onl" 1
+"aux60_onr" 1
+"aux60_offl" 0
+"aux60_offr" 0
+"aux61_partialfork" 0
+"aux_61_fork" 0
+"aux61_onl" 1
+"aux61_onr" 1
+"aux61_offl" 0
+"aux61_offr" 0
+"aux62_partialfork" 0
+"aux_62_fork" 0
+"aux62_onl" 1
+"aux62_onr" 1
+"aux62_offl" 0
+"aux62_offr" 0
+"aux63_partialfork" 0
+"aux_63_fork" 0
+"aux63_onl" 1
+"aux63_onr" 1
+"aux63_offl" 0
+"aux63_offr" 0
+"aux64_partialfork" 0
+"aux_64_fork" 0
+"aux64_onl" 1
+"aux64_onr" 1
+"aux64_offl" 0
+"aux64_offr" 0
+"aux_65_fork" 0
+"aux65_onl" 1
+"aux65_onr" 1
+"aux65_offl" 0
+"aux65_offr" 0
+"aux66_priv_P24_T6" 0
+"aux66_priv_P24_T7" 0
+"aux66_priv_P24_T5" 0
+"aux67_partialfork" 0
+"aux_67_fork" 0
+"aux67_onl" 1
+"aux67_onr" 1
+"aux67_offl" 0
+"aux67_offr" 0
+"aux_68_fork" 0
+"aux68_onl" 1
+"aux68_onr" 1
+"aux68_offl" 0
+"aux68_offr" 0
+"aux69_priv_P18_T50" 0
+"aux69_priv_P18_T53" 0
+"aux69_priv_P18_T4" 0
+"aux69_priv_P18_T47" 0
+"aux70_partialfork" 0
+"aux_70_fork" 0
+"aux70_onl" 1
+"aux70_onr" 1
+"aux70_offl" 0
+"aux70_offr" 0
+"aux71_partialfork" 0
+"aux_71_fork" 0
+"aux71_onl" 1
+"aux71_onr" 1
+"aux71_offl" 0
+"aux71_offr" 0
+"aux_72_fork" 0
+"aux72_onl" 1
+"aux72_onr" 1
+"aux72_offl" 0
+"aux72_offr" 0
+"aux73_priv_P17_T3" 0
+"aux73_priv_P17_T46" 0
+"aux73_priv_P17_T49" 0
+"aux73_priv_P17_T52" 0
+"aux74_partialfork" 0
+"aux_74_fork" 0
+"aux74_onl" 1
+"aux74_onr" 1
+"aux74_offl" 0
+"aux74_offr" 0
+"aux75_partialfork" 0
+"aux_75_fork" 0
+"aux75_onl" 1
+"aux75_onr" 1
+"aux75_offl" 0
+"aux75_offr" 0
+"aux_76_fork" 0
+"aux76_onl" 1
+"aux76_onr" 1
+"aux76_offl" 0
+"aux76_offr" 0
+"aux77_priv_P16_T48" 0
+"aux77_priv_P16_T51" 0
+"aux77_priv_P16_T2" 0
+"aux77_priv_P16_T45" 0
+"aux78_partialfork" 0
+"aux_78_fork" 0
+"aux78_onl" 1
+"aux78_onr" 1
+"aux78_offl" 0
+"aux78_offr" 0
+"aux79_partialfork" 0
+"aux_79_fork" 0
+"aux79_onl" 1
+"aux79_onr" 1
+"aux79_offl" 0
+"aux79_offr" 0
+"aux_80_fork" 0
+"aux80_onl" 1
+"aux80_onr" 1
+"aux80_offl" 0
+"aux80_offr" 0
+"aux81_priv_P14_T6" 0
+"aux81_priv_P14_T7" 0
+"aux81_priv_P14_T5" 0
+"aux82_partialfork" 0
+"aux_82_fork" 0
+"aux82_onl" 1
+"aux82_onr" 1
+"aux82_offl" 0
+"aux82_offr" 0
+"aux_83_fork" 0
+"aux83_onl" 1
+"aux83_onr" 1
+"aux83_offl" 0
+"aux83_offr" 0
+"aux84_priv_P13_T4" 0
+"aux84_priv_P13_T3" 0
+"aux84_priv_P13_T2" 0
+"aux85_partialfork" 0
+"aux_85_fork" 0
+"aux85_onl" 1
+"aux85_onr" 1
+"aux85_offl" 0
+"aux85_offr" 0
+"aux_86_fork" 0
+"aux86_onl" 1
+"aux86_onr" 1
+"aux86_offl" 0
+"aux86_offr" 0
+"aux87_priv_P12_T51" 0
+"aux87_priv_P12_T50" 0
+"aux87_priv_P12_T49" 0
+"aux87_priv_P12_T48" 0
+"aux87_priv_P12_T47" 0
+"aux87_priv_P12_T53" 0
+"aux87_priv_P12_T46" 0
+"aux87_priv_P12_T45" 0
+"aux87_priv_P12_T52" 0
+"aux88_partialfork" 0
+"aux_88_fork" 0
+"aux88_onl" 1
+"aux88_onr" 1
+"aux88_offl" 0
+"aux88_offr" 0
+"aux89_partialfork" 0
+"aux_89_fork" 0
+"aux89_onl" 1
+"aux89_onr" 1
+"aux89_offl" 0
+"aux89_offr" 0
+"aux90_partialfork" 0
+"aux_90_fork" 0
+"aux90_onl" 1
+"aux90_onr" 1
+"aux90_offl" 0
+"aux90_offr" 0
+"aux91_partialfork" 0
+"aux_91_fork" 0
+"aux91_onl" 1
+"aux91_onr" 1
+"aux91_offl" 0
+"aux91_offr" 0
+"aux92_partialfork" 0
+"aux_92_fork" 0
+"aux92_onl" 1
+"aux92_onr" 1
+"aux92_offl" 0
+"aux92_offr" 0
+"aux93_partialfork" 0
+"aux_93_fork" 0
+"aux93_onl" 1
+"aux93_onr" 1
+"aux93_offl" 0
+"aux93_offr" 0
+"aux94_partialfork" 0
+"aux_94_fork" 0
+"aux94_onl" 1
+"aux94_onr" 1
+"aux94_offl" 0
+"aux94_offr" 0
+"aux_95_fork" 0
+"aux95_onl" 1
+"aux95_onr" 1
+"aux95_offl" 0
+"aux95_offr" 0
+"aux96_priv_P8_T59" 0
+"aux96_priv_P8_T60" 0
+"aux96_priv_P8_T58" 0
+"aux97_partialfork" 0
+"aux_97_fork" 0
+"aux97_onl" 1
+"aux97_onr" 1
+"aux97_offl" 0
+"aux97_offr" 0
+"aux_98_fork" 0
+"aux98_onl" 1
+"aux98_onr" 1
+"aux98_offl" 0
+"aux98_offr" 0
+"T74" 2 2 5 89 8 1
+"T73" 2 2 6 91 8 2
+"T72" 2 2 90 7 8 3
+"T71" 1 2 0 8 4
+"T70" 1 1 30 29
+"T68" 1 1 39 38
+"T67" 1 1 35 38
+"T66" 1 2 45 39 34
+"T62" 1 1 46 41
+"T61" 1 1 40 41
+"T60" 2 2 104 573 5 40
+"T59" 2 2 572 103 40 6
+"T58" 2 2 574 105 7 40
+"T53" 3 3 426 47 521 32 4 37
+"T52" 3 3 524 449 49 32 4 37
+"T51" 3 3 468 48 516 32 4 37
+"T50" 3 3 517 425 61 4 33 37
+"T49" 3 3 448 518 63 4 33 37
+"T48" 3 3 62 519 467 4 33 37
+"T47" 3 3 76 520 428 34 4 37
+"T46" 3 3 522 75 447 34 4 37
+"T45" 3 3 470 77 523 34 4 37
+"T44" 1 2 12 42 11
+"T40" 2 2 42 15 43 14
+"T37" 2 2 27 13 28 14
+"T34" 2 2 25 14 13 26
+"T33" 2 2 18 43 44 17
+"T30" 2 2 16 28 31 17
+"T27" 2 2 24 17 16 25
+"T25" 3 3 146 204 320 9 27 19
+"T24" 3 3 177 321 203 9 27 19
+"T23" 3 3 236 322 118 27 20 10
+"T21" 3 3 173 240 323 27 20 10
+"T20" 3 3 119 273 324 11 27 21
+"T19" 3 3 325 145 274 11 27 21
+"T17" 3 3 148 206 363 24 10 19
+"T16" 3 3 356 201 175 11 24 19
+"T15" 3 3 237 120 357 9 20 24
+"T14" 3 3 239 359 176 11 24 20
+"T13" 3 3 121 360 275 9 24 21
+"T12" 3 3 147 276 361 24 10 21
+"T11" 3 3 362 205 117 9 31 19
+"T10" 3 3 241 358 149 20 31 10
+"T9" 3 3 174 355 271 11 31 21
+"T7" 3 2 202 412 489 23 35
+"T6" 3 2 411 488 238 23 35
+"T5" 3 2 272 413 490 23 35
+"T4" 3 4 306 427 502 32 36 19 30
+"T3" 3 4 446 307 503 36 20 33 30
+"T2" 3 4 469 504 308 34 36 30 21
+"T1" 2 3 44 22 23 46 45
+"aux1_init__onl_onr" 3 3 52 53 1 52 51 53
+"aux1_init__onl_offr" 3 3 52 55 1 52 51 53
+"aux1_init__offl_onr" 3 3 54 53 1 52 51 53
+"aux1_l__go" 2 2 51 53 47 55
+"aux1_l__wait" 1 1 54 52
+"aux1_r__go" 2 2 52 51 50 54
+"aux1_r__wait" 1 1 55 53
+"aux2_init__onl_onr" 3 3 50 58 57 56 58 57
+"aux2_init__onl_offr" 3 3 50 60 57 56 58 57
+"aux2_init__offl_onr" 3 3 50 59 58 56 58 57
+"aux2_l__go" 2 2 56 58 60 48
+"aux2_l__wait" 1 1 59 57
+"aux2_r__go" 2 2 56 57 59 49
+"aux2_r__wait" 1 1 60 58
+"aux4_init__onl_onr" 3 3 67 2 66 67 66 65
+"aux4_init__onl_offr" 3 3 69 2 66 67 66 65
+"aux4_init__offl_onr" 3 3 67 2 68 67 66 65
+"aux4_l__go" 2 2 67 65 69 61
+"aux4_l__wait" 1 1 68 66
+"aux4_r__go" 2 2 66 65 64 68
+"aux4_r__wait" 1 1 69 67
+"aux5_init__onl_onr" 3 3 71 64 72 71 70 72
+"aux5_init__onl_offr" 3 3 71 64 74 71 70 72
+"aux5_init__offl_onr" 3 3 64 73 72 71 70 72
+"aux5_l__go" 2 2 70 72 62 74
+"aux5_l__wait" 1 1 73 71
+"aux5_r__go" 2 2 71 70 73 63
+"aux5_r__wait" 1 1 74 72
+"aux7_init__onl_onr" 3 3 80 3 81 80 79 81
+"aux7_init__onl_offr" 3 3 80 3 83 80 79 81
+"aux7_init__offl_onr" 3 3 82 3 81 80 79 81
+"aux7_l__go" 2 2 79 81 75 83
+"aux7_l__wait" 1 1 82 80
+"aux7_r__go" 2 2 80 79 78 82
+"aux7_r__wait" 1 1 83 81
+"aux8_init__onl_onr" 3 3 85 78 86 85 84 86
+"aux8_init__onl_offr" 3 3 85 78 88 85 84 86
+"aux8_init__offl_onr" 3 3 78 86 87 85 84 86
+"aux8_l__go" 2 2 84 86 76 88
+"aux8_l__wait" 1 1 87 85
+"aux8_r__go" 2 2 85 84 87 77
+"aux8_r__wait" 1 1 88 86
+"aux10_init__onl_onr" 3 3 95 4 94 93 95 94
+"aux10_init__onl_offr" 3 3 4 94 97 93 95 94
+"aux10_init__offl_onr" 3 3 95 4 96 93 95 94
+"aux10_l__go" 2 2 93 95 97 89
+"aux10_l__wait" 1 1 96 94
+"aux10_r__go" 2 2 93 94 92 96
+"aux10_r__wait" 1 1 97 95
+"aux11_init__onl_onr" 3 3 99 92 100 99 98 100
+"aux11_init__onl_offr" 3 3 102 99 92 99 98 100
+"aux11_init__offl_onr" 3 3 100 92 101 99 98 100
+"aux11_l__go" 2 2 98 100 102 90
+"aux11_l__wait" 1 1 101 99
+"aux11_r__go" 2 2 99 98 101 91
+"aux11_r__wait" 1 1 102 100
+"aux13_init__onl_onr" 3 3 8 108 109 108 107 109
+"aux13_init__onl_offr" 3 3 8 111 108 108 107 109
+"aux13_init__offl_onr" 3 3 8 110 109 108 107 109
+"aux13_l__go" 2 2 107 109 111 103
+"aux13_l__wait" 1 1 110 108
+"aux13_r__go" 2 2 108 107 106 110
+"aux13_r__wait" 1 1 111 109
+"aux14_init__onl_onr" 3 3 113 106 114 113 112 114
+"aux14_init__onl_offr" 3 3 113 106 116 113 112 114
+"aux14_init__offl_onr" 3 3 106 115 114 113 112 114
+"aux14_l__go" 2 2 112 114 104 116
+"aux14_l__wait" 1 1 115 113
+"aux14_r__go" 2 2 113 112 115 105
+"aux14_r__wait" 1 1 116 114
+"aux16_init__onl_onr" 3 3 9 125 124 123 125 124
+"aux16_init__onl_offr" 3 3 9 127 124 123 125 124
+"aux16_init__offl_onr" 3 3 9 125 126 123 125 124
+"aux16_l__go" 2 2 123 125 127 117
+"aux16_l__wait" 1 1 126 124
+"aux16_r__go" 2 2 123 124 122 126
+"aux16_r__wait" 1 1 127 125
+"aux17_init__onl_onr" 3 3 131 122 130 131 129 130
+"aux17_init__onl_offr" 3 3 133 122 130 131 129 130
+"aux17_init__offl_onr" 3 3 131 122 132 131 129 130
+"aux17_l__go" 2 2 131 129 133 118
+"aux17_l__wait" 1 1 132 130
+"aux17_r__go" 2 2 129 130 128 132
+"aux17_r__wait" 1 1 133 131
+"aux18_init__onl_onr" 3 3 128 137 136 135 137 136
+"aux18_init__onl_offr" 3 3 128 139 136 135 137 136
+"aux18_init__offl_onr" 3 3 128 138 137 135 137 136
+"aux18_l__go" 2 2 135 137 119 139
+"aux18_l__wait" 1 1 138 136
+"aux18_r__go" 2 2 135 136 138 134
+"aux18_r__wait" 1 1 139 137
+"aux19_init__onl_onr" 3 3 142 141 134 140 142 141
+"aux19_init__onl_offr" 3 3 144 141 134 140 142 141
+"aux19_init__offl_onr" 3 3 142 143 134 140 142 141
+"aux19_l__go" 2 2 140 142 144 120
+"aux19_l__wait" 1 1 143 141
+"aux19_r__go" 2 2 140 141 121 143
+"aux19_r__wait" 1 1 144 142
+"aux21_init__onl_onr" 3 3 152 10 153 152 151 153
+"aux21_init__onl_offr" 3 3 155 152 10 152 151 153
+"aux21_init__offl_onr" 3 3 154 10 153 152 151 153
+"aux21_l__go" 2 2 151 153 155 145
+"aux21_l__wait" 1 1 154 152
+"aux21_r__go" 2 2 152 151 150 154
+"aux21_r__wait" 1 1 155 153
+"aux22_init__onl_onr" 3 3 158 150 159 158 157 159
+"aux22_init__onl_offr" 3 3 158 150 161 158 157 159
+"aux22_init__offl_onr" 3 3 150 160 159 158 157 159
+"aux22_l__go" 2 2 157 159 146 161
+"aux22_l__wait" 1 1 160 158
+"aux22_r__go" 2 2 158 157 160 156
+"aux22_r__wait" 1 1 161 159
+"aux23_init__onl_onr" 3 3 165 164 156 165 164 163
+"aux23_init__onl_offr" 3 3 164 167 156 165 164 163
+"aux23_init__offl_onr" 3 3 165 156 166 165 164 163
+"aux23_l__go" 2 2 165 163 167 147
+"aux23_l__wait" 1 1 166 164
+"aux23_r__go" 2 2 164 163 162 166
+"aux23_r__wait" 1 1 167 165
+"aux24_init__onl_onr" 3 3 169 162 170 169 168 170
+"aux24_init__onl_offr" 3 3 169 162 172 169 168 170
+"aux24_init__offl_onr" 3 3 162 171 170 169 168 170
+"aux24_l__go" 2 2 168 170 148 172
+"aux24_l__wait" 1 1 171 169
+"aux24_r__go" 2 2 169 168 171 149
+"aux24_r__wait" 1 1 172 170
+"aux26_init__onl_onr" 3 3 11 181 180 179 181 180
+"aux26_init__onl_offr" 3 3 11 183 180 179 181 180
+"aux26_init__offl_onr" 3 3 182 11 181 179 181 180
+"aux26_l__go" 2 2 179 181 173 183
+"aux26_l__wait" 1 1 182 180
+"aux26_r__go" 2 2 179 180 182 178
+"aux26_r__wait" 1 1 183 181
+"aux27_init__onl_onr" 3 3 187 186 178 185 187 186
+"aux27_init__onl_offr" 3 3 189 186 178 185 187 186
+"aux27_init__offl_onr" 3 3 187 178 188 185 187 186
+"aux27_l__go" 2 2 185 187 189 174
+"aux27_l__wait" 1 1 188 186
+"aux27_r__go" 2 2 185 186 184 188
+"aux27_r__wait" 1 1 189 187
+"aux28_init__onl_onr" 3 3 192 184 193 192 191 193
+"aux28_init__onl_offr" 3 3 192 184 195 192 191 193
+"aux28_init__offl_onr" 3 3 194 184 193 192 191 193
+"aux28_l__go" 2 2 191 193 175 195
+"aux28_l__wait" 1 1 194 192
+"aux28_r__go" 2 2 192 191 194 190
+"aux28_r__wait" 1 1 195 193
+"aux29_init__onl_onr" 3 3 198 197 190 196 198 197
+"aux29_init__onl_offr" 3 3 200 197 190 196 198 197
+"aux29_init__offl_onr" 3 3 199 198 190 196 198 197
+"aux29_l__go" 2 2 196 198 200 176
+"aux29_l__wait" 1 1 199 197
+"aux29_r__go" 2 2 196 197 177 199
+"aux29_r__wait" 1 1 200 198
+"aux31_init__onl_onr" 3 3 209 210 19 209 208 210
+"aux31_init__onl_offr" 3 3 209 212 19 209 208 210
+"aux31_init__offl_onr" 3 3 211 210 19 209 208 210
+"aux31_l__go" 2 2 208 210 201 212
+"aux31_l__wait" 1 1 211 209
+"aux31_r__go" 2 2 209 208 211 207
+"aux31_r__wait" 1 1 212 210
+"aux32_init__onl_onr" 3 3 215 216 207 214 216 215
+"aux32_init__onl_offr" 3 3 215 218 207 214 216 215
+"aux32_init__offl_onr" 3 3 217 216 207 214 216 215
+"aux32_l__go" 2 2 214 216 202 218
+"aux32_l__wait" 1 1 217 215
+"aux32_r__go" 2 2 214 215 217 213
+"aux32_r__wait" 1 1 218 216
+"aux33_init__onl_onr" 3 3 221 222 213 221 220 222
+"aux33_init__onl_offr" 3 3 221 213 224 221 220 222
+"aux33_init__offl_onr" 3 3 223 222 213 221 220 222
+"aux33_l__go" 2 2 220 222 203 224
+"aux33_l__wait" 1 1 223 221
+"aux33_r__go" 2 2 221 220 219 223
+"aux33_r__wait" 1 1 224 222
+"aux34_init__onl_onr" 3 3 219 228 227 228 227 226
+"aux34_init__onl_offr" 3 3 219 230 227 228 227 226
+"aux34_init__offl_onr" 3 3 219 228 229 228 227 226
+"aux34_l__go" 2 2 228 226 230 204
+"aux34_l__wait" 1 1 229 227
+"aux34_r__go" 2 2 227 226 225 229
+"aux34_r__wait" 1 1 230 228
+"aux35_init__onl_onr" 3 3 232 225 233 232 231 233
+"aux35_init__onl_offr" 3 3 232 225 235 232 231 233
+"aux35_init__offl_onr" 3 3 225 233 234 232 231 233
+"aux35_l__go" 2 2 231 233 205 235
+"aux35_l__wait" 1 1 234 232
+"aux35_r__go" 2 2 232 231 234 206
+"aux35_r__wait" 1 1 235 233
+"aux37_init__onl_onr" 3 3 244 20 245 244 243 245
+"aux37_init__onl_offr" 3 3 244 20 247 244 243 245
+"aux37_init__offl_onr" 3 3 246 20 245 244 243 245
+"aux37_l__go" 2 2 243 245 236 247
+"aux37_l__wait" 1 1 246 244
+"aux37_r__go" 2 2 244 243 246 242
+"aux37_r__wait" 1 1 247 245
+"aux38_init__onl_onr" 3 3 250 251 242 250 249 251
+"aux38_init__onl_offr" 3 3 253 250 242 250 249 251
+"aux38_init__offl_onr" 3 3 251 252 242 250 249 251
+"aux38_l__go" 2 2 249 251 253 237
+"aux38_l__wait" 1 1 252 250
+"aux38_r__go" 2 2 250 249 248 252
+"aux38_r__wait" 1 1 253 251
+"aux39_init__onl_onr" 3 3 248 256 257 255 257 256
+"aux39_init__onl_offr" 3 3 248 259 256 255 257 256
+"aux39_init__offl_onr" 3 3 248 258 257 255 257 256
+"aux39_l__go" 2 2 255 257 259 238
+"aux39_l__wait" 1 1 258 256
+"aux39_r__go" 2 2 255 256 254 258
+"aux39_r__wait" 1 1 259 257
+"aux40_init__onl_onr" 3 3 263 254 262 261 263 262
+"aux40_init__onl_offr" 3 3 254 265 262 261 263 262
+"aux40_init__offl_onr" 3 3 264 263 254 261 263 262
+"aux40_l__go" 2 2 261 263 239 265
+"aux40_l__wait" 1 1 264 262
+"aux40_r__go" 2 2 261 262 264 260
+"aux40_r__wait" 1 1 265 263
+"aux41_init__onl_onr" 3 3 267 268 260 267 266 268
+"aux41_init__onl_offr" 3 3 267 260 270 267 266 268
+"aux41_init__offl_onr" 3 3 269 268 260 267 266 268
+"aux41_l__go" 2 2 266 268 240 270
+"aux41_l__wait" 1 1 269 267
+"aux41_r__go" 2 2 267 266 269 241
+"aux41_r__wait" 1 1 270 268
+"aux43_init__onl_onr" 3 3 280 279 21 280 279 278
+"aux43_init__onl_offr" 3 3 282 279 21 280 279 278
+"aux43_init__offl_onr" 3 3 280 281 21 280 279 278
+"aux43_l__go" 2 2 280 278 282 271
+"aux43_l__wait" 1 1 281 279
+"aux43_r__go" 2 2 279 278 277 281
+"aux43_r__wait" 1 1 282 280
+"aux44_init__onl_onr" 3 3 277 286 285 284 286 285
+"aux44_init__onl_offr" 3 3 277 288 285 284 286 285
+"aux44_init__offl_onr" 3 3 277 286 287 284 286 285
+"aux44_l__go" 2 2 284 286 288 272
+"aux44_l__wait" 1 1 287 285
+"aux44_r__go" 2 2 284 285 283 287
+"aux44_r__wait" 1 1 288 286
+"aux45_init__onl_onr" 3 3 291 283 292 291 290 292
+"aux45_init__onl_offr" 3 3 291 283 294 291 290 292
+"aux45_init__offl_onr" 3 3 293 283 292 291 290 292
+"aux45_l__go" 2 2 290 292 273 294
+"aux45_l__wait" 1 1 293 291
+"aux45_r__go" 2 2 291 290 293 289
+"aux45_r__wait" 1 1 294 292
+"aux46_init__onl_onr" 3 3 297 298 289 296 298 297
+"aux46_init__onl_offr" 3 3 297 300 289 296 298 297
+"aux46_init__offl_onr" 3 3 299 298 289 296 298 297
+"aux46_l__go" 2 2 296 298 300 274
+"aux46_l__wait" 1 1 299 297
+"aux46_r__go" 2 2 296 297 299 295
+"aux46_r__wait" 1 1 300 298
+"aux47_init__onl_onr" 3 3 303 302 295 301 303 302
+"aux47_init__onl_offr" 3 3 305 302 295 301 303 302
+"aux47_init__offl_onr" 3 3 303 304 295 301 303 302
+"aux47_l__go" 2 2 301 303 275 305
+"aux47_l__wait" 1 1 304 302
+"aux47_r__go" 2 2 301 302 276 304
+"aux47_r__wait" 1 1 305 303
+"aux49_init__onl_onr" 3 3 23 311 312 311 310 312
+"aux49_init__onl_offr" 3 3 23 311 314 311 310 312
+"aux49_init__offl_onr" 3 3 23 313 312 311 310 312
+"aux49_l__go" 2 2 310 312 306 314
+"aux49_l__wait" 1 1 313 311
+"aux49_r__go" 2 2 311 310 309 313
+"aux49_r__wait" 1 1 314 312
+"aux50_init__onl_onr" 3 3 309 317 316 315 317 316
+"aux50_init__onl_offr" 3 3 309 319 316 315 317 316
+"aux50_init__offl_onr" 3 3 309 318 317 315 317 316
+"aux50_l__go" 2 2 315 317 319 307
+"aux50_l__wait" 1 1 318 316
+"aux50_r__go" 2 2 315 316 318 308
+"aux50_r__wait" 1 1 319 317
+"aux52_init__onl_onr" 3 3 329 26 328 327 329 328
+"aux52_init__onl_offr" 3 3 331 26 328 327 329 328
+"aux52_init__offl_onr" 3 3 329 26 330 327 329 328
+"aux52_l__go" 2 2 327 329 320 331
+"aux52_l__wait" 1 1 330 328
+"aux52_r__go" 2 2 327 328 326 330
+"aux52_r__wait" 1 1 331 329
+"aux53_init__onl_onr" 3 3 334 335 326 334 333 335
+"aux53_init__onl_offr" 3 3 334 326 337 334 333 335
+"aux53_init__offl_onr" 3 3 336 326 335 334 333 335
+"aux53_l__go" 2 2 333 335 337 321
+"aux53_l__wait" 1 1 336 334
+"aux53_r__go" 2 2 334 333 336 332
+"aux53_r__wait" 1 1 337 335
+"aux54_init__onl_onr" 3 3 340 341 332 340 339 341
+"aux54_init__onl_offr" 3 3 343 340 332 340 339 341
+"aux54_init__offl_onr" 3 3 342 341 332 340 339 341
+"aux54_l__go" 2 2 339 341 343 322
+"aux54_l__wait" 1 1 342 340
+"aux54_r__go" 2 2 340 339 338 342
+"aux54_r__wait" 1 1 343 341
+"aux55_init__onl_onr" 3 3 338 346 347 345 347 346
+"aux55_init__onl_offr" 3 3 338 349 346 345 347 346
+"aux55_init__offl_onr" 3 3 338 348 347 345 347 346
+"aux55_l__go" 2 2 345 347 349 323
+"aux55_l__wait" 1 1 348 346
+"aux55_r__go" 2 2 345 346 344 348
+"aux55_r__wait" 1 1 349 347
+"aux56_init__onl_onr" 3 3 352 344 351 350 352 351
+"aux56_init__onl_offr" 3 3 354 344 351 350 352 351
+"aux56_init__offl_onr" 3 3 353 352 344 350 352 351
+"aux56_l__go" 2 2 350 352 324 354
+"aux56_l__wait" 1 1 353 351
+"aux56_r__go" 2 2 350 351 353 325
+"aux56_r__wait" 1 1 354 352
+"aux58_init__onl_onr" 3 3 29 367 366 365 367 366
+"aux58_init__onl_offr" 3 3 29 369 366 365 367 366
+"aux58_init__offl_onr" 3 3 29 367 368 365 367 366
+"aux58_l__go" 2 2 365 367 369 355
+"aux58_l__wait" 1 1 368 366
+"aux58_r__go" 2 2 365 366 364 368
+"aux58_r__wait" 1 1 369 367
+"aux59_init__onl_onr" 3 3 372 364 373 372 371 373
+"aux59_init__onl_offr" 3 3 372 364 375 372 371 373
+"aux59_init__offl_onr" 3 3 374 364 373 372 371 373
+"aux59_l__go" 2 2 371 373 356 375
+"aux59_l__wait" 1 1 374 372
+"aux59_r__go" 2 2 372 371 370 374
+"aux59_r__wait" 1 1 375 373
+"aux60_init__onl_onr" 3 3 370 379 378 379 378 377
+"aux60_init__onl_offr" 3 3 370 378 381 379 378 377
+"aux60_init__offl_onr" 3 3 370 379 380 379 378 377
+"aux60_l__go" 2 2 379 377 381 357
+"aux60_l__wait" 1 1 380 378
+"aux60_r__go" 2 2 378 377 376 380
+"aux60_r__wait" 1 1 381 379
+"aux61_init__onl_onr" 3 3 376 384 385 384 383 385
+"aux61_init__onl_offr" 3 3 376 384 387 384 383 385
+"aux61_init__offl_onr" 3 3 376 386 385 384 383 385
+"aux61_l__go" 2 2 383 385 358 387
+"aux61_l__wait" 1 1 386 384
+"aux61_r__go" 2 2 384 383 382 386
+"aux61_r__wait" 1 1 387 385
+"aux62_init__onl_onr" 3 3 382 390 391 389 391 390
+"aux62_init__onl_offr" 3 3 382 393 390 389 391 390
+"aux62_init__offl_onr" 3 3 382 392 391 389 391 390
+"aux62_l__go" 2 2 389 391 393 359
+"aux62_l__wait" 1 1 392 390
+"aux62_r__go" 2 2 389 390 388 392
+"aux62_r__wait" 1 1 393 391
+"aux63_init__onl_onr" 3 3 388 397 396 395 397 396
+"aux63_init__onl_offr" 3 3 388 399 396 395 397 396
+"aux63_init__offl_onr" 3 3 398 388 397 395 397 396
+"aux63_l__go" 2 2 395 397 360 399
+"aux63_l__wait" 1 1 398 396
+"aux63_r__go" 2 2 395 396 398 394
+"aux63_r__wait" 1 1 399 397
+"aux64_init__onl_onr" 3 3 402 403 394 402 401 403
+"aux64_init__onl_offr" 3 3 402 394 405 402 401 403
+"aux64_init__offl_onr" 3 3 404 403 394 402 401 403
+"aux64_l__go" 2 2 401 403 361 405
+"aux64_l__wait" 1 1 404 402
+"aux64_r__go" 2 2 402 401 400 404
+"aux64_r__wait" 1 1 405 403
+"aux65_init__onl_onr" 3 3 400 408 407 408 407 406
+"aux65_init__onl_offr" 3 3 400 410 407 408 407 406
+"aux65_init__offl_onr" 3 3 400 408 409 408 407 406
+"aux65_l__go" 2 2 408 406 410 362
+"aux65_l__wait" 1 1 409 407
+"aux65_r__go" 2 2 407 406 363 409
+"aux65_r__wait" 1 1 410 408
+"aux67_init__onl_onr" 3 3 416 417 31 416 415 417
+"aux67_init__onl_offr" 3 3 416 31 419 416 415 417
+"aux67_init__offl_onr" 3 3 417 418 31 416 415 417
+"aux67_l__go" 2 2 415 417 411 419
+"aux67_l__wait" 1 1 418 416
+"aux67_r__go" 2 2 416 415 418 414
+"aux67_r__wait" 1 1 419 417
+"aux68_init__onl_onr" 3 3 422 421 414 420 422 421
+"aux68_init__onl_offr" 3 3 424 421 414 420 422 421
+"aux68_init__offl_onr" 3 3 422 423 414 420 422 421
+"aux68_l__go" 2 2 420 422 424 412
+"aux68_l__wait" 1 1 423 421
+"aux68_r__go" 2 2 420 421 413 423
+"aux68_r__wait" 1 1 424 422
+"aux70_init__onl_onr" 3 3 32 432 431 430 432 431
+"aux70_init__onl_offr" 3 3 32 434 431 430 432 431
+"aux70_init__offl_onr" 3 3 32 433 432 430 432 431
+"aux70_l__go" 2 2 430 432 425 434
+"aux70_l__wait" 1 1 433 431
+"aux70_r__go" 2 2 430 431 433 429
+"aux70_r__wait" 1 1 434 432
+"aux71_init__onl_onr" 3 3 438 437 429 436 438 437
+"aux71_init__onl_offr" 3 3 440 437 429 436 438 437
+"aux71_init__offl_onr" 3 3 438 439 429 436 438 437
+"aux71_l__go" 2 2 436 438 426 440
+"aux71_l__wait" 1 1 439 437
+"aux71_r__go" 2 2 436 437 435 439
+"aux71_r__wait" 1 1 440 438
+"aux72_init__onl_onr" 3 3 443 442 435 443 442 441
+"aux72_init__onl_offr" 3 3 445 442 435 443 442 441
+"aux72_init__offl_onr" 3 3 443 444 435 443 442 441
+"aux72_l__go" 2 2 443 441 445 427
+"aux72_l__wait" 1 1 444 442
+"aux72_r__go" 2 2 442 441 428 444
+"aux72_r__wait" 1 1 445 443
+"aux74_init__onl_onr" 3 3 453 452 33 451 453 452
+"aux74_init__onl_offr" 3 3 455 452 33 451 453 452
+"aux74_init__offl_onr" 3 3 453 33 454 451 453 452
+"aux74_l__go" 2 2 451 453 446 455
+"aux74_l__wait" 1 1 454 452
+"aux74_r__go" 2 2 451 452 450 454
+"aux74_r__wait" 1 1 455 453
+"aux75_init__onl_onr" 3 3 458 450 459 457 459 458
+"aux75_init__onl_offr" 3 3 450 461 458 457 459 458
+"aux75_init__offl_onr" 3 3 460 450 459 457 459 458
+"aux75_l__go" 2 2 457 459 461 447
+"aux75_l__wait" 1 1 460 458
+"aux75_r__go" 2 2 457 458 460 456
+"aux75_r__wait" 1 1 461 459
+"aux76_init__onl_onr" 3 3 463 464 456 463 462 464
+"aux76_init__onl_offr" 3 3 463 466 456 463 462 464
+"aux76_init__offl_onr" 3 3 465 464 456 463 462 464
+"aux76_l__go" 2 2 462 464 448 466
+"aux76_l__wait" 1 1 465 463
+"aux76_r__go" 2 2 463 462 465 449
+"aux76_r__wait" 1 1 466 464
+"aux78_init__onl_onr" 3 3 34 473 474 473 472 474
+"aux78_init__onl_offr" 3 3 34 473 476 473 472 474
+"aux78_init__offl_onr" 3 3 34 475 474 473 472 474
+"aux78_l__go" 2 2 472 474 467 476
+"aux78_l__wait" 1 1 475 473
+"aux78_r__go" 2 2 473 472 471 475
+"aux78_r__wait" 1 1 476 474
+"aux79_init__onl_onr" 3 3 471 479 480 478 480 479
+"aux79_init__onl_offr" 3 3 471 482 479 478 480 479
+"aux79_init__offl_onr" 3 3 471 481 480 478 480 479
+"aux79_l__go" 2 2 478 480 482 468
+"aux79_l__wait" 1 1 481 479
+"aux79_r__go" 2 2 478 479 477 481
+"aux79_r__wait" 1 1 482 480
+"aux80_init__onl_onr" 3 3 484 477 485 484 483 485
+"aux80_init__onl_offr" 3 3 487 484 477 484 483 485
+"aux80_init__offl_onr" 3 3 477 485 486 484 483 485
+"aux80_l__go" 2 2 483 485 487 469
+"aux80_l__wait" 1 1 486 484
+"aux80_r__go" 2 2 484 483 486 470
+"aux80_r__wait" 1 1 487 485
+"aux82_init__onl_onr" 3 3 36 493 494 493 492 494
+"aux82_init__onl_offr" 3 3 496 36 493 493 492 494
+"aux82_init__offl_onr" 3 3 36 495 494 493 492 494
+"aux82_l__go" 2 2 492 494 496 488
+"aux82_l__wait" 1 1 495 493
+"aux82_r__go" 2 2 493 492 491 495
+"aux82_r__wait" 1 1 496 494
+"aux83_init__onl_onr" 3 3 498 491 499 498 497 499
+"aux83_init__onl_offr" 3 3 498 491 501 498 497 499
+"aux83_init__offl_onr" 3 3 491 500 499 498 497 499
+"aux83_l__go" 2 2 497 499 489 501
+"aux83_l__wait" 1 1 500 498
+"aux83_r__go" 2 2 498 497 500 490
+"aux83_r__wait" 1 1 501 499
+"aux85_init__onl_onr" 3 3 508 507 37 506 508 507
+"aux85_init__onl_offr" 3 3 510 507 37 506 508 507
+"aux85_init__offl_onr" 3 3 508 509 37 506 508 507
+"aux85_l__go" 2 2 506 508 510 502
+"aux85_l__wait" 1 1 509 507
+"aux85_r__go" 2 2 506 507 505 509
+"aux85_r__wait" 1 1 510 508
+"aux86_init__onl_onr" 3 3 513 512 505 513 512 511
+"aux86_init__onl_offr" 3 3 512 505 515 513 512 511
+"aux86_init__offl_onr" 3 3 513 514 505 513 512 511
+"aux86_l__go" 2 2 513 511 503 515
+"aux86_l__wait" 1 1 514 512
+"aux86_r__go" 2 2 512 511 504 514
+"aux86_r__wait" 1 1 515 513
+"aux88_init__onl_onr" 3 3 528 38 527 526 528 527
+"aux88_init__onl_offr" 3 3 38 530 527 526 528 527
+"aux88_init__offl_onr" 3 3 529 528 38 526 528 527
+"aux88_l__go" 2 2 526 528 530 516
+"aux88_l__wait" 1 1 529 527
+"aux88_r__go" 2 2 526 527 529 525
+"aux88_r__wait" 1 1 530 528
+"aux89_init__onl_onr" 3 3 533 534 525 533 532 534
+"aux89_init__onl_offr" 3 3 533 525 536 533 532 534
+"aux89_init__offl_onr" 3 3 535 534 525 533 532 534
+"aux89_l__go" 2 2 532 534 517 536
+"aux89_l__wait" 1 1 535 533
+"aux89_r__go" 2 2 533 532 531 535
+"aux89_r__wait" 1 1 536 534
+"aux90_init__onl_onr" 3 3 531 540 539 540 539 538
+"aux90_init__onl_offr" 3 3 531 542 539 540 539 538
+"aux90_init__offl_onr" 3 3 531 540 541 540 539 538
+"aux90_l__go" 2 2 540 538 542 518
+"aux90_l__wait" 1 1 541 539
+"aux90_r__go" 2 2 539 538 537 541
+"aux90_r__wait" 1 1 542 540
+"aux91_init__onl_onr" 3 3 545 537 546 545 544 546
+"aux91_init__onl_offr" 3 3 548 545 537 545 544 546
+"aux91_init__offl_onr" 3 3 547 537 546 545 544 546
+"aux91_l__go" 2 2 544 546 548 519
+"aux91_l__wait" 1 1 547 545
+"aux91_r__go" 2 2 545 544 543 547
+"aux91_r__wait" 1 1 548 546
+"aux92_init__onl_onr" 3 3 543 551 552 550 552 551
+"aux92_init__onl_offr" 3 3 543 554 551 550 552 551
+"aux92_init__offl_onr" 3 3 543 553 552 550 552 551
+"aux92_l__go" 2 2 550 552 554 520
+"aux92_l__wait" 1 1 553 551
+"aux92_r__go" 2 2 550 551 549 553
+"aux92_r__wait" 1 1 554 552
+"aux93_init__onl_onr" 3 3 558 549 557 556 558 557
+"aux93_init__onl_offr" 3 3 549 560 557 556 558 557
+"aux93_init__offl_onr" 3 3 559 558 549 556 558 557
+"aux93_l__go" 2 2 556 558 521 560
+"aux93_l__wait" 1 1 559 557
+"aux93_r__go" 2 2 556 557 559 555
+"aux93_r__wait" 1 1 560 558
+"aux94_init__onl_onr" 3 3 563 564 555 563 562 564
+"aux94_init__onl_offr" 3 3 563 555 566 563 562 564
+"aux94_init__offl_onr" 3 3 565 564 555 563 562 564
+"aux94_l__go" 2 2 562 564 522 566
+"aux94_l__wait" 1 1 565 563
+"aux94_r__go" 2 2 563 562 561 565
+"aux94_r__wait" 1 1 566 564
+"aux95_init__onl_onr" 3 3 568 561 569 568 567 569
+"aux95_init__onl_offr" 3 3 568 561 571 568 567 569
+"aux95_init__offl_onr" 3 3 561 569 570 568 567 569
+"aux95_l__go" 2 2 567 569 571 523
+"aux95_l__wait" 1 1 570 568
+"aux95_r__go" 2 2 568 567 524 570
+"aux95_r__wait" 1 1 571 569
+"aux97_init__onl_onr" 3 3 577 41 578 577 576 578
+"aux97_init__onl_offr" 3 3 577 41 580 577 576 578
+"aux97_init__offl_onr" 3 3 579 41 578 577 576 578
+"aux97_l__go" 2 2 576 578 572 580
+"aux97_l__wait" 1 1 579 577
+"aux97_r__go" 2 2 577 576 579 575
+"aux97_r__wait" 1 1 580 578
+"aux98_init__onl_onr" 3 3 583 582 575 581 583 582
+"aux98_init__onl_offr" 3 3 585 582 575 581 583 582
+"aux98_init__offl_onr" 3 3 584 583 575 581 583 582
+"aux98_l__go" 2 2 581 583 585 573
+"aux98_l__wait" 1 1 584 582
+"aux98_r__go" 2 2 581 582 574 584
+"aux98_r__wait" 1 1 585 583

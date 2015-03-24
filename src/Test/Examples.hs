@@ -27,6 +27,7 @@ t1' s = do
 t1 :: Transition s
 t1 = (BS.pack "p", 0, t1')
 
+
 t2' :: TransitionFn s 
 t2' s = do
   v <- safeLookup "t2" s (BS.pack "pcq")

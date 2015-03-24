@@ -48,13 +48,6 @@ type TransitionsID = V.Vector TransitionID
 type Transition s = (ProcessID, TransitionID, TransitionFn s)
 type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
 
--- This type class is important to define for each model of 
--- computation the enabled function that computes the transitions
--- that are enabled at a given state sigma.
--- The default enabled function is given below (enabledTransitions).
--- However, this function is very inefficient because it relies on 
--- actually computing the result for every transition.
-
 -- | enabledTransitions 
 enabledTransitions :: System s -> Sigma s -> ST s (V.Vector (TransitionID,ProcessID))
 enabledTransitions sys@System{..} s = do
@@ -114,35 +107,7 @@ getTransition sys@System{..} trIdx
         Nothing -> error $ "getTransition fail: " ++ show trIdx
         Just (_,_,tr) -> tr
 
--- | Runs the system in a dfs fashion
-{-
-runSystem :: System s -> ST s [Sigma s]
-runSystem sys@System{..} = runSys 1 sys [initialState] []
 
-runSys :: Int -> System s -> [Sigma s] -> [Sigma s] -> ST s [Sigma s]
-runSys c sys [] sts = return sts
-runSys c sys (s:rest) sts = trace ("runSys: " ++ show c) $ do
-  contained <- isElem s sts 
-  if contained 
-  then runSys c sys rest sts 
-  else do 
-    ys <- runTrs sys s
-    let stack = ys ++ rest 
- -- stack' <- foldM (\a v -> add v a) rest ys -- I can fuse these two lines
---  stack  <- filterM (\s -> isElem s nsts >>= return . not) stack'
-    runSys (c+1) sys stack (s:sts)
-
-runTrs :: System s -> Sigma s -> ST s [Sigma s]
-runTrs sys s = do
-  trs <- enabledTransitions sys s
-  V.foldM runTrs' [] trs
-  where 
-    runTrs' acc (tr,_) = do
-      s' <- copy s                     -- copy the state
-      v <- (getTransition sys tr) s'     -- gets the transition and applies it
-      ns <- fromJust v $ s'            -- now I actually apply it
-      return $ ns:acc
--}
 -- This needs to be more efficient
 copy :: Sigma s -> ST s (Sigma s)
 copy s = do 
@@ -205,31 +170,4 @@ sortSigmas sts =
 
 filterSigma :: Sigma s -> Sigma s
 filterSigma st = M.filter (==1) st
--}
-{-
--- Abstract Interpretation
-data Sign = GtZero | LtZero | Zero | Top | Bottom
-  deriving (Show, Eq, Ord)
-
-int2sign :: Int -> Sign
-int2sign 0 = Zero
-int2sign x 
-  | x > 0 = GtZero
-  | x < 0 = LtZero
- 
--- alpha :: Lattice Concrete -> Lattice Abstract
--- example for sign analysis
-alpha :: [Int] -> Sign
-alpha [] = Bottom
-alpha xs =   
-  let (s:sxs) = map int2sign xs
-  in alpha' s sxs 
-  where
-   alpha' s [] = s
-   alpha' s (s':xs) = 
-     if s == s'
-     then alpha' s xs
-     else Top 
-  
-
 -}

@@ -1,0 +1,22 @@
+Name:               poet
+Version:            0.1
+Cabal-Version:      >= 1.2
+Author:             Marcelo Sousa
+Synopsis:           POET: Partial Order Exploration Tools
+Description:        POR and Unfolding-based Exploration of Concurrent Systems
+Build-Type:         Simple
+
+Executable poet
+    Main-Is:          Main.hs
+    Build-Depends:    base          
+                    , containers    
+                    , filepath   
+                    , directory
+                    , mtl           
+                    , fgl           
+                    , cmdargs
+                    , transformers 
+                    , text
+                    , base-unicode-symbols
+    Hs-Source-Dirs:   src/
+    ghc-options:      -O3 -rtsopts
