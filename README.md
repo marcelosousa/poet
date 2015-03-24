@@ -1,4 +1,5 @@
 Marcelo Sousa (msousa at cs dot ox dot ac dot uk)
+-------------------------------------------------
 University of Oxford, UK
 
 poet - v0.1@03'2015
@@ -14,9 +15,9 @@ relevant for exploration of concurrent systems,
 the main motivation of this project.
 
 The two main techniques implemented are:
- - Unfoldings
+ - Unfoldings:
    Inspired by Petri Net unfoldings, the goal
    is to efficiently explore a partial order 
    semantics known as prime event structures.
- - Partial Order Reduction
+ - Partial Order Reduction:
    Based on Abdulla et al. ODPOR@POPL'14.
