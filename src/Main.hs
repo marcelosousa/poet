@@ -60,3 +60,5 @@ run file = do
 show' :: [String] -> String
 show' [] = ""
 show' ((c:x):xs) = (init x) ++ " " ++ show' xs
+
+

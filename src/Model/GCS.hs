@@ -1,4 +1,4 @@
-{-#LANGUAGE RecordWildCards, TypeSynonymInstances, FlexibleInstances #-}
+{-#LANGUAGE RecordWildCards, TypeSynonymInstances, FlexibleInstances, DoAndIfThenElse #-}
 module Model.GCS where
 
 import Control.Monad.ST.Safe
@@ -9,7 +9,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Map as M
 import Data.Map hiding (foldr, filter, map, (\\))
 import Data.List
-import qualified Data.Judy as J
+-- import qualified Data.Judy as J
 -- Perhaps I want to use Unboxed Vectors?
 import qualified Data.Vector as V
 import qualified Data.ByteString as BS

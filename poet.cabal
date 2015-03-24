@@ -13,10 +13,13 @@ Executable poet
                     , filepath   
                     , directory
                     , mtl           
-                    , fgl           
                     , cmdargs
                     , transformers 
                     , text
-                    , base-unicode-symbols
+                    , bytestring
+                    , vector
+                    , hashtables
+                    , HUnit
     Hs-Source-Dirs:   src/
     ghc-options:      -O3 -rtsopts
+    Extensions:       DoAndIfThenElse
