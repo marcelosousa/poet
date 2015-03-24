@@ -1,5 +1,5 @@
 {-#LANGUAGE RecordWildCards, TypeSynonymInstances, FlexibleInstances #-}
-module Model where
+module Model.GCS where
 
 import Control.Monad.ST.Safe
 import Control.Monad

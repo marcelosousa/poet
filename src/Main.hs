@@ -1,18 +1,18 @@
 module Main where
 
 --import Unfolderful
-import Unfolderless
+import Exploration.UNF.Unfolderless
 --import Printer
-import Examples
 --import Benchmark
-import Model
-import PetriNet
-import Tests
+import Model.GCS
+import Frontend.PetriNet
 
 import qualified Data.Map as M
 
 import Control.Monad.ST.Safe
 import Test.HUnit
+import Test.Tests
+import Test.Examples
 
 {-
 writeUnf :: (System, UIndependence) -> IO ()

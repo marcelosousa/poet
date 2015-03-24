@@ -1,5 +1,5 @@
 {-#LANGUAGE RecordWildCards #-}
-module APIStateless where
+module Exploration.UNF.APIStateless where
 
 import Prelude hiding (succ)
 
@@ -15,7 +15,7 @@ import qualified Data.ByteString.Char8 as BS
 import Data.List
 -- import PetriNet
 
-import qualified Model as ML
+import qualified Model.GCS as GCS
 
 import qualified Debug.Trace as T
 
@@ -34,7 +34,7 @@ type EventsID = [EventID]
 
 -- @ Configuration  
 data Configuration s = Conf {
-    stc :: ML.Sigma s   -- state at this configuration
+    stc :: GCS.Sigma s   -- state at this configuration
   , maxevs :: EventsID  -- maximal events of the configuration
   , enevs  :: EventsID  -- enabled events of the configuration
   , cevs   :: EventsID  -- special events: the ones that have imm conflicts
@@ -49,18 +49,18 @@ type Counter = Int
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
 data Event = Event {
-    evtr :: (ML.TransitionID, ML.ProcessID)  -- Transition id
+    evtr :: (GCS.TransitionID, GCS.ProcessID)  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
-  , lcst :: Maybe ML.LSigma  -- Local state 
+  , lcst :: Maybe GCS.LSigma  -- Local state 
 } deriving (Show,Eq,Ord)
 
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
-type Events s = ML.HashTable s EventID Event
+type Events s = GCS.HashTable s EventID Event
 
 -- @ Show an 
 showEvents :: Events s -> ST s String
@@ -78,8 +78,8 @@ copyEvents s = do
  
 -- @ The state of the unfolder at any moment
 data UnfolderState s = UnfolderState {
-    syst :: ML.System s      -- The system being analyzed
-  , inde :: ML.UIndep        -- Independence relation
+    syst :: GCS.System s      -- The system being analyzed
+  , inde :: GCS.UIndep        -- Independence relation
   , evts :: Events s         -- Unfolding prefix 
   , pcnf :: Configuration s  -- Previous configuration
   , cntr :: Counter          -- Event counter
@@ -93,14 +93,14 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: ML.LSigma -> Event
-botEvent lst = Event (ML.botID, BS.pack "") [] [] [] [] [] (Just lst) 
+botEvent :: GCS.LSigma -> Event
+botEvent lst = Event (GCS.botID, BS.pack "") [] [] [] [] [] (Just lst) 
 
 -- @ Initial state of the unfolder
-iState :: ML.System s -> ML.UIndep -> ST s (UnfolderState s) 
+iState :: GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
 iState sys indep = do
   events <- H.new
-  H.insert events 0 $ botEvent $ ML.initialLState sys 
+  H.insert events 0 $ botEvent $ GCS.initialLState sys 
   let pconf = Conf undefined [] [] []
   return $ UnfolderState sys indep events pconf 1 [0]
 
@@ -125,27 +125,27 @@ gc s@UnfolderState{..} =
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: ML.Sigma s -> EventID -> UnfolderOp s (ML.Sigma s, ML.LSigma)
+execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s, GCS.LSigma)
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
-  let t = ML.getTransition syst $ fst evtr
+  let t = GCS.getTransition syst $ fst evtr
   fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
   lift $ fn cst
 
-isDependent_te :: ML.UIndep -> (ML.TransitionID, ML.ProcessID) -> EventID -> Events s -> ST s Bool
+isDependent_te :: GCS.UIndep -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
 isDependent_te indep tr e events = do
   ev@Event{..} <- getEvent "isDependent" e events
-  return $ ML.isDependent indep tr evtr
+  return $ GCS.isDependent indep tr evtr
 
-isIndependent :: ML.UIndep -> EventID -> EventID -> Events s -> ST s Bool
+isIndependent :: GCS.UIndep -> EventID -> EventID -> Events s -> ST s Bool
 {-# INLINE isIndependent #-}
 isIndependent indep e ê events = do
   ev <- getEvent "isIndependent" e events 
   êv <- getEvent "isIndependent" ê events
-  return $ ML.isIndependent indep (evtr ev) (evtr êv) 
+  return $ GCS.isIndependent indep (evtr ev) (evtr êv) 
 
 -- Useful Functions
 predecessors, successors :: EventID -> Events s -> ST s EventsID
@@ -168,8 +168,8 @@ successors e events =  do
      ev@Event{..} <- getEvent "successors" e events 
      foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
 
-predecessorWith :: EventID -> ML.ProcessID -> Events s -> ST s EventID
-predecessorWith 0 p events = return ML.botID
+predecessorWith :: EventID -> GCS.ProcessID -> Events s -> ST s EventID
+predecessorWith 0 p events = return GCS.botID
 predecessorWith e p events = do
   pred <- getIPred e events
   epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ snd evtr == p) pred
@@ -185,7 +185,7 @@ filterResult es =
   then error "predecessorWith: shouldn't happen"
   else let res = filter (/= 0) es
        in if null res
-          then ML.botID
+          then GCS.botID
           else if all (== (head res)) (tail res)
                then head res
                else error "predecessorWith: multiple possibilities"    
@@ -238,7 +238,7 @@ setEvent :: EventID -> Event -> Events s -> ST s ()
 setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
   H.insert events eID e
 
-setLSigma :: EventID -> ML.LSigma -> Events s -> ST s ()
+setLSigma :: EventID -> GCS.LSigma -> Events s -> ST s ()
 setLSigma eID st events = -- trace ("setLSigma: " ++ show eID) $ 
  do
   ev@Event{..} <- getEvent "setLSigma" eID events

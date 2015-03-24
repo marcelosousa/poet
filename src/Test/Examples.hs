@@ -1,6 +1,6 @@
-module Examples where
+module Test.Examples where
 
-import Model 
+import Model.GCS
 
 import Control.Monad.ST.Safe
 import Control.Monad.State.Strict

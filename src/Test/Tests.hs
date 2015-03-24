@@ -1,7 +1,7 @@
-module Tests where
+module Test.Tests where
 
-import Unfolderless
-import Examples
+import Exploration.UNF.Unfolderless
+import Test.Examples
 
 import Control.Monad.ST.Safe
 import Test.HUnit

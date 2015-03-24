@@ -1,5 +1,5 @@
 {-#LANGUAGE RecordWildCards #-}
-module Unfolderless where
+module Exploration.UNF.Unfolderless where
 
 import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
@@ -13,8 +13,8 @@ import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Map as M
 
-import APIStateless
-import qualified Model as ML
+import Exploration.UNF.APIStateless
+import qualified Model.GCS as GCS
 import qualified Debug.Trace as DT
 
 --import Examples
@@ -23,7 +23,7 @@ import qualified Debug.Trace as DT
 import System.IO.Unsafe
 import Prelude hiding (pred)
 
-stateless :: ML.System s -> ML.UIndep -> ST s (UnfolderState s)
+stateless :: GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
 stateless sys indep = do
   is <- iState sys indep 
   (a,s) <- runStateT botExplore is 
@@ -45,8 +45,8 @@ initialExtensions = do
   s@UnfolderState{..} <- get
   let e = botEID
       cevs = [e]
-      st = ML.initialState syst
-  trs <- lift $ ML.enabledTransitions syst st
+      st = GCS.initialState syst
+  trs <- lift $ GCS.enabledTransitions syst st
   enevs <- V.foldM (\en tr -> expandWith st e cevs tr >>= \es -> return $! (es++en)) [] trs
   s@UnfolderState{..} <- trace ("enabled after e=" ++ show e ++ " are " ++ show enevs) get
   let iConf = Conf st cevs enevs []
@@ -59,11 +59,11 @@ explore :: Configuration s -> EventID -> Alternative -> UnfolderOp s ()
 explore c@Conf{..} ê alt = do
   is@UnfolderState{..} <- get
   -- @ assert that the global state given by the maximal events is the same as the global state that we have
-  -- nst <- lift $ ML.copy stc 
+  -- nst <- lift $ GCS.copy stc 
   -- build the global state
   -- emax <- lift $ mapM (\e -> getEvent "explore" e evts) maxevs
-  -- gst <- lift $ foldM (\ist e -> ML.modify ist $ fromJust $ lcst e) nst emax 
-  -- check <- lift $ ML.equals stc gst
+  -- gst <- lift $ foldM (\ist e -> GCS.modify ist $ fromJust $ lcst e) nst emax 
+  -- check <- lift $ GCS.equals stc gst
   -- if not check
   -- then error "explore: the states are different"
   -- else do  
@@ -169,10 +169,10 @@ unfold conf@Conf{..} e = do
   tr <- lift $ getEvent "unfold" e evts >>= return . snd . evtr
   -- @ 1. compute the new state after executing the event e
   -- copy the state otherwise it will go wrong 
-  copyst <- lift $ ML.copy stc
+  copyst <- lift $ GCS.copy stc
   -- execute the event e
   (nstc, lcst) <- execute copyst e
-  snstc <- lift $ ML.showSigma nstc
+  snstc <- lift $ GCS.showSigma nstc
   -- update the local state of e
   _ <- mtrace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
   -- @ 2. compute the new set of maximal events
@@ -183,7 +183,7 @@ unfold conf@Conf{..} e = do
   -- - compute the set of events independent with *e*, they will be enabled after *e*
   senevs <- lift $ filterM (\ê -> isIndependent inde e ê evts) es 
   -- - compute the set of enabled transitions at the new state
-  entrs <- lift $ ML.enabledTransitions syst nstc 
+  entrs <- lift $ GCS.enabledTransitions syst nstc 
   -- - filter the enabled transitions that are dependent with h(e); those will be the new events
   --   some of these new events will be conflicting extensions
   netrs <- lift $ V.filterM (\tr -> isDependent_te inde tr e evts) entrs
@@ -204,10 +204,10 @@ unfold conf@Conf{..} e = do
     
 -- expandWith only adds events that have e in the history
 -- critical step
-expandWith :: ML.Sigma s -> EventID -> EventsID -> (ML.TransitionID, ML.ProcessID) -> UnfolderOp s EventsID
+expandWith :: GCS.Sigma s -> EventID -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> UnfolderOp s EventsID
 expandWith st e maxevs tr = do
-  cst <- lift $ ML.copy st
---  scst <- lift $ ML.showSigma cst
+  cst <- lift $ GCS.copy st
+--  scst <- lift $ GCS.showSigma cst
   s@UnfolderState{..} <- trace ("expandWith(e="++show e++",maxevs="++show maxevs++",tr="++show tr++")") $ get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
   --   not sure why this is necessary.
@@ -216,7 +216,7 @@ expandWith st e maxevs tr = do
            >>= return . filter (\(e,ev) -> evtr ev == tr)
   -- @ computes h0, the maximal history:
   (ncst, h0) <- computeHistory cst maxevs tr
-  -- sncst <- lift $ ML.showSigma ncst
+  -- sncst <- lift $ GCS.showSigma ncst
   -- @ check for enabledness
   tr_dis_h0 <- isEnabled evts ncst tr h0 
   if null h0 || (not tr_dis_h0)
@@ -235,7 +235,7 @@ expandWith st e maxevs tr = do
 --     - Set of maximal events, 
 --     - Transition tr
 --   Output: History
-computeHistory :: ML.Sigma s -> EventsID -> (ML.TransitionID, ML.ProcessID) -> UnfolderOp s (ML.Sigma s, EventsID)
+computeHistory :: GCS.Sigma s -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> UnfolderOp s (GCS.Sigma s, EventsID)
 computeHistory st maxevs tr = do
   s@UnfolderState{..} <- trace ("computeHistory(maxevs="++show maxevs++",tr="++show tr++")") $ get
   -- set of maximal events that are dependent with tr union 
@@ -271,10 +271,10 @@ pruneConfiguration st inde events pre_his tr es = do
 
 -- @ computeNextHistory
 --   build a candidate history out of replacing a maximal event e with its immediate predecessors
-computeNextHistory :: ML.Sigma s -> EventsID -> (ML.TransitionID, ML.ProcessID) -> EventID -> UnfolderOp s (ML.Sigma s, EventsID)
+computeNextHistory :: GCS.Sigma s -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> UnfolderOp s (GCS.Sigma s, EventsID)
 computeNextHistory st h tr e = mtrace ("computeNextHistory(h="++show h++",tr="++show tr++",e="++show e++")") $ do
   s@UnfolderState{..} <- get
-  cst <- lift $ ML.copy st
+  cst <- lift $ GCS.copy st
   -- we want to replace e by its predecessors
   let h' = e `delete` h
   -- predecessors of e
@@ -289,7 +289,7 @@ computeNextHistory st h tr e = mtrace ("computeNextHistory(h="++show h++",tr="++
 
 -- @ computeHistories : worklist algorithm 
 --   e must always be a part of the histories
-computeHistories :: ML.Sigma s -> (ML.TransitionID, ML.ProcessID) -> EventID -> [EventsID] -> UnfolderOp s [EventsID]
+computeHistories :: GCS.Sigma s -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> [EventsID] -> UnfolderOp s [EventsID]
 computeHistories _ tr e [] = return []
 computeHistories cst tr e (h:hs) = do
   s@UnfolderState{..} <- get
@@ -305,7 +305,7 @@ computeHistories cst tr e (h:hs) = do
   return $! nhs ++ res 
   
 -- @ changes the global state with respect to the local state of the event we want to remove 
-removeEvent :: ML.Sigma s -> Events s -> EventID -> ST s (ML.Sigma s)
+removeEvent :: GCS.Sigma s -> Events s -> EventID -> ST s (GCS.Sigma s)
 removeEvent s events 0 = return s
 removeEvent s events eID = do
   ev@Event{..} <- getEvent "removeEvent" eID events
@@ -313,12 +313,12 @@ removeEvent s events eID = do
   case lcst of
     Nothing  -> return s
     Just lst -> do
-      ss <- ML.showSigma s
+      ss <- GCS.showSigma s
       ns <- revertState s events prede lst
-      sns <- ML.showSigma ns
+      sns <- GCS.showSigma ns
       mtrace("removeEvent(eID="++show eID++") previous state="++ss++"\nnew state="++sns) $ return $! ns 
 
-revertState :: ML.Sigma s -> Events s -> EventsID -> ML.LSigma -> ST s (ML.Sigma s)
+revertState :: GCS.Sigma s -> Events s -> EventsID -> GCS.LSigma -> ST s (GCS.Sigma s)
 revertState s events prede [] = return s
 revertState s events prede lst =  
   if null prede
@@ -327,14 +327,14 @@ revertState s events prede lst =
     es <- mapM (\e -> getEvent "revertState" e events >>= \ev -> return $ (e,fromMaybe [] $ lcst ev)) prede
     -- get the changes
     let (lst',mods) = getChanges lst es
-    s' <- ML.modify s mods 
+    s' <- GCS.modify s mods 
     pprede <- mapM (\e -> getIPred e events) prede >>= return . nub . concat
     revertState s' events pprede lst'
 
 -- returns the effects that need to be found
 --         the events that needs to go up
 --         the new state
-getChanges :: ML.LSigma -> [(EventID, ML.LSigma)] -> (ML.LSigma, ML.LSigma)
+getChanges :: GCS.LSigma -> [(EventID, GCS.LSigma)] -> (GCS.LSigma, GCS.LSigma)
 getChanges [] prede = ([],[])
 getChanges l@((k,v):lst) prede = 
   -- split between the predecessors that modify k
@@ -357,14 +357,14 @@ getChanges l@((k,v):lst) prede =
     _ -> error "getChanges"
 
 -- @ isEnabled: computes the global state given a set of maximal events and checks if tr is enabled
-isEnabled :: Events s -> ML.Sigma s -> (ML.TransitionID, ML.ProcessID) -> EventsID -> UnfolderOp s Bool
+isEnabled :: Events s -> GCS.Sigma s -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> UnfolderOp s Bool
 isEnabled events st (tr,_) h = do
   s@UnfolderState{..} <- get
-  -- cst <- lift $ ML.copy st
-  let fn = ML.getTransition syst tr
+  -- cst <- lift $ GCS.copy st
+  let fn = GCS.getTransition syst tr
   es <- lift $  mapM (\e -> getEvent "isEnabled" e events) h 
   -- build the global state
-  gst <- lift $ foldM (\ist e -> ML.modify ist $ fromJust $ lcst e) st es
+  gst <- lift $ foldM (\ist e -> GCS.modify ist $ fromJust $ lcst e) st es
   -- check if the transition is enabled
   checkEn <- lift $ fn gst
   case checkEn of
@@ -380,7 +380,7 @@ isEnabled events st (tr,_) h = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: EventsID -> [(EventID,Event)] -> (ML.TransitionID, ML.ProcessID) -> EventsID -> UnfolderOp s EventsID 
+addEvent :: EventsID -> [(EventID,Event)] -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> UnfolderOp s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
@@ -412,7 +412,7 @@ addEvent stack dup tr history = do
 --  . Is an immediate conflict (or successor) of an event in the local configuration
 --  . Is dependent with tr
 --  Changed for a worklist
-computeConflicts :: ML.UIndep -> (ML.TransitionID, ML.ProcessID) -> EventsID -> EventsID -> Events s -> ST s EventsID
+computeConflicts :: GCS.UIndep -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> EventsID -> Events s -> ST s EventsID
 computeConflicts uidep tr lh lhCnfls events = do 
   ev@Event{..} <- getEvent "computeConflicts" botEID events
   computeConflict [] succ 
@@ -426,7 +426,7 @@ computeConflicts uidep tr lh lhCnfls events = do
            then computeConflict (e:seen) rest -- return []
            else do
              ev@Event{..} <- getEvent "computeConflict" e events
-             if not (e `elem` lh) && ML.isDependent uidep tr evtr
+             if not (e `elem` lh) && GCS.isDependent uidep tr evtr
              then do 
                lhe <- predecessors e events
                if any (\e -> elem e lhe) lhCnfls 

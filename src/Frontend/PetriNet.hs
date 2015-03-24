@@ -1,10 +1,10 @@
-module PetriNet where
+module Frontend.PetriNet where
 
 import Control.Monad
 import Control.Monad.ST.Safe
 import Control.Monad.Trans
 
-import qualified Model as ML
+import qualified Model.GCS as GCS
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.HashTable.Class as H
@@ -22,16 +22,16 @@ import Debug.Trace
 
 type Net = (Places, [Transitions])
 type Places = [Place]
-type Place = (ML.Var, ML.Value)
+type Place = (GCS.Var, GCS.Value)
 type Transitions = [Transition]
-type Transition = (String, [ML.Var], [ML.Var])
+type Transition = (String, [GCS.Var], [GCS.Var])
 
 fst3 :: (a, b, c) -> a 
 fst3 (a,b,c) = a
 
 -- | getSysInd - Given a file path to a petri net, parse and converts 
 -- it into the model of computation of the net and computes the indep. rel.
-getSysInd :: FilePath -> IO (ST s (ML.System s), ML.UIndep)
+getSysInd :: FilePath -> IO (ST s (GCS.System s), GCS.UIndep)
 getSysInd file = do
   net <- parse file
   sys <- return $ convert net
@@ -80,7 +80,7 @@ parseTransition p s =
          else error $ "parseTransition: length pos is not correct: " ++ show (pos,npos)
     _ -> error $ "parseTransition " ++ s
 
-getPlace :: Places -> String -> ML.Var
+getPlace :: Places -> String -> GCS.Var
 getPlace ps s = 
   let i = read s :: Int
   in if length ps >= i
@@ -88,7 +88,7 @@ getPlace ps s =
      else error "getPlace"     
 
 -- Retrieve the independence relation
-retrieveIndRel :: Net -> ML.UIndep
+retrieveIndRel :: Net -> GCS.UIndep
 retrieveIndRel (_, tr) =
   let matrixSize = length tr
   in V.generate matrixSize (\i -> 
@@ -120,20 +120,20 @@ dropSuffix ('_':'_':xs) = []
 dropSuffix (x:xs) = x:dropSuffix xs 
 
 -- Conversion section
-convert :: Net -> ST s (ML.System s)
+convert :: Net -> ST s (GCS.System s)
 convert net@(ps,tr) = do
   i <- H.fromList ps
   trs <- mapM toTransition $ zip tr [0..]
-  return $ ML.System (V.fromList trs) i ps
+  return $ GCS.System (V.fromList trs) i ps
  
-toTransition :: (Transitions, ML.TransitionID) -> ST s (ML.Transition s)
+toTransition :: (Transitions, GCS.TransitionID) -> ST s (GCS.Transition s)
 toTransition ([], tID) = error "toTransition"
 toTransition (trs, tID) =  do
   let (n,_,_) = head trs
       fn = buildFn' $ zip trs [0..]
   return (BS8.pack $ dropSuffix n, tID, fn) 
 
-buildFn' :: [(Transition,Int)] -> ML.TransitionFn s
+buildFn' :: [(Transition,Int)] -> GCS.TransitionFn s
 buildFn' trs = \s -> do 
   trs' <- mapM (\((na,pre,pos),n) -> mapM (\p -> H.lookup s p >>= return . checkLookup) pre >>= \pre' -> return (pre',n)) trs
   let ptrs = filter (\(pre',n) -> all (>0) pre') trs'
@@ -147,9 +147,9 @@ buildFn' trs = \s -> do
         return (s,map (\v -> (v,0)) pre ++ map (\v -> (v,1)) pos)
     _ -> error "buildFn': several transitions are enabled"
 
-buildFn :: [ML.Var] -> [ML.Var] -> ML.TransitionFn s
+buildFn :: [GCS.Var] -> [GCS.Var] -> GCS.TransitionFn s
 buildFn pre pos = \s -> do 
-  pre' <- mapM (\p -> H.lookup s p >>= return . checkLookup) pre -- prem :: ST s [ML.Value]
+  pre' <- mapM (\p -> H.lookup s p >>= return . checkLookup) pre -- prem :: ST s [GCS.Value]
   if all (>0) pre'
   then do
     return $ Just $ \s -> do
@@ -158,21 +158,21 @@ buildFn pre pos = \s -> do
       return (s,map (\v -> (v,1)) pos)
   else return Nothing 
 
-getValue :: [ML.Var] -> ML.Sigma s -> ST s Bool
+getValue :: [GCS.Var] -> GCS.Sigma s -> ST s Bool
 getValue pre s = do 
   prem <- mapM (\p -> H.lookup s p >>= return . checkLookup) pre
   return $ all (>0) prem
  
-checkLookup :: Maybe ML.Value -> ML.Value
+checkLookup :: Maybe GCS.Value -> GCS.Value
 checkLookup Nothing  = error "checkLookup"
 checkLookup (Just i) = i
 
-updatePre :: ML.Sigma s -> ML.Var -> ST s (ML.Sigma s)
+updatePre :: GCS.Sigma s -> GCS.Var -> ST s (GCS.Sigma s)
 updatePre s p = do
   H.insert s p 0
   return s  
 
-updatePos :: ML.Sigma s -> ML.Var -> ST s (ML.Sigma s)
+updatePos :: GCS.Sigma s -> GCS.Var -> ST s (GCS.Sigma s)
 updatePos s p = do 
   H.insert s p 1
   return s 
