@@ -6,11 +6,15 @@ import Control.Monad
 import qualified Data.Vector as V
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
+import Language.C 
+import Language.C.System.GCC  -- preprocessor used
+import Language.C.Data.Ident
 
 import Language.SimpleC.AST
---import SimpleC.Converter
+import Language.SimpleC.Converter
+import Language.SimpleC.Printer
 import Language.C.Syntax.AST (CBinaryOp(..),CUnaryOp(..))
-import Model
+import Model.GCS
 
 import Debug.Trace
 
@@ -19,6 +23,21 @@ import Debug.Trace
 -- This is crucial to compute the independence relation
 -- which has to be done at the same as we compute the 
 -- transitions
+
+parseFile :: FilePath -> IO CTranslUnit
+parseFile f  =
+  do parse_result <- parseCFile (newGCC "gcc") Nothing [] f
+     case parse_result of
+       Left parse_err -> do 
+           parse_result <- parseCFilePre f
+           case parse_result of
+               Left _ -> error (show parse_err)
+               Right ast -> return ast
+       Right ast      -> return ast
+
+pp :: FilePath -> IO ()
+pp f = do ctu <- parseFile f
+          print $ translate ctu
 
 -- read write data type
 data RW = Read Var | Write Var
@@ -40,8 +59,7 @@ convert (Program (decls, defs)) = do
   return (sys, uind) 
 
 computeUIndep :: [Var] -> [(TransitionID, RWSet)] -> UIndep
-computeUIndep globals =
-  V.generate (\i -> V.generate 
+computeUIndep globals = undefined
 
 getInitialState :: Decls -> LSigma
 getInitialState = foldl (\a decl -> convertDecl decl ++ a) [(BS.pack "pcmain", 0)] 
@@ -65,3 +83,5 @@ computeInitialState lst = do
 -- transition id is the position in the vector of transitions 
 getTransitions :: Defs -> ST s [(Transition s, (TransitionID, RWSet))] 
 getTransitions = undefined
+
+
