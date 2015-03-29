@@ -16,6 +16,49 @@ type Globals = [Ident]
 iDB :: DataBase
 iDB = 0
 
+isMain :: Definition -> Bool
+isMain (FunctionDef _ "main" _ _) = True
+isMain _ = False
+
+findMain :: Defs -> Definition
+findMain defs = case filter isMain defs of
+    [main] -> main
+    _ -> error "main not found"
+
+pass1 :: Program -> (Program, (Int,[(Ident,Int)]))
+pass1 p@(Program (decl,defs)) = 
+    let main = findMain defs
+        (threadCount, threads, main') = findAndInstrThreads main
+        pmt = GlobalDecl 0 (Index (Ident "__poet_mutex_threads") (Const $ IntValue $ toInteger threadCount)) Nothing
+    in (Program (pmt:decl,replaceMain main' defs),(threadCount,threads))
+
+replaceMain :: Definition -> [Definition] -> [Definition]
+replaceMain nmain defs = 
+    let others = filter (not . isMain) defs
+    in nmain:others
+    
+findAndInstrThreads :: Definition -> (Int,[(Ident,Int)], Definition)
+findAndInstrThreads (FunctionDef pc "main" params stats) = 
+    let (threadCount, threads, stats') = foldr (\s (i,r,r') -> let (s',t,i') = findAndInstrThreadsAux s i in (i',t++r,s'++r')) (0,[],[]) stats
+    in (threadCount, threads, FunctionDef pc "main" params stats')
+
+findAndInstrThreadsAux :: AnnStatement PC -> Int -> ([AnnStatement PC], [(Ident,Int)],Int)
+findAndInstrThreadsAux s threadCount = 
+    case s of
+        ExprStat pc (Call "pthread_create" [Ident tid, Ident "NULL", Ident name, Ident "NULL"]) ->
+          let i = Const $ IntValue $ toInteger threadCount
+              ass = ExprStat pc (Assign CAssignOp (Ident tid) i)
+              mcall = ExprStat pc (Call "__poet_mutex_lock" [Index (Ident "__poet_mutex_threads") i])
+          in ([ass,mcall], [(name ,threadCount)], threadCount+1)
+        ExprStat pc (Call "pthread_join" [Ident tid, Ident "NULL"]) -> 
+          let mcall = ExprStat pc (Call "__poet_mutex_lock" [Index (Ident "__poet_mutex_threads") (Ident tid)])
+          in ([mcall], [], threadCount)
+        ExprStat _ (Call fname _) ->
+          if fname `elem` ["pthread_create", "pthread_join"]
+          then error "unexpected parameters for pthread_{create,join}"
+          else ([s],[],threadCount) 
+        _ -> ([s],[],threadCount)                     
+        
 simplify :: Program -> Program
 simplify (Program (decl,defs)) = 
     let defs' = fst $ unzip $ map (applyTrans iDB for2while) defs -- Pass 4
@@ -80,6 +123,7 @@ assertWellFormed_1Global globals s =
         Label _ _ s -> sum (map (assertWellFormed_1Global globals) s)
         Goto _ _ -> 0
 
+
 allowedBinOp :: OpCode -> Bool
 allowedBinOp op = 
  op `elem` [ CMulOp, CDivOp,CRmdOp, CAddOp, CSubOp, CLeOp,CGrOp,CLeqOp, CGeqOp,CEqOp,CNeqOp,CLndOp, CLorOp ]
@@ -107,7 +151,7 @@ assertWellFormed_1GlobalE globals e =
          if x `elem` globals
          then 1
          else 0
-        Index lhs rhs -> 
+        Index lhs@(Ident _) rhs -> 
           let lhsr = assertWellFormed_1GlobalE globals lhs 
               rhsr = assertWellFormed_1GlobalE globals rhs
               r = lhsr + rhsr
@@ -116,6 +160,7 @@ assertWellFormed_1GlobalE globals e =
              else if isIdentOrConstant rhs
                   then r
                   else error $ "Index operation only with ident or constant: " ++ show e
+        Index _ _ -> error $ "assertWellFormed_1GlobalE: lhs of Index is not an identifier: " ++ show e
         Assign CAssignOp lhs rhs ->
           let lhsr = assertWellFormed_1GlobalE globals lhs 
               rhsr = assertWellFormed_1GlobalE globals rhs
@@ -142,7 +187,12 @@ getGlobalsDecls (Program (decls,defs)) = foldl (\a decl -> convertDecl decl ++ a
   where 
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
-      GlobalDecl _ i _ -> [i]
+      GlobalDecl _ (Ident i) _ -> [i]
+      GlobalDecl _ (Index (Ident i) _) _ -> [i]
+      GlobalDecl _ _ _ -> []
+
+-- 
+
 
 parseFile :: FilePath -> IO CTranslUnit
 parseFile f  =
@@ -158,9 +208,12 @@ parseFile f  =
 pp :: FilePath -> IO ()
 pp f = do ctu <- parseFile f
           let prog = translate ctu
+              (prog',threads) = pass1 prog
               globals = getGlobalsDecls prog
               res = assertWellFormed globals prog
           --print ctu
+          print threads
           print prog
-          print res
+          print prog'
+--          print res
           --print $ simplify $ translate ctu
