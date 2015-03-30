@@ -7,6 +7,7 @@ import Language.SimpleC.Printer
 import Language.C hiding (Ident)
 import Language.C.System.GCC  -- preprocessor used
 
+import Data.List
 import Debug.Trace
 
 type LabelID = Int
@@ -38,7 +39,6 @@ pass1 p@(Program (decl,defs)) =
 -- at the beginning of every thread, do a mutex_lock(__poet_mutex_threads[i])
 
 -- pass 3: rename variable x to "c.x"
--- fixme: make sure that the names of functions are unique (in pass 1 or pass 3)
 
 -- pass 6: fixing the PCs
 --         getting rid of labels
@@ -55,7 +55,10 @@ replaceMain nmain defs =
 findAndInstrThreads :: Definition -> (Int,[(Ident,Int)], Definition)
 findAndInstrThreads (FunctionDef pc "main" params stats) = 
     let (threadCount, threads, stats') = foldr (\s (i,r,r') -> let (s',t,i') = findAndInstrThreadsAux s i in (i',t++r,s'++r')) (0,[],[]) stats
-    in (threadCount, threads, FunctionDef pc "main" params stats')
+        uniqueThreadNames = nub $ fst $ unzip threads
+    in if length threads == length uniqueThreadNames
+       then (threadCount, threads, FunctionDef pc "main" params stats')
+       else error "thread names are not unique"
 
 findAndInstrThreadsAux :: AnnStatement PC -> Int -> ([AnnStatement PC], [(Ident,Int)],Int)
 findAndInstrThreadsAux s threadCount = 
