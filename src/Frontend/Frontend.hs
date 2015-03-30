@@ -30,7 +30,22 @@ pass1 p@(Program (decl,defs)) =
     let main = findMain defs
         (threadCount, threads, main') = findAndInstrThreads main
         pmt = GlobalDecl 0 (Index (Ident "__poet_mutex_threads") (Const $ IntValue $ toInteger threadCount)) Nothing
-    in (Program (pmt:decl,replaceMain main' defs),(threadCount,threads))
+        pmd = GlobalDecl 0 (Ident "__poet_mutex_death") (Just (IntValue 0))
+    in (Program (pmt:pmd:decl,replaceMain main' defs),(threadCount,threads))
+
+-- introduce a call to pthread_exit as the last statement of every thread and main
+-- replace pthread_exit with mutex_unlock(__poet_mutex_threads[i]) + mutex_lock(__poet_mutex_death)
+-- at the beginning of every thread, do a mutex_lock(__poet_mutex_threads[i])
+
+-- pass 3: rename variable x to "c.x"
+-- fixme: make sure that the names of functions are unique (in pass 1 or pass 3)
+
+-- pass 6: fixing the PCs
+--         getting rid of labels
+--         transform local into exprStat of assign
+--         confirm that at the top level we have only assign, goto, if, if-then-else.
+
+-- pass 7: transform the program into a graph (data type to be defined)
 
 replaceMain :: Definition -> [Definition] -> [Definition]
 replaceMain nmain defs = 
