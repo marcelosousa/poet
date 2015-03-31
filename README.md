@@ -25,18 +25,18 @@ The two main techniques implemented are:
 Installation Notes:
 -------------------
  
-  1. Install the Haskell Platform (https://www.haskell.org/platform/)
-     Make sure you can run *ghc* and *cabal*
-  2. Install the simple-c package:
-     git clone git@github.com:marcelosousa/simplec.git
-     cd simplec
-     cabal install
-  3. Install poet:
-     git clone git@github.com:marcelosousa/poet.git
-     cd poet
-     cabal install
+1. Install the Haskell Platform (https://www.haskell.org/platform/)
+   Make sure you can run *ghc* and *cabal*
+2. Install the simple-c package:
+   git clone git@github.com:marcelosousa/simplec.git
+   cd simplec
+   cabal install
+3. Install poet:
+   git clone git@github.com:marcelosousa/poet.git
+   cd poet
+   cabal install
   
-  This will create an executable *poet* at dist/build/poet/
+This will create an executable *poet* at dist/build/poet/
 
 Running Poet:
 -------------
