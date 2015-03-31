@@ -1,8 +1,7 @@
 poet - v0.1@03'2015
 ======
 
-Marcelo Sousa (msousa at cs dot ox dot ac dot uk)  
-University of Oxford, UK.  
+Contact: Marcelo Sousa (msousa at cs dot ox dot ac dot uk). University of Oxford, UK.  
 Overview
 -------------------------------------------------
 
@@ -23,7 +22,7 @@ The two main techniques implemented are:
  - Partial Order Reduction:
    Based on Abdulla et al. ODPOR@POPL'14.
 
-Installation Notes:
+Installation Notes
 -------------------
 
 1. Install the Haskell Platform (https://www.haskell.org/platform/).  
@@ -40,7 +39,7 @@ Installation Notes:
   
 This will create an executable *poet* at dist/build/poet/
 
-Running Poet:
+Running Poet
 -------------
   
   So far, only the frontend mode is enabled that can be executed with the following command:
