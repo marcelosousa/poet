@@ -25,8 +25,9 @@ The two main techniques implemented are:
 Installation Notes:
 -------------------
  
-1. Install the Haskell Platform (https://www.haskell.org/platform/)
+1. Install the Haskell Platform (https://www.haskell.org/platform/).
    Make sure you can run *ghc* and *cabal*
+   
 2. Install the simple-c package:
    git clone git@github.com:marcelosousa/simplec.git
    cd simplec
