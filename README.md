@@ -3,6 +3,7 @@ poet - v0.1@03'2015
 
 Marcelo Sousa (msousa at cs dot ox dot ac dot uk)  
 University of Oxford, UK.  
+Overview
 -------------------------------------------------
 
 POET (Partial Order Exploration Tools) is a 
