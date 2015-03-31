@@ -24,7 +24,11 @@ The two main techniques implemented are:
 
 Installation Notes:
 -------------------
- 
+1. Base binding library llvm/base. This library is the actual binding library that defines the FFI (Foreign Function Interface) functions. 
+   To install:
+   cd llvm/base
+   cabal install
+   
 1. Install the Haskell Platform (https://www.haskell.org/platform/).
   Make sure you can run *ghc* and *cabal*
    
