@@ -46,7 +46,7 @@ Running Poet:
 
   Example
   -------
-    poet frontend /tmp/t.c
+    >: poet frontend /tmp/t.c
     
     ORIGINAL PROGRAM
     TRANSFORMED PROGRAM
