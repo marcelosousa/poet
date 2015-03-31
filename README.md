@@ -42,8 +42,8 @@ This will create an executable *poet* at dist/build/poet/
 Running Poet
 -------------
   
-  So far, only the frontend mode is enabled that can be executed with the following command:
-    poet frontend file.c
+  So far, only the frontend mode is enabled that can be executed with the following command:  
+    *poet frontend file.c*
 
   Example: $ poet frontend /tmp/t.c      
     ORIGINAL PROGRAM  
