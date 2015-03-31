@@ -19,6 +19,8 @@ Executable poet
                     , bytestring
                     , vector
                     , hashtables
+                    , language-c
+                    , simplec
                     , HUnit
     Hs-Source-Dirs:   src/
     ghc-options:      -O3 -rtsopts

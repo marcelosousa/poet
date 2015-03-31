@@ -12,18 +12,16 @@ import Frontend (frontEnd)
 import Language.SimpleC
 
 --import Unfolderful
-import Exploration.UNF.Unfolderless
+--import Exploration.UNF.Unfolderless
 --import Printer
 --import Benchmark
-import Model.GCS
-import Frontend.PetriNet
-
-import qualified Data.Map as M
-
-import Control.Monad.ST.Safe
-import Test.HUnit
-import Test.Tests
-import Test.Examples
+--import Model.GCS
+--import Frontend.PetriNet
+--import qualified Data.Map as M
+--import Control.Monad.ST.Safe
+--import Test.HUnit
+--import Test.Tests
+--import Test.Examples
 
 _program, _summary :: String
 _summary = unlines ["POET - v0.1","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs.","Copyright 2015 @ Marcelo Sousa"]
@@ -53,8 +51,10 @@ runOption :: Option -> IO ()
 runOption (Frontend f) = 
     do prog <- extract f
        let prog' = frontEnd prog
-       print "ORIGINAL PROGRAM"
+       putStrLn "ORIGINAL PROGRAM"
+       putStrLn "------------------------------"
        print prog
-       print "TRANSFORMED PROGRAM"
+       putStrLn "TRANSFORMED PROGRAM"
+       putStrLn "------------------------------"
        print prog'
 

@@ -21,3 +21,40 @@ The two main techniques implemented are:
    semantics known as prime event structures.
  - Partial Order Reduction:
    Based on Abdulla et al. ODPOR@POPL'14.
+
+Installation Notes:
+-------------------
+ 
+  1. Install the Haskell Platform (https://www.haskell.org/platform/)
+     Make sure you can run *ghc* and *cabal*
+  2. Install the simple-c package:
+      git clone git@github.com:marcelosousa/simplec.git
+      cd simplec
+      cabal install
+  3. Install poet:
+      git clone git@github.com:marcelosousa/poet.git
+      cd poet
+      cabal install
+  
+  This will create an executable *poet* at dist/build/poet/
+
+Running Poet:
+-------------
+  
+  So far, only the frontend mode is enabled that can be executed with the following command:
+    poet frontend file.c
+
+  Example:
+    poet frontend /tmp/t.c
+    ORIGINAL PROGRAM
+    ------------------------------
+      SOME CODE
+
+    TRANSFORMED PROGRAM
+    ------------------------------
+      SOME CODE
+  
+  The first program (ORIGINAL) is an ugly pretty-print from the initial simplec AST.
+  The second program (TRANSFORMER) is the simplec program that will be passed to the converter
+  that will generate an instance of the model of computation.
+  
