@@ -45,15 +45,11 @@ Running Poet:
   So far, only the frontend mode is enabled that can be executed with the following command:
     poet frontend file.c
 
-  Example
-  -------
-    >: poet frontend /tmp/t.c
+  Example: $ poet frontend /tmp/t.c      
+    ORIGINAL PROGRAM  
+    TRANSFORMED PROGRAM  
     
-    ORIGINAL PROGRAM
-    TRANSFORMED PROGRAM
-  -------
-      
-  The first program (ORIGINAL) is an ugly pretty-print from the initial simplec AST.
+  The first program (ORIGINAL) is an ugly pretty-print from the initial simplec AST.  
   The second program (TRANSFORMER) is the simplec program that will be passed to the converter
   that will generate an instance of the model of computation.
   
