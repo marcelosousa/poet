@@ -6,9 +6,6 @@ import Control.Monad
 import qualified Data.Vector as V
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
-import Language.C 
-import Language.C.System.GCC  -- preprocessor used
-import Language.C.Data.Ident
 
 import Language.SimpleC.AST
 import Language.SimpleC.Converter
@@ -26,12 +23,15 @@ data RW = Read Var | Write Var
 
 type RWSet = [RW]
 
-convert :: Program -> Flow -> Int -> ST s (System s, UIndep)
-convert (Program (decls, defs)) thCount flow = do
+convert :: Program -> FirstFlow -> Flow -> Int -> ST s (System s, UIndep)
+convert (Program (decls, defs)) pcs flow thCount = do
   -- @ get the initial local state: this will be the set of global variables 
   --   minus the pcs
-  let ils = getInitialState decls
-  is <- computeInitialState ils 
+  let ils = getInitialDecls decls
+      pmd = (BS.pack "__poet_mutex_death", IntVal 1)
+      pmt = (BS.pack "__poet_mutex_threads", Array $ map IntVal $ replicate (thCount+1) 1)
+      ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
+  is <- toInitialState $ pmd:pmt:(ils++ipcs)
   (trs,annot) <- getTransitions defs >>= return . unzip 
   -- @ complete the initial state with the pcs: put the pc = 1 for main (later on put this on a user defined function)
   let vtrs = V.fromList trs
@@ -42,21 +42,19 @@ convert (Program (decls, defs)) thCount flow = do
 computeUIndep :: [Var] -> [(TransitionID, RWSet)] -> UIndep
 computeUIndep globals = undefined
 
-getInitialState :: Decls -> LSigma
-getInitialState = undefined
-{-
-foldl (\a decl -> convertDecl decl ++ a) [(BS.pack "pcmain", 0)] 
+getInitialDecls :: Decls -> LSigma
+getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) [] 
   where 
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
-      GlobalDecl _ i Nothing -> [(BS.pack i, 0)]
-      GlobalDecl _ i (Just (IntValue v)) -> [(BS.pack i, fromInteger v)] 
+      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, IntVal 0)]
+      GlobalDecl _ (Ident i) (Just (IntValue v)) -> [(BS.pack i, IntVal $ fromInteger v)]
+      GlobalDecl _ (Index (Ident i) _) _ -> error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
--}
 
 -- @ computeInitialState 
-computeInitialState :: LSigma -> ST s (ISigma s)
-computeInitialState lst = do
+toInitialState :: LSigma -> ST s (ISigma s)
+toInitialState lst = do
   ht <- H.new
   mapM_ (\(n,v) -> H.insert ht n v) lst
   return ht  

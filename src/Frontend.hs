@@ -22,7 +22,7 @@ import Frontend.PassSeven
 -- frontEnd: 
 --  Transforms a C file into a restricted subset of C
 --  for easy manipulation and analysis.
-frontEnd :: Program -> (Program, Flow, Int)
+frontEnd :: Program -> (Program, FirstFlow, Flow, Int)
 frontEnd prog = 
     let globals = getGlobalsDecls prog
         (prog1, threadCount) = passOne prog
@@ -33,9 +33,9 @@ frontEnd prog =
         pass7res = pass2res `seq` passSeven prog6 -- :: Bool
         maplabelpc = mapLabelPC prog6
         prog8 = removeLabel prog6
-        flow = flowProgram maplabelpc prog8
+        (firstflow, flow) = flowProgram maplabelpc prog8
     in if pass7res
-       then (prog8, flow, threadCount)
+       then (prog8, firstflow, flow, threadCount)
        else error "frontEnd fatal: something went wrong! Please contact developers."
 
 -- Pass 8: transform the program into a graph (data type to be defined)
@@ -82,6 +82,7 @@ removeLabel (Program (decls,defs)) =
 data Dir = Branch (PC, PC) | Continue PC
   deriving Show
 type Flow = [(PC,Dir)]
+type FirstFlow = [(Ident,PC)]
 
 getPC :: AnnStatement PC -> PC
 getPC s = case s of
@@ -91,12 +92,13 @@ getPC s = case s of
     Goto pc i -> pc
     _ -> error $ "getPC fatal: disallowed " ++ show s
   
-flowProgram :: MapLabelPC -> Program -> Flow
+flowProgram :: MapLabelPC -> Program -> (FirstFlow, Flow)
 flowProgram mlpc (Program (decls,defs)) = 
-    let flowdefs' = map flowDefinition defs
-    in concat $ fst $ unzip flowdefs' where
+    let flowdefs = map flowDefinition defs
+        (firstpc, flowdefs') = unzip flowdefs
+    in (firstpc, concat $ fst $ unzip flowdefs') where
         flowDefinition (FunctionDef pc ident params stats) = 
-            flowStatement mlpc Nothing stats
+            ((ident, getPC (head stats)), flowStatement mlpc Nothing stats)
  
 flowStatement :: MapLabelPC -> Maybe PC -> Statement -> (Flow, [PC])
 flowStatement mlpc _ [] = error "flowStatement: empty list"

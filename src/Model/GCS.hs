@@ -38,8 +38,8 @@ type HashTable s k v = C.HashTable s k v
 type Sigma s = HashTable s Var Value -- We may want to add the enabled transitions for efficiency.
 type Var = BS.ByteString
 data Value = 
-      IntValue Int 
-    | Array Value
+      IntVal Int 
+    | Array [Value]
   deriving (Show,Eq,Ord)
   
 type LockMap = Map Var LockedValue
