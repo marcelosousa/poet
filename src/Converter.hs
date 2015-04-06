@@ -32,14 +32,20 @@ convert (Program (decls, defs)) pcs flow thCount = do
   is <- toInitialState $ ils++ipcs
   H.insert is (BS.pack "__poet_mutex_death") (IntVal 1, Just $ Var [])
   H.insert is (BS.pack "__poet_mutex_threads") (pmtiv, pmtivl)
-  (trs,annot) <- mapM (getTransitions flow) defs >>= return . unzip . concat
-  -- @ complete the initial state with the pcs: put the pc = 1 for main (later on put this on a user defined function)
-  let vtrs = V.fromList trs
-      uind = computeUIndep (map fst ils) annot
+  atrs <- mapM (getTransitions flow) defs >>= return . concat
+  let (trs,annot) = unzip atrs
+      vtrs = V.fromList trs
+      uind = computeUIndep annot
       sys = System vtrs is ils  
   return (sys, uind) 
 
-computeUIndep :: [Var] -> [(TransitionID, RWSet)] -> UIndep
+resetTID :: [(Transition s, (TransitionID, RWSet))] -> [(Transition s, (TransitionID, RWSet))] 
+resetTID = snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
+
+resetTID' :: Int -> (Transition s, (TransitionID, RWSet)) -> (Int, (Transition s, (TransitionID, RWSet)))
+resetTID' c ((pid,_,fn),(_,annot)) = (c+1,((pid,c,fn),(c,annot)))
+
+computeUIndep :: [(TransitionID, RWSet)] -> UIndep
 computeUIndep globals = undefined
 
 getInitialDecls :: Decls -> LSigma
