@@ -21,6 +21,9 @@ data RW = Read Var | Write Var
 
 type RWSet = [RW]
 
+pmdVar = BS.pack "__poet_mutex_death"
+pmtVar = BS.pack "__poet_mutex_threads"
+
 convert :: Program -> FirstFlow -> Flow -> Int -> ST s (System s, UIndep)
 convert (Program (decls, defs)) pcs flow thCount = do
   -- @ get the initial local state: this will be the set of global variables 
@@ -29,14 +32,16 @@ convert (Program (decls, defs)) pcs flow thCount = do
       pmtiv = Array $ map IntVal $ replicate (thCount+1) 1
       pmtivl = Just $ ArrayLock $ map Var $ replicate (thCount+1) []
       ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
-  is <- toInitialState $ ils++ipcs
-  H.insert is (BS.pack "__poet_mutex_death") (IntVal 1, Just $ Var [])
-  H.insert is (BS.pack "__poet_mutex_threads") (pmtiv, pmtivl)
+      iils = ils++ipcs
+      fils = (pmdVar, IntVal 1):(pmtVar, pmtiv):iils
+  is <- toInitialState iils
+  H.insert is pmdVar (IntVal 1, Just $ Var [])
+  H.insert is pmtVar (pmtiv, pmtivl)
   atrs <- mapM (getTransitions flow) defs >>= return . concat
   let (trs,annot) = unzip atrs
       vtrs = V.fromList trs
       uind = computeUIndep annot
-      sys = System vtrs is ils  
+      sys = System vtrs is fils
   return (sys, uind) 
 
 resetTID :: [(Transition s, (TransitionID, RWSet))] -> [(Transition s, (TransitionID, RWSet))] 
@@ -46,7 +51,22 @@ resetTID' :: Int -> (Transition s, (TransitionID, RWSet)) -> (Int, (Transition s
 resetTID' c ((pid,_,fn),(_,annot)) = (c+1,((pid,c,fn),(c,annot)))
 
 computeUIndep :: [(TransitionID, RWSet)] -> UIndep
-computeUIndep globals = undefined
+computeUIndep rwsets = 
+    let size = length rwsets
+    in V.generate size (\i -> V.generate size (\j -> check rwsets i j))
+
+check :: [(TransitionID, RWSet)] -> Int -> Int -> Bool
+check rwsets i j = 
+    let (_,tr1) = rwsets!!i
+        (_,tr2) = rwsets!!j
+    in isRWDependent tr1 tr2
+
+isRWDependent :: RWSet -> RWSet -> Bool
+isRWDependent [] _ = False
+isRWDependent ((Read v):rw1) rw2 = 
+    any (\el -> el == Write v) rw2 || isRWDependent rw1 rw2
+isRWDependent ((Write v):rw1) rw2 =
+    any (\el -> el == Write v || el == Read v) rw2 || isRWDependent rw1 rw2
 
 getInitialDecls :: Decls -> LSigma
 getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) [] 
