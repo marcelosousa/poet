@@ -9,14 +9,14 @@ void *p(){
     y = x;
     x = 1;
     pthread_mutex_unlock(&l);
-    return NULL;
+    //return NULL;
 }
 
 void *q(){
     pthread_mutex_lock(&l);
     x = 2;
     pthread_mutex_unlock(&l);
-    return NULL;
+    //return NULL;
 }
 
 int main(){
@@ -24,11 +24,11 @@ int main(){
     pthread_t p_t;
     pthread_t q_t;
     
-    pthread_mutex_init(&l, NULL);
+    //pthread_mutex_init(&l, NULL);
 
     /* create the threads and execute */
-    pthread_create(&p_t, NULL, p, NULL);
-    pthread_create(&q_t, NULL, q, NULL);
+    pthread_create(p_t, NULL, p, NULL);
+    pthread_create(q_t, NULL, q, NULL);
 
     /* wait for the threads to finish */
     pthread_join(p_t, NULL);
@@ -36,7 +36,7 @@ int main(){
 
 
     /* show the results  */
-    printf("x: %d\n", x);
+    //printf("x: %d\n", x);
 
-    return 0;
+    //return 0;
 }

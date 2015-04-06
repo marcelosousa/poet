@@ -20,6 +20,7 @@ import qualified Data.Set as S
 import Data.Maybe 
 
 import Debug.Trace
+import Language.SimpleC.AST (PC)
 
 -- System is a vector of transitions and an initial state
 -- We use vector because we just want to query. 
@@ -34,10 +35,19 @@ type ISigma s = Sigma s
 -- A state is an Hash Table
 type HashTable s k v = C.HashTable s k v
 --  Later we can try Judy Arrays or Mutable Vectors
-type Sigma s  = HashTable s Var Value -- We want to add the enabled transitions for efficiency.
-type Var      = BS.ByteString
-type Value    = Int
-
+type Sigma s = HashTable s Var Value -- We may want to add the enabled transitions for efficiency.
+type Var = BS.ByteString
+data Value = 
+      IntValue Int 
+    | Array Value
+  deriving (Show,Eq,Ord)
+  
+type LockMap = Map Var LockedValue
+data LockedValue = 
+      Var [PC]
+    | ArrayLock [LockedValue]
+  deriving (Show,Eq,Ord)
+  
 -- Local State
 type LSigma = [(Var,Value)] 
 

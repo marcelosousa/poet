@@ -52,4 +52,10 @@ Running Poet
   The first program (ORIGINAL) is an ugly pretty-print from the initial simplec AST.  
   The second program (TRANSFORMER) is the simplec program that will be passed to the converter
   that will generate an instance of the model of computation.
-  
+
+TODO
+----
+
+  pthread_mutex_init
+  pthread_mutex_lock
+  pthread_mutex_unlock

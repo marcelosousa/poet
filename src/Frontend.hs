@@ -22,10 +22,10 @@ import Frontend.PassSeven
 -- frontEnd: 
 --  Transforms a C file into a restricted subset of C
 --  for easy manipulation and analysis.
-frontEnd :: Program -> (Program, Flow)
+frontEnd :: Program -> (Program, Flow, Int)
 frontEnd prog = 
     let globals = getGlobalsDecls prog
-        prog1 = passOne prog
+        (prog1, threadCount) = passOne prog
         pass2res = passTwo globals prog1 -- :: Int
         prog3 = passThree globals prog1
         prog45 = passFourFive prog3
@@ -35,7 +35,7 @@ frontEnd prog =
         prog8 = removeLabel prog6
         flow = flowProgram maplabelpc prog8
     in if pass7res
-       then (prog8, flow)
+       then (prog8, flow, threadCount)
        else error "frontEnd fatal: something went wrong! Please contact developers."
 
 -- Pass 8: transform the program into a graph (data type to be defined)
