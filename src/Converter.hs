@@ -56,7 +56,7 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
 toInitialState :: LSigma -> ST s (ISigma s)
 toInitialState lst = do
   ht <- H.new
-  mapM_ (\(n,v) -> H.insert ht n v) lst
+  mapM_ (\(n,v) -> H.insert ht n (v,Nothing)) lst
   return ht  
 
 -- for each transition: 
@@ -64,6 +64,6 @@ toInitialState lst = do
 -- process id is the name of the function
 -- transition id is the position in the vector of transitions 
 getTransitions :: Defs -> ST s [(Transition s, (TransitionID, RWSet))] 
-getTransitions = undefined
+getTransitions  = undefined
 
 

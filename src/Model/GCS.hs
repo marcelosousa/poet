@@ -35,16 +35,16 @@ type ISigma s = Sigma s
 -- A state is an Hash Table
 type HashTable s k v = C.HashTable s k v
 --  Later we can try Judy Arrays or Mutable Vectors
-type Sigma s = HashTable s Var Value -- We may want to add the enabled transitions for efficiency.
+type Sigma s = HashTable s Var SigmaValue -- We may want to add the enabled transitions for efficiency.
 type Var = BS.ByteString
+type SigmaValue = (Value, Maybe LockedValue)
 data Value = 
       IntVal Int 
     | Array [Value]
   deriving (Show,Eq,Ord)
-  
-type LockMap = Map Var LockedValue
+
 data LockedValue = 
-      Var [PC]
+      Var [(String,PC)]
     | ArrayLock [LockedValue]
   deriving (Show,Eq,Ord)
   
@@ -76,7 +76,7 @@ snd3 (a,b,c) = b
 -- END OF TYPES 
 
 -- safeLookup: lookup :: (Eq k, Hashable k) => h s k v -> k -> ST s (Maybe v)
-safeLookup :: String -> Sigma s -> Var -> ST s Value
+safeLookup :: String -> Sigma s -> Var -> ST s SigmaValue
 safeLookup err ht k = do
   mv <- H.lookup ht k
   case mv of 
@@ -139,7 +139,7 @@ equals s1 s2 = do
 modify :: Sigma s -> LSigma -> ST s (Sigma s)
 modify s [] = return s
 modify s ((k,v):r) = do 
-  H.insert s k v
+  H.insert s k (v,Nothing)
   modify s r
 -- modify s l = trace ("modify: " ++ show l) $ H.fromList l
    
@@ -168,7 +168,7 @@ isEqual s1 s2 = do
   l2 <- H.toList s2
   return $ isEqual' l1 l2  
 
-isEqual' :: [(Var,Value)] -> [(Var,Value)] -> Bool
+isEqual' :: [(Var,SigmaValue)] -> [(Var,SigmaValue)] -> Bool
 isEqual' [] [] = True
 isEqual' ((x,v):xs) ((y,t):ys) = x == y && v == t && isEqual' xs ys
 
