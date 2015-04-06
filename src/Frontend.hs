@@ -84,6 +84,13 @@ data Dir = Branch (PC, PC) | Continue PC
 type Flow = [(PC,Dir)]
 type FirstFlow = [(Ident,PC)]
 
+getFlow :: Flow -> PC -> Dir
+getFlow [] pc = error $ "getFlow: no match for " ++ show pc
+getFlow ((pc',dir):rest) pc = 
+    if pc == pc'
+    then dir
+    else getFlow rest pc
+    
 getPC :: AnnStatement PC -> PC
 getPC s = case s of
     ExprStat pc e -> pc

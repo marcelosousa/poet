@@ -44,7 +44,7 @@ data Value =
   deriving (Show,Eq,Ord)
 
 data LockedValue = 
-      Var [(String,PC)]
+      Var [(Var,PC)]
     | ArrayLock [LockedValue]
   deriving (Show,Eq,Ord)
   
