@@ -253,8 +253,70 @@ fromIf flow pcVar pc _cond = do
     return [(fn, [Write pcVar])]
 
 eval :: Expression -> Sigma s -> ST s Value
-eval = undefined
+eval expr s = case expr of
+  BinOp op lhs rhs -> do
+    lhsv <- eval lhs s
+    rhsv <- eval rhs s
+    return $ apply op lhsv rhsv
+  UnaryOp op rhs -> do
+      v <- eval rhs s
+      case op of
+        CPlusOp -> return v
+        CMinOp  -> case v of
+          IntVal iv -> return $ IntVal (-iv)
+          _ -> error $ "eval: unaryop " ++ show expr
+        CNegOp  ->   case v of
+          IntVal 0 -> return $ IntVal 1
+          IntVal 1 -> return $ IntVal 0
+          _ -> error $ "eval: unaryop " ++ show expr
+        _ -> error $ "eval: disallowed unary op: " ++ show expr    
+  Const (IntValue v) -> return $ IntVal $ fromInteger v
+  Ident i -> do
+    let ident = BS.pack i
+    (v,_) <- safeLookup "eval" s ident
+    return v
+  Index (Ident i) rhs -> do
+    let ident = BS.pack i
+    (v,_) <- safeLookup "eval" s ident  
+    vhs <- eval rhs s
+    case v of
+      IntVal idx -> error $ "eval: fatal error " ++ show expr
+      Array vs -> case vhs of
+        IntVal idx -> return $ vs!!idx
+        Array _ -> error $ "eval: disallowed " ++ show expr           
+  _ -> error $ "eval: disallowed " ++ show expr
+
+apply :: OpCode -> Value -> Value -> Value
+apply op (IntVal lhs) (IntVal rhs) = case op of
+  CMulOp -> IntVal $ lhs * rhs
+  CDivOp -> IntVal $ lhs `div` rhs
+  CRmdOp -> IntVal $ lhs `mod` rhs
+  CAddOp -> IntVal $ lhs + rhs
+  CSubOp -> IntVal $ lhs - rhs
+  CLeOp  -> IntVal $ fromBool $ lhs < rhs
+  CGrOp  -> IntVal $ fromBool $ lhs > rhs
+  CLeqOp -> IntVal $ fromBool $ lhs <= rhs
+  CGeqOp -> IntVal $ fromBool $ lhs >= rhs
+  CEqOp  -> IntVal $ fromBool $ lhs == rhs
+  CNeqOp -> IntVal $ fromBool $ lhs /= rhs
+  CLndOp -> IntVal $ fromBool $ toBool lhs && toBool rhs
+  CLorOp -> IntVal $ fromBool $ toBool lhs || toBool rhs
+apply _ _ _ = error "apply: not all sides are just integer values"
+
+toBool :: Int -> Bool
+toBool 0 = False
+toBool 1 = True
+toBool x = error $ "toBool: " ++ show x
+
+fromBool :: Bool -> Int
+fromBool True = 1
+fromBool False = 0
 
 evalCond :: Expression -> Sigma s -> ST s Bool
-evalCond expr s = undefined
+evalCond expr s = do
+  v <- eval expr s
+  case v of
+    IntVal 0 -> return False
+    IntVal 1 -> return True
+    _ -> error $ "evalCond: " ++ show expr
 
