@@ -1,12 +1,40 @@
-module Printer where
+{-#LANGUAGE RecordWildCards, FlexibleInstances #-}
+module Util.Printer where
 
-import Model
-import APIStateful
+import Control.Monad.ST.Safe
+import qualified Data.HashTable.Class as H
+import qualified Data.ByteString.Char8 as BS
+
+import Exploration.UNF.APIStateless
+
 import qualified Data.Map as M
 
-printUnf :: EventsID -> UnfoldingPrefix -> String
-printUnf mev unf@(pes, cfs) = "digraph unfolding {\n" ++ printPES mev pes ++ "}" 
+unfToDot :: UnfolderState s -> ST s (Int,String)
+unfToDot sys@UnfolderState{..} = do
+    events <- H.toList evts
+    return (length events, "digraph unfolding {\n" ++ toDot events stack ++ "}")
 
+class ToDot a where
+    toDot :: a -> EventsID -> String
+    
+instance ToDot [(EventID, Event)] where
+    toDot events stack = foldr (\el res -> toDot el stack ++ res) "" events
+
+instance ToDot (EventID, Event) where
+    toDot (eID, ev@Event{..}) stack = 
+      let causality = foldr (printCausality eID) "" succ
+          conflict = foldr (printConflict eID) "" icnf
+          (tID,pID) = evtr
+          label = show eID ++ " [label=\"eID = " ++ show eID ++ " tr=(" ++ show tID ++ "," ++ BS.unpack pID ++ ")\"]\n"
+      in causality ++ conflict ++ label
+
+printCausality :: EventID -> EventID -> String -> String
+printCausality e1 e2 s = show e1 ++ " -> " ++ show e2 ++ ";\n" ++ s
+
+printConflict :: EventID -> EventID -> String -> String
+printConflict e1 e2 s = show e1 ++ " -> " ++ show e2 ++ " [style=dotted];\n" ++ s  
+
+{-
 printUnfConf :: UnfoldingPrefix -> String
 printUnfConf (pes, cfs) = "digraph unfolding {\n" ++ printPES [] pes ++ "}" ++  printConfigurations cfs
 
@@ -40,14 +68,9 @@ printEvent mevents id (tid, cid) s =
   then show id ++ " [label=\""++tid++","++show cid++"\",style=filled,fillcolor=red];\n" ++ s
   else show id ++ " [label=\""++tid++","++show cid++"\"];\n" ++ s
 
-printCausality :: (EventID, EventID) -> String -> String
-printCausality (e1,e2) s = show e1 ++ " -> " ++ show e2 ++ ";\n" ++ s
-
-printConflict :: (EventID, EventID) -> String -> String
-printConflict (e1,e2) s = show e1 ++ " -> " ++ show e2 ++ " [style=dotted];\n" ++ s  
-
 printConfigurations :: Configurations -> String
 printConfigurations = M.foldWithKey printConfiguration "" 
 
 printConfiguration :: ConfigurationID -> (EventsID, Sigma) -> String -> String
 printConfiguration cID (esID, s) r = show cID ++ "=" ++ show esID ++ ";" ++ show s ++ "\n" ++ r
+-}

@@ -41,7 +41,8 @@ convert (Program (decls, defs)) pcs flow thCount = do
   H.insert is pmjVar (pmtiv, pmtivl)
   atrs <- mapM (getTransitions flow) defs >>= return . resetTID . concat
   let (trs,annot) = unzip atrs
-      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
+--      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
+      vtrs = V.fromList trs
       uind = computeUIndep annot
       sys = System vtrs is fils
   return (sys, uind)       

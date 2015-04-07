@@ -14,6 +14,7 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Map as M
 
 import Exploration.UNF.APIStateless
+import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
 import qualified Debug.Trace as DT
 
@@ -69,9 +70,12 @@ explore c@Conf{..} ê alt = do
   -- else do  
   let confEvs = stack -- lift $ getConfEvs maxevs evts
   str <- lift $ showEvents evts
-  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return () 
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
+  --isStr <- lift $ unfToDot is
+  --mtrace (separator ++ isStr) $ return ()
+  let k = 0
   -- @ configuration is maximal?
-  if null enevs 
+  if k `seq` null enevs 
   then do
     -- @ forall special events e in the configuration compute V(e)
     computePotentialAlternatives maxevs cevs 
@@ -108,7 +112,7 @@ explore c@Conf{..} ê alt = do
     if null malt
     then do
       core <- lift $ computeCore stack evts
-      lift $ prune e core evts
+      --lift $ prune e core evts
       return () 
     else do
       let alt' = head malt
@@ -137,7 +141,7 @@ prune e core events = do
   else deleteEvent e events
 
 deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = mtrace ("deleting event " ++ show e) $ do
+deleteEvent e events = trace ("deleting event " ++ show e) $ do
   ev@Event{..} <- getEvent "deleteEvent" e events
   mapM_ (\e' -> delSuccessor e e' events) pred
   mapM_ (\e' -> delImmCnfl e e' events) icnf 
@@ -174,7 +178,7 @@ unfold conf@Conf{..} e = do
   (nstc, lcst) <- execute copyst e
   snstc <- lift $ GCS.showSigma nstc
   -- update the local state of e
-  _ <- mtrace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
+  _ <- trace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
   -- @ 2. compute the new set of maximal events
   iprede <- lift $ getIPred e evts
   let nmaxevs = e:(maxevs \\ iprede)
@@ -221,13 +225,13 @@ expandWith st e maxevs tr = do
   tr_dis_h0 <- isEnabled evts ncst tr h0 
   if null h0 || (not tr_dis_h0)
   then error $ "expandWith(e="++show e++",tr="++show tr++",h0="++show h0++",tr_dis_h0=" ++ show tr_dis_h0++",maxevs="++show maxevs -- return [] 
-  else mtrace ("H0="++show h0++" enabled = " ++ show tr_dis_h0) $ do
+  else trace ("H0="++show h0++" enabled = " ++ show tr_dis_h0) $ do
     -- e should be a valid maximal event
     if e `elem` h0
     then do
       his <- computeHistories ncst tr e [h0] >>= return . nub 
       mapM (addEvent stack succe tr) his
-      mtrace ("other histories="++show his) $ addEvent stack succe tr h0
+      trace ("other histories="++show his) $ addEvent stack succe tr h0
     else error "e must always be in h0"  
 
 -- @ computeHistory 
@@ -272,7 +276,7 @@ pruneConfiguration st inde events pre_his tr es = do
 -- @ computeNextHistory
 --   build a candidate history out of replacing a maximal event e with its immediate predecessors
 computeNextHistory :: GCS.Sigma s -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> UnfolderOp s (GCS.Sigma s, EventsID)
-computeNextHistory st h tr e = mtrace ("computeNextHistory(h="++show h++",tr="++show tr++",e="++show e++")") $ do
+computeNextHistory st h tr e = trace ("computeNextHistory(h="++show h++",tr="++show tr++",e="++show e++")") $ do
   s@UnfolderState{..} <- get
   cst <- lift $ GCS.copy st
   -- we want to replace e by its predecessors
@@ -316,7 +320,7 @@ removeEvent s events eID = do
       ss <- GCS.showSigma s
       ns <- revertState s events prede lst
       sns <- GCS.showSigma ns
-      mtrace("removeEvent(eID="++show eID++") previous state="++ss++"\nnew state="++sns) $ return $! ns 
+      trace("removeEvent(eID="++show eID++") previous state="++ss++"\nnew state="++sns) $ return $! ns 
 
 revertState :: GCS.Sigma s -> Events s -> EventsID -> GCS.LSigma -> ST s (GCS.Sigma s)
 revertState s events prede [] = return s
@@ -390,7 +394,7 @@ addEvent stack dup tr history = do
     neID <- freshCounter
     -- @ 2. Compute the immediate conflicts
     -- @  a) Computes the local history of the new event
-    prede <- mtrace ("addEvent(tr=" ++ show tr++",history="++show history++",neID="++ show neID ++ ")") $ lift $ mapM (\e -> predecessors e evts) history  
+    prede <- trace ("addEvent(tr=" ++ show tr++",history="++show history++",neID="++ show neID ++ ")") $ lift $ mapM (\e -> predecessors e evts) history  
     let localHistory = prede `seq` nub $ concat prede ++ history 
     -- @  b) Computes the immediate conflicts of all events in the local configuration
     lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
