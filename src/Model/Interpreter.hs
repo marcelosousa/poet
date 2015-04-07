@@ -15,16 +15,15 @@ interpret :: Int -> System s -> Sigma s -> ST s Int
 interpret step sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
-    let s1 = unsafePerformIO $ print "current state:"
+    let s1 = unsafePerformIO $ putStrLn "current state:"
         s2 = unsafePerformIO $ putStrLn ststr
-        s3 = unsafePerformIO $ print "enabled transitions:"
+        s3 = unsafePerformIO $ putStrLn menu
         s4 = unsafePerformIO $ print trs
     if s1 `seq` s2 `seq` s3 `seq` s4 `seq` V.null trs
     then do
       return $ unsafePerformIO $ print "Finished execution"
       return step  
     else do
-      return $ unsafePerformIO $ print menu
       let c = unsafePerformIO $ getChar
           n = case c of
            'a' -> 0
@@ -35,7 +34,7 @@ interpret step sys st = do
          case trs V.!? n of
            Nothing -> error $ "interpret getTransition fail: " ++ show n
            Just (trID,_) -> do
-             let tr = getTransition sys trID
+             let tr = getTransitionWithID sys trID
              fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
              (nst,_) <- fn st
              interpret (step+1) sys nst
@@ -44,4 +43,5 @@ interpret step sys st = do
         return step
         
 menu :: String
-menu = unlines ["Choose an option:", "(a): automatic mode", "(n): number of enabled transition", "(x): exit"]
+menu = "Choose an enabled transition (by the position in the list):"
+--menu = unlines ["Choose a transition by position:", "(a): automatic mode", "(n): number of enabled transition", "(x): exit"]

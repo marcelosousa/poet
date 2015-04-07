@@ -120,6 +120,11 @@ getTransition sys@System{..} trIdx
         Nothing -> error $ "getTransition fail: " ++ show trIdx
         Just (_,_,tr) -> tr
 
+getTransitionWithID :: System s -> TransitionID -> TransitionFn s
+getTransitionWithID sys@System{..} trID = 
+  case V.find (\(a,b,c) -> b == trID) transitions of
+      Nothing ->  error $ "getTransition fail: " ++ show trID
+      Just (a,b,c) -> c
 
 -- This needs to be more efficient
 copy :: Sigma s -> ST s (Sigma s)
@@ -135,10 +140,9 @@ showSigma s = do
 showSigma' :: [(Var, SigmaValue)] -> String
 showSigma' [] = ""
 showSigma' ((v,(vs,l)):rest) = 
-    let sl = case l of 
-           Nothing -> ""
-           Just locks -> show locks
-    in show v ++ "=" ++ show vs ++ ", " ++ sl ++ "\n" ++ showSigma' rest
+    case l of 
+        Nothing -> show v ++ "=" ++ show vs ++ "\n" ++ showSigma' rest
+        Just locks -> show v ++ "=" ++ show (vs,locks) ++ "\n" ++ showSigma' rest
       
 equals :: Sigma s -> Sigma s -> ST s Bool
 equals s1 s2 = do

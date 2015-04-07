@@ -42,7 +42,8 @@ convert (Program (decls, defs)) pcs flow thCount = do
       vtrs = V.fromList trs
       uind = computeUIndep annot
       sys = System vtrs is fils
-  trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
+  return (sys, uind)       
+  --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
 resetTID :: [(Transition s, (TransitionID, RWSet))] -> [(Transition s, (TransitionID, RWSet))] 
 resetTID = snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
@@ -164,7 +165,7 @@ fromCall flow pcVar pc name [param] = do
                   then do
                     H.insert s pcVar (IntVal next, Nothing)
                     let vs' = modifyList vs (IntVal 1) idx
-                    H.insert s ident (Array vs', Nothing)
+                    H.insert s ident (Array vs', mlock)
                     return (s, [(pcVar, IntVal next),(ident, Array vs')])
                   else 
                     case mlock of
@@ -191,7 +192,7 @@ fromCall flow pcVar pc name [param] = do
                         H.insert s ident (IntVal 0, Nothing)
                         mapM_ (\(pcVar',pc') -> H.insert s pcVar' (IntVal pc',Nothing)) locks
                         let ch = map (\(pcVar',pc') -> (pcVar', IntVal pc')) locks
-                        return (s, [(pcVar, IntVal next),(ident, IntVal 1)]++ch)                    
+                        return (s, [(pcVar, IntVal next),(ident, IntVal 0)]++ch)                    
                 Index (Ident i) (Const (IntValue idx)) -> do
                   let ident = BS.pack i
                   (Array vs, mlock) <- safeLookup "call" s ident
@@ -207,7 +208,7 @@ fromCall flow pcVar pc name [param] = do
                             nidx = Var []
                             locks' = modifyList locks nidx idx
                         H.insert s pcVar (IntVal next, Nothing)  
-                        H.insert s ident (Array vs, Just $ ArrayLock locks')
+                        H.insert s ident (Array vs', Just $ ArrayLock locks')
                         mapM_ (\(pcVar',pc') -> H.insert s pcVar' (IntVal pc',Nothing)) vlock
                         let ch = map (\(pcVar',pc') -> (pcVar', IntVal pc')) vlock
                         return (s, [(pcVar, IntVal next),(ident, Array vs')]++ch)                            
