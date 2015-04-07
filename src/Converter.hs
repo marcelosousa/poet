@@ -29,8 +29,8 @@ convert (Program (decls, defs)) pcs flow thCount = do
   -- @ get the initial local state: this will be the set of global variables 
   --   minus the pcs
   let ils = getInitialDecls decls
-      pmtiv = Array $ map IntVal $ replicate (thCount+1) 1
-      pmtivl = Just $ ArrayLock $ map Var $ replicate (thCount+1) []
+      pmtiv = Array $ map IntVal $ replicate thCount 1
+      pmtivl = Just $ ArrayLock $ map Var $ replicate thCount []
       ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
       iils = ils++ipcs
       fils = (pmdVar, IntVal 1):(pmtVar, pmtiv):iils
