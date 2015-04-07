@@ -22,6 +22,7 @@ Executable poet
                     , language-c
                     , simplec
                     , HUnit
+                    , random
     Hs-Source-Dirs:   src/
     ghc-options:      -O3 -rtsopts
     Extensions:       DoAndIfThenElse

@@ -14,6 +14,7 @@ import Frontend (frontEnd)
 import Language.SimpleC
 import Converter
 import Model.Interpreter
+import System.Random
 
 --import Unfolderful
 --import Exploration.UNF.Unfolderless
@@ -36,11 +37,11 @@ _helpFE = unlines ["poet frontend receives a concurrent C program in a restricte
 _helpInter = unlines ["poet interpret receives a concurrent C program in a restricted subset of the language and runs the interpreter on the corresponding model of computation"
                   ,"Example: poet interpret -i=file.c"]
 _helpExec = unlines ["poet interpret receives a concurrent C program in a restricted subset of the language and executes one run of the corresponding model of computation"
-                  ,"Example: poet execute -i=file.c"]                 
+                  ,"Example: poet execute -i=file.c -s=int (optional)"]                 
                   
 data Option = Frontend {input :: FilePath}
             | Middleend {input :: FilePath}
-            | Execute {input :: FilePath}
+            | Execute {input :: FilePath, seed :: Int}
             | Interpret {input :: FilePath}
   deriving (Show, Data, Typeable, Eq)
 
@@ -51,7 +52,8 @@ middleendMode :: Option
 middleendMode = Middleend {input = def &= args} &= help _helpFE
 
 executeMode :: Option
-executeMode = Execute {input = def &= args} &= help _helpExec
+executeMode = Execute {input = def &= args
+                      ,seed = def &= help "seed for the scheduler"} &= help _helpExec
 
 interpretMode :: Option
 interpretMode = Interpret {input = def &= args} &= help _helpInter
@@ -82,7 +84,7 @@ runOption (Middleend f) = do
     let (prog', fflow, flow, thcount) = frontEnd prog
         ind = runST (convert prog' fflow flow thcount >>= return . snd)
     print ind
-runOption (Execute f) = execute f
+runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
         
 interpreter :: FilePath -> IO ()
@@ -92,11 +94,16 @@ interpreter f = do
       k = runST (convert prog' fflow flow thcount >>= interpret)    
   print prog'
   print k
-  
-execute :: FilePath -> IO ()
-execute f = do
+
+execute :: FilePath -> Int -> IO ()
+execute f dseed = do
   prog <- extract f
+  seed <- randomIO :: IO Int
+  print $ "Using seed = " ++ show (seed,dseed)
   let (prog', fflow, flow, thcount) = frontEnd prog
-      log = runST (convert prog' fflow flow thcount >>= exec thcount)    
+      gen = if dseed == 0
+            then mkStdGen seed
+            else mkStdGen dseed
+      log = runST (convert prog' fflow flow thcount >>= exec gen thcount)  
   print prog'
   putStrLn log

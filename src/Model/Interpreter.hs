@@ -1,5 +1,6 @@
 module Model.Interpreter where
 
+import System.Random
 import qualified Data.Vector as V
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
@@ -10,11 +11,11 @@ import System.IO.Unsafe
 
 import Model.GCS
 
-exec :: Int -> (System s, UIndep) -> ST s String
-exec thcount (sys,indep) = execIt thcount "" indep sys (initialState sys)
+exec :: StdGen -> Int -> (System s, UIndep) -> ST s String
+exec gen thcount (sys,indep) = execIt gen thcount "" indep sys (initialState sys)
 
-execIt :: Int -> String -> UIndep -> System s -> Sigma s -> ST s String
-execIt thcount str indep sys st = do
+execIt :: StdGen -> Int -> String -> UIndep -> System s -> Sigma s -> ST s String
+execIt gen thcount str indep sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
     if V.null trs
@@ -24,17 +25,20 @@ execIt thcount str indep sys st = do
         then return $ str ++ ststr
         else error $ "exec fatal: " ++ show (thcount+1) ++ "\n" ++ show ststr
     else do 
-      let indepTr = getIndepTr indep $ V.toList trs
+      let ltrs = "Enabled transitions: " ++ (show $ V.toList trs)
+          indepTr = getIndepTr indep $ V.toList trs
       check <- checkDiamonds sys indepTr st
       if check
-      then case trs V.!? 0 of
-        Nothing -> error $ "execIt getTransition fail!"
-        Just (trID,procID) -> do
-          let tr = getTransitionWithID sys trID
-              nstr = str ++ ststr ++ "independent transitions=" ++ show indepTr ++ "\nRunning " ++ show (trID,procID) ++ "\n"
-          fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-          (nst,_) <- fn st
-          execIt thcount nstr indep sys nst
+      then do
+        let (n, gen') = randomR (0,V.length trs - 1) gen
+        case trs V.!? n of
+          Nothing -> error $ "execIt getTransition fail!"
+          Just (trID,procID) -> do
+            let tr = getTransitionWithID sys trID
+                nstr = str ++ ststr ++ ltrs ++ "\nIndependent transitions=" ++ show indepTr ++ "\nRunning " ++ show (trID,procID) ++ "\n\n"
+            fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
+            (nst,_) <- fn st
+            execIt gen' thcount nstr indep sys nst
       else error "diamond check failed"
           
 checkDiamonds :: System s -> [((TransitionID,ProcessID),(TransitionID,ProcessID))] -> Sigma s -> ST s Bool
