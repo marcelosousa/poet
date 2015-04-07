@@ -58,6 +58,9 @@ type TransitionsID = V.Vector TransitionID
 type Transition s = (ProcessID, TransitionID, TransitionFn s)
 type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
 
+showTransition :: Transition s -> String
+showTransition (a,b,_) = show (a,b)
+
 -- | enabledTransitions 
 enabledTransitions :: System s -> Sigma s -> ST s (V.Vector (TransitionID,ProcessID))
 enabledTransitions sys@System{..} s = do
@@ -127,8 +130,16 @@ copy s = do
 showSigma :: Sigma s -> ST s String
 showSigma s = do
   kv <- H.toList s
-  return $ show kv 
+  return $ showSigma' kv 
 
+showSigma' :: [(Var, SigmaValue)] -> String
+showSigma' [] = ""
+showSigma' ((v,(vs,l)):rest) = 
+    let sl = case l of 
+           Nothing -> ""
+           Just locks -> show locks
+    in show v ++ "=" ++ show vs ++ ", " ++ sl ++ "\n" ++ showSigma' rest
+      
 equals :: Sigma s -> Sigma s -> ST s Bool
 equals s1 s2 = do
   kv1 <- H.toList s1

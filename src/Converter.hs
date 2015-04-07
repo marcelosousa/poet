@@ -42,7 +42,7 @@ convert (Program (decls, defs)) pcs flow thCount = do
       vtrs = V.fromList trs
       uind = computeUIndep annot
       sys = System vtrs is fils
-  return (sys, uind) 
+  trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
 resetTID :: [(Transition s, (TransitionID, RWSet))] -> [(Transition s, (TransitionID, RWSet))] 
 resetTID = snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])

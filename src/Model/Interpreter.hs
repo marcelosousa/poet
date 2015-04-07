@@ -16,7 +16,7 @@ interpret step sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
     let s1 = unsafePerformIO $ print "current state:"
-        s2 = unsafePerformIO $ print ststr
+        s2 = unsafePerformIO $ putStrLn ststr
         s3 = unsafePerformIO $ print "enabled transitions:"
         s4 = unsafePerformIO $ print trs
     if s1 `seq` s2 `seq` s3 `seq` s4 `seq` V.null trs

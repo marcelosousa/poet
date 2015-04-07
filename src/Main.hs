@@ -77,4 +77,5 @@ exec f = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
       k = runST (convert prog' fflow flow thcount >>= interpreter . fst)    
+  print prog'
   print k

@@ -12,7 +12,7 @@ passSix (Program (decls,defs)) =
     let defs' = map local2exprStat defs
     -- fix the PCs
         defs'' = fst $ foldr (\def (r,c) -> let (def',nc) = fixPCDef c def in (def':r,nc)) ([],0) defs'
-    in Program (decls,defs')
+    in Program (decls,defs'')
 
 local2exprStat :: Definition -> Definition
 local2exprStat (FunctionDef pc name params stats) = 
@@ -52,4 +52,4 @@ fixPCStat pcCount s =
 
 rec :: a -> (a -> b -> (b,a)) -> [b] -> ([b], a)
 rec c func list = 
-    foldr (\el (res,cc) -> let (el',nc) = func c el in (el':res,nc)) ([],c) list
+    foldr (\el (res,cc) -> let (el',nc) = func cc el in (el':res,nc)) ([],c) list
