@@ -101,9 +101,8 @@ isIndependent uindep (t1,p1) (t2,p2)
 -- | isDependent - checks if two transitions are dependent
 isDependent uindep t1 t2 = not $ isIndependent uindep t1 t2
 
-printIndep :: UIndep -> [(TransitionID,ProcessID)] -> String
-printIndep uindep trs = 
-    "independent transitions=" ++ show [ (t1,t2) | t1 <- trs, t2 <- trs, t1 < t2 && isIndependent uindep t1 t2]
+getIndepTr :: UIndep -> [(TransitionID,ProcessID)] -> [((TransitionID,ProcessID),(TransitionID,ProcessID))]
+getIndepTr uindep trs = [ (t1,t2) | t1 <- trs, t2 <- trs, t1 < t2 && isIndependent uindep t1 t2]
 
 -- | botID 0 is the transition id for bottom 
 botID :: TransitionID
