@@ -26,11 +26,11 @@ execIt str sys st = do
         (nst,_) <- fn st
         execIt nstr sys nst
     
-interpreter :: System s -> ST s Int
-interpreter sys = interpret 0 sys (initialState sys)
+interpret :: System s -> ST s Int
+interpret sys = interpretIt 0 sys (initialState sys)
 
-interpret :: Int -> System s -> Sigma s -> ST s Int
-interpret step sys st = do
+interpretIt :: Int -> System s -> Sigma s -> ST s Int
+interpretIt step sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
     let s1 = unsafePerformIO $ putStrLn "current state:"
@@ -55,11 +55,10 @@ interpret step sys st = do
              let tr = getTransitionWithID sys trID
              fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
              (nst,_) <- fn st
-             interpret (step+1) sys nst
+             interpretIt (step+1) sys nst
       else do 
-        return $ unsafePerformIO $ print "Exit."
         return step
         
 menu :: String
-menu = "Choose an enabled transition (by the position in the list):"
+menu = "Choose an enabled transition (by the position in the list, 'x' to quit):"
 --menu = unlines ["Choose a transition by position:", "(a): automatic mode", "(n): number of enabled transition", "(x): exit"]
