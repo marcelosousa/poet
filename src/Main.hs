@@ -13,6 +13,8 @@ import Control.Monad.ST
 import Frontend (frontEnd)
 import Language.SimpleC
 import Converter
+import Model.Interpreter
+
 --import Unfolderful
 --import Exploration.UNF.Unfolderless
 --import Printer
@@ -70,4 +72,9 @@ runOption (Middleend f) = do
     print ind
     --convert :: Program -> FirstFlow -> Flow -> Int -> ST s (System s, UIndep)
     
-    
+exec :: FilePath -> IO ()
+exec f = do
+  prog <- extract f
+  let (prog', fflow, flow, thcount) = frontEnd prog
+      k = runST (convert prog' fflow flow thcount >>= interpreter . fst)    
+  print k

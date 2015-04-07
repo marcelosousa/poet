@@ -37,7 +37,7 @@ convert (Program (decls, defs)) pcs flow thCount = do
   is <- toInitialState iils
   H.insert is pmdVar (IntVal 1, Just $ Var [])
   H.insert is pmtVar (pmtiv, pmtivl)
-  atrs <- mapM (getTransitions flow) defs >>= return . concat
+  atrs <- mapM (getTransitions flow) defs >>= return . resetTID . concat
   let (trs,annot) = unzip atrs
       vtrs = V.fromList trs
       uind = computeUIndep annot
