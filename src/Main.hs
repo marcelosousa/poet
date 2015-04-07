@@ -39,11 +39,14 @@ _helpInter = unlines ["poet interpret receives a concurrent C program in a restr
                   ,"Example: poet interpret -i=file.c"]
 _helpExec = unlines ["poet interpret receives a concurrent C program in a restricted subset of the language and executes one run of the corresponding model of computation"
                   ,"Example: poet execute -i=file.c -s=int (optional)"]                 
-                  
+_helpExplore = unlines ["poet explore receives a concurrent C program in a restricted subset of the language and explores the state space of the corresponding model of computation using a partial order representation"
+                  ,"Example: poet explore -i=file.c"]                 
+                   
 data Option = Frontend {input :: FilePath}
             | Middleend {input :: FilePath}
             | Execute {input :: FilePath, seed :: Int}
             | Interpret {input :: FilePath}
+            | Explore {input :: FilePath}
   deriving (Show, Data, Typeable, Eq)
 
 frontendMode :: Option
@@ -59,8 +62,11 @@ executeMode = Execute {input = def &= args
 interpretMode :: Option
 interpretMode = Interpret {input = def &= args} &= help _helpInter
 
+exploreMode :: Option
+exploreMode = Explore {input = def &= args} &= help _helpExplore
+
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode]
+progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode, exploreMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -87,6 +93,7 @@ runOption (Middleend f) = do
     print ind
 runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
+runOption (Explore f) = explore f
         
 interpreter :: FilePath -> IO ()
 interpreter f = do
@@ -109,8 +116,8 @@ execute f dseed = do
   print prog'
   putStrLn log
 
-unfold :: FilePath -> IO ()
-unfold f = do
+explore :: FilePath -> IO ()
+explore f = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
       unfst = runST (convert prog' fflow flow thcount >>= uncurry stateless >>= return . show)
