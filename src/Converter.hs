@@ -23,6 +23,7 @@ type RWSet = [RW]
 
 pmdVar = BS.pack "__poet_mutex_death"
 pmtVar = BS.pack "__poet_mutex_threads"
+pmjVar = BS.pack "__poet_mutex_threads_join"
 
 convert :: Program -> FirstFlow -> Flow -> Int -> ST s (System s, UIndep)
 convert (Program (decls, defs)) pcs flow thCount = do
@@ -37,16 +38,17 @@ convert (Program (decls, defs)) pcs flow thCount = do
   is <- toInitialState iils
   H.insert is pmdVar (IntVal 1, Just $ Var [])
   H.insert is pmtVar (pmtiv, pmtivl)
+  H.insert is pmjVar (pmtiv, pmtivl)
   atrs <- mapM (getTransitions flow) defs >>= return . resetTID . concat
   let (trs,annot) = unzip atrs
-      vtrs = V.fromList trs
+      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
       uind = computeUIndep annot
       sys = System vtrs is fils
   return (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
 resetTID :: [(Transition s, (TransitionID, RWSet))] -> [(Transition s, (TransitionID, RWSet))] 
-resetTID = snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
+resetTID = reverse . snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
 
 resetTID' :: Int -> (Transition s, (TransitionID, RWSet)) -> (Int, (Transition s, (TransitionID, RWSet)))
 resetTID' c ((pid,_,fn),(_,annot)) = (c+1,((pid,c,fn),(c,annot)))
@@ -60,7 +62,7 @@ check :: [(TransitionID, RWSet)] -> Int -> Int -> Bool
 check rwsets i j = 
     let (_,tr1) = rwsets!!i
         (_,tr2) = rwsets!!j
-    in isRWDependent tr1 tr2
+    in not $ isRWDependent tr1 tr2
 
 isRWDependent :: RWSet -> RWSet -> Bool
 isRWDependent [] _ = False

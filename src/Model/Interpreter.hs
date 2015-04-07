@@ -10,11 +10,11 @@ import System.IO.Unsafe
 
 import Model.GCS
 
-exec :: Int -> System s -> ST s String
-exec thcount sys = execIt thcount "" sys (initialState sys)
+exec :: Int -> (System s, UIndep) -> ST s String
+exec thcount (sys,indep) = execIt thcount "" indep sys (initialState sys)
 
-execIt :: Int -> String -> System s -> Sigma s -> ST s String
-execIt thcount str sys st = do
+execIt :: Int -> String -> UIndep -> System s -> Sigma s -> ST s String
+execIt thcount str indep sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
     if V.null trs
@@ -27,10 +27,10 @@ execIt thcount str sys st = do
       Nothing -> error $ "execIt getTransition fail!"
       Just (trID,procID) -> do
         let tr = getTransitionWithID sys trID
-            nstr = str ++ ststr ++ "\nRunning " ++ show (trID,procID) ++ "\n"
+            nstr = str ++ ststr ++ (printIndep indep $ V.toList trs) ++ "\nRunning " ++ show (trID,procID) ++ "\n"
         fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
         (nst,_) <- fn st
-        execIt thcount nstr sys nst
+        execIt thcount nstr indep sys nst
 
 isDeadlock :: Int -> Sigma s -> ST s Bool
 isDeadlock thcount st = do
@@ -40,18 +40,19 @@ isDeadlock thcount st = do
         Just (Var locks) -> return $ length locks == (thcount+1)
         _ -> error $ "isDeadlock: " ++ show mlock
         
-interpret :: System s -> ST s Int
-interpret sys = interpretIt 0 sys (initialState sys)
+interpret :: (System s, UIndep) -> ST s Int
+interpret (sys,indep) = interpretIt 0 indep sys (initialState sys)
 
-interpretIt :: Int -> System s -> Sigma s -> ST s Int
-interpretIt step sys st = do
+interpretIt :: Int -> UIndep -> System s -> Sigma s -> ST s Int
+interpretIt step indep sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
     let s1 = unsafePerformIO $ putStrLn "current state:"
         s2 = unsafePerformIO $ putStrLn ststr
         s3 = unsafePerformIO $ putStrLn menu
         s4 = unsafePerformIO $ print trs
-    if s1 `seq` s2 `seq` s3 `seq` s4 `seq` V.null trs
+        s5 = unsafePerformIO $ putStrLn $ printIndep indep $ V.toList trs
+    if s1 `seq` s2 `seq` s3 `seq` s4 `seq` s5 `seq` V.null trs
     then do
       let f = unsafePerformIO $ print "Finished execution"
       f `seq` return step  
@@ -69,7 +70,7 @@ interpretIt step sys st = do
              let tr = getTransitionWithID sys trID
              fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
              (nst,_) <- fn st
-             interpretIt (step+1) sys nst
+             interpretIt (step+1) indep sys nst
       else do 
         return step
         

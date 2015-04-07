@@ -101,6 +101,10 @@ isIndependent uindep (t1,p1) (t2,p2)
 -- | isDependent - checks if two transitions are dependent
 isDependent uindep t1 t2 = not $ isIndependent uindep t1 t2
 
+printIndep :: UIndep -> [(TransitionID,ProcessID)] -> String
+printIndep uindep trs = 
+    "independent transitions=" ++ show [ (t1,t2) | t1 <- trs, t2 <- trs, t1 < t2 && isIndependent uindep t1 t2]
+
 -- | botID 0 is the transition id for bottom 
 botID :: TransitionID
 botID = -1
@@ -122,9 +126,12 @@ getTransition sys@System{..} trIdx
 
 getTransitionWithID :: System s -> TransitionID -> TransitionFn s
 getTransitionWithID sys@System{..} trID = 
-  case V.find (\(a,b,c) -> b == trID) transitions of
-      Nothing ->  error $ "getTransition fail: " ++ show trID
-      Just (a,b,c) -> c
+  case transitions V.!? trID of
+    Nothing -> error $ "getTransition fail: " ++ show trID
+    Just (_,trIDx,tr) -> 
+      if trID /= trIDx
+      then error $ "getTransitionWithID something went wrong before: " ++ show (trID, trIDx)
+      else tr 
 
 -- This needs to be more efficient
 copy :: Sigma s -> ST s (Sigma s)

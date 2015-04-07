@@ -14,6 +14,7 @@ passOne p@(Program (decl,defs)) =
     let main = findMain defs
         (threadCount, threads, main') = findAndInstrThreads main
         pmt = GlobalDecl 0 (Index (Ident "__poet_mutex_threads") (Const $ IntValue $ toInteger threadCount)) Nothing
+        pmj = GlobalDecl 0 (Index (Ident "__poet_mutex_threads_join") (Const $ IntValue $ toInteger threadCount)) Nothing
         pmd = GlobalDecl 0 (Ident "__poet_mutex_death") (Just (IntValue 0))
         threadNames = fst3 $ unzip3 threads
         defs' = replaceMain main' defs
@@ -60,7 +61,7 @@ findAndInstrThreadsAux s (maps,threadCount) =
           in ([mcall], res, threadCount+1)
         ExprStat pc (Call "pthread_join" [Ident tid, Ident "NULL"]) -> 
           let i = Const $ IntValue $ toInteger $ getTIDValue tid maps
-              mcall = ExprStat pc (Call "__poet_mutex_lock" [Index (Ident "__poet_mutex_threads") i])
+              mcall = ExprStat pc (Call "__poet_mutex_lock" [Index (Ident "__poet_mutex_threads_join") i])
           in ([mcall], maps, threadCount)
         ExprStat _ (Call fname _) ->
           if fname `elem` ["pthread_create", "pthread_join"]
@@ -113,7 +114,7 @@ replacePthreadExitAux name threadInfo s =
     case s of
          ExprStat pc (Call "pthread_exit" [Ident "NULL"]) ->
            let i = Const $ IntValue $ toInteger $ getTNameValue name threadInfo
-               pcall = ExprStat pc (Call "__poet_mutex_unlock" [Index (Ident "__poet_mutex_threads") i])
+               pcall = ExprStat pc (Call "__poet_mutex_unlock" [Index (Ident "__poet_mutex_threads_join") i])
                dcall = ExprStat pc (Call "__poet_mutex_lock" [Ident "__poet_mutex_death"])
            in [pcall,dcall]
          _ -> [s]

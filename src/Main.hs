@@ -89,7 +89,7 @@ interpreter :: FilePath -> IO ()
 interpreter f = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
-      k = runST (convert prog' fflow flow thcount >>= interpret . fst)    
+      k = runST (convert prog' fflow flow thcount >>= interpret)    
   print prog'
   print k
   
@@ -97,6 +97,6 @@ execute :: FilePath -> IO ()
 execute f = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
-      log = runST (convert prog' fflow flow thcount >>= (exec thcount) . fst)    
+      log = runST (convert prog' fflow flow thcount >>= exec thcount)    
   print prog'
   putStrLn log
