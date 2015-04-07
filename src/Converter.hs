@@ -75,7 +75,7 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
       FunctionDecl _ _ _ -> [] 
       GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, IntVal 0)]
       GlobalDecl _ (Ident i) (Just (IntValue v)) -> [(BS.pack i, IntVal $ fromInteger v)]
-      GlobalDecl _ (Index (Ident i) _) _ -> error "getInitialDecls: global array is not supported yet"
+      GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
 
 -- @ computeInitialState 
@@ -221,7 +221,15 @@ getVarArg (Index (Ident i) _) = BS.pack i
 getVarArg e = error $ "getVarArg: " ++ show e
 
 getIdent :: Expression -> [Var]
-getIdent = undefined
+getIdent expr = case expr of
+  BinOp op lhs rhs -> getIdent lhs ++ getIdent rhs
+  UnaryOp op rhs -> getIdent rhs
+  Const v -> []
+  Ident i -> [BS.pack i]
+  Index (Ident i) rhs -> (BS.pack i):getIdent rhs
+  Call _ args -> concatMap getIdent args
+  _ -> error $ "eval: disallowed " ++ show expr
+
 
 -- encodes Assign
 fromAssign :: Flow -> Var -> PC -> Expression -> Expression -> ST s [(TransitionFn s, RWSet)]
@@ -273,8 +281,12 @@ fromIf flow pcVar pc _cond = do
             then return $ Just $ \s -> do
                 valCond <- evalCond _cond s 
                 if valCond
-                then return (s, [(pcVar, IntVal t)])
-                else return (s, [(pcVar, IntVal e)])
+                then do 
+                  H.insert s pcVar (IntVal t, Nothing)
+                  return (s, [(pcVar, IntVal t)])
+                else do
+                  H.insert s pcVar (IntVal e, Nothing) 
+                  return (s, [(pcVar, IntVal e)])
             else return Nothing
     return [(fn, [Write pcVar])]
 
@@ -345,4 +357,3 @@ evalCond expr s = do
     IntVal 0 -> return False
     IntVal 1 -> return True
     _ -> error $ "evalCond: " ++ show expr
-

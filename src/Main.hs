@@ -8,9 +8,11 @@ module Main where
 
 import System.Console.CmdArgs
 
+import Control.Monad.ST
+
 import Frontend (frontEnd)
 import Language.SimpleC
-
+import Converter
 --import Unfolderful
 --import Exploration.UNF.Unfolderless
 --import Printer
@@ -31,13 +33,17 @@ _helpFE = unlines ["poet frontend receives a concurrent C program in a restricte
                   ,"Example: poet frontend file.c"]
 
 data Option = Frontend {input :: FilePath}
+            | Middleend {input :: FilePath}
   deriving (Show, Data, Typeable, Eq)
 
 frontendMode :: Option
 frontendMode = Frontend {input = def &= args} &= help _helpFE
 
+middleendMode :: Option
+middleendMode = Middleend {input = def &= args} &= help _helpFE
+
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode]
+progModes = cmdArgsMode $ modes [frontendMode, middleendMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -48,13 +54,20 @@ main = do options <- cmdArgsRun progModes
           runOption options
           
 runOption :: Option -> IO ()
-runOption (Frontend f) = 
-    do prog <- extract f
-       let prog' = frontEnd prog
-       putStrLn "ORIGINAL PROGRAM"
-       putStrLn "------------------------------"
-       print prog
-       putStrLn "TRANSFORMED PROGRAM"
-       putStrLn "------------------------------"
-       print prog'
-
+runOption (Frontend f) = do
+    prog <- extract f
+    let prog' = frontEnd prog
+    putStrLn "ORIGINAL PROGRAM"
+    putStrLn "------------------------------"
+    print prog
+    putStrLn "TRANSFORMED PROGRAM"
+    putStrLn "------------------------------"
+    print prog'
+runOption (Middleend f) = do
+    prog <- extract f
+    let (prog', fflow, flow, thcount) = frontEnd prog
+        ind = runST (convert prog' fflow flow thcount >>= return . snd)
+    print ind
+    --convert :: Program -> FirstFlow -> Flow -> Int -> ST s (System s, UIndep)
+    
+    
