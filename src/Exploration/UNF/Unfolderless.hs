@@ -322,7 +322,7 @@ revertState :: GCS.Sigma s -> Events s -> EventsID -> GCS.LSigma -> ST s (GCS.Si
 revertState s events prede [] = return s
 revertState s events prede lst =  
   if null prede
-  then error $ "revertState: null prede: " ++ show lst
+  then return s -- error $ "revertState: null prede: " ++ show lst
   else do
     es <- mapM (\e -> getEvent "revertState" e events >>= \ev -> return $ (e,fromMaybe [] $ lcst ev)) prede
     -- get the changes

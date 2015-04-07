@@ -7,17 +7,18 @@
 module Main where
 
 import System.Console.CmdArgs
+import System.Random
 
 import Control.Monad.ST
 
-import Frontend (frontEnd)
 import Language.SimpleC
+import Frontend (frontEnd)
 import Converter
 import Model.Interpreter
-import System.Random
+import Exploration.UNF.Unfolderless (stateless)
+import Exploration.UNF.APIStateless hiding (execute)
 
 --import Unfolderful
---import Exploration.UNF.Unfolderless
 --import Printer
 --import Benchmark
 --import Model.GCS
@@ -107,3 +108,10 @@ execute f dseed = do
       log = runST (convert prog' fflow flow thcount >>= exec gen thcount)  
   print prog'
   putStrLn log
+
+unfold :: FilePath -> IO ()
+unfold f = do
+  prog <- extract f
+  let (prog', fflow, flow, thcount) = frontEnd prog
+      unfst = runST (convert prog' fflow flow thcount >>= uncurry stateless >>= return . show)
+  print unfst
