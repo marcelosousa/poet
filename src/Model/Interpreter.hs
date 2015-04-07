@@ -8,6 +8,24 @@ import System.IO.Unsafe
 
 import Model.GCS
 
+exec :: System s -> ST s String
+exec sys = execIt "" sys (initialState sys)
+
+execIt :: String -> System s -> Sigma s -> ST s String
+execIt str sys st = do
+    trs <- enabledTransitions sys st
+    ststr <- showSigma st
+    if V.null trs
+    then return $ str ++ ststr
+    else case trs V.!? 0 of
+      Nothing -> error $ "execIt getTransition fail!"
+      Just (trID,procID) -> do
+        let tr = getTransitionWithID sys trID
+            nstr = str ++ ststr ++ "\nRunning " ++ show (trID,procID) ++ "\n"
+        fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
+        (nst,_) <- fn st
+        execIt nstr sys nst
+    
 interpreter :: System s -> ST s Int
 interpreter sys = interpret 0 sys (initialState sys)
 
@@ -21,8 +39,8 @@ interpret step sys st = do
         s4 = unsafePerformIO $ print trs
     if s1 `seq` s2 `seq` s3 `seq` s4 `seq` V.null trs
     then do
-      return $ unsafePerformIO $ print "Finished execution"
-      return step  
+      let f = unsafePerformIO $ print "Finished execution"
+      f `seq` return step  
     else do
       let c = unsafePerformIO $ getChar
           n = case c of

@@ -36,6 +36,7 @@ _helpFE = unlines ["poet frontend receives a concurrent C program in a restricte
 
 data Option = Frontend {input :: FilePath}
             | Middleend {input :: FilePath}
+            | Execute {input :: FilePath}
   deriving (Show, Data, Typeable, Eq)
 
 frontendMode :: Option
@@ -44,8 +45,11 @@ frontendMode = Frontend {input = def &= args} &= help _helpFE
 middleendMode :: Option
 middleendMode = Middleend {input = def &= args} &= help _helpFE
 
+executeMode :: Option
+executeMode = Execute {input = def &= args} &= help _helpFE
+
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode, middleendMode]
+progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -70,12 +74,20 @@ runOption (Middleend f) = do
     let (prog', fflow, flow, thcount) = frontEnd prog
         ind = runST (convert prog' fflow flow thcount >>= return . snd)
     print ind
-    --convert :: Program -> FirstFlow -> Flow -> Int -> ST s (System s, UIndep)
-    
-exec :: FilePath -> IO ()
-exec f = do
+runOption (Execute f) = execute f
+        
+interpret :: FilePath -> IO ()
+interpret f = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
       k = runST (convert prog' fflow flow thcount >>= interpreter . fst)    
   print prog'
   print k
+  
+execute :: FilePath -> IO ()
+execute f = do
+  prog <- extract f
+  let (prog', fflow, flow, thcount) = frontEnd prog
+      log = runST (convert prog' fflow flow thcount >>= exec . fst)    
+  print prog'
+  putStrLn log
