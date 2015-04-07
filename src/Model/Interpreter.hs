@@ -2,21 +2,27 @@ module Model.Interpreter where
 
 import qualified Data.Vector as V
 import qualified Data.Maybe as M
+import qualified Data.ByteString.Char8 as BS
+
 import Data.Char
 import Control.Monad.ST
 import System.IO.Unsafe
 
 import Model.GCS
 
-exec :: System s -> ST s String
-exec sys = execIt "" sys (initialState sys)
+exec :: Int -> System s -> ST s String
+exec thcount sys = execIt thcount "" sys (initialState sys)
 
-execIt :: String -> System s -> Sigma s -> ST s String
-execIt str sys st = do
+execIt :: Int -> String -> System s -> Sigma s -> ST s String
+execIt thcount str sys st = do
     trs <- enabledTransitions sys st
     ststr <- showSigma st
     if V.null trs
-    then return $ str ++ ststr
+    then do
+        check <- isDeadlock thcount st 
+        if check
+        then return $ str ++ ststr
+        else error $ "exec fatal: " ++ show (thcount+1) ++ "\n" ++ show ststr
     else case trs V.!? 0 of
       Nothing -> error $ "execIt getTransition fail!"
       Just (trID,procID) -> do
@@ -24,8 +30,16 @@ execIt str sys st = do
             nstr = str ++ ststr ++ "\nRunning " ++ show (trID,procID) ++ "\n"
         fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
         (nst,_) <- fn st
-        execIt nstr sys nst
-    
+        execIt thcount nstr sys nst
+
+isDeadlock :: Int -> Sigma s -> ST s Bool
+isDeadlock thcount st = do
+    let ident = BS.pack "__poet_mutex_death"
+    (_, mlock) <- safeLookup "isDeadlock" st ident
+    case mlock of
+        Just (Var locks) -> return $ length locks == (thcount+1)
+        _ -> error $ "isDeadlock: " ++ show mlock
+        
 interpret :: System s -> ST s Int
 interpret sys = interpretIt 0 sys (initialState sys)
 
