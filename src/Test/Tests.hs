@@ -2,6 +2,12 @@ module Test.Tests where
 
 import Exploration.UNF.Unfolderless
 import Test.Examples
+import Test.Examples.ExOne
+import Test.Examples.ExTwo
+import Test.Examples.ExThree
+import Test.Examples.ExFour
+import Test.Examples.ExFive
+import Test.Examples.ExSix
 
 import Control.Monad.ST.Safe
 import Test.HUnit
@@ -39,7 +45,7 @@ tests = TestList
   , TestLabel "test2" test2 
   , TestLabel "test3" test3 
   , TestLabel "test4" test4 
---  , TestLabel "test5" test5 
---  , TestLabel "test6" test6 
---  , TestLabel "test7" test7 
+  , TestLabel "test5" test5 
+  , TestLabel "test6" test6 
+  , TestLabel "test7" test7 
   ] 

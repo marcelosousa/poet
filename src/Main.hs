@@ -19,6 +19,9 @@ import Exploration.UNF.Unfolderless (stateless)
 import Exploration.UNF.APIStateless hiding (execute)
 import Util.Printer
 
+import Test.HUnit (runTestTT)
+import Test.Tests
+
 --import Unfolderful
 --import Printer
 --import Benchmark
@@ -26,9 +29,7 @@ import Util.Printer
 --import Frontend.PetriNet
 --import qualified Data.Map as M
 --import Control.Monad.ST.Safe
---import Test.HUnit
---import Test.Tests
---import Test.Examples
+
 
 _program, _summary :: String
 _summary = unlines ["POET - v0.1","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs.","Copyright 2015 @ Marcelo Sousa"]
@@ -42,12 +43,14 @@ _helpExec = unlines ["poet interpret receives a concurrent C program in a restri
                   ,"Example: poet execute -i=file.c -s=int (optional)"]                 
 _helpExplore = unlines ["poet explore receives a concurrent C program in a restricted subset of the language and explores the state space of the corresponding model of computation using a partial order representation"
                   ,"Example: poet explore -i=file.c"]                 
+_helpTest = unlines ["poet test runs the explore mode over the set of examples in Test/Examples"]
                    
 data Option = Frontend {input :: FilePath}
             | Middleend {input :: FilePath}
             | Execute {input :: FilePath, seed :: Int}
             | Interpret {input :: FilePath}
             | Explore {input :: FilePath}
+            | Test 
   deriving (Show, Data, Typeable, Eq)
 
 frontendMode :: Option
@@ -66,8 +69,11 @@ interpretMode = Interpret {input = def &= args} &= help _helpInter
 exploreMode :: Option
 exploreMode = Explore {input = def &= args} &= help _helpExplore
 
+testMode :: Option
+testMode = Test {} &= help _helpTest
+
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode, exploreMode]
+progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode, exploreMode, testMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -95,6 +101,7 @@ runOption (Middleend f) = do
 runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
 runOption (Explore f) = explore f
+runOption Test = test
         
 interpreter :: FilePath -> IO ()
 interpreter f = do
@@ -126,3 +133,17 @@ explore f = do
   size `seq` print prog'
   putStrLn $ "total number of events of the unfolding: " ++ show size
   writeFile (f++".log") unfst
+
+test :: IO ()
+test = do
+    succCount <- runTestTT tests
+    print succCount
+    
+{-
+runPT :: FilePath -> IO ()
+runPT file = do
+  net <- parse file
+  let ind = retrieveIndRel net
+      unfSt = runST (convert net >>= \sys -> stateless sys ind >>= return . show)
+  print unfSt 
+-}

@@ -460,7 +460,7 @@ computePotentialAlternatives maxevs evs =  do
         -- @ 1 and 2
         let common = stack \\ (concat succes') 
             v = common ++ [e'] 
-            isStackValid = all (\e' -> e' `elem` v) stackE 
+            isStackValid = all (\e' -> e' `elem` v) stackE -- this check is probably redundant now
         if isStackValid
         then do
           -- @ Compute v: *pre-condition* prede' are in common
