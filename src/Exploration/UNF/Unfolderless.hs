@@ -18,9 +18,6 @@ import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
 import qualified Debug.Trace as DT
 
---import Examples
---import Benchmark
-
 import System.IO.Unsafe
 import Prelude hiding (pred)
 
@@ -59,69 +56,39 @@ separator = "-----------------------------------------\n"
 explore :: Configuration s -> EventID -> Alternative -> UnfolderOp s ()
 explore c@Conf{..} ê alt = do
   is@UnfolderState{..} <- get
-  -- @ assert that the global state given by the maximal events is the same as the global state that we have
-  -- nst <- lift $ GCS.copy stc 
-  -- build the global state
-  -- emax <- lift $ mapM (\e -> getEvent "explore" e evts) maxevs
-  -- gst <- lift $ foldM (\ist e -> GCS.modify ist $ fromJust $ lcst e) nst emax 
-  -- check <- lift $ GCS.equals stc gst
-  -- if not check
-  -- then error "explore: the states are different"
-  -- else do  
-  let confEvs = stack -- lift $ getConfEvs maxevs evts
-  str <- lift $ showEvents evts
-  trace (separator ++ "explore(ê = " ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
-  --isStr <- lift $ unfToDot is
-  --mtrace (separator ++ isStr) $ return ()
-  let k = 0
   -- @ configuration is maximal?
-  if k `seq` null enevs 
-  then do
-    -- @ forall special events e in the configuration compute V(e)
+  if null enevs 
+  then
+    -- @ forall events e in Conf with immediate conflicts compute V(e)
+    --   and check if its a valid alternative
     computePotentialAlternatives maxevs cevs 
-    return () 
   else do
-    -- @ pick an event that is enabled
-    e <- if null alt
-         then return $ head enevs -- enevs !! (read $ k:[]) -- head enevs
-         else do
-           let lp = enevs `intersect` alt
-           if null lp 
-           then do
-             evtstr <- lift $ showEvents evts
-             stacke <- lift $ mapM (\e -> getEvent "error state" e evts >>= return . snd . evtr) stack
-             error $ separator ++ "explore(ê = " ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack ++ ")\n"++evtstr++"\nstack_tr="++show stacke
-           else return $ head lp   
+    -- @ choose event
+    let e = if null alt
+            then head enevs
+            else let lp = enevs `intersect` alt
+                 in if null lp 
+                    then error $ separator ++ "A `intersect` en(C) = {} at explore(ê = " 
+                                 ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " 
+                                 ++ show alt ++ ", stack = " ++ show stack ++ ")"
+                    else head lp   
     -- @ initialize disable of e
     lift $ initializeDisabled evts e ê
     -- @ compute the new enabled events and immediate conflicts after adding *e*
-    --   return a new configuration
+    --   return the new configuration c `union` {e}
     nc <- unfold c e
-    ms@UnfolderState{..} <- get
-    --pevts <- lift $ copyEvents evts 
     -- @ recursive call
     push e
-    explore nc e (alt \\ [e])
+    explore nc e (e `delete` alt)
     pop
-    -- @ TODO! Stateless: Garbage collection
-    -- @ set the previous disable set
-    --setPreviousDisabled pevts
-    -- let s' = gc s
     -- @ filter alternatives
     malt <- filterAlternatives maxevs e
     if null malt
-    then do
-      core <- lift $ computeCore stack evts
-      --lift $ prune e core evts
-      return () 
+    then return ()
     else do
       let alt' = head malt
       lift $ addDisabled e ê evts
-      -- evs <- lift $ getConfEvs maxevs evts
-      -- isConfA <- lift $ isConfiguration evts alt'
       explore c ê (alt' \\ stack)
-    --  core <- lift $ computeCore stack evts
-    --  lift $ prune e core evts
 
 computeCore :: EventsID -> Events s -> ST s (EventsID)
 computeCore conf events = do
