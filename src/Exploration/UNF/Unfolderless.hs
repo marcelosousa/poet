@@ -33,7 +33,7 @@ stateless sys indep = do
 botExplore :: UnfolderOp s () 
 botExplore = do 
   iConf <- initialExtensions 
-  explore iConf botEID []
+  explore iConf botEID [] []
 
 -- The extensions from the bottom event
 -- After this function, the unfolding prefix denotes
@@ -53,9 +53,14 @@ initialExtensions = do
 
 separator = "-----------------------------------------\n"
 -- @@ main function 
-explore :: Configuration s -> EventID -> Alternative -> UnfolderOp s ()
-explore c@Conf{..} ê alt = do
+explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s ()
+explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
+  str <- lift $ showEvents evts
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+         ++ ", enevs = " ++ show enevs ++ ", alt = " 
+         ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
+  --let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
   if null enevs 
   then
@@ -73,22 +78,24 @@ explore c@Conf{..} ê alt = do
                                  ++ show alt ++ ", stack = " ++ show stack ++ ")"
                     else head lp   
     -- @ initialize disable of e
-    lift $ initializeDisabled evts e ê
+    lift $ setDisabled e d evts -- initializeDisabled evts e ê
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
     nc <- unfold c e
     -- @ recursive call
     push e
-    explore nc e (e `delete` alt)
+    explore nc e d (e `delete` alt)
     pop
+--    ms@UnfolderState{..} <- get
+--    str' <- lift $ showEvents evts
+--    trace (separator ++ "after explore(ê = " ++ show ê 
+--          ++ ", e = " ++ show e ++ ", enevs = " ++ show enevs 
+--          ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack++")\n"++str') $ return ()
     -- @ filter alternatives
-    malt <- filterAlternatives maxevs e
-    if null malt
-    then return ()
-    else do
-      let alt' = head malt
-      lift $ addDisabled e ê evts
-      explore c ê (alt' \\ stack)
+    malt <- trace ("alt2(d="++show (e:d)++")") $ alt2 (e:d) (e:d) -- maxevs e
+    case malt of
+      Nothing -> return ()
+      Just alt' -> explore c ê (e:d) (alt' \\ stack)
 
 computeCore :: EventsID -> Events s -> ST s (EventsID)
 computeCore conf events = do
@@ -413,7 +420,7 @@ computeConflicts uidep tr lh lhCnfls events = do
 -- Let ê be the events such that e #^ ê.
 -- Can ê intersect cext =!= ê? Yes. There may be immediate conflicts of 
 -- e whose roots are not in C.
--- @@ compute potential alternatives 
+-- @@ compute potential alternatives @ revised: 08-04-15
 computePotentialAlternatives :: EventsID -> EventsID -> UnfolderOp s ()
 computePotentialAlternatives maxevs evs =  do
   s@UnfolderState{..} <- get
@@ -472,55 +479,32 @@ computePotentialAlternatives maxevs evs =  do
           else return ()
         else return () 
 
--- @ initialize disabled events of *e* based on de(ê)
-initializeDisabled :: Events s -> EventID -> EventID -> ST s ()
-initializeDisabled events e ê = do -- trace ("init disabled of (e,ê) = " ++ show (e,ê)) $ do
-  dê  <- getDisabled ê events
-  icê <- getImmediateConflicts ê events
-  let de = dê \\ icê
-  setDisabled e de events
-
 -- @@ filter alternatives
-filterAlternatives :: EventsID -> EventID -> UnfolderOp s Alternatives
-filterAlternatives maxevs e =  do 
+alt2 :: EventsID -> EventsID -> UnfolderOp s (Maybe Alternative)
+alt2 [] _ = return Nothing
+alt2 (d:ds) ods = do
   s@UnfolderState{..} <- get
-  -- @ compute all the events of the configuration
-  let confEvs = stack -- <- lift $ getConfEvs maxevs evts
-  -- @ compute V(D(e) U e)
-  de <- lift $ getDisabled e evts
-  vs <- lift $ mapM (\e -> getAlternatives e evts) (e:de) >>= return . concat
-  -- @ compute min(dec)
-  let ede = e:de 
-  edepred <- lift $ mapM (\e -> predecessors e evts) ede >>= return . S.fromList . concat
-  dec' <- lift $ filterM (\e -> predecessors e evts >>= \prede -> return $ all (\e -> not $ elem e prede) ede) ede
-  let dec = S.fromList dec' 
-      maxevset = S.fromList maxevs
-  lift $ filterM (filterAlternative evts confEvs maxevset dec) vs where
-    -- @@ filter alternative
-    filterAlternative events confEvs maxevset dec v =  do
-      let vset = S.fromList v
-      if maxevset `isSubsetOf` vset
-      then do
-        cextv <- cex events confEvs v >>= return . S.fromList
-        if dec `isSubsetOf` cextv
-        then return True 
-        else return False 
-      else return False
-    -- @@ compute conflicting extensions of an alternative
-    cex events confEvs v = 
-      mapM (cexe events confEvs) v >>= return . concat
-    -- @@ compute conflicting extensions of an event
-    cexe events confEvs e = do
-      -- @ #^(e)
-      cfle <- getImmediateConflicts e events
-      -- @ #^(e) intersect cex(C)
-      filterM (isCExtension events confEvs) cfle
-    -- @@ checks if a particular event is a conflicting extension
-    --    by checking if its immediate predecessors are events of the configuration
-    isCExtension events confEvs e = do
-      -- @ checks if the immediate predecessors of e are events of the configuration
-      eipred <- getIPred e events
-      return $! all (\p -> p `elem` confEvs) eipred
+  vs <- lift $ getAlternatives d evts
+  mv <- filterAlternatives vs ods
+  case mv of
+    Nothing -> alt2 ds ods
+    v -> trace ("alt2 success: " ++ show v) $ return v
+  
+filterAlternatives :: Alternatives -> EventsID -> UnfolderOp s (Maybe Alternative)
+filterAlternatives [] _ = return Nothing
+filterAlternatives (v:vs) ods = do
+  mv <- filterAlternative v ods
+  if mv
+  then return $ Just v
+  else filterAlternatives vs ods
+ 
+filterAlternative :: Alternative -> EventsID -> UnfolderOp s Bool
+filterAlternative v d = trace ("filterAlternative(v="++show v++", d="++show d++")") $ do
+  s@UnfolderState{..} <- get
+  cnfs <- lift $ mapM (\e -> getImmediateConflicts e evts) v >>= return . concat
+  let isConf = not $ any (\e -> e `elem` stack) cnfs
+      isJust = all (\e -> e `elem` cnfs) d
+  return $ isConf && isJust
 
 allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 allM f [] = return True

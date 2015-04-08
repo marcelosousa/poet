@@ -23,7 +23,7 @@ mytrace True a b = T.trace a b
 mytrace False a b = b
 
 mtrace = T.trace
---mtrace a b = b
+--trace a b = b
 trace a b = b 
 --trace = T.trace 
 
@@ -295,7 +295,7 @@ setDisabled e de events = -- trace ("setDisa: " ++ show de ++ " of " ++ show e) 
   setEvent e ev' events 
 
 addAlternative :: EventID -> Alternative -> Events s -> ST s ()
-addAlternative e v events = trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
+addAlternative e v events = -- trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
  do
   ev@Event{..} <- getEvent "addAlternative" e events
   let altEv = nub $ v:alte
