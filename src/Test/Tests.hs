@@ -40,7 +40,8 @@ test7 mode =
   let r1 = runST (sys6 >>= \sys -> stateless mode sys ind6 >>= return . show)
   in TestCase (assertEqual "histories" "15" r1)
 
-tests mode = TestList 
+
+tests2 mode = TestList 
   [ TestLabel "test1" (test1 mode)
   , TestLabel "test2" (test2 mode)
   , TestLabel "test3" (test3 mode)
@@ -48,4 +49,8 @@ tests mode = TestList
   , TestLabel "test5" (test5 mode)
   , TestLabel "test6" (test6 mode)
   , TestLabel "test7" (test7 mode)
+  ]
+  
+tests mode = TestList 
+  [ TestLabel "test3" (test3 mode)
   ] 

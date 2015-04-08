@@ -57,17 +57,18 @@ explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
          ++ ", enevs = " ++ show enevs ++ ", alt = " 
          ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
-  --let k = unsafePerformIO $ getChar
+  let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  if null enevs 
+  if k `seq` null enevs 
   then
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
     computePotentialAlternatives maxevs cevs 
   else do
+    isStr <- lift $ unfToDot is
     -- @ choose event
     let e = if null alt
             then head enevs
@@ -75,7 +76,8 @@ explore c@Conf{..} ê d alt = do
                  in if null lp 
                     then error $ separator ++ "A `intersect` en(C) = {} at explore(ê = " 
                                  ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " 
-                                 ++ show alt ++ ", stack = " ++ show stack ++ ")"
+                                 ++ show alt ++ ", stack = " ++ show stack ++ ")\n"
+                                 ++ snd isStr
                     else head lp   
     -- @ initialize disable of e
     lift $ setDisabled e d evts 
@@ -146,6 +148,7 @@ causalClosed evts conf (e:es) = do
 -- @@ unfold receives the configuration and event that is going to executed
 --    and returns the new configuration with that event
 --    Build the configuration step by step
+-- @revised 08-04-15
 unfold :: Configuration s -> EventID -> UnfolderOp s (Configuration s)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
@@ -186,14 +189,13 @@ unfold conf@Conf{..} e = do
   return $! nconf
     
 -- expandWith only adds events that have e in the history
--- critical step
+-- @CRITICAL
 expandWith :: GCS.Sigma s -> EventID -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> UnfolderOp s EventsID
 expandWith st e maxevs tr = do
   cst <- lift $ GCS.copy st
 --  scst <- lift $ GCS.showSigma cst
   s@UnfolderState{..} <- trace ("expandWith(e="++show e++",maxevs="++show maxevs++",tr="++show tr++")") $ get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
-  --   not sure why this is necessary.
   succe <- lift $ getISucc e evts 
            >>= mapM (\e -> getEvent "expandWith" e evts >>= \ev -> return (e,ev)) 
            >>= return . filter (\(e,ev) -> evtr ev == tr)
@@ -223,7 +225,7 @@ computeHistory st maxevs tr = do
   s@UnfolderState{..} <- trace ("computeHistory(maxevs="++show maxevs++",tr="++show tr++")") $ get
   -- set of maximal events that are dependent with tr union 
   -- they are events of maxevs that are dependent with tr 
-  -- or predecessors of the independent ones that are maximal and dependent
+  -- or dependent predecessors of the independent ones that are maximal
   (maxevs_h0,maxevs') <- lift $ foldM (\(l,r) e -> 
          isDependent_te inde tr e evts >>= \b -> 
             if b then return (e:l,r) else return (l,e:r)) ([],[]) maxevs
@@ -356,7 +358,7 @@ isEnabled events st (tr,_) h = do
 
 -- @ addEvent: Given a transition id and the history
 --   adds the correspondent event.
---   *Pre-condition*: The event to be added is not in the unf prefix
+--   *Note*: We may try to add an even that is already in the prefix
 --   *Flow*: 
 --     1. Generate a fresh event counter: neID
 --     2. Compute the set of immediate conflicts
