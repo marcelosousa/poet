@@ -17,7 +17,7 @@ t1' s = do
     (IntVal 1, _) -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcp") (IntVal 2, Nothing)
       H.insert s (BS.pack "x") (IntVal 1, Nothing)
-      return (s, [(BS.pack "pcp", IntVal 2),(BS.pack "x", IntVal 1)]) 
+      return (s, [(BS.pack "pcp", (IntVal 2, Nothing)),(BS.pack "x", (IntVal 1, Nothing))]) 
     _ -> return Nothing
 
 t1 :: Transition s
@@ -31,7 +31,7 @@ t2' s = do
     (IntVal 1, _) -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") (IntVal 2, Nothing)
       H.insert s (BS.pack "y") (IntVal 1, Nothing)
-      return (s, [(BS.pack "pcq", IntVal 2),(BS.pack "y", IntVal 1)]) 
+      return (s, [(BS.pack "pcq", (IntVal 2, Nothing)),(BS.pack "y", (IntVal 1, Nothing))]) 
     _ -> return Nothing
 
 t2 :: Transition s
@@ -49,7 +49,7 @@ s1 = do
 sys1 :: ST s (System s)
 sys1 = do 
   is <- s1
-  lis <- H.toList is >>= return . map (\(a,b) -> (a, fst b)) 
+  lis <- H.toList is
   return $ System (V.fromList [t1,t2]) is lis
 
 ind11,ind12 :: UIndep

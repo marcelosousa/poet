@@ -49,7 +49,7 @@ data LockedValue =
   deriving (Show,Eq,Ord)
   
 -- Local State
-type LSigma = [(Var,Value)] 
+type LSigma = [(Var,SigmaValue)]
 
 --type Process = Map TransitionID Transition
 type ProcessID = BS.ByteString
@@ -160,7 +160,7 @@ equals s1 s2 = do
 modify :: Sigma s -> LSigma -> ST s (Sigma s)
 modify s [] = return s
 modify s ((k,v):r) = do 
-  H.insert s k (v,Nothing)
+  H.insert s k v
   modify s r
 -- modify s l = trace ("modify: " ++ show l) $ H.fromList l
    

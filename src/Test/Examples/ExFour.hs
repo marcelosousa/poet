@@ -30,39 +30,47 @@ t11_4' s = do
   v <- safeLookup "t11" s (BS.pack "pcp")
   case v of
     (IntVal 1,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcp") (IntVal 2, Nothing)
-      H.insert s (BS.pack "y") (IntVal 1, Nothing)
-      return (s,[(BS.pack "pcp", IntVal 2),(BS.pack "y", IntVal 1)]) 
+      let pcVal = (IntVal 2, Nothing)
+          yVal = (IntVal 1, Nothing)
+      H.insert s (BS.pack "pcp") pcVal      
+      H.insert s (BS.pack "y") yVal
+      return (s,[(BS.pack "pcp", pcVal),(BS.pack "y", yVal)]) 
     _ -> return Nothing
 t12_4' s = do 
   v <- safeLookup "t12" s (BS.pack "pcp")
   case v of
     (IntVal 2,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcp") (IntVal 3, Nothing)
-      H.insert s (BS.pack "x") (IntVal 1, Nothing)
-      return (s,[(BS.pack "pcp", IntVal 3),(BS.pack "x", IntVal 1)]) 
+      let pcVal = (IntVal 3, Nothing)
+          xVal = (IntVal 1, Nothing)
+      H.insert s (BS.pack "pcp") pcVal
+      H.insert s (BS.pack "x") xVal
+      return (s,[(BS.pack "pcp", pcVal),(BS.pack "x", xVal)]) 
     _ -> return Nothing
 t21_4' s = do 
   v <- safeLookup "t21" s (BS.pack "pcq")
   case v of
     (IntVal 1,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcq") (IntVal 2, Nothing)
-      H.insert s (BS.pack "z") (IntVal 1, Nothing)
-      return (s,[(BS.pack "pcq", IntVal 2),(BS.pack "z", IntVal 1)]) 
+      let pcVal = (IntVal 2, Nothing)
+          zVal = (IntVal 1, Nothing)
+      H.insert s (BS.pack "pcq") pcVal
+      H.insert s (BS.pack "z") zVal
+      return (s,[(BS.pack "pcq", pcVal),(BS.pack "z", zVal)]) 
     _ -> return Nothing
 t22_4' s = do 
   v <- safeLookup "t22" s (BS.pack "pcq")
   case v of
     (IntVal 2,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcq") (IntVal 3, Nothing)
-      H.insert s (BS.pack "x") (IntVal 2, Nothing)
-      return (s,[(BS.pack "pcq", IntVal 3),(BS.pack "x", IntVal 2)]) 
+      let pcVal = (IntVal 3, Nothing)
+          xVal = (IntVal 2, Nothing)
+      H.insert s (BS.pack "pcq") pcVal
+      H.insert s (BS.pack "x") xVal
+      return (s,[(BS.pack "pcq", pcVal),(BS.pack "x", xVal)]) 
     _ -> return Nothing
 
 sys4 :: ST s (System s)
 sys4 = do 
   is <- s4
-  lis <- H.toList is >>= return . map (\(a,b) -> (a, fst b)) 
+  lis <- H.toList is
   return $ System (V.fromList [t11_4,t12_4,t21_4,t22_4]) is lis
 
 ind4 :: UIndep

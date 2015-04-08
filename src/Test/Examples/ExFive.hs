@@ -14,9 +14,11 @@ t1_5' s = do
   v <- safeLookup "t1" s (BS.pack "pcp")
   case v of
     (IntVal 1,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcp") (IntVal 2, Nothing)
-      H.insert s (BS.pack "x") (IntVal 1, Nothing)
-      return (s,[(BS.pack "pcp", IntVal 2),(BS.pack "x", IntVal 1)]) 
+      let pcVal = (IntVal 2, Nothing)
+          xVal = (IntVal 1, Nothing)
+      H.insert s (BS.pack "pcp") pcVal
+      H.insert s (BS.pack "x") xVal
+      return (s,[(BS.pack "pcp", pcVal),(BS.pack "x", xVal)]) 
     _ -> return Nothing
 t21_5' s = do
   v <- safeLookup "t21" s (BS.pack "pcq")
@@ -25,21 +27,25 @@ t21_5' s = do
       (IntVal lock,_) <- safeLookup "t21" s (BS.pack "lock")
       if lock == 0
       then do
-        H.insert s (BS.pack "pcq") (IntVal 2, Nothing)
-        H.insert s (BS.pack "lock") (IntVal 1, Nothing)
-        return (s,[(BS.pack "pcq", IntVal 2),(BS.pack "lock", IntVal 1)]) 
+        let pcVal = (IntVal 2, Nothing)
+            lockVal = (IntVal 1, Nothing)
+        H.insert s (BS.pack "pcq") pcVal
+        H.insert s (BS.pack "lock") lockVal
+        return (s,[(BS.pack "pcq", pcVal),(BS.pack "lock", lockVal)]) 
       else do
-        H.insert s (BS.pack "pcq") (IntVal 3, Nothing)
-        return (s,[(BS.pack "pcq", IntVal 3)]) 
+        let pcVal = (IntVal 3, Nothing)
+        H.insert s (BS.pack "pcq") pcVal
+        return (s,[(BS.pack "pcq", pcVal)]) 
     _ -> return Nothing
 t22_5' s = do
   v <- safeLookup "t22" s (BS.pack "pcq")
   case v of
     (IntVal 2,_) -> return $ Just $ \s -> do
       x <- safeLookup "t22" s (BS.pack "x")
-      H.insert s (BS.pack "pcq") (IntVal 3, Nothing)
+      let pcVal = (IntVal 3, Nothing)
+      H.insert s (BS.pack "pcq") pcVal
       H.insert s (BS.pack "x2") x
-      return (s,[(BS.pack "pcq", IntVal 3),(BS.pack "x2", fst x)]) 
+      return (s,[(BS.pack "pcq", pcVal),(BS.pack "x2", x)]) 
     _ -> return Nothing
 t31_5' s = do
   v <- safeLookup "t31" s (BS.pack "pcr")
@@ -48,21 +54,25 @@ t31_5' s = do
       (IntVal lock,_) <- safeLookup "t31" s (BS.pack "lock")
       if lock == 0
       then do
-        H.insert s (BS.pack "pcr") (IntVal 2, Nothing)
-        H.insert s (BS.pack "lock") (IntVal 1, Nothing)
-        return (s,[(BS.pack "pcr", IntVal 2),(BS.pack "lock", IntVal 1)]) 
+        let pcVal = (IntVal 2, Nothing)
+            lockVal = (IntVal 1, Nothing)
+        H.insert s (BS.pack "pcr") pcVal
+        H.insert s (BS.pack "lock") lockVal
+        return (s,[(BS.pack "pcr", pcVal),(BS.pack "lock", lockVal)]) 
       else do
-        H.insert s (BS.pack "pcr") (IntVal 3, Nothing)
-        return (s,[(BS.pack "pcr", IntVal 3)]) 
+        let pcVal = (IntVal 3, Nothing)
+        H.insert s (BS.pack "pcr") pcVal
+        return (s,[(BS.pack "pcr", pcVal)]) 
     _ -> return Nothing
 t32_5' s = do
   v <- safeLookup "t32" s (BS.pack "pcr")
   case v of
     (IntVal 2,_) -> return $ Just $ \s -> do
       x <- safeLookup "t32" s (BS.pack "x")
-      H.insert s (BS.pack "pcr") (IntVal 3, Nothing)
+      let pcVal = (IntVal 3, Nothing)
+      H.insert s (BS.pack "pcr") pcVal
       H.insert s (BS.pack "x3") x
-      return (s,[(BS.pack "pcr", IntVal 3),(BS.pack "x3", fst x)]) 
+      return (s,[(BS.pack "pcr", pcVal),(BS.pack "x3", x)]) 
     _ -> return Nothing
 
 
@@ -88,7 +98,7 @@ t32_5 = (BS.pack "r", 4, t32_5')
 sys5 :: ST s (System s)
 sys5 = do 
   is <- s5
-  lis <- H.toList is >>= return . map (\(a,b) -> (a, fst b)) 
+  lis <- H.toList is
   return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is lis
 
 -- [("t1","t2"),("t1","t4"),("t3","t5"),("t2","t5"),("t3","t4")]

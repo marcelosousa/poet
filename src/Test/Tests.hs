@@ -41,7 +41,7 @@ test7 mode =
   in TestCase (assertEqual "histories" "15" r1)
 
 
-tests2 mode = TestList 
+tests mode = TestList 
   [ TestLabel "test1" (test1 mode)
   , TestLabel "test2" (test2 mode)
   , TestLabel "test3" (test3 mode)
@@ -50,7 +50,3 @@ tests2 mode = TestList
   , TestLabel "test6" (test6 mode)
   , TestLabel "test7" (test7 mode)
   ]
-  
-tests mode = TestList 
-  [ TestLabel "test3" (test3 mode)
-  ] 

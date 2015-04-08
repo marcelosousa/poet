@@ -34,46 +34,52 @@ t1_6' s = do
   case v of
     (IntVal 1, _) -> return $ Just $ \s -> do
       x <- safeLookup "t1" s (BS.pack "x")
-      H.insert s (BS.pack "pcp") (IntVal 2, Nothing) 
+      let pcVal = (IntVal 2, Nothing) 
+      H.insert s (BS.pack "pcp") pcVal
       H.insert s (BS.pack "x1") x
-      return (s,[(BS.pack "pcp", IntVal 2),(BS.pack "x1", fst x)]) 
+      return (s,[(BS.pack "pcp", pcVal),(BS.pack "x1", x)]) 
     _ -> return Nothing
 t21_6' s = do
   v <- safeLookup "t21" s (BS.pack "pcq")
   case v of
     (IntVal 1, _) -> return $ Just $ \s -> do
       x <- safeLookup "t1" s (BS.pack "x")
-      H.insert s (BS.pack "pcq") (IntVal 2, Nothing) 
+      let pcVal = (IntVal 2, Nothing)
+      H.insert s (BS.pack "pcq") pcVal
       H.insert s (BS.pack "x2") x
-      return (s,[(BS.pack "pcq", IntVal 2),(BS.pack "x2", fst x)]) 
+      return (s,[(BS.pack "pcq", pcVal),(BS.pack "x2", x)]) 
     _ -> return Nothing
 t22_6' s = do 
   v <- safeLookup "t22" s (BS.pack "pcq")
   case v of
     (IntVal 2, _) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcq") (IntVal 3, Nothing) 
-      return (s,[(BS.pack "pcq", IntVal 3)]) 
+      let pcVal = (IntVal 3, Nothing) 
+      H.insert s (BS.pack "pcq") pcVal
+      return (s,[(BS.pack "pcq", pcVal)]) 
     _ -> return Nothing
 t31_6' s = do 
   v <- safeLookup "t31" s (BS.pack "pcr")
   case v of
     (IntVal 1,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcr") (IntVal 2, Nothing) 
-      return (s,[(BS.pack "pcr", IntVal 2)]) 
+      let pcVal = (IntVal 2, Nothing) 
+      H.insert s (BS.pack "pcr") pcVal
+      return (s,[(BS.pack "pcr", pcVal)]) 
     _ -> return Nothing
 t32_6' s = do
   v <- safeLookup "t32" s (BS.pack "pcr")
   case v of
     (IntVal 2,_) -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcr") (IntVal 3, Nothing) 
-      H.insert s (BS.pack "x") (IntVal 2, Nothing) 
-      return (s,[(BS.pack "pcr", IntVal 3),(BS.pack "x", IntVal 2)]) 
+      let pcVal = (IntVal 3, Nothing) 
+          xVal = (IntVal 2, Nothing)
+      H.insert s (BS.pack "pcr") pcVal
+      H.insert s (BS.pack "x") xVal
+      return (s,[(BS.pack "pcr", pcVal),(BS.pack "x", xVal)]) 
     _ -> return Nothing
 
 sys6 :: ST s (System s)
 sys6 = do 
   is <- s6
-  lis <- H.toList is >>= return . map (\(a,b) -> (a, fst b))
+  lis <- H.toList is
   return $ System (V.fromList [t1_6,t21_6,t22_6,t31_6,t32_6]) is lis
 
 ind6 :: UIndep
