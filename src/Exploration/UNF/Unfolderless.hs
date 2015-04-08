@@ -451,23 +451,26 @@ computePotentialAlternatives maxevs evs =  do
     computeV stack events de e e' = do
       -- @ Compute the common parts of the configurations that contain e and e': confEvs - (e:succ e) 
       clfe' <- getImmediateConflicts e' events
-      let clfec' = filter (\e -> e `elem` stack) clfe' -- do this check first so that any e' clfe'
-      succes' <- mapM (\ce' -> successors ce' events >>= return . (ce':)) clfec'
-      let common = stack \\ (concat succes') 
-      -- @ 1 and 2
-      let v = common ++ [e'] 
-          stackE = tail $ dropWhile (/=e) stack -- C(e) is a subset of V
-          isStackValid = all (\e' -> e' `elem` v) stackE 
-      if isStackValid
-      then do
-        -- @ Compute v: *pre-condition* prede' are in common
-        -- 3. All e \in de is an immediate conflict of some e' \in v
-        vcfs <- mapM (\e -> getImmediateConflicts e events) v
-        let justifies = all (\e -> any (\vcf -> e `elem` vcf) vcfs) de
-        if justifies
-        then addAlternative e v events 
-        else return ()
-      else return () 
+      let clfec' = filter (\e -> e `elem` stack) clfe'
+          stackE = tail $ dropWhile (/=e) stack -- C(e) is a subset of V 
+      if any (\e -> e `elem` stackE) clfec'
+      then return () -- not stack valid
+      else do 
+        succes' <- mapM (\ce' -> successors ce' events >>= return . (ce':)) clfec'
+        -- @ 1 and 2
+        let common = stack \\ (concat succes') 
+            v = common ++ [e'] 
+            isStackValid = all (\e' -> e' `elem` v) stackE 
+        if isStackValid
+        then do
+          -- @ Compute v: *pre-condition* prede' are in common
+          -- 3. All e \in de is an immediate conflict of some e' \in v
+          vcfs <- mapM (\e -> getImmediateConflicts e events) v
+          let justifies = all (\e -> any (\vcf -> e `elem` vcf) vcfs) de
+          if justifies
+          then addAlternative e v events 
+          else return ()
+        else return () 
 
 -- @ initialize disabled events of *e* based on de(ê)
 initializeDisabled :: Events s -> EventID -> EventID -> ST s ()
