@@ -1,5 +1,5 @@
 {-#LANGUAGE RecordWildCards #-}
-module Exploration.UNF.Unfolderless where
+module Exploration.UNF.Unfolderless (stateless) where
 
 import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
@@ -21,9 +21,9 @@ import qualified Debug.Trace as DT
 import System.IO.Unsafe
 import Prelude hiding (pred)
 
-stateless :: GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
-stateless sys indep = do
-  is <- iState sys indep 
+stateless :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
+stateless statelessMode sys indep = do
+  is <- iState statelessMode sys indep  
   (a,s) <- runStateT botExplore is 
   return $! s
 
@@ -78,7 +78,7 @@ explore c@Conf{..} ê d alt = do
                                  ++ show alt ++ ", stack = " ++ show stack ++ ")"
                     else head lp   
     -- @ initialize disable of e
-    lift $ setDisabled e d evts -- initializeDisabled evts e ê
+    lift $ setDisabled e d evts 
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
     nc <- unfold c e
@@ -96,6 +96,11 @@ explore c@Conf{..} ê d alt = do
     case malt of
       Nothing -> return ()
       Just alt' -> explore c ê (e:d) (alt' \\ stack)
+    if statelessMode
+    then do
+      core <- lift $ computeCore stack evts
+      lift $ prune e core evts
+    else return ()
 
 computeCore :: EventsID -> Events s -> ST s (EventsID)
 computeCore conf events = do
@@ -167,7 +172,7 @@ unfold conf@Conf{..} e = do
   netrs <- lift $ V.filterM (\tr -> isDependent_te inde tr e evts) entrs
   nnevs <- V.mapM (expandWith nstc e nmaxevs) netrs >>= return . concat . V.toList 
   -- @ compute all the events of the configuration 
-  let confEvs = e:stack -- lift $ getConfEvs nmaxevs evts
+  let confEvs = e:stack
   -- @ filter from nnevs events that may have immediate conflicts with events in the configuration
   nnevs' <- lift $ filterM (\e -> getEvent "unfold" e evts >>= \ev -> return $ null (icnf ev `intersect` confEvs)) nnevs 
   let nenevs = nnevs' ++ senevs 

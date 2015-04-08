@@ -84,6 +84,7 @@ data UnfolderState s = UnfolderState {
   , pcnf :: Configuration s  -- Previous configuration
   , cntr :: Counter          -- Event counter
   , stack :: EventsID        -- Call stack
+  , statelessMode :: Bool    -- Stateless or not
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -97,12 +98,12 @@ botEvent :: GCS.LSigma -> Event
 botEvent lst = Event (GCS.botID, BS.pack "") [] [] [] [] [] (Just lst) 
 
 -- @ Initial state of the unfolder
-iState :: GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
-iState sys indep = do
+iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
+iState statelessMode sys indep = do
   events <- H.new
   H.insert events 0 $ botEvent $ GCS.initialLState sys 
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 [0]
+  return $ UnfolderState sys indep events pconf 1 [0] statelessMode
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
