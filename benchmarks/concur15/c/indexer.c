@@ -2,9 +2,9 @@
 
 /* BOUND 5 */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <pthread.h>
+//#include <assert.h>
+//#include <stdlib.h>
+#include "pthread.h"
 
 #define SIZE  8
 #define MAX   4
@@ -35,7 +35,7 @@ int cas(int volatile * tab, int h, int val, int new_val)
 
 
 
-void * thread_routine(void * arg)
+void * thread_routine()
 {
   int tid;
   int m = 0, w, h;

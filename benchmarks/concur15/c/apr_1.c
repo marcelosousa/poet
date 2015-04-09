@@ -3,34 +3,9 @@
  */
 
 /* BOUND 5 */
-# 1 "main1.c"
-# 1 "<built-in>" 1
-# 1 "<built-in>" 3
-# 312 "<built-in>" 3
-# 1 "<command line>" 1
-# 1 "<built-in>" 2
-# 1 "main1.c" 2
 
-# 1 "/usr/include/assert.h" 1 3 4
-# 35 "/usr/include/assert.h" 3 4
-# 1 "/usr/include/features.h" 1 3 4
-# 352 "/usr/include/features.h" 3 4
-# 1 "/usr/include/stdc-predef.h" 1 3 4
-# 353 "/usr/include/features.h" 2 3 4
-# 374 "/usr/include/features.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/sys/cdefs.h" 1 3 4
-# 385 "/usr/include/x86_64-linux-gnu/sys/cdefs.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 386 "/usr/include/x86_64-linux-gnu/sys/cdefs.h" 2 3 4
-# 375 "/usr/include/features.h" 2 3 4
-# 398 "/usr/include/features.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/gnu/stubs.h" 1 3 4
-# 10 "/usr/include/x86_64-linux-gnu/gnu/stubs.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/gnu/stubs-64.h" 1 3 4
-# 11 "/usr/include/x86_64-linux-gnu/gnu/stubs.h" 2 3 4
-# 399 "/usr/include/features.h" 2 3 4
-# 36 "/usr/include/assert.h" 2 3 4
-# 69 "/usr/include/assert.h" 3 4
+
+
 extern void __assert_fail (const char *__assertion, const char *__file,
       unsigned int __line, const char *__function)
      __attribute__ ((__nothrow__ )) __attribute__ ((__noreturn__));
@@ -45,30 +20,17 @@ extern void __assert_perror_fail (int __errnum, const char *__file,
 
 extern void __assert (const char *__assertion, const char *__file, int __line)
      __attribute__ ((__nothrow__ )) __attribute__ ((__noreturn__));
-# 3 "main1.c" 2
 
 
-
-
-# 1 "./../test/abts.h" 1
-# 21 "./../test/abts.h"
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdarg.h" 1 3
-# 30 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdarg.h" 3
 typedef __builtin_va_list va_list;
-# 50 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdarg.h" 3
-typedef __builtin_va_list __gnuc_va_list;
-# 22 "./../test/abts.h" 2
-# 1 "/usr/include/stdio.h" 1 3 4
-# 33 "/usr/include/stdio.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 58 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 3 4
-typedef long unsigned int size_t;
-# 34 "/usr/include/stdio.h" 2 3 4
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/types.h" 1 3 4
-# 27 "/usr/include/x86_64-linux-gnu/bits/types.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/bits/types.h" 2 3 4
+typedef __builtin_va_list __gnuc_va_list;
+
+
+
+
+
+typedef long unsigned int size_t;
 
 
 typedef unsigned char __u_char;
@@ -95,9 +57,9 @@ typedef unsigned long int __uint64_t;
 
 typedef long int __quad_t;
 typedef unsigned long int __u_quad_t;
-# 121 "/usr/include/x86_64-linux-gnu/bits/types.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/typesizes.h" 1 3 4
-# 122 "/usr/include/x86_64-linux-gnu/bits/types.h" 2 3 4
+
+
+
 
 
 typedef unsigned long int __dev_t;
@@ -166,7 +128,7 @@ typedef long int __intptr_t;
 
 
 typedef unsigned int __socklen_t;
-# 36 "/usr/include/stdio.h" 2 3 4
+
 
 
 
@@ -180,21 +142,21 @@ struct _IO_FILE;
 
 
 typedef struct _IO_FILE FILE;
-# 64 "/usr/include/stdio.h" 3 4
+
 typedef struct _IO_FILE __FILE;
-# 74 "/usr/include/stdio.h" 3 4
-# 1 "/usr/include/libio.h" 1 3 4
-# 31 "/usr/include/libio.h" 3 4
-# 1 "/usr/include/_G_config.h" 1 3 4
-# 15 "/usr/include/_G_config.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 16 "/usr/include/_G_config.h" 2 3 4
 
 
 
 
-# 1 "/usr/include/wchar.h" 1 3 4
-# 82 "/usr/include/wchar.h" 3 4
+
+
+
+
+
+
+
+
+
 typedef struct
 {
   int __count;
@@ -208,7 +170,7 @@ typedef struct
     char __wchb[4];
   } __value;
 } __mbstate_t;
-# 21 "/usr/include/_G_config.h" 2 3 4
+
 typedef struct
 {
   __off_t __pos;
@@ -219,10 +181,10 @@ typedef struct
   __off64_t __pos;
   __mbstate_t __state;
 } _G_fpos64_t;
-# 32 "/usr/include/libio.h" 2 3 4
-# 144 "/usr/include/libio.h" 3 4
+
+
 struct _IO_jump_t; struct _IO_FILE;
-# 154 "/usr/include/libio.h" 3 4
+
 typedef void _IO_lock_t;
 
 
@@ -236,7 +198,7 @@ struct _IO_marker {
 
 
   int _pos;
-# 177 "/usr/include/libio.h" 3 4
+
 };
 
 
@@ -247,7 +209,7 @@ enum __codecvt_result
   __codecvt_error,
   __codecvt_noconv
 };
-# 245 "/usr/include/libio.h" 3 4
+
 struct _IO_FILE {
   int _flags;
 
@@ -288,9 +250,9 @@ struct _IO_FILE {
 
 
   _IO_lock_t *_lock;
-# 293 "/usr/include/libio.h" 3 4
+
   __off64_t _offset;
-# 302 "/usr/include/libio.h" 3 4
+
   void *__pad1;
   void *__pad2;
   void *__pad3;
@@ -312,7 +274,7 @@ struct _IO_FILE_plus;
 extern struct _IO_FILE_plus _IO_2_1_stdin_;
 extern struct _IO_FILE_plus _IO_2_1_stdout_;
 extern struct _IO_FILE_plus _IO_2_1_stderr_;
-# 338 "/usr/include/libio.h" 3 4
+
 typedef __ssize_t __io_read_fn (void *__cookie, char *__buf, size_t __nbytes);
 
 
@@ -334,11 +296,11 @@ typedef int __io_seek_fn (void *__cookie, __off64_t *__pos, int __w);
 
 
 typedef int __io_close_fn (void *__cookie);
-# 390 "/usr/include/libio.h" 3 4
+
 extern int __underflow (_IO_FILE *);
 extern int __uflow (_IO_FILE *);
 extern int __overflow (_IO_FILE *, int);
-# 434 "/usr/include/libio.h" 3 4
+
 extern int _IO_getc (_IO_FILE *__fp);
 extern int _IO_putc (int __c, _IO_FILE *__fp);
 extern int _IO_feof (_IO_FILE *__fp) __attribute__ ((__nothrow__ ));
@@ -353,7 +315,7 @@ extern int _IO_peekc_locked (_IO_FILE *__fp);
 extern void _IO_flockfile (_IO_FILE *) __attribute__ ((__nothrow__ ));
 extern void _IO_funlockfile (_IO_FILE *) __attribute__ ((__nothrow__ ));
 extern int _IO_ftrylockfile (_IO_FILE *) __attribute__ ((__nothrow__ ));
-# 464 "/usr/include/libio.h" 3 4
+
 extern int _IO_vfscanf (_IO_FILE * __restrict, const char * __restrict,
    __gnuc_va_list, int *__restrict);
 extern int _IO_vfprintf (_IO_FILE *__restrict, const char *__restrict,
@@ -365,15 +327,15 @@ extern __off64_t _IO_seekoff (_IO_FILE *, __off64_t, int, int);
 extern __off64_t _IO_seekpos (_IO_FILE *, __off64_t, int);
 
 extern void _IO_free_backup_area (_IO_FILE *) __attribute__ ((__nothrow__ ));
-# 75 "/usr/include/stdio.h" 2 3 4
+
 
 
 
 
 typedef __gnuc_va_list va_list;
-# 90 "/usr/include/stdio.h" 3 4
+
 typedef __off_t off_t;
-# 102 "/usr/include/stdio.h" 3 4
+
 typedef __ssize_t ssize_t;
 
 
@@ -383,9 +345,9 @@ typedef __ssize_t ssize_t;
 
 
 typedef _G_fpos_t fpos_t;
-# 164 "/usr/include/stdio.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/stdio_lim.h" 1 3 4
-# 165 "/usr/include/stdio.h" 2 3 4
+
+
+
 
 
 
@@ -408,9 +370,9 @@ extern int rename (const char *__old, const char *__new) __attribute__ ((__nothr
 
 extern int renameat (int __oldfd, const char *__old, int __newfd,
        const char *__new) __attribute__ ((__nothrow__ ));
-# 195 "/usr/include/stdio.h" 3 4
+
 extern FILE *tmpfile (void) ;
-# 209 "/usr/include/stdio.h" 3 4
+
 extern char *tmpnam (char *__s) __attribute__ ((__nothrow__ )) ;
 
 
@@ -418,19 +380,19 @@ extern char *tmpnam (char *__s) __attribute__ ((__nothrow__ )) ;
 
 
 extern char *tmpnam_r (char *__s) __attribute__ ((__nothrow__ )) ;
-# 227 "/usr/include/stdio.h" 3 4
+
 extern char *tempnam (const char *__dir, const char *__pfx)
      __attribute__ ((__nothrow__ )) __attribute__ ((__malloc__)) ;
-# 237 "/usr/include/stdio.h" 3 4
+
 extern int fclose (FILE *__stream);
 
 
 
 
 extern int fflush (FILE *__stream);
-# 252 "/usr/include/stdio.h" 3 4
+
 extern int fflush_unlocked (FILE *__stream);
-# 272 "/usr/include/stdio.h" 3 4
+
 extern FILE *fopen (const char *__restrict __filename,
       const char *__restrict __modes) ;
 
@@ -440,9 +402,9 @@ extern FILE *fopen (const char *__restrict __filename,
 extern FILE *freopen (const char *__restrict __filename,
         const char *__restrict __modes,
         FILE *__restrict __stream) ;
-# 306 "/usr/include/stdio.h" 3 4
+
 extern FILE *fdopen (int __fd, const char *__modes) __attribute__ ((__nothrow__ )) ;
-# 319 "/usr/include/stdio.h" 3 4
+
 extern FILE *fmemopen (void *__s, size_t __len, const char *__modes)
   __attribute__ ((__nothrow__ )) ;
 
@@ -472,7 +434,7 @@ extern void setbuffer (FILE *__restrict __stream, char *__restrict __buf,
 
 
 extern void setlinebuf (FILE *__stream) __attribute__ ((__nothrow__ ));
-# 356 "/usr/include/stdio.h" 3 4
+
 extern int fprintf (FILE *__restrict __stream,
       const char *__restrict __format, ...);
 
@@ -510,13 +472,13 @@ extern int snprintf (char *__restrict __s, size_t __maxlen,
 extern int vsnprintf (char *__restrict __s, size_t __maxlen,
         const char *__restrict __format, __gnuc_va_list __arg)
      __attribute__ ((__nothrow__)) __attribute__ ((__format__ (__printf__, 3, 0)));
-# 412 "/usr/include/stdio.h" 3 4
+
 extern int vdprintf (int __fd, const char *__restrict __fmt,
        __gnuc_va_list __arg)
      __attribute__ ((__format__ (__printf__, 2, 0)));
 extern int dprintf (int __fd, const char *__restrict __fmt, ...)
      __attribute__ ((__format__ (__printf__, 2, 3)));
-# 425 "/usr/include/stdio.h" 3 4
+
 extern int fscanf (FILE *__restrict __stream,
      const char *__restrict __format, ...) ;
 
@@ -527,14 +489,14 @@ extern int scanf (const char *__restrict __format, ...) ;
 
 extern int sscanf (const char *__restrict __s,
      const char *__restrict __format, ...) __attribute__ ((__nothrow__ ));
-# 443 "/usr/include/stdio.h" 3 4
+
 extern int fscanf (FILE *__restrict __stream, const char *__restrict __format, ...) __asm__ ("" "__isoc99_fscanf") ;
 
 
 extern int scanf (const char *__restrict __format, ...) __asm__ ("" "__isoc99_scanf") ;
 
 extern int sscanf (const char *__restrict __s, const char *__restrict __format, ...) __asm__ ("" "__isoc99_sscanf") __attribute__ ((__nothrow__ ));
-# 471 "/usr/include/stdio.h" 3 4
+
 extern int vfscanf (FILE *__restrict __s, const char *__restrict __format,
       __gnuc_va_list __arg)
      __attribute__ ((__format__ (__scanf__, 2, 0))) ;
@@ -550,7 +512,7 @@ extern int vscanf (const char *__restrict __format, __gnuc_va_list __arg)
 extern int vsscanf (const char *__restrict __s,
       const char *__restrict __format, __gnuc_va_list __arg)
      __attribute__ ((__nothrow__ )) __attribute__ ((__format__ (__scanf__, 2, 0)));
-# 494 "/usr/include/stdio.h" 3 4
+
 extern int vfscanf (FILE *__restrict __s, const char *__restrict __format, __gnuc_va_list __arg) __asm__ ("" "__isoc99_vfscanf")
 
 
@@ -564,7 +526,7 @@ extern int vsscanf (const char *__restrict __s, const char *__restrict __format,
 
 
      __attribute__ ((__format__ (__scanf__, 2, 0)));
-# 531 "/usr/include/stdio.h" 3 4
+
 extern int fgetc (FILE *__stream);
 extern int getc (FILE *__stream);
 
@@ -573,12 +535,12 @@ extern int getc (FILE *__stream);
 
 
 extern int getchar (void);
-# 550 "/usr/include/stdio.h" 3 4
+
 extern int getc_unlocked (FILE *__stream);
 extern int getchar_unlocked (void);
-# 561 "/usr/include/stdio.h" 3 4
+
 extern int fgetc_unlocked (FILE *__stream);
-# 573 "/usr/include/stdio.h" 3 4
+
 extern int fputc (int __c, FILE *__stream);
 extern int putc (int __c, FILE *__stream);
 
@@ -587,7 +549,7 @@ extern int putc (int __c, FILE *__stream);
 
 
 extern int putchar (int __c);
-# 594 "/usr/include/stdio.h" 3 4
+
 extern int fputc_unlocked (int __c, FILE *__stream);
 
 
@@ -608,12 +570,12 @@ extern int getw (FILE *__stream);
 
 
 extern int putw (int __w, FILE *__stream);
-# 622 "/usr/include/stdio.h" 3 4
+
 extern char *fgets (char *__restrict __s, int __n, FILE *__restrict __stream)
           ;
-# 638 "/usr/include/stdio.h" 3 4
+
 extern char *gets (char *__s) __attribute__ ((__deprecated__));
-# 665 "/usr/include/stdio.h" 3 4
+
 extern __ssize_t __getdelim (char **__restrict __lineptr,
           size_t *__restrict __n, int __delimiter,
           FILE *__restrict __stream) ;
@@ -630,7 +592,7 @@ extern __ssize_t getdelim (char **__restrict __lineptr,
 extern __ssize_t getline (char **__restrict __lineptr,
        size_t *__restrict __n,
        FILE *__restrict __stream) ;
-# 689 "/usr/include/stdio.h" 3 4
+
 extern int fputs (const char *__restrict __s, FILE *__restrict __stream);
 
 
@@ -659,12 +621,12 @@ extern size_t fread (void *__restrict __ptr, size_t __size,
 
 extern size_t fwrite (const void *__restrict __ptr, size_t __size,
         size_t __n, FILE *__restrict __s);
-# 737 "/usr/include/stdio.h" 3 4
+
 extern size_t fread_unlocked (void *__restrict __ptr, size_t __size,
          size_t __n, FILE *__restrict __stream) ;
 extern size_t fwrite_unlocked (const void *__restrict __ptr, size_t __size,
           size_t __n, FILE *__restrict __stream);
-# 749 "/usr/include/stdio.h" 3 4
+
 extern int fseek (FILE *__stream, long int __off, int __whence);
 
 
@@ -676,21 +638,21 @@ extern long int ftell (FILE *__stream) ;
 
 
 extern void rewind (FILE *__stream);
-# 773 "/usr/include/stdio.h" 3 4
+
 extern int fseeko (FILE *__stream, __off_t __off, int __whence);
 
 
 
 
 extern __off_t ftello (FILE *__stream) ;
-# 798 "/usr/include/stdio.h" 3 4
+
 extern int fgetpos (FILE *__restrict __stream, fpos_t *__restrict __pos);
 
 
 
 
 extern int fsetpos (FILE *__stream, const fpos_t *__pos);
-# 826 "/usr/include/stdio.h" 3 4
+
 extern void clearerr (FILE *__stream) __attribute__ ((__nothrow__ ));
 
 extern int feof (FILE *__stream) __attribute__ ((__nothrow__ )) ;
@@ -703,7 +665,7 @@ extern int ferror (FILE *__stream) __attribute__ ((__nothrow__ )) ;
 extern void clearerr_unlocked (FILE *__stream) __attribute__ ((__nothrow__ ));
 extern int feof_unlocked (FILE *__stream) __attribute__ ((__nothrow__ )) ;
 extern int ferror_unlocked (FILE *__stream) __attribute__ ((__nothrow__ )) ;
-# 846 "/usr/include/stdio.h" 3 4
+
 extern void perror (const char *__s);
 
 
@@ -712,11 +674,11 @@ extern void perror (const char *__s);
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h" 1 3 4
-# 26 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h" 3 4
+
+
 extern int sys_nerr;
 extern const char *const sys_errlist[];
-# 854 "/usr/include/stdio.h" 2 3 4
+
 
 
 
@@ -727,7 +689,7 @@ extern int fileno (FILE *__stream) __attribute__ ((__nothrow__ )) ;
 
 
 extern int fileno_unlocked (FILE *__stream) __attribute__ ((__nothrow__ )) ;
-# 873 "/usr/include/stdio.h" 3 4
+
 extern FILE *popen (const char *__command, const char *__modes) ;
 
 
@@ -741,7 +703,7 @@ extern int pclose (FILE *__stream);
 
 
 extern char *ctermid (char *__s) __attribute__ ((__nothrow__ ));
-# 913 "/usr/include/stdio.h" 3 4
+
 extern void flockfile (FILE *__stream) __attribute__ ((__nothrow__ ));
 
 
@@ -750,13 +712,12 @@ extern int ftrylockfile (FILE *__stream) __attribute__ ((__nothrow__ )) ;
 
 
 extern void funlockfile (FILE *__stream) __attribute__ ((__nothrow__ ));
-# 23 "./../test/abts.h" 2
-# 1 "/usr/include/stdlib.h" 1 3 4
-# 32 "/usr/include/stdlib.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 86 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 3 4
+
+
+
+
+
 typedef int wchar_t;
-# 33 "/usr/include/stdlib.h" 2 3 4
 
 
 
@@ -765,36 +726,37 @@ typedef int wchar_t;
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/waitflags.h" 1 3 4
-# 50 "/usr/include/x86_64-linux-gnu/bits/waitflags.h" 3 4
+
+
+
 typedef enum
 {
   P_ALL,
   P_PID,
   P_PGID
 } idtype_t;
-# 42 "/usr/include/stdlib.h" 2 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/waitstatus.h" 1 3 4
-# 64 "/usr/include/x86_64-linux-gnu/bits/waitstatus.h" 3 4
-# 1 "/usr/include/endian.h" 1 3 4
-# 36 "/usr/include/endian.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/endian.h" 1 3 4
-# 37 "/usr/include/endian.h" 2 3 4
-# 60 "/usr/include/endian.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/byteswap.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/bits/byteswap.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 29 "/usr/include/x86_64-linux-gnu/bits/byteswap.h" 2 3 4
 
 
 
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/byteswap-16.h" 1 3 4
-# 36 "/usr/include/x86_64-linux-gnu/bits/byteswap.h" 2 3 4
-# 61 "/usr/include/endian.h" 2 3 4
-# 65 "/usr/include/x86_64-linux-gnu/bits/waitstatus.h" 2 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 union wait
   {
@@ -828,14 +790,14 @@ union wait
 
       } __wait_stopped;
   };
-# 43 "/usr/include/stdlib.h" 2 3 4
-# 67 "/usr/include/stdlib.h" 3 4
+
+
 typedef union
   {
     union wait *__uptr;
     int *__iptr;
   } __WAIT_STATUS __attribute__ ((__transparent_union__));
-# 97 "/usr/include/stdlib.h" 3 4
+
 typedef struct
   {
     int quot;
@@ -861,7 +823,7 @@ __extension__ typedef struct
     long long int quot;
     long long int rem;
   } lldiv_t;
-# 139 "/usr/include/stdlib.h" 3 4
+
 extern size_t __ctype_get_mb_cur_max (void) __attribute__ ((__nothrow__ )) ;
 
 
@@ -940,7 +902,7 @@ __extension__
 extern unsigned long long int strtoull (const char *__restrict __nptr,
      char **__restrict __endptr, int __base)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 305 "/usr/include/stdlib.h" 3 4
+
 extern char *l64a (long int __n) __attribute__ ((__nothrow__ )) ;
 
 
@@ -951,8 +913,8 @@ extern long int a64l (const char *__s)
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/types.h" 1 3 4
-# 33 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
+
+
 typedef __u_char u_char;
 typedef __u_short u_short;
 typedef __u_int u_int;
@@ -969,7 +931,7 @@ typedef __loff_t loff_t;
 
 
 typedef __ino_t ino_t;
-# 60 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
+
 typedef __dev_t dev_t;
 
 
@@ -991,7 +953,7 @@ typedef __nlink_t nlink_t;
 
 
 typedef __uid_t uid_t;
-# 98 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
+
 typedef __pid_t pid_t;
 
 
@@ -999,7 +961,7 @@ typedef __pid_t pid_t;
 
 
 typedef __id_t id_t;
-# 115 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
+
 typedef __daddr_t daddr_t;
 typedef __caddr_t caddr_t;
 
@@ -1008,27 +970,27 @@ typedef __caddr_t caddr_t;
 
 
 typedef __key_t key_t;
-# 132 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
-# 1 "/usr/include/time.h" 1 3 4
-# 59 "/usr/include/time.h" 3 4
+
+
+
 typedef __clock_t clock_t;
-# 75 "/usr/include/time.h" 3 4
+
 typedef __time_t time_t;
-# 91 "/usr/include/time.h" 3 4
+
 typedef __clockid_t clockid_t;
-# 103 "/usr/include/time.h" 3 4
+
 typedef __timer_t timer_t;
-# 133 "/usr/include/x86_64-linux-gnu/sys/types.h" 2 3 4
-# 146 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 147 "/usr/include/x86_64-linux-gnu/sys/types.h" 2 3 4
+
+
+
+
 
 
 
 typedef unsigned long int ulong;
 typedef unsigned short int ushort;
 typedef unsigned int uint;
-# 194 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
+
 typedef int int8_t __attribute__ ((__mode__ (__QI__)));
 typedef int int16_t __attribute__ ((__mode__ (__HI__)));
 typedef int int32_t __attribute__ ((__mode__ (__SI__)));
@@ -1041,18 +1003,18 @@ typedef unsigned int u_int32_t __attribute__ ((__mode__ (__SI__)));
 typedef unsigned int u_int64_t __attribute__ ((__mode__ (__DI__)));
 
 typedef int register_t __attribute__ ((__mode__ (__word__)));
-# 219 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/sys/select.h" 1 3 4
-# 30 "/usr/include/x86_64-linux-gnu/sys/select.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/select.h" 1 3 4
-# 22 "/usr/include/x86_64-linux-gnu/bits/select.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 23 "/usr/include/x86_64-linux-gnu/bits/select.h" 2 3 4
-# 31 "/usr/include/x86_64-linux-gnu/sys/select.h" 2 3 4
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/sigset.h" 1 3 4
-# 22 "/usr/include/x86_64-linux-gnu/bits/sigset.h" 3 4
+
+
+
+
+
+
+
+
+
+
 typedef int __sig_atomic_t;
 
 
@@ -1062,7 +1024,7 @@ typedef struct
   {
     unsigned long int __val[(1024 / (8 * sizeof (unsigned long int)))];
   } __sigset_t;
-# 34 "/usr/include/x86_64-linux-gnu/sys/select.h" 2 3 4
+
 
 
 
@@ -1073,23 +1035,23 @@ typedef __sigset_t sigset_t;
 
 
 
-# 1 "/usr/include/time.h" 1 3 4
-# 120 "/usr/include/time.h" 3 4
+
+
 struct timespec
   {
     __time_t tv_sec;
     __syscall_slong_t tv_nsec;
   };
-# 44 "/usr/include/x86_64-linux-gnu/sys/select.h" 2 3 4
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/time.h" 1 3 4
-# 30 "/usr/include/x86_64-linux-gnu/bits/time.h" 3 4
+
+
+
 struct timeval
   {
     __time_t tv_sec;
     __suseconds_t tv_usec;
   };
-# 46 "/usr/include/x86_64-linux-gnu/sys/select.h" 2 3 4
+
 
 
 typedef __suseconds_t suseconds_t;
@@ -1099,7 +1061,7 @@ typedef __suseconds_t suseconds_t;
 
 
 typedef long int __fd_mask;
-# 64 "/usr/include/x86_64-linux-gnu/sys/select.h" 3 4
+
 typedef struct
   {
 
@@ -1119,22 +1081,22 @@ typedef struct
 
 
 typedef __fd_mask fd_mask;
-# 106 "/usr/include/x86_64-linux-gnu/sys/select.h" 3 4
+
 extern int select (int __nfds, fd_set *__restrict __readfds,
      fd_set *__restrict __writefds,
      fd_set *__restrict __exceptfds,
      struct timeval *__restrict __timeout);
-# 118 "/usr/include/x86_64-linux-gnu/sys/select.h" 3 4
+
 extern int pselect (int __nfds, fd_set *__restrict __readfds,
       fd_set *__restrict __writefds,
       fd_set *__restrict __exceptfds,
       const struct timespec *__restrict __timeout,
       const __sigset_t *__restrict __sigmask);
-# 220 "/usr/include/x86_64-linux-gnu/sys/types.h" 2 3 4
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/sysmacros.h" 1 3 4
-# 26 "/usr/include/x86_64-linux-gnu/sys/sysmacros.h" 3 4
+
+
+
 __extension__
 extern unsigned int gnu_dev_major (unsigned long long int __dev)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
@@ -1145,7 +1107,7 @@ __extension__
 extern unsigned long long int gnu_dev_makedev (unsigned int __major,
             unsigned int __minor)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
-# 223 "/usr/include/x86_64-linux-gnu/sys/types.h" 2 3 4
+
 
 
 
@@ -1167,12 +1129,12 @@ typedef __fsblkcnt_t fsblkcnt_t;
 
 
 typedef __fsfilcnt_t fsfilcnt_t;
-# 270 "/usr/include/x86_64-linux-gnu/sys/types.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 1 3 4
-# 21 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 22 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 2 3 4
-# 60 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 3 4
+
+
+
+
+
+
 typedef unsigned long int pthread_t;
 
 
@@ -1193,7 +1155,7 @@ typedef struct __pthread_internal_list
   struct __pthread_internal_list *__prev;
   struct __pthread_internal_list *__next;
 } __pthread_list_t;
-# 90 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 3 4
+
 typedef union
 {
   struct __pthread_mutex_s
@@ -1211,7 +1173,7 @@ typedef union
     short __spins;
     short __elision;
     __pthread_list_t __list;
-# 124 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 3 4
+
   } __data;
   char __size[40];
   long int __align;
@@ -1281,7 +1243,7 @@ typedef union
     unsigned int __flags;
 
   } __data;
-# 211 "/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h" 3 4
+
   char __size[56];
   long int __align;
 } pthread_rwlock_t;
@@ -1312,8 +1274,8 @@ typedef union
   char __size[4];
   int __align;
 } pthread_barrierattr_t;
-# 271 "/usr/include/x86_64-linux-gnu/sys/types.h" 2 3 4
-# 315 "/usr/include/stdlib.h" 2 3 4
+
+
 
 
 
@@ -1456,12 +1418,12 @@ extern int seed48_r (unsigned short int __seed16v[3],
 extern int lcong48_r (unsigned short int __param[7],
         struct drand48_data *__buffer)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
-# 466 "/usr/include/stdlib.h" 3 4
+
 extern void *malloc (size_t __size) __attribute__ ((__nothrow__ )) __attribute__ ((__malloc__)) ;
 
 extern void *calloc (size_t __nmemb, size_t __size)
      __attribute__ ((__nothrow__ )) __attribute__ ((__malloc__)) ;
-# 480 "/usr/include/stdlib.h" 3 4
+
 extern void *realloc (void *__ptr, size_t __size)
      __attribute__ ((__nothrow__ )) __attribute__ ((__warn_unused_result__));
 
@@ -1475,10 +1437,10 @@ extern void cfree (void *__ptr) __attribute__ ((__nothrow__ ));
 
 
 
-# 1 "/usr/include/alloca.h" 1 3 4
-# 24 "/usr/include/alloca.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 25 "/usr/include/alloca.h" 2 3 4
+
+
+
+
 
 
 
@@ -1487,7 +1449,7 @@ extern void cfree (void *__ptr) __attribute__ ((__nothrow__ ));
 
 
 extern void *alloca (size_t __size) __attribute__ ((__nothrow__ ));
-# 493 "/usr/include/stdlib.h" 2 3 4
+
 
 
 
@@ -1500,13 +1462,13 @@ extern void *valloc (size_t __size) __attribute__ ((__nothrow__ )) __attribute__
 
 extern int posix_memalign (void **__memptr, size_t __alignment, size_t __size)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1))) ;
-# 515 "/usr/include/stdlib.h" 3 4
+
 extern void abort (void) __attribute__ ((__nothrow__ )) __attribute__ ((__noreturn__));
 
 
 
 extern int atexit (void (*__func) (void)) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 535 "/usr/include/stdlib.h" 3 4
+
 extern int on_exit (void (*__func) (int __status, void *__arg), void *__arg)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
@@ -1516,7 +1478,7 @@ extern int on_exit (void (*__func) (int __status, void *__arg), void *__arg)
 
 
 extern void exit (int __status) __attribute__ ((__nothrow__ )) __attribute__ ((__noreturn__));
-# 557 "/usr/include/stdlib.h" 3 4
+
 extern void _Exit (int __status) __attribute__ ((__nothrow__ )) __attribute__ ((__noreturn__));
 
 
@@ -1525,7 +1487,7 @@ extern void _Exit (int __status) __attribute__ ((__nothrow__ )) __attribute__ ((
 
 
 extern char *getenv (const char *__name) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1))) ;
-# 578 "/usr/include/stdlib.h" 3 4
+
 extern int putenv (char *__string) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
 
@@ -1544,17 +1506,17 @@ extern int unsetenv (const char *__name) __attribute__ ((__nothrow__ )) __attrib
 
 
 extern int clearenv (void) __attribute__ ((__nothrow__ ));
-# 606 "/usr/include/stdlib.h" 3 4
+
 extern char *mktemp (char *__template) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 620 "/usr/include/stdlib.h" 3 4
+
 extern int mkstemp (char *__template) __attribute__ ((__nonnull__ (1))) ;
-# 642 "/usr/include/stdlib.h" 3 4
+
 extern int mkstemps (char *__template, int __suffixlen) __attribute__ ((__nonnull__ (1))) ;
-# 663 "/usr/include/stdlib.h" 3 4
+
 extern char *mkdtemp (char *__template) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1))) ;
-# 717 "/usr/include/stdlib.h" 3 4
+
 extern int system (const char *__command) ;
-# 734 "/usr/include/stdlib.h" 3 4
+
 extern char *realpath (const char *__restrict __name,
          char *__restrict __resolved) __attribute__ ((__nothrow__ )) ;
 
@@ -1564,7 +1526,7 @@ extern char *realpath (const char *__restrict __name,
 
 
 typedef int (*__compar_fn_t) (const void *, const void *);
-# 755 "/usr/include/stdlib.h" 3 4
+
 extern void *bsearch (const void *__key, const void *__base,
         size_t __nmemb, size_t __size, __compar_fn_t __compar)
      __attribute__ ((__nonnull__ (1, 2, 5))) ;
@@ -1577,7 +1539,7 @@ extern void *bsearch (const void *__key, const void *__base,
 
 extern void qsort (void *__base, size_t __nmemb, size_t __size,
      __compar_fn_t __compar) __attribute__ ((__nonnull__ (1, 4)));
-# 775 "/usr/include/stdlib.h" 3 4
+
 extern int abs (int __x) __attribute__ ((__nothrow__ )) __attribute__ ((__const__)) ;
 extern long int labs (long int __x) __attribute__ ((__nothrow__ )) __attribute__ ((__const__)) ;
 
@@ -1603,7 +1565,7 @@ extern ldiv_t ldiv (long int __numer, long int __denom)
 __extension__ extern lldiv_t lldiv (long long int __numer,
         long long int __denom)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__)) ;
-# 812 "/usr/include/stdlib.h" 3 4
+
 extern char *ecvt (double __value, int __ndigit, int *__restrict __decpt,
      int *__restrict __sign) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (3, 4))) ;
 
@@ -1672,27 +1634,27 @@ extern size_t mbstowcs (wchar_t *__restrict __pwcs,
 extern size_t wcstombs (char *__restrict __s,
    const wchar_t *__restrict __pwcs, size_t __n)
      __attribute__ ((__nothrow__ ));
-# 888 "/usr/include/stdlib.h" 3 4
+
 extern int rpmatch (const char *__response) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1))) ;
-# 899 "/usr/include/stdlib.h" 3 4
+
 extern int getsubopt (char **__restrict __optionp,
         char *const *__restrict __tokens,
         char **__restrict __valuep)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2, 3))) ;
-# 951 "/usr/include/stdlib.h" 3 4
+
 extern int getloadavg (double __loadavg[], int __nelem)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/stdlib-float.h" 1 3 4
-# 956 "/usr/include/stdlib.h" 2 3 4
-# 24 "./../test/abts.h" 2
-# 1 "/usr/include/string.h" 1 3 4
-# 32 "/usr/include/string.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 33 "/usr/include/string.h" 2 3 4
-# 46 "/usr/include/string.h" 3 4
+
+
+
+
+
+
+
+
 extern void *memcpy (void *__restrict __dest, const void *__restrict __src,
        size_t __n) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
 
@@ -1718,10 +1680,10 @@ extern void *memset (void *__s, int __c, size_t __n) __attribute__ ((__nothrow__
 
 extern int memcmp (const void *__s1, const void *__s2, size_t __n)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
-# 96 "/usr/include/string.h" 3 4
+
 extern void *memchr (const void *__s, int __c, size_t __n)
       __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
-# 129 "/usr/include/string.h" 3 4
+
 extern char *strcpy (char *__restrict __dest, const char *__restrict __src)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
 
@@ -1757,8 +1719,8 @@ extern size_t strxfrm (char *__restrict __dest,
 
 
 
-# 1 "/usr/include/xlocale.h" 1 3 4
-# 27 "/usr/include/xlocale.h" 3 4
+
+
 typedef struct __locale_struct
 {
 
@@ -1775,7 +1737,7 @@ typedef struct __locale_struct
 
 
 typedef __locale_t locale_t;
-# 164 "/usr/include/string.h" 2 3 4
+
 
 
 extern int strcoll_l (const char *__s1, const char *__s2, __locale_t __l)
@@ -1798,23 +1760,23 @@ extern char *strdup (const char *__s)
 
 extern char *strndup (const char *__string, size_t __n)
      __attribute__ ((__nothrow__ )) __attribute__ ((__malloc__)) __attribute__ ((__nonnull__ (1)));
-# 236 "/usr/include/string.h" 3 4
+
 extern char *strchr (const char *__s, int __c)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
-# 263 "/usr/include/string.h" 3 4
+
 extern char *strrchr (const char *__s, int __c)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
-# 285 "/usr/include/string.h" 3 4
+
 extern size_t strcspn (const char *__s, const char *__reject)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
 
 
 extern size_t strspn (const char *__s, const char *__accept)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
-# 315 "/usr/include/string.h" 3 4
+
 extern char *strpbrk (const char *__s, const char *__accept)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
-# 342 "/usr/include/string.h" 3 4
+
 extern char *strstr (const char *__haystack, const char *__needle)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
 
@@ -1835,7 +1797,7 @@ extern char *__strtok_r (char *__restrict __s,
 extern char *strtok_r (char *__restrict __s, const char *__restrict __delim,
          char **__restrict __save_ptr)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2, 3)));
-# 399 "/usr/include/string.h" 3 4
+
 extern size_t strlen (const char *__s)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
 
@@ -1851,9 +1813,9 @@ extern size_t strnlen (const char *__string, size_t __maxlen)
 
 
 extern char *strerror (int __errnum) __attribute__ ((__nothrow__ ));
-# 427 "/usr/include/string.h" 3 4
+
 extern int strerror_r (int __errnum, char *__buf, size_t __buflen) __asm__ ("" "__xpg_strerror_r") __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2)));
-# 445 "/usr/include/string.h" 3 4
+
 extern char *strerror_l (int __errnum, __locale_t __l) __attribute__ ((__nothrow__ ));
 
 
@@ -1873,10 +1835,10 @@ extern void bzero (void *__s, size_t __n) __attribute__ ((__nothrow__ )) __attri
 
 extern int bcmp (const void *__s1, const void *__s2, size_t __n)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
-# 489 "/usr/include/string.h" 3 4
+
 extern char *index (const char *__s, int __c)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
-# 517 "/usr/include/string.h" 3 4
+
 extern char *rindex (const char *__s, int __c)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1)));
 
@@ -1884,14 +1846,14 @@ extern char *rindex (const char *__s, int __c)
 
 
 extern int ffs (int __i) __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
-# 534 "/usr/include/string.h" 3 4
+
 extern int strcasecmp (const char *__s1, const char *__s2)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
 
 
 extern int strncasecmp (const char *__s1, const char *__s2, size_t __n)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
-# 557 "/usr/include/string.h" 3 4
+
 extern char *strsep (char **__restrict __stringp,
        const char *__restrict __delim)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
@@ -1915,28 +1877,28 @@ extern char *__stpncpy (char *__restrict __dest,
 extern char *stpncpy (char *__restrict __dest,
         const char *__restrict __src, size_t __n)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
-# 25 "./../test/abts.h" 2
 
 
 
-# 1 "/usr/include/unistd.h" 1 3 4
-# 202 "/usr/include/unistd.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/posix_opt.h" 1 3 4
-# 203 "/usr/include/unistd.h" 2 3 4
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/environments.h" 1 3 4
-# 22 "/usr/include/x86_64-linux-gnu/bits/environments.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 23 "/usr/include/x86_64-linux-gnu/bits/environments.h" 2 3 4
-# 207 "/usr/include/unistd.h" 2 3 4
-# 226 "/usr/include/unistd.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 227 "/usr/include/unistd.h" 2 3 4
-# 255 "/usr/include/unistd.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef __useconds_t useconds_t;
-# 267 "/usr/include/unistd.h" 3 4
+
 typedef __intptr_t intptr_t;
 
 
@@ -1945,14 +1907,14 @@ typedef __intptr_t intptr_t;
 
 
 typedef __socklen_t socklen_t;
-# 287 "/usr/include/unistd.h" 3 4
+
 extern int access (const char *__name, int __type) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 304 "/usr/include/unistd.h" 3 4
+
 extern int faccessat (int __fd, const char *__file, int __type, int __flag)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2))) ;
-# 334 "/usr/include/unistd.h" 3 4
+
 extern __off_t lseek (int __fd, __off_t __offset, int __whence) __attribute__ ((__nothrow__ ));
-# 353 "/usr/include/unistd.h" 3 4
+
 extern int close (int __fd);
 
 
@@ -1967,7 +1929,7 @@ extern ssize_t read (int __fd, void *__buf, size_t __nbytes) ;
 
 
 extern ssize_t write (int __fd, const void *__buf, size_t __n) ;
-# 376 "/usr/include/unistd.h" 3 4
+
 extern ssize_t pread (int __fd, void *__buf, size_t __nbytes,
         __off_t __offset) ;
 
@@ -1978,11 +1940,11 @@ extern ssize_t pread (int __fd, void *__buf, size_t __nbytes,
 
 extern ssize_t pwrite (int __fd, const void *__buf, size_t __n,
          __off_t __offset) ;
-# 417 "/usr/include/unistd.h" 3 4
+
 extern int pipe (int __pipedes[2]) __attribute__ ((__nothrow__ )) ;
-# 432 "/usr/include/unistd.h" 3 4
+
 extern unsigned int alarm (unsigned int __seconds) __attribute__ ((__nothrow__ ));
-# 444 "/usr/include/unistd.h" 3 4
+
 extern unsigned int sleep (unsigned int __seconds);
 
 
@@ -2000,7 +1962,7 @@ extern __useconds_t ualarm (__useconds_t __value, __useconds_t __interval)
 
 
 extern int usleep (__useconds_t __useconds);
-# 469 "/usr/include/unistd.h" 3 4
+
 extern int pause (void);
 
 
@@ -2034,9 +1996,9 @@ extern int chdir (const char *__path) __attribute__ ((__nothrow__ )) __attribute
 
 
 extern int fchdir (int __fd) __attribute__ ((__nothrow__ )) ;
-# 511 "/usr/include/unistd.h" 3 4
+
 extern char *getcwd (char *__buf, size_t __size) __attribute__ ((__nothrow__ )) ;
-# 525 "/usr/include/unistd.h" 3 4
+
 extern char *getwd (char *__buf)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1))) __attribute__ ((__deprecated__)) ;
 
@@ -2047,7 +2009,7 @@ extern int dup (int __fd) __attribute__ ((__nothrow__ )) ;
 
 
 extern int dup2 (int __fd, int __fd2) __attribute__ ((__nothrow__ ));
-# 543 "/usr/include/unistd.h" 3 4
+
 extern char **__environ;
 
 
@@ -2091,7 +2053,7 @@ extern int execvp (const char *__file, char *const __argv[])
 
 extern int execlp (const char *__file, const char *__arg, ...)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
-# 598 "/usr/include/unistd.h" 3 4
+
 extern int nice (int __inc) __attribute__ ((__nothrow__ )) ;
 
 
@@ -2104,8 +2066,8 @@ extern void _exit (int __status) __attribute__ ((__noreturn__));
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/confname.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/confname.h" 3 4
+
+
 enum
   {
     _PC_LINK_MAX,
@@ -2758,7 +2720,7 @@ enum
     _CS_V7_ENV
 
   };
-# 610 "/usr/include/unistd.h" 2 3 4
+
 
 
 extern long int pathconf (const char *__path, int __name)
@@ -2796,7 +2758,7 @@ extern __pid_t getpgid (__pid_t __pid) __attribute__ ((__nothrow__ ));
 
 
 extern int setpgid (__pid_t __pid, __pid_t __pgid) __attribute__ ((__nothrow__ ));
-# 660 "/usr/include/unistd.h" 3 4
+
 extern int setpgrp (void) __attribute__ ((__nothrow__ ));
 
 
@@ -2827,7 +2789,7 @@ extern __gid_t getegid (void) __attribute__ ((__nothrow__ ));
 
 
 extern int getgroups (int __size, __gid_t __list[]) __attribute__ ((__nothrow__ )) ;
-# 700 "/usr/include/unistd.h" 3 4
+
 extern int setuid (__uid_t __uid) __attribute__ ((__nothrow__ )) ;
 
 
@@ -2856,7 +2818,7 @@ extern int setregid (__gid_t __rgid, __gid_t __egid) __attribute__ ((__nothrow__
 
 
 extern int setegid (__gid_t __gid) __attribute__ ((__nothrow__ )) ;
-# 756 "/usr/include/unistd.h" 3 4
+
 extern __pid_t fork (void) __attribute__ ((__nothrow__));
 
 
@@ -2964,11 +2926,11 @@ extern int getlogin_r (char *__name, size_t __name_len) __attribute__ ((__nonnul
 
 
 extern int setlogin (const char *__name) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 871 "/usr/include/unistd.h" 3 4
-# 1 "/usr/include/getopt.h" 1 3 4
-# 57 "/usr/include/getopt.h" 3 4
+
+
+
 extern char *optarg;
-# 71 "/usr/include/getopt.h" 3 4
+
 extern int optind;
 
 
@@ -2979,10 +2941,10 @@ extern int opterr;
 
 
 extern int optopt;
-# 150 "/usr/include/getopt.h" 3 4
+
 extern int getopt (int ___argc, char *const *___argv, const char *__shortopts)
        __attribute__ ((__nothrow__ ));
-# 872 "/usr/include/unistd.h" 2 3 4
+
 
 
 
@@ -3068,7 +3030,7 @@ extern char *getpass (const char *__prompt) __attribute__ ((__nonnull__ (1)));
 
 
 extern int fsync (int __fd);
-# 969 "/usr/include/unistd.h" 3 4
+
 extern long int gethostid (void);
 
 
@@ -3084,12 +3046,12 @@ extern int getpagesize (void) __attribute__ ((__nothrow__ )) __attribute__ ((__c
 
 
 extern int getdtablesize (void) __attribute__ ((__nothrow__ ));
-# 993 "/usr/include/unistd.h" 3 4
+
 extern int truncate (const char *__file, __off_t __length)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1))) ;
-# 1016 "/usr/include/unistd.h" 3 4
+
 extern int ftruncate (int __fd, __off_t __length) __attribute__ ((__nothrow__ )) ;
-# 1037 "/usr/include/unistd.h" 3 4
+
 extern int brk (void *__addr) __attribute__ ((__nothrow__ )) ;
 
 
@@ -3097,14 +3059,14 @@ extern int brk (void *__addr) __attribute__ ((__nothrow__ )) ;
 
 
 extern void *sbrk (intptr_t __delta) __attribute__ ((__nothrow__ ));
-# 1058 "/usr/include/unistd.h" 3 4
+
 extern long int syscall (long int __sysno, ...) __attribute__ ((__nothrow__ ));
-# 1081 "/usr/include/unistd.h" 3 4
+
 extern int lockf (int __fd, int __cmd, __off_t __len) ;
-# 1112 "/usr/include/unistd.h" 3 4
+
 extern int fdatasync (int __fildes);
-# 29 "./../test/abts.h" 2
-# 41 "./../test/abts.h"
+
+
 struct sub_suite {
     const char *name;
     int num_test;
@@ -3147,52 +3109,52 @@ void abts_fail(abts_case *tc, const char *message, int lineno);
 void abts_not_impl(abts_case *tc, const char *message, int lineno);
 void abts_assert(abts_case *tc, const char *message, int condition, int lineno);
 void abts_size_equal(abts_case *tc, size_t expected, size_t actual, int lineno);
-# 99 "./../test/abts.h"
+
 abts_suite *run_tests(abts_suite *suite);
 abts_suite *run_tests1(abts_suite *suite);
-# 8 "main1.c" 2
-# 1 "./../test/testutil.h" 1
-# 17 "./../test/testutil.h"
-# 1 "../include/apr_pools.h" 1
-# 43 "../include/apr_pools.h"
-# 1 "../include/apr.h" 1
-# 168 "../include/apr.h"
-# 1 "/usr/include/x86_64-linux-gnu/sys/socket.h" 1 3 4
-# 26 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/sys/uio.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/sys/uio.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/uio.h" 1 3 4
-# 43 "/usr/include/x86_64-linux-gnu/bits/uio.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct iovec
   {
     void *iov_base;
     size_t iov_len;
   };
-# 29 "/usr/include/x86_64-linux-gnu/sys/uio.h" 2 3 4
-# 39 "/usr/include/x86_64-linux-gnu/sys/uio.h" 3 4
+
+
 extern ssize_t readv (int __fd, const struct iovec *__iovec, int __count)
        ;
-# 50 "/usr/include/x86_64-linux-gnu/sys/uio.h" 3 4
+
 extern ssize_t writev (int __fd, const struct iovec *__iovec, int __count)
        ;
-# 65 "/usr/include/x86_64-linux-gnu/sys/uio.h" 3 4
+
 extern ssize_t preadv (int __fd, const struct iovec *__iovec, int __count,
          __off_t __offset) ;
-# 77 "/usr/include/x86_64-linux-gnu/sys/uio.h" 3 4
+
 extern ssize_t pwritev (int __fd, const struct iovec *__iovec, int __count,
    __off_t __offset) ;
-# 27 "/usr/include/x86_64-linux-gnu/sys/socket.h" 2 3 4
 
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 29 "/usr/include/x86_64-linux-gnu/sys/socket.h" 2 3 4
-# 38 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/socket.h" 1 3 4
-# 27 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/bits/socket.h" 2 3 4
-# 38 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/socket_type.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/socket_type.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
 enum __socket_type
 {
   SOCK_STREAM = 1,
@@ -3225,12 +3187,12 @@ enum __socket_type
 
 
 };
-# 39 "/usr/include/x86_64-linux-gnu/bits/socket.h" 2 3 4
-# 146 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/sockaddr.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/bits/sockaddr.h" 3 4
+
+
+
+
 typedef unsigned short int sa_family_t;
-# 147 "/usr/include/x86_64-linux-gnu/bits/socket.h" 2 3 4
+
 
 
 struct sockaddr
@@ -3238,7 +3200,7 @@ struct sockaddr
     sa_family_t sa_family;
     char sa_data[14];
   };
-# 162 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
+
 struct sockaddr_storage
   {
     sa_family_t ss_family;
@@ -3332,10 +3294,10 @@ struct cmsghdr
     __extension__ unsigned char __cmsg_data [];
 
   };
-# 272 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
+
 extern struct cmsghdr *__cmsg_nxthdr (struct msghdr *__mhdr,
           struct cmsghdr *__cmsg) __attribute__ ((__nothrow__ ));
-# 299 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
+
 enum
   {
     SCM_RIGHTS = 0x01
@@ -3345,25 +3307,25 @@ enum
 
 
   };
-# 345 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/asm/socket.h" 1 3 4
-# 1 "/usr/include/asm-generic/socket.h" 1 3 4
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/asm/sockios.h" 1 3 4
-# 1 "/usr/include/asm-generic/sockios.h" 1 3 4
-# 2 "/usr/include/x86_64-linux-gnu/asm/sockios.h" 2 3 4
-# 5 "/usr/include/asm-generic/socket.h" 2 3 4
-# 2 "/usr/include/x86_64-linux-gnu/asm/socket.h" 2 3 4
-# 346 "/usr/include/x86_64-linux-gnu/bits/socket.h" 2 3 4
-# 379 "/usr/include/x86_64-linux-gnu/bits/socket.h" 3 4
+
+
+
+
+
+
+
+
+
+
 struct linger
   {
     int l_onoff;
     int l_linger;
   };
-# 39 "/usr/include/x86_64-linux-gnu/sys/socket.h" 2 3 4
+
 
 
 
@@ -3386,7 +3348,7 @@ enum
   SHUT_RDWR
 
 };
-# 113 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern int socket (int __domain, int __type, int __protocol) __attribute__ ((__nothrow__ ));
 
 
@@ -3403,7 +3365,7 @@ extern int bind (int __fd, const struct sockaddr * __addr, socklen_t __len)
 
 extern int getsockname (int __fd, struct sockaddr *__restrict __addr,
    socklen_t *__restrict __len) __attribute__ ((__nothrow__ ));
-# 137 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern int connect (int __fd, const struct sockaddr * __addr, socklen_t __len);
 
 
@@ -3433,7 +3395,7 @@ extern ssize_t recv (int __fd, void *__buf, size_t __n, int __flags);
 extern ssize_t sendto (int __fd, const void *__buf, size_t __n,
          int __flags, const struct sockaddr * __addr,
          socklen_t __addr_len);
-# 174 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern ssize_t recvfrom (int __fd, void *__restrict __buf, size_t __n,
     int __flags, struct sockaddr *__restrict __addr,
     socklen_t *__restrict __addr_len);
@@ -3446,9 +3408,9 @@ extern ssize_t recvfrom (int __fd, void *__restrict __buf, size_t __n,
 
 extern ssize_t sendmsg (int __fd, const struct msghdr *__message,
    int __flags);
-# 202 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern ssize_t recvmsg (int __fd, struct msghdr *__message, int __flags);
-# 219 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern int getsockopt (int __fd, int __level, int __optname,
          void *__restrict __optval,
          socklen_t *__restrict __optlen) __attribute__ ((__nothrow__ ));
@@ -3464,10 +3426,10 @@ extern int setsockopt (int __fd, int __level, int __optname,
 
 
 extern int listen (int __fd, int __n) __attribute__ ((__nothrow__ ));
-# 243 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern int accept (int __fd, struct sockaddr *__restrict __addr,
      socklen_t *__restrict __addr_len);
-# 261 "/usr/include/x86_64-linux-gnu/sys/socket.h" 3 4
+
 extern int shutdown (int __fd, int __how) __attribute__ ((__nothrow__ ));
 
 
@@ -3482,11 +3444,6 @@ extern int sockatmark (int __fd) __attribute__ ((__nothrow__ ));
 
 
 extern int isfdtype (int __fd, int __fdtype) __attribute__ ((__nothrow__ ));
-# 169 "../include/apr.h" 2
-# 178 "../include/apr.h"
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdint.h" 1 3
-# 61 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdint.h" 3
-# 1 "/usr/bin/../lib/gcc/x86_64-linux-gnu/4.9/include/stdint.h" 1 3 4
 
 
 
@@ -3495,13 +3452,18 @@ extern int isfdtype (int __fd, int __fdtype) __attribute__ ((__nothrow__ ));
 
 
 
-# 1 "/usr/include/stdint.h" 1 3 4
-# 26 "/usr/include/stdint.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wchar.h" 1 3 4
-# 27 "/usr/include/stdint.h" 2 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 28 "/usr/include/stdint.h" 2 3 4
-# 48 "/usr/include/stdint.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 
@@ -3510,7 +3472,7 @@ typedef unsigned int uint32_t;
 
 
 typedef unsigned long int uint64_t;
-# 65 "/usr/include/stdint.h" 3 4
+
 typedef signed char int_least8_t;
 typedef short int int_least16_t;
 typedef int int_least32_t;
@@ -3527,39 +3489,39 @@ typedef unsigned short int uint_least16_t;
 typedef unsigned int uint_least32_t;
 
 typedef unsigned long int uint_least64_t;
-# 90 "/usr/include/stdint.h" 3 4
+
 typedef signed char int_fast8_t;
 
 typedef long int int_fast16_t;
 typedef long int int_fast32_t;
 typedef long int int_fast64_t;
-# 103 "/usr/include/stdint.h" 3 4
+
 typedef unsigned char uint_fast8_t;
 
 typedef unsigned long int uint_fast16_t;
 typedef unsigned long int uint_fast32_t;
 typedef unsigned long int uint_fast64_t;
-# 122 "/usr/include/stdint.h" 3 4
+
 typedef unsigned long int uintptr_t;
-# 134 "/usr/include/stdint.h" 3 4
+
 typedef long int intmax_t;
 typedef unsigned long int uintmax_t;
-# 10 "/usr/bin/../lib/gcc/x86_64-linux-gnu/4.9/include/stdint.h" 2 3 4
-# 62 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdint.h" 2 3
-# 179 "../include/apr.h" 2
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/wait.h" 1 3 4
-# 29 "/usr/include/x86_64-linux-gnu/sys/wait.h" 3 4
-# 1 "/usr/include/signal.h" 1 3 4
-# 32 "/usr/include/signal.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/sigset.h" 1 3 4
-# 102 "/usr/include/x86_64-linux-gnu/bits/sigset.h" 3 4
+
+
+
+
+
+
+
+
+
 extern int __sigismember (const __sigset_t *, int);
 extern int __sigaddset (__sigset_t *, int);
 extern int __sigdelset (__sigset_t *, int);
-# 33 "/usr/include/signal.h" 2 3 4
+
 
 
 
@@ -3568,20 +3530,20 @@ extern int __sigdelset (__sigset_t *, int);
 
 
 typedef __sig_atomic_t sig_atomic_t;
-# 57 "/usr/include/signal.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/signum.h" 1 3 4
-# 58 "/usr/include/signal.h" 2 3 4
-# 75 "/usr/include/signal.h" 3 4
-# 1 "/usr/include/time.h" 1 3 4
-# 76 "/usr/include/signal.h" 2 3 4
 
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 25 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 2 3 4
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3594,7 +3556,7 @@ typedef union sigval
     int sival_int;
     void *sival_ptr;
   } sigval_t;
-# 58 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 3 4
+
 typedef __clock_t __sigchld_clock_t;
 
 
@@ -3666,7 +3628,7 @@ typedef struct
    } _sigsys;
       } _sifields;
   } siginfo_t ;
-# 153 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 3 4
+
 enum
 {
   SI_ASYNCNL = -60,
@@ -3798,7 +3760,7 @@ enum
   POLL_HUP
 
 };
-# 307 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 3 4
+
 typedef struct sigevent
   {
     sigval_t sigev_value;
@@ -3838,7 +3800,7 @@ enum
   SIGEV_THREAD_ID = 4
 
 };
-# 81 "/usr/include/signal.h" 2 3 4
+
 
 
 
@@ -3850,10 +3812,10 @@ typedef void (*__sighandler_t) (int);
 
 extern __sighandler_t __sysv_signal (int __sig, __sighandler_t __handler)
      __attribute__ ((__nothrow__ ));
-# 102 "/usr/include/signal.h" 3 4
+
 extern __sighandler_t signal (int __sig, __sighandler_t __handler)
      __attribute__ ((__nothrow__ ));
-# 127 "/usr/include/signal.h" 3 4
+
 extern int kill (__pid_t __pid, int __sig) __attribute__ ((__nothrow__ ));
 
 
@@ -3884,9 +3846,9 @@ extern void psignal (int __sig, const char *__s);
 
 
 extern void psiginfo (const siginfo_t *__pinfo, const char *__s);
-# 167 "/usr/include/signal.h" 3 4
+
 extern int __sigpause (int __sig_or_mask, int __is_sig);
-# 189 "/usr/include/signal.h" 3 4
+
 extern int sigblock (int __mask) __attribute__ ((__nothrow__ )) __attribute__ ((__deprecated__));
 
 
@@ -3894,7 +3856,7 @@ extern int sigsetmask (int __mask) __attribute__ ((__nothrow__ )) __attribute__ 
 
 
 extern int siggetmask (void) __attribute__ ((__nothrow__ )) __attribute__ ((__deprecated__));
-# 209 "/usr/include/signal.h" 3 4
+
 typedef __sighandler_t sig_t;
 
 
@@ -3915,9 +3877,9 @@ extern int sigdelset (sigset_t *__set, int __signo) __attribute__ ((__nothrow__ 
 
 extern int sigismember (const sigset_t *__set, int __signo)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 245 "/usr/include/signal.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/sigaction.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/sigaction.h" 3 4
+
+
+
 struct sigaction
   {
 
@@ -3945,7 +3907,7 @@ struct sigaction
 
     void (*sa_restorer) (void);
   };
-# 246 "/usr/include/signal.h" 2 3 4
+
 
 
 extern int sigprocmask (int __how, const sigset_t *__restrict __set,
@@ -3995,7 +3957,7 @@ extern int sigtimedwait (const sigset_t *__restrict __set,
 
 extern int sigqueue (__pid_t __pid, int __sig, const union sigval __val)
      __attribute__ ((__nothrow__ ));
-# 303 "/usr/include/signal.h" 3 4
+
 extern const char *const _sys_siglist[65];
 extern const char *const sys_siglist[65];
 
@@ -4008,15 +3970,15 @@ struct sigvec
     int sv_flags;
 
   };
-# 327 "/usr/include/signal.h" 3 4
+
 extern int sigvec (int __sig, const struct sigvec *__vec,
      struct sigvec *__ovec) __attribute__ ((__nothrow__ ));
 
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/sigcontext.h" 1 3 4
-# 29 "/usr/include/x86_64-linux-gnu/bits/sigcontext.h" 3 4
+
+
 struct _fpx_sw_bytes
 {
   __uint32_t magic1;
@@ -4043,7 +4005,7 @@ struct _xmmreg
 {
   __uint32_t element[4];
 };
-# 121 "/usr/include/x86_64-linux-gnu/bits/sigcontext.h" 3 4
+
 struct _fpstate
 {
 
@@ -4116,7 +4078,7 @@ struct _xstate
   struct _xsave_hdr xstate_hdr;
   struct _ymmh_state ymmh;
 };
-# 333 "/usr/include/signal.h" 2 3 4
+
 
 
 extern int sigreturn (struct sigcontext *__scp) __attribute__ ((__nothrow__ ));
@@ -4127,8 +4089,8 @@ extern int sigreturn (struct sigcontext *__scp) __attribute__ ((__nothrow__ ));
 
 
 
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 343 "/usr/include/signal.h" 2 3 4
+
+
 
 
 
@@ -4136,8 +4098,8 @@ extern int sigreturn (struct sigcontext *__scp) __attribute__ ((__nothrow__ ));
 extern int siginterrupt (int __sig, int __interrupt) __attribute__ ((__nothrow__ ));
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/sigstack.h" 1 3 4
-# 25 "/usr/include/x86_64-linux-gnu/bits/sigstack.h" 3 4
+
+
 struct sigstack
   {
     void *ss_sp;
@@ -4153,20 +4115,20 @@ enum
   SS_DISABLE
 
 };
-# 49 "/usr/include/x86_64-linux-gnu/bits/sigstack.h" 3 4
+
 typedef struct sigaltstack
   {
     void *ss_sp;
     int ss_flags;
     size_t ss_size;
   } stack_t;
-# 350 "/usr/include/signal.h" 2 3 4
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/ucontext.h" 1 3 4
-# 22 "/usr/include/x86_64-linux-gnu/sys/ucontext.h" 3 4
-# 1 "/usr/include/signal.h" 1 3 4
-# 23 "/usr/include/x86_64-linux-gnu/sys/ucontext.h" 2 3 4
+
+
+
+
+
 
 
 
@@ -4182,7 +4144,7 @@ __extension__ typedef long long int greg_t;
 
 
 typedef greg_t gregset_t[23];
-# 92 "/usr/include/x86_64-linux-gnu/sys/ucontext.h" 3 4
+
 struct _libc_fpxreg
 {
   unsigned short int significand[4];
@@ -4233,7 +4195,7 @@ typedef struct ucontext
     __sigset_t uc_sigmask;
     struct _libc_fpstate __fpregs_mem;
   } ucontext_t;
-# 353 "/usr/include/signal.h" 2 3 4
+
 
 
 
@@ -4246,16 +4208,16 @@ extern int sigstack (struct sigstack *__ss, struct sigstack *__oss)
 
 extern int sigaltstack (const struct sigaltstack *__restrict __ss,
    struct sigaltstack *__restrict __oss) __attribute__ ((__nothrow__ ));
-# 388 "/usr/include/signal.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/sigthread.h" 1 3 4
-# 30 "/usr/include/x86_64-linux-gnu/bits/sigthread.h" 3 4
+
+
+
 extern int pthread_sigmask (int __how,
        const __sigset_t *__restrict __newmask,
        __sigset_t *__restrict __oldmask)__attribute__ ((__nothrow__ ));
 
 
 extern int pthread_kill (pthread_t __threadid, int __signo) __attribute__ ((__nothrow__ ));
-# 389 "/usr/include/signal.h" 2 3 4
+
 
 
 
@@ -4265,18 +4227,18 @@ extern int pthread_kill (pthread_t __threadid, int __signo) __attribute__ ((__no
 extern int __libc_current_sigrtmin (void) __attribute__ ((__nothrow__ ));
 
 extern int __libc_current_sigrtmax (void) __attribute__ ((__nothrow__ ));
-# 30 "/usr/include/x86_64-linux-gnu/sys/wait.h" 2 3 4
-# 102 "/usr/include/x86_64-linux-gnu/sys/wait.h" 3 4
+
+
 extern __pid_t wait (__WAIT_STATUS __stat_loc);
-# 125 "/usr/include/x86_64-linux-gnu/sys/wait.h" 3 4
+
 extern __pid_t waitpid (__pid_t __pid, int *__stat_loc, int __options);
-# 135 "/usr/include/x86_64-linux-gnu/sys/wait.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 25 "/usr/include/x86_64-linux-gnu/bits/siginfo.h" 2 3 4
-# 136 "/usr/include/x86_64-linux-gnu/sys/wait.h" 2 3 4
-# 148 "/usr/include/x86_64-linux-gnu/sys/wait.h" 3 4
+
+
+
+
+
+
+
 extern int waitid (idtype_t __idtype, __id_t __id, siginfo_t *__infop,
      int __options);
 
@@ -4299,28 +4261,28 @@ extern __pid_t wait3 (__WAIT_STATUS __stat_loc, int __options,
 
 extern __pid_t wait4 (__pid_t __pid, __WAIT_STATUS __stat_loc, int __options,
         struct rusage *__usage) __attribute__ ((__nothrow__));
-# 183 "../include/apr.h" 2
-# 193 "../include/apr.h"
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/limits.h" 1 3
-# 37 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/limits.h" 3
-# 1 "/usr/include/limits.h" 1 3 4
-# 143 "/usr/include/limits.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/posix1_lim.h" 1 3 4
-# 160 "/usr/include/x86_64-linux-gnu/bits/posix1_lim.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/local_lim.h" 1 3 4
-# 38 "/usr/include/x86_64-linux-gnu/bits/local_lim.h" 3 4
-# 1 "/usr/include/linux/limits.h" 1 3 4
-# 39 "/usr/include/x86_64-linux-gnu/bits/local_lim.h" 2 3 4
-# 161 "/usr/include/x86_64-linux-gnu/bits/posix1_lim.h" 2 3 4
-# 144 "/usr/include/limits.h" 2 3 4
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/posix2_lim.h" 1 3 4
-# 148 "/usr/include/limits.h" 2 3 4
-# 38 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/limits.h" 2 3
-# 194 "../include/apr.h" 2
-# 309 "../include/apr.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef unsigned char apr_byte_t;
 
 typedef short apr_int16_t;
@@ -4328,7 +4290,7 @@ typedef unsigned short apr_uint16_t;
 
 typedef int apr_int32_t;
 typedef unsigned int apr_uint32_t;
-# 352 "../include/apr.h"
+
  typedef long apr_int64_t;
  typedef unsigned long apr_uint64_t;
 
@@ -4341,29 +4303,29 @@ typedef ino_t apr_ino_t;
 
 
 typedef apr_uint64_t apr_uintptr_t;
-# 44 "../include/apr_pools.h" 2
-# 1 "../include/apr_errno.h" 1
-# 28 "../include/apr_errno.h"
-# 1 "/usr/include/errno.h" 1 3 4
-# 35 "/usr/include/errno.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/errno.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/errno.h" 3 4
-# 1 "/usr/include/linux/errno.h" 1 3 4
-# 1 "/usr/include/x86_64-linux-gnu/asm/errno.h" 1 3 4
-# 1 "/usr/include/asm-generic/errno.h" 1 3 4
 
 
 
-# 1 "/usr/include/asm-generic/errno-base.h" 1 3 4
-# 5 "/usr/include/asm-generic/errno.h" 2 3 4
-# 2 "/usr/include/x86_64-linux-gnu/asm/errno.h" 2 3 4
-# 2 "/usr/include/linux/errno.h" 2 3 4
-# 25 "/usr/include/x86_64-linux-gnu/bits/errno.h" 2 3 4
-# 50 "/usr/include/x86_64-linux-gnu/bits/errno.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern int *__errno_location (void) __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
-# 36 "/usr/include/errno.h" 2 3 4
-# 29 "../include/apr_errno.h" 2
-# 44 "../include/apr_errno.h"
+
+
+
 typedef int apr_status_t;
 
 
@@ -4374,35 +4336,35 @@ typedef int apr_status_t;
 
 char * apr_strerror(apr_status_t statcode, char *buf,
                                  apr_size_t bufsize);
-# 45 "../include/apr_pools.h" 2
-# 1 "../include/apr_general.h" 1
-# 29 "../include/apr_general.h"
-# 1 "../include/apr_pools.h" 1
-# 30 "../include/apr_general.h" 2
-# 68 "../include/apr_general.h"
+
+
+
+
+
+
 typedef int apr_signum_t;
-# 177 "../include/apr_general.h"
+
 apr_status_t apr_initialize(void);
-# 191 "../include/apr_general.h"
+
 apr_status_t apr_app_initialize(int *argc,
                                              char const * const * *argv,
                                              char const * const * *env);
-# 205 "../include/apr_general.h"
+
 void apr_terminate(void);
-# 216 "../include/apr_general.h"
+
 void apr_terminate2(void);
-# 233 "../include/apr_general.h"
+
 apr_status_t apr_generate_random_bytes(unsigned char * buf,
                                                     apr_size_t length);
-# 46 "../include/apr_pools.h" 2
 
-# 1 "../include/apr_want.h" 1
-# 48 "../include/apr_pools.h" 2
-# 60 "../include/apr_pools.h"
+
+
+
+
 typedef struct apr_pool_t apr_pool_t;
-# 148 "../include/apr_pools.h"
+
 typedef int (*apr_abortfunc_t)(int retcode);
-# 164 "../include/apr_pools.h"
+
 apr_status_t apr_pool_initialize(void);
 
 
@@ -4419,15 +4381,15 @@ void apr_pool_terminate(void);
 
 
 
-# 1 "../include/apr_allocator.h" 1
-# 28 "../include/apr_allocator.h"
-# 1 "../include/apr_want.h" 1
-# 29 "../include/apr_allocator.h" 2
-# 41 "../include/apr_allocator.h"
+
+
+
+
+
 typedef struct apr_allocator_t apr_allocator_t;
 
 typedef struct apr_memnode_t apr_memnode_t;
-# 54 "../include/apr_allocator.h"
+
 struct apr_memnode_t {
     apr_memnode_t *next;
     apr_memnode_t **ref;
@@ -4436,7 +4398,7 @@ struct apr_memnode_t {
     char *first_avail;
     char *endp;
 };
-# 74 "../include/apr_allocator.h"
+
 apr_status_t apr_allocator_create(apr_allocator_t **allocator)
                           __attribute__((nonnull(1)));
 
@@ -4458,15 +4420,15 @@ void apr_allocator_destroy(apr_allocator_t *allocator)
 apr_memnode_t * apr_allocator_alloc(apr_allocator_t *allocator,
                                                  apr_size_t size)
                              __attribute__((nonnull(1)));
-# 103 "../include/apr_allocator.h"
+
 void apr_allocator_free(apr_allocator_t *allocator,
                                      apr_memnode_t *memnode)
                   __attribute__((nonnull(1,2)));
 
 
-# 1 "../include/apr_pools.h" 1
-# 108 "../include/apr_allocator.h" 2
-# 120 "../include/apr_allocator.h"
+
+
+
 void apr_allocator_owner_set(apr_allocator_t *allocator,
                                           apr_pool_t *pool)
                   __attribute__((nonnull(1)));
@@ -4489,8 +4451,8 @@ void apr_allocator_max_free_set(apr_allocator_t *allocator,
                   __attribute__((nonnull(1)));
 
 
-# 1 "../include/apr_thread_mutex.h" 1
-# 41 "../include/apr_thread_mutex.h"
+
+
 typedef struct apr_thread_mutex_t apr_thread_mutex_t;
 
 
@@ -4499,9 +4461,9 @@ typedef struct apr_thread_mutex_t apr_thread_mutex_t;
 
 
 
-# 1 "../include/apr_pools.h" 1
-# 49 "../include/apr_thread_mutex.h" 2
-# 65 "../include/apr_thread_mutex.h"
+
+
+
 apr_status_t apr_thread_mutex_create(apr_thread_mutex_t **mutex,
                                                   unsigned int flags,
                                                   apr_pool_t *pool);
@@ -4511,7 +4473,7 @@ apr_status_t apr_thread_mutex_create(apr_thread_mutex_t **mutex,
 
 
 apr_status_t apr_thread_mutex_lock(apr_thread_mutex_t *mutex);
-# 82 "../include/apr_thread_mutex.h"
+
 apr_status_t apr_thread_mutex_trylock(apr_thread_mutex_t *mutex);
 
 
@@ -4531,7 +4493,7 @@ apr_status_t apr_thread_mutex_destroy(apr_thread_mutex_t *mutex);
 
 
 apr_pool_t * apr_thread_mutex_pool_get (const apr_thread_mutex_t *thethread_mutex);
-# 142 "../include/apr_allocator.h" 2
+
 
 
 
@@ -4550,8 +4512,8 @@ void apr_allocator_mutex_set(apr_allocator_t *allocator,
 apr_thread_mutex_t * apr_allocator_mutex_get(
                                           apr_allocator_t *allocator)
                                   __attribute__((nonnull(1)));
-# 180 "../include/apr_pools.h" 2
-# 196 "../include/apr_pools.h"
+
+
 apr_status_t apr_pool_create_ex(apr_pool_t **newpool,
                                              apr_pool_t *parent,
                                              apr_abortfunc_t abort_fn,
@@ -4565,62 +4527,62 @@ apr_status_t apr_pool_create_ex(apr_pool_t **newpool,
 apr_status_t apr_pool_create_core_ex(apr_pool_t **newpool,
                                                   apr_abortfunc_t abort_fn,
                                                   apr_allocator_t *allocator);
-# 226 "../include/apr_pools.h"
+
 apr_status_t apr_pool_create_unmanaged_ex(apr_pool_t **newpool,
                                                    apr_abortfunc_t abort_fn,
                                                    apr_allocator_t *allocator)
                           __attribute__((nonnull(1)));
-# 247 "../include/apr_pools.h"
+
 apr_status_t apr_pool_create_ex_debug(apr_pool_t **newpool,
                                                    apr_pool_t *parent,
                                                    apr_abortfunc_t abort_fn,
                                                    apr_allocator_t *allocator,
                                                    const char *file_line)
                           __attribute__((nonnull(1)));
-# 264 "../include/apr_pools.h"
+
 apr_status_t apr_pool_create_core_ex_debug(apr_pool_t **newpool,
                                                    apr_abortfunc_t abort_fn,
                                                    apr_allocator_t *allocator,
                                                    const char *file_line);
-# 284 "../include/apr_pools.h"
+
 apr_status_t apr_pool_create_unmanaged_ex_debug(apr_pool_t **newpool,
                                                    apr_abortfunc_t abort_fn,
                                                    apr_allocator_t *allocator,
                                                    const char *file_line)
                           __attribute__((nonnull(1)));
-# 354 "../include/apr_pools.h"
+
 apr_allocator_t * apr_pool_allocator_get(apr_pool_t *pool)
                                __attribute__((nonnull(1)));
-# 365 "../include/apr_pools.h"
+
 void apr_pool_clear(apr_pool_t *p) __attribute__((nonnull(1)));
-# 380 "../include/apr_pools.h"
+
 void apr_pool_clear_debug(apr_pool_t *p,
                                        const char *file_line)
                   __attribute__((nonnull(1)));
-# 395 "../include/apr_pools.h"
+
 void apr_pool_destroy(apr_pool_t *p) __attribute__((nonnull(1)));
-# 410 "../include/apr_pools.h"
+
 void apr_pool_destroy_debug(apr_pool_t *p,
                                          const char *file_line)
                   __attribute__((nonnull(1)));
-# 430 "../include/apr_pools.h"
+
 void * apr_palloc(apr_pool_t *p, apr_size_t size)
 
 
 
                     __attribute__((nonnull(1)));
-# 444 "../include/apr_pools.h"
+
 void * apr_palloc_debug(apr_pool_t *p, apr_size_t size,
                                      const char *file_line)
 
 
 
                     __attribute__((nonnull(1)));
-# 476 "../include/apr_pools.h"
+
 void * apr_pcalloc_debug(apr_pool_t *p, apr_size_t size,
                                       const char *file_line)
                     __attribute__((nonnull(1)));
-# 498 "../include/apr_pools.h"
+
 void apr_pool_abort_set(apr_abortfunc_t abortfunc,
                                      apr_pool_t *pool)
                   __attribute__((nonnull(2)));
@@ -4640,7 +4602,7 @@ apr_abortfunc_t apr_pool_abort_get(apr_pool_t *pool)
 
 apr_pool_t * apr_pool_parent_get(apr_pool_t *pool)
                           __attribute__((nonnull(1)));
-# 529 "../include/apr_pools.h"
+
 int apr_pool_is_ancestor(apr_pool_t *a, apr_pool_t *b);
 
 
@@ -4650,13 +4612,13 @@ int apr_pool_is_ancestor(apr_pool_t *a, apr_pool_t *b);
 
 void apr_pool_tag(apr_pool_t *pool, const char *tag)
                   __attribute__((nonnull(1)));
-# 563 "../include/apr_pools.h"
+
 apr_status_t apr_pool_userdata_set(const void *data,
                                                 const char *key,
                                                 apr_status_t (*cleanup)(void *),
                                                 apr_pool_t *pool)
                           __attribute__((nonnull(2,4)));
-# 588 "../include/apr_pools.h"
+
 apr_status_t apr_pool_userdata_setn(
                                 const void *data, const char *key,
                                 apr_status_t (*cleanup)(void *),
@@ -4672,32 +4634,32 @@ apr_status_t apr_pool_userdata_setn(
 apr_status_t apr_pool_userdata_get(void **data, const char *key,
                                                 apr_pool_t *pool)
                           __attribute__((nonnull(1,2,3)));
-# 628 "../include/apr_pools.h"
+
 void apr_pool_cleanup_register(
                             apr_pool_t *p, const void *data,
                             apr_status_t (*plain_cleanup)(void *),
                             apr_status_t (*child_cleanup)(void *))
                   __attribute__((nonnull(3,4)));
-# 646 "../include/apr_pools.h"
+
 void apr_pool_pre_cleanup_register(
                             apr_pool_t *p, const void *data,
                             apr_status_t (*plain_cleanup)(void *))
                   __attribute__((nonnull(3)));
-# 663 "../include/apr_pools.h"
+
 void apr_pool_cleanup_kill(apr_pool_t *p, const void *data,
                                         apr_status_t (*cleanup)(void *))
                   __attribute__((nonnull(3)));
-# 679 "../include/apr_pools.h"
+
 void apr_pool_child_cleanup_set(
                         apr_pool_t *p, const void *data,
                         apr_status_t (*plain_cleanup)(void *),
                         apr_status_t (*child_cleanup)(void *))
                   __attribute__((nonnull(3,4)));
-# 696 "../include/apr_pools.h"
+
 apr_status_t apr_pool_cleanup_run(apr_pool_t *p, void *data,
                                                apr_status_t (*cleanup)(void *))
                           __attribute__((nonnull(3)));
-# 707 "../include/apr_pools.h"
+
 apr_status_t apr_pool_cleanup_null(void *data);
 
 
@@ -4707,11 +4669,11 @@ apr_status_t apr_pool_cleanup_null(void *data);
 
 
 void apr_pool_cleanup_for_exec(void);
-# 18 "./../test/testutil.h" 2
 
-# 1 "./../test/abts.h" 1
-# 20 "./../test/testutil.h" 2
-# 52 "./../test/testutil.h"
+
+
+
+
 extern apr_pool_t *p;
 
 
@@ -4766,22 +4728,22 @@ abts_suite *testtime(abts_suite *suite);
 abts_suite *testud(abts_suite *suite);
 abts_suite *testuser(abts_suite *suite);
 abts_suite *testvsn(abts_suite *suite);
-# 9 "main1.c" 2
 
-# 1 "./../test/testatomic.c" 1
-# 17 "./../test/testatomic.c"
-# 1 "./../test/testutil.h" 1
-# 19 "./../test/testutil.h"
-# 1 "./../test/abts.h" 1
-# 20 "./../test/testutil.h" 2
-# 18 "./../test/testatomic.c" 2
-# 1 "../include/apr_strings.h" 1
-# 52 "../include/apr_strings.h"
-# 1 "../include/apr_want.h" 1
-# 53 "../include/apr_strings.h" 2
-# 76 "../include/apr_strings.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
 int apr_strnatcmp(char const *a, char const *b);
-# 87 "../include/apr_strings.h"
+
 int apr_strnatcasecmp(char const *a, char const *b);
 
 
@@ -4791,15 +4753,15 @@ int apr_strnatcasecmp(char const *a, char const *b);
 
 
 char * apr_pstrdup(apr_pool_t *p, const char *s);
-# 109 "../include/apr_strings.h"
+
 char * apr_pstrmemdup(apr_pool_t *p, const char *s, apr_size_t n)
 
 
 
     ;
-# 125 "../include/apr_strings.h"
+
 char * apr_pstrndup(apr_pool_t *p, const char *s, apr_size_t n);
-# 135 "../include/apr_strings.h"
+
 void * apr_pmemdup(apr_pool_t *p, const void *m, apr_size_t n)
 
 
@@ -4817,33 +4779,33 @@ char * apr_pstrcat(apr_pool_t *p, ...)
     __attribute__((sentinel))
 
     ;
-# 161 "../include/apr_strings.h"
+
 char * apr_pstrcatv(apr_pool_t *p, const struct iovec *vec,
                                  apr_size_t nvec, apr_size_t *nbytes);
-# 172 "../include/apr_strings.h"
+
 char * apr_pvsprintf(apr_pool_t *p, const char *fmt, va_list ap);
-# 182 "../include/apr_strings.h"
+
 char * apr_psprintf(apr_pool_t *p, const char *fmt, ...)
         __attribute__((format(printf,2,3)));
-# 207 "../include/apr_strings.h"
+
 char * apr_cpystrn(char *dst, const char *src,
                                 apr_size_t dst_size);
-# 217 "../include/apr_strings.h"
+
 char * apr_collapse_spaces(char *dest, const char *src);
-# 226 "../include/apr_strings.h"
+
 apr_status_t apr_tokenize_to_argv(const char *arg_str,
                                                char ***argv_out,
                                                apr_pool_t *token_context);
-# 247 "../include/apr_strings.h"
+
 char * apr_strtok(char *str, const char *sep, char **last);
-# 279 "../include/apr_strings.h"
+
 int apr_snprintf(char *buf, apr_size_t len,
                                      const char *format, ...)
         __attribute__((format(printf,3,4)));
-# 291 "../include/apr_strings.h"
+
 int apr_vsnprintf(char *buf, apr_size_t len, const char *format,
                                va_list ap);
-# 301 "../include/apr_strings.h"
+
 char * apr_itoa(apr_pool_t *p, int n);
 
 
@@ -4861,22 +4823,22 @@ char * apr_ltoa(apr_pool_t *p, long n);
 
 
 char * apr_off_t_toa(apr_pool_t *p, apr_off_t n);
-# 335 "../include/apr_strings.h"
+
 apr_status_t apr_strtoff(apr_off_t *offset, const char *buf,
                                       char **end, int base);
-# 353 "../include/apr_strings.h"
+
 apr_int64_t apr_strtoi64(const char *buf, char **end, int base);
-# 362 "../include/apr_strings.h"
+
 apr_int64_t apr_atoi64(const char *buf);
-# 372 "../include/apr_strings.h"
+
 char * apr_strfsize(apr_off_t size, char *buf);
-# 19 "./../test/testatomic.c" 2
-# 1 "../include/apr_thread_proc.h" 1
-# 26 "../include/apr_thread_proc.h"
-# 1 "../include/apr_file_io.h" 1
-# 27 "../include/apr_file_io.h"
-# 1 "../include/apr_time.h" 1
-# 40 "../include/apr_time.h"
+
+
+
+
+
+
+
                  extern const char apr_month_snames[12][4];
 
                  extern const char apr_day_snames[7][4];
@@ -4884,11 +4846,11 @@ char * apr_strfsize(apr_off_t size, char *buf);
 
 
 typedef apr_int64_t apr_time_t;
-# 56 "../include/apr_time.h"
+
 typedef apr_int64_t apr_interval_time_t;
 
 typedef apr_int32_t apr_short_interval_time_t;
-# 88 "../include/apr_time.h"
+
 apr_time_t apr_time_now(void);
 
 
@@ -4931,7 +4893,7 @@ struct apr_time_exp_t {
 
 apr_status_t apr_time_ansi_put(apr_time_t *result,
                                                     time_t input);
-# 138 "../include/apr_time.h"
+
 apr_status_t apr_time_exp_tz(apr_time_exp_t *result,
                                           apr_time_t input,
                                           apr_int32_t offs);
@@ -4976,11 +4938,11 @@ apr_status_t apr_time_exp_gmt_get(apr_time_t *result,
 
 
 void apr_sleep(apr_interval_time_t t);
-# 193 "../include/apr_time.h"
+
 apr_status_t apr_rfc822_date(char *date_str, apr_time_t t);
-# 207 "../include/apr_time.h"
+
 apr_status_t apr_ctime(char *date_str, apr_time_t t);
-# 217 "../include/apr_time.h"
+
 apr_status_t apr_strftime(char *s, apr_size_t *retsize,
                                        apr_size_t max, const char *format,
                                        apr_time_exp_t *tm);
@@ -4992,39 +4954,39 @@ apr_status_t apr_strftime(char *s, apr_size_t *retsize,
 
 
 void apr_time_clock_hires(apr_pool_t *p);
-# 28 "../include/apr_file_io.h" 2
 
-# 1 "../include/apr_file_info.h" 1
-# 26 "../include/apr_file_info.h"
-# 1 "../include/apr_user.h" 1
-# 45 "../include/apr_user.h"
+
+
+
+
+
 typedef uid_t apr_uid_t;
-# 54 "../include/apr_user.h"
+
 typedef gid_t apr_gid_t;
-# 66 "../include/apr_user.h"
+
 apr_status_t apr_uid_current(apr_uid_t *userid,
                                           apr_gid_t *groupid,
                                           apr_pool_t *p);
-# 77 "../include/apr_user.h"
+
 apr_status_t apr_uid_name_get(char **username, apr_uid_t userid,
                                            apr_pool_t *p);
-# 88 "../include/apr_user.h"
+
 apr_status_t apr_uid_get(apr_uid_t *userid, apr_gid_t *groupid,
                                       const char *username, apr_pool_t *p);
-# 98 "../include/apr_user.h"
+
 apr_status_t apr_uid_homepath_get(char **dirname,
                                                const char *username,
                                                apr_pool_t *p);
-# 123 "../include/apr_user.h"
+
 apr_status_t apr_gid_name_get(char **groupname,
                                              apr_gid_t groupid, apr_pool_t *p);
-# 133 "../include/apr_user.h"
+
 apr_status_t apr_gid_get(apr_gid_t *groupid,
                                       const char *groupname, apr_pool_t *p);
-# 27 "../include/apr_file_info.h" 2
 
-# 1 "../include/apr_tables.h" 1
-# 56 "../include/apr_tables.h"
+
+
+
 typedef struct apr_table_t apr_table_t;
 
 
@@ -5082,12 +5044,12 @@ int apr_is_empty_table(const apr_table_t *t);
 
 
 int apr_is_empty_array(const apr_array_header_t *a);
-# 121 "../include/apr_tables.h"
+
 apr_array_header_t * apr_array_make(apr_pool_t *p,
                                                  int nelts, int elt_size);
-# 131 "../include/apr_tables.h"
+
 void * apr_array_push(apr_array_header_t *arr);
-# 158 "../include/apr_tables.h"
+
 void * apr_array_pop(apr_array_header_t *arr);
 
 
@@ -5106,26 +5068,26 @@ void apr_array_clear(apr_array_header_t *arr);
 
 void apr_array_cat(apr_array_header_t *dst,
            const apr_array_header_t *src);
-# 186 "../include/apr_tables.h"
+
 apr_array_header_t * apr_array_copy(apr_pool_t *p,
                                       const apr_array_header_t *arr);
-# 196 "../include/apr_tables.h"
+
 apr_array_header_t * apr_array_copy_hdr(apr_pool_t *p,
                                       const apr_array_header_t *arr);
-# 206 "../include/apr_tables.h"
+
 apr_array_header_t * apr_array_append(apr_pool_t *p,
                                       const apr_array_header_t *first,
                                       const apr_array_header_t *second);
-# 221 "../include/apr_tables.h"
+
 char * apr_array_pstrcat(apr_pool_t *p,
           const apr_array_header_t *arr,
           const char sep);
-# 232 "../include/apr_tables.h"
+
 apr_table_t * apr_table_make(apr_pool_t *p, int nelts);
-# 241 "../include/apr_tables.h"
+
 apr_table_t * apr_table_copy(apr_pool_t *p,
                                           const apr_table_t *t);
-# 252 "../include/apr_tables.h"
+
 apr_table_t * apr_table_clone(apr_pool_t *p,
                                            const apr_table_t *t);
 
@@ -5134,15 +5096,15 @@ apr_table_t * apr_table_clone(apr_pool_t *p,
 
 
 void apr_table_clear(apr_table_t *t);
-# 268 "../include/apr_tables.h"
+
 const char * apr_table_get(const apr_table_t *t, const char *key);
-# 279 "../include/apr_tables.h"
+
 const char * apr_table_getm(apr_pool_t *p, const apr_table_t *t,
                                          const char *key);
-# 291 "../include/apr_tables.h"
+
 void apr_table_set(apr_table_t *t, const char *key,
                                 const char *val);
-# 304 "../include/apr_tables.h"
+
 void apr_table_setn(apr_table_t *t, const char *key,
                                  const char *val);
 
@@ -5152,42 +5114,42 @@ void apr_table_setn(apr_table_t *t, const char *key,
 
 
 void apr_table_unset(apr_table_t *t, const char *key);
-# 323 "../include/apr_tables.h"
+
 void apr_table_merge(apr_table_t *t, const char *key,
                                   const char *val);
-# 335 "../include/apr_tables.h"
+
 void apr_table_mergen(apr_table_t *t, const char *key,
                                    const char *val);
-# 347 "../include/apr_tables.h"
+
 void apr_table_add(apr_table_t *t, const char *key,
                                 const char *val);
-# 360 "../include/apr_tables.h"
+
 void apr_table_addn(apr_table_t *t, const char *key,
                                  const char *val);
-# 370 "../include/apr_tables.h"
+
 apr_table_t * apr_table_overlay(apr_pool_t *p,
                                              const apr_table_t *overlay,
                                              const apr_table_t *base);
-# 384 "../include/apr_tables.h"
+
 typedef int (apr_table_do_callback_fn_t)(void *rec, const char *key,
                                                     const char *value);
-# 406 "../include/apr_tables.h"
+
 int apr_table_do(apr_table_do_callback_fn_t *comp,
                                      void *rec, const apr_table_t *t, ...)
 
     __attribute__((sentinel))
 
     ;
-# 432 "../include/apr_tables.h"
+
 int apr_table_vdo(apr_table_do_callback_fn_t *comp,
                                void *rec, const apr_table_t *t, va_list vp);
-# 478 "../include/apr_tables.h"
+
 void apr_table_overlap(apr_table_t *a, const apr_table_t *b,
                                      unsigned flags);
-# 491 "../include/apr_tables.h"
+
 void apr_table_compress(apr_table_t *t, unsigned flags);
-# 29 "../include/apr_file_info.h" 2
-# 62 "../include/apr_file_info.h"
+
+
 typedef enum {
     APR_NOFILE = 0,
     APR_REG,
@@ -5199,13 +5161,13 @@ typedef enum {
     APR_SOCK,
     APR_UNKFILE = 127
 } apr_filetype_e;
-# 121 "../include/apr_file_info.h"
+
 typedef struct apr_dir_t apr_dir_t;
 
 
 
 typedef apr_int32_t apr_fileperms_t;
-# 135 "../include/apr_file_info.h"
+
 typedef dev_t apr_dev_t;
 
 
@@ -5215,7 +5177,7 @@ typedef dev_t apr_dev_t;
 
 
 typedef struct apr_finfo_t apr_finfo_t;
-# 174 "../include/apr_file_info.h"
+
 struct apr_finfo_t {
 
     apr_pool_t *pool;
@@ -5256,10 +5218,10 @@ struct apr_finfo_t {
 
     struct apr_file_t *filehand;
 };
-# 229 "../include/apr_file_info.h"
+
 apr_status_t apr_stat(apr_finfo_t *finfo, const char *fname,
                                    apr_int32_t wanted, apr_pool_t *pool);
-# 244 "../include/apr_file_info.h"
+
 apr_status_t apr_dir_open(apr_dir_t **new_dir,
                                        const char *dirname,
                                        apr_pool_t *pool);
@@ -5269,7 +5231,7 @@ apr_status_t apr_dir_open(apr_dir_t **new_dir,
 
 
 apr_status_t apr_dir_close(apr_dir_t *thedir);
-# 267 "../include/apr_file_info.h"
+
 apr_status_t apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
                                        apr_dir_t *thedir);
 
@@ -5278,26 +5240,26 @@ apr_status_t apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
 
 
 apr_status_t apr_dir_rewind(apr_dir_t *thedir);
-# 336 "../include/apr_file_info.h"
+
 apr_status_t apr_filepath_root(const char **rootpath,
                                             const char **filepath,
                                             apr_int32_t flags,
                                             apr_pool_t *p);
-# 354 "../include/apr_file_info.h"
+
 apr_status_t apr_filepath_merge(char **newpath,
                                              const char *rootpath,
                                              const char *addpath,
                                              apr_int32_t flags,
                                              apr_pool_t *p);
-# 369 "../include/apr_file_info.h"
+
 apr_status_t apr_filepath_list_split(apr_array_header_t **pathelts,
                                                   const char *liststr,
                                                   apr_pool_t *p);
-# 382 "../include/apr_file_info.h"
+
 apr_status_t apr_filepath_list_merge(char **liststr,
                                                   apr_array_header_t *pathelts,
                                                   apr_pool_t *p);
-# 393 "../include/apr_file_info.h"
+
 apr_status_t apr_filepath_get(char **path, apr_int32_t flags,
                                            apr_pool_t *p);
 
@@ -5307,17 +5269,17 @@ apr_status_t apr_filepath_get(char **path, apr_int32_t flags,
 
 
 apr_status_t apr_filepath_set(const char *path, apr_pool_t *p);
-# 419 "../include/apr_file_info.h"
+
 apr_status_t apr_filepath_encoding(int *style, apr_pool_t *p);
-# 30 "../include/apr_file_io.h" 2
-# 1 "../include/apr_inherit.h" 1
-# 31 "../include/apr_file_io.h" 2
 
 
 
-# 1 "../include/apr_want.h" 1
-# 35 "../include/apr_file_io.h" 2
-# 180 "../include/apr_file_io.h"
+
+
+
+
+
+
 typedef apr_uint32_t apr_fileattrs_t;
 
 
@@ -5327,7 +5289,7 @@ typedef int apr_seek_where_t;
 
 
 typedef struct apr_file_t apr_file_t;
-# 250 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open(apr_file_t **newf, const char *fname,
                                         apr_int32_t flag, apr_fileperms_t perm,
                                         apr_pool_t *pool);
@@ -5337,9 +5299,9 @@ apr_status_t apr_file_open(apr_file_t **newf, const char *fname,
 
 
 apr_status_t apr_file_close(apr_file_t *file);
-# 267 "../include/apr_file_io.h"
+
 apr_status_t apr_file_remove(const char *path, apr_pool_t *pool);
-# 278 "../include/apr_file_io.h"
+
 apr_status_t apr_file_rename(const char *from_path,
                                           const char *to_path,
                                           apr_pool_t *pool);
@@ -5352,12 +5314,12 @@ apr_status_t apr_file_rename(const char *from_path,
 
 apr_status_t apr_file_link(const char *from_path,
                                           const char *to_path);
-# 303 "../include/apr_file_io.h"
+
 apr_status_t apr_file_copy(const char *from_path,
                                         const char *to_path,
                                         apr_fileperms_t perms,
                                         apr_pool_t *pool);
-# 319 "../include/apr_file_io.h"
+
 apr_status_t apr_file_append(const char *from_path,
                                           const char *to_path,
                                           apr_fileperms_t perms,
@@ -5369,47 +5331,47 @@ apr_status_t apr_file_append(const char *from_path,
 
 
 apr_status_t apr_file_eof(apr_file_t *fptr);
-# 346 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open_stderr(apr_file_t **thefile,
                                                apr_pool_t *pool);
-# 356 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open_stdout(apr_file_t **thefile,
                                                apr_pool_t *pool);
-# 366 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open_stdin(apr_file_t **thefile,
                                               apr_pool_t *pool);
-# 386 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open_flags_stderr(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool);
-# 407 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open_flags_stdout(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool);
-# 428 "../include/apr_file_io.h"
+
 apr_status_t apr_file_open_flags_stdin(apr_file_t **thefile,
                                                      apr_int32_t flags,
                                                      apr_pool_t *pool);
-# 449 "../include/apr_file_io.h"
+
 apr_status_t apr_file_read(apr_file_t *thefile, void *buf,
                                         apr_size_t *nbytes);
-# 467 "../include/apr_file_io.h"
+
 apr_status_t apr_file_write(apr_file_t *thefile, const void *buf,
                                          apr_size_t *nbytes);
-# 485 "../include/apr_file_io.h"
+
 apr_status_t apr_file_writev(apr_file_t *thefile,
                                           const struct iovec *vec,
                                           apr_size_t nvec, apr_size_t *nbytes);
-# 509 "../include/apr_file_io.h"
+
 apr_status_t apr_file_read_full(apr_file_t *thefile, void *buf,
                                              apr_size_t nbytes,
                                              apr_size_t *bytes_read);
-# 533 "../include/apr_file_io.h"
+
 apr_status_t apr_file_write_full(apr_file_t *thefile,
                                               const void *buf,
                                               apr_size_t nbytes,
                                               apr_size_t *bytes_written);
-# 552 "../include/apr_file_io.h"
+
 apr_status_t apr_file_writev_full(apr_file_t *thefile,
                                                const struct iovec *vec,
                                                apr_size_t nvec,
@@ -5434,7 +5396,7 @@ apr_status_t apr_file_getc(char *ch, apr_file_t *thefile);
 
 
 apr_status_t apr_file_ungetc(char ch, apr_file_t *thefile);
-# 585 "../include/apr_file_io.h"
+
 apr_status_t apr_file_gets(char *str, int len,
                                         apr_file_t *thefile);
 
@@ -5462,19 +5424,19 @@ apr_status_t apr_file_sync(apr_file_t *thefile);
 
 
 apr_status_t apr_file_datasync(apr_file_t *thefile);
-# 620 "../include/apr_file_io.h"
+
 apr_status_t apr_file_dup(apr_file_t **new_file,
                                        apr_file_t *old_file,
                                        apr_pool_t *p);
-# 632 "../include/apr_file_io.h"
+
 apr_status_t apr_file_dup2(apr_file_t *new_file,
                                         apr_file_t *old_file,
                                         apr_pool_t *p);
-# 647 "../include/apr_file_io.h"
+
 apr_status_t apr_file_setaside(apr_file_t **new_file,
                                             apr_file_t *old_file,
                                             apr_pool_t *p);
-# 662 "../include/apr_file_io.h"
+
 apr_status_t apr_file_buffer_set(apr_file_t *thefile,
                                               char * buffer,
                                               apr_size_t bufsize);
@@ -5484,15 +5446,15 @@ apr_status_t apr_file_buffer_set(apr_file_t *thefile,
 
 
 apr_size_t apr_file_buffer_size_get(apr_file_t *thefile);
-# 683 "../include/apr_file_io.h"
+
 apr_status_t apr_file_seek(apr_file_t *thefile,
                                    apr_seek_where_t where,
                                    apr_off_t *offset);
-# 700 "../include/apr_file_io.h"
+
 apr_status_t apr_file_pipe_create(apr_file_t **in,
                                                apr_file_t **out,
                                                apr_pool_t *pool);
-# 723 "../include/apr_file_io.h"
+
 apr_status_t apr_file_pipe_create_ex(apr_file_t **in,
                                                   apr_file_t **out,
                                                   apr_int32_t blocking,
@@ -5524,7 +5486,7 @@ apr_status_t apr_file_pipe_timeout_get(apr_file_t *thepipe,
 
 apr_status_t apr_file_pipe_timeout_set(apr_file_t *thepipe,
                                                   apr_interval_time_t timeout);
-# 766 "../include/apr_file_io.h"
+
 apr_status_t apr_file_lock(apr_file_t *thefile, int type);
 
 
@@ -5532,7 +5494,7 @@ apr_status_t apr_file_lock(apr_file_t *thefile, int type);
 
 
 apr_status_t apr_file_unlock(apr_file_t *thefile);
-# 781 "../include/apr_file_io.h"
+
 apr_status_t apr_file_name_get(const char **new_path,
                                             apr_file_t *thefile);
 
@@ -5544,23 +5506,23 @@ apr_status_t apr_file_name_get(const char **new_path,
 
 apr_status_t apr_file_data_get(void **data, const char *key,
                                             apr_file_t *file);
-# 800 "../include/apr_file_io.h"
+
 apr_status_t apr_file_data_set(apr_file_t *file, void *data,
                                             const char *key,
                                             apr_status_t (*cleanup)(void *));
-# 811 "../include/apr_file_io.h"
+
 int apr_file_printf(apr_file_t *fptr,
                                         const char *format, ...)
         __attribute__((format(printf,2,3)));
-# 827 "../include/apr_file_io.h"
+
 apr_status_t apr_file_perms_set(const char *fname,
                                              apr_fileperms_t perms);
-# 846 "../include/apr_file_io.h"
+
 apr_status_t apr_file_attrs_set(const char *fname,
                                              apr_fileattrs_t attributes,
                                              apr_fileattrs_t attr_mask,
                                              apr_pool_t *pool);
-# 859 "../include/apr_file_io.h"
+
 apr_status_t apr_file_mtime_set(const char *fname,
                                              apr_time_t mtime,
                                              apr_pool_t *pool);
@@ -5573,11 +5535,11 @@ apr_status_t apr_file_mtime_set(const char *fname,
 
 apr_status_t apr_dir_make(const char *path, apr_fileperms_t perm,
                                        apr_pool_t *pool);
-# 879 "../include/apr_file_io.h"
+
 apr_status_t apr_dir_make_recursive(const char *path,
                                                  apr_fileperms_t perm,
                                                  apr_pool_t *pool);
-# 890 "../include/apr_file_io.h"
+
 apr_status_t apr_dir_remove(const char *path, apr_pool_t *pool);
 
 
@@ -5589,7 +5551,7 @@ apr_status_t apr_dir_remove(const char *path, apr_pool_t *pool);
 apr_status_t apr_file_info_get(apr_finfo_t *finfo,
                                             apr_int32_t wanted,
                                             apr_file_t *thefile);
-# 909 "../include/apr_file_io.h"
+
 apr_status_t apr_file_trunc(apr_file_t *fp, apr_off_t offset);
 
 
@@ -5614,25 +5576,25 @@ apr_status_t apr_file_inherit_set( apr_file_t *thefile);
 
 
 apr_status_t apr_file_inherit_unset( apr_file_t *thefile);
-# 951 "../include/apr_file_io.h"
+
 apr_status_t apr_file_mktemp(apr_file_t **fp, char *templ,
                                           apr_int32_t flags, apr_pool_t *p);
-# 964 "../include/apr_file_io.h"
+
 apr_status_t apr_temp_dir_get(const char **temp_dir,
                                            apr_pool_t *p);
-# 27 "../include/apr_thread_proc.h" 2
 
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/time.h" 1 3 4
-# 25 "/usr/include/x86_64-linux-gnu/sys/time.h" 3 4
-# 1 "/usr/include/time.h" 1 3 4
-# 26 "/usr/include/x86_64-linux-gnu/sys/time.h" 2 3 4
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/time.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/sys/time.h" 2 3 4
-# 55 "/usr/include/x86_64-linux-gnu/sys/time.h" 3 4
+
+
+
+
+
+
+
+
 struct timezone
   {
     int tz_minuteswest;
@@ -5640,7 +5602,7 @@ struct timezone
   };
 
 typedef struct timezone *__restrict __timezone_ptr_t;
-# 71 "/usr/include/x86_64-linux-gnu/sys/time.h" 3 4
+
 extern int gettimeofday (struct timeval *__restrict __tv,
     __timezone_ptr_t __tz) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
@@ -5718,11 +5680,11 @@ extern int lutimes (const char *__file, const struct timeval __tvp[2])
 
 
 extern int futimes (int __fd, const struct timeval __tvp[2]) __attribute__ ((__nothrow__ ));
-# 32 "../include/apr_thread_proc.h" 2
-# 1 "/usr/include/x86_64-linux-gnu/sys/resource.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/sys/resource.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/resource.h" 1 3 4
-# 31 "/usr/include/x86_64-linux-gnu/bits/resource.h" 3 4
+
+
+
+
+
 enum __rlimit_resource
 {
 
@@ -5804,7 +5766,7 @@ enum __rlimit_resource
 
 
 };
-# 131 "/usr/include/x86_64-linux-gnu/bits/resource.h" 3 4
+
 typedef __rlim_t rlim_t;
 
 
@@ -5820,7 +5782,7 @@ struct rlimit
 
     rlim_t rlim_max;
   };
-# 158 "/usr/include/x86_64-linux-gnu/bits/resource.h" 3 4
+
 enum __rusage_who
 {
 
@@ -5829,13 +5791,13 @@ enum __rusage_who
 
 
   RUSAGE_CHILDREN = -1
-# 176 "/usr/include/x86_64-linux-gnu/bits/resource.h" 3 4
+
 };
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/time.h" 1 3 4
-# 180 "/usr/include/x86_64-linux-gnu/bits/resource.h" 2 3 4
+
+
 
 
 
@@ -5957,8 +5919,8 @@ enum __priority_which
   PRIO_USER = 2
 
 };
-# 25 "/usr/include/x86_64-linux-gnu/sys/resource.h" 2 3 4
-# 42 "/usr/include/x86_64-linux-gnu/sys/resource.h" 3 4
+
+
 typedef int __rlimit_resource_t;
 typedef int __rusage_who_t;
 typedef int __priority_which_t;
@@ -5969,10 +5931,10 @@ typedef int __priority_which_t;
 
 extern int getrlimit (__rlimit_resource_t __resource,
         struct rlimit *__rlimits) __attribute__ ((__nothrow__ ));
-# 69 "/usr/include/x86_64-linux-gnu/sys/resource.h" 3 4
+
 extern int setrlimit (__rlimit_resource_t __resource,
         const struct rlimit *__rlimits) __attribute__ ((__nothrow__ ));
-# 87 "/usr/include/x86_64-linux-gnu/sys/resource.h" 3 4
+
 extern int getrusage (__rusage_who_t __who, struct rusage *__usage) __attribute__ ((__nothrow__ ));
 
 
@@ -5985,8 +5947,8 @@ extern int getpriority (__priority_which_t __which, id_t __who) __attribute__ ((
 
 extern int setpriority (__priority_which_t __which, id_t __who, int __prio)
      __attribute__ ((__nothrow__ ));
-# 33 "../include/apr_thread_proc.h" 2
-# 45 "../include/apr_thread_proc.h"
+
+
 typedef enum {
     APR_SHELLCMD,
     APR_PROGRAM,
@@ -6012,7 +5974,7 @@ typedef enum {
     APR_PROC_SIGNAL = 2,
     APR_PROC_SIGNAL_CORE = 4
 } apr_exit_why_e;
-# 133 "../include/apr_thread_proc.h"
+
 typedef struct apr_proc_t {
 
     pid_t pid;
@@ -6022,9 +5984,9 @@ typedef struct apr_proc_t {
     apr_file_t *out;
 
     apr_file_t *err;
-# 161 "../include/apr_thread_proc.h"
+
 } apr_proc_t;
-# 173 "../include/apr_thread_proc.h"
+
 typedef void (apr_child_errfn_t)(apr_pool_t *proc, apr_status_t err,
                                  const char *description);
 
@@ -6060,7 +6022,7 @@ typedef enum {
     APR_JUST_WAIT,
     APR_KILL_ONLY_ONCE
 } apr_kill_conditions_e;
-# 218 "../include/apr_thread_proc.h"
+
 apr_status_t apr_threadattr_create(apr_threadattr_t **new_attr,
                                                 apr_pool_t *cont);
 
@@ -6087,10 +6049,10 @@ apr_status_t apr_threadattr_detach_get(apr_threadattr_t *attr);
 
 apr_status_t apr_threadattr_stacksize_set(apr_threadattr_t *attr,
                                                        apr_size_t stacksize);
-# 255 "../include/apr_thread_proc.h"
+
 apr_status_t apr_threadattr_guardsize_set(apr_threadattr_t *attr,
                                                        apr_size_t guardsize);
-# 266 "../include/apr_thread_proc.h"
+
 apr_status_t apr_thread_create(apr_thread_t **new_thread,
                                             apr_threadattr_t *attr,
                                             apr_thread_start_t func,
@@ -6125,7 +6087,7 @@ void apr_thread_yield(void);
 
 apr_status_t apr_thread_once_init(apr_thread_once_t **control,
                                                apr_pool_t *p);
-# 310 "../include/apr_thread_proc.h"
+
 apr_status_t apr_thread_once(apr_thread_once_t *control,
                                           void (*func)(void));
 
@@ -6143,7 +6105,7 @@ apr_status_t apr_thread_detach(apr_thread_t *thd);
 
 apr_status_t apr_thread_data_get(void **data, const char *key,
                                              apr_thread_t *thread);
-# 335 "../include/apr_thread_proc.h"
+
 apr_status_t apr_thread_data_set(void *data, const char *key,
                                              apr_status_t (*cleanup) (void *),
                                              apr_thread_t *thread);
@@ -6188,33 +6150,33 @@ apr_status_t apr_threadkey_private_delete(apr_threadkey_t *key);
 
 apr_status_t apr_threadkey_data_get(void **data, const char *key,
                                                 apr_threadkey_t *threadkey);
-# 387 "../include/apr_thread_proc.h"
+
 apr_status_t apr_threadkey_data_set(void *data, const char *key,
                                                 apr_status_t (*cleanup) (void *),
                                                 apr_threadkey_t *threadkey);
-# 398 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_create(apr_procattr_t **new_attr,
                                                   apr_pool_t *cont);
-# 415 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_io_set(apr_procattr_t *attr,
                                              apr_int32_t in, apr_int32_t out,
                                              apr_int32_t err);
-# 434 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_child_in_set(struct apr_procattr_t *attr,
                                                   apr_file_t *child_in,
                                                   apr_file_t *parent_in);
-# 451 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_child_out_set(struct apr_procattr_t *attr,
                                                    apr_file_t *child_out,
                                                    apr_file_t *parent_out);
-# 468 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_child_err_set(struct apr_procattr_t *attr,
                                                    apr_file_t *child_err,
                                                    apr_file_t *parent_err);
-# 479 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_dir_set(apr_procattr_t *attr,
                                               const char *dir);
-# 493 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_cmdtype_set(apr_procattr_t *attr,
                                                   apr_cmdtype_e cmd);
 
@@ -6225,20 +6187,20 @@ apr_status_t apr_procattr_cmdtype_set(apr_procattr_t *attr,
 
 apr_status_t apr_procattr_detach_set(apr_procattr_t *attr,
                                                  apr_int32_t detach);
-# 517 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_limit_set(apr_procattr_t *attr,
                                                 apr_int32_t what,
                                                 struct rlimit *limit);
-# 533 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_child_errfn_set(apr_procattr_t *attr,
                                                        apr_child_errfn_t *errfn);
-# 548 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_error_check_set(apr_procattr_t *attr,
                                                        apr_int32_t chk);
-# 558 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_addrspace_set(apr_procattr_t *attr,
                                                        apr_int32_t addrspace);
-# 569 "../include/apr_thread_proc.h"
+
 apr_status_t apr_procattr_user_set(apr_procattr_t *attr,
                                                 const char *username,
                                                 const char *password);
@@ -6250,41 +6212,41 @@ apr_status_t apr_procattr_user_set(apr_procattr_t *attr,
 
 apr_status_t apr_procattr_group_set(apr_procattr_t *attr,
                                                  const char *groupname);
-# 591 "../include/apr_thread_proc.h"
+
 apr_status_t apr_proc_fork(apr_proc_t *proc, apr_pool_t *cont);
-# 610 "../include/apr_thread_proc.h"
+
 apr_status_t apr_proc_create(apr_proc_t *new_proc,
                                           const char *progname,
                                           const char * const *args,
                                           const char * const *env,
                                           apr_procattr_t *attr,
                                           apr_pool_t *pool);
-# 643 "../include/apr_thread_proc.h"
+
 apr_status_t apr_proc_wait(apr_proc_t *proc,
                                         int *exitcode, apr_exit_why_e *exitwhy,
                                         apr_wait_how_e waithow);
-# 673 "../include/apr_thread_proc.h"
+
 apr_status_t apr_proc_wait_all_procs(apr_proc_t *proc,
                                                   int *exitcode,
                                                   apr_exit_why_e *exitwhy,
                                                   apr_wait_how_e waithow,
                                                   apr_pool_t *p);
-# 688 "../include/apr_thread_proc.h"
+
 apr_status_t apr_proc_detach(int daemonize);
-# 707 "../include/apr_thread_proc.h"
+
 void apr_proc_other_child_register(apr_proc_t *proc,
                                            void (*maintenance) (int reason,
                                                                 void *,
                                                                 int status),
                                            void *data, apr_file_t *write_fd,
                                            apr_pool_t *p);
-# 723 "../include/apr_thread_proc.h"
+
 void apr_proc_other_child_unregister(void *data);
-# 745 "../include/apr_thread_proc.h"
+
 apr_status_t apr_proc_other_child_alert(apr_proc_t *proc,
                                                      int reason,
                                                      int status);
-# 756 "../include/apr_thread_proc.h"
+
 void apr_proc_other_child_refresh(apr_other_child_rec_t *ocr,
                                                int reason);
 
@@ -6302,12 +6264,12 @@ void apr_proc_other_child_refresh_all(int reason);
 
 
 apr_status_t apr_proc_kill(apr_proc_t *proc, int sig);
-# 787 "../include/apr_thread_proc.h"
+
 void apr_pool_note_subprocess(apr_pool_t *a, apr_proc_t *proc,
                                            apr_kill_conditions_e how);
-# 798 "../include/apr_thread_proc.h"
+
 apr_status_t apr_setup_signal_thread(void);
-# 807 "../include/apr_thread_proc.h"
+
 apr_status_t apr_signal_thread(int(*signal_handler)(int signum));
 
 
@@ -6317,13 +6279,13 @@ apr_status_t apr_signal_thread(int(*signal_handler)(int signum));
 
 
 apr_pool_t * apr_thread_pool_get (const apr_thread_t *thethread);
-# 20 "./../test/testatomic.c" 2
 
 
-# 1 "../include/apr_atomic.h" 1
-# 47 "../include/apr_atomic.h"
+
+
+
 apr_status_t apr_atomic_init(apr_pool_t *p);
-# 59 "../include/apr_atomic.h"
+
 apr_uint32_t apr_atomic_read32(volatile apr_uint32_t *mem);
 
 
@@ -6361,7 +6323,7 @@ apr_uint32_t apr_atomic_inc32(volatile apr_uint32_t *mem);
 
 
 int apr_atomic_dec32(volatile apr_uint32_t *mem);
-# 105 "../include/apr_atomic.h"
+
 apr_uint32_t apr_atomic_cas32(volatile apr_uint32_t *mem, apr_uint32_t with,
                               apr_uint32_t cmp);
 
@@ -6372,7 +6334,7 @@ apr_uint32_t apr_atomic_cas32(volatile apr_uint32_t *mem, apr_uint32_t with,
 
 
 apr_uint32_t apr_atomic_xchg32(volatile apr_uint32_t *mem, apr_uint32_t val);
-# 124 "../include/apr_atomic.h"
+
 void* apr_atomic_casptr(volatile void **mem, void *with, const void *cmp);
 
 
@@ -6382,8 +6344,8 @@ void* apr_atomic_casptr(volatile void **mem, void *with, const void *cmp);
 
 
 void* apr_atomic_xchgptr(volatile void **mem, void *with);
-# 23 "./../test/testatomic.c" 2
-# 37 "./../test/testatomic.c"
+
+
 static void test_init(abts_case *tc, void *data)
 {
     apr_assert_success(tc, "Could not initliaze atomics", apr_atomic_init(p), 39);
@@ -6877,16 +6839,16 @@ abts_suite *testatomic(abts_suite *suite)
 
     return suite;
 }
-# 11 "main1.c" 2
-# 1 "./../test/testutil.c" 1
-# 20 "./../test/testutil.c"
-# 1 "./../test/abts.h" 1
-# 21 "./../test/testutil.c" 2
-# 1 "./../test/testutil.h" 1
-# 19 "./../test/testutil.h"
-# 1 "./../test/abts.h" 1
-# 20 "./../test/testutil.h" 2
-# 22 "./../test/testutil.c" 2
+
+
+
+
+
+
+
+
+
+
 
 
 apr_pool_t *p;
@@ -6910,15 +6872,15 @@ void initialize(void) {
 
     apr_pool_create_ex(&p, ((void*)0), ((void*)0), ((void*)0));
 }
-# 12 "main1.c" 2
-# 1 "./../locks/unix/thread_mutex.c" 1
-# 17 "./../locks/unix/thread_mutex.c"
-# 1 "../include/arch/unix/apr_arch_thread_mutex.h" 1
-# 21 "../include/arch/unix/apr_arch_thread_mutex.h"
-# 1 "../include/arch/unix/apr_private.h" 1
-# 999 "../include/arch/unix/apr_private.h"
-# 1 "../include/arch/unix/../apr_private_common.h" 1
-# 27 "../include/arch/unix/../apr_private_common.h"
+
+
+
+
+
+
+
+
+
 apr_status_t apr_filepath_list_split_impl(apr_array_header_t **pathelts,
                                           const char *liststr,
                                           char separator,
@@ -6928,18 +6890,18 @@ apr_status_t apr_filepath_list_merge_impl(char **liststr,
                                           apr_array_header_t *pathelts,
                                           char separator,
                                           apr_pool_t *p);
-# 1000 "../include/arch/unix/apr_private.h" 2
-# 22 "../include/arch/unix/apr_arch_thread_mutex.h" 2
 
 
-# 1 "../include/apr_portable.h" 1
-# 32 "../include/apr_portable.h"
-# 1 "../include/apr_network_io.h" 1
-# 31 "../include/apr_network_io.h"
-# 1 "/usr/include/netinet/in.h" 1 3 4
-# 22 "/usr/include/netinet/in.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stdint.h" 1 3 4
-# 23 "/usr/include/netinet/in.h" 2 3 4
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6955,8 +6917,8 @@ struct in_addr
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/in.h" 1 3 4
-# 112 "/usr/include/x86_64-linux-gnu/bits/in.h" 3 4
+
+
 struct ip_opts
   {
     struct in_addr ip_dst;
@@ -6978,7 +6940,7 @@ struct in_pktinfo
     struct in_addr ipi_spec_dst;
     struct in_addr ipi_addr;
   };
-# 38 "/usr/include/netinet/in.h" 2 3 4
+
 
 
 enum
@@ -7099,7 +7061,7 @@ enum
 
     IPPORT_USERRESERVED = 5000
   };
-# 209 "/usr/include/netinet/in.h" 3 4
+
 struct in6_addr
   {
     union
@@ -7120,7 +7082,7 @@ struct in6_addr
 
 extern const struct in6_addr in6addr_any;
 extern const struct in6_addr in6addr_loopback;
-# 237 "/usr/include/netinet/in.h" 3 4
+
 struct sockaddr_in
   {
     sa_family_t sin_family;
@@ -7244,7 +7206,7 @@ struct group_filter
 
     struct sockaddr_storage gf_slist[1];
 };
-# 374 "/usr/include/netinet/in.h" 3 4
+
 extern uint32_t ntohl (uint32_t __netlong) __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
 extern uint16_t ntohs (uint16_t __netshort)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
@@ -7257,27 +7219,27 @@ extern uint16_t htons (uint16_t __hostshort)
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/byteswap.h" 1 3 4
-# 386 "/usr/include/netinet/in.h" 2 3 4
-# 501 "/usr/include/netinet/in.h" 3 4
+
+
+
 extern int bindresvport (int __sockfd, struct sockaddr_in *__sock_in) __attribute__ ((__nothrow__ ));
 
 
 extern int bindresvport6 (int __sockfd, struct sockaddr_in6 *__sock_in)
      __attribute__ ((__nothrow__ ));
-# 32 "../include/apr_network_io.h" 2
-# 108 "../include/apr_network_io.h"
+
+
 typedef enum {
     APR_SHUTDOWN_READ,
     APR_SHUTDOWN_WRITE,
     APR_SHUTDOWN_READWRITE
 } apr_shutdown_how_e;
-# 172 "../include/apr_network_io.h"
+
 typedef enum {
     APR_LOCAL,
     APR_REMOTE
 } apr_interface_e;
-# 193 "../include/apr_network_io.h"
+
 typedef struct apr_socket_t apr_socket_t;
 
 
@@ -7337,7 +7299,7 @@ struct apr_sockaddr_t {
 
     } sa;
 };
-# 263 "../include/apr_network_io.h"
+
 struct apr_hdtr_t {
 
     struct iovec* headers;
@@ -7348,12 +7310,12 @@ struct apr_hdtr_t {
 
     int numtrailers;
 };
-# 287 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_create(apr_socket_t **new_sock,
                                             int family, int type,
                                             int protocol,
                                             apr_pool_t *cont);
-# 305 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_shutdown(apr_socket_t *thesocket,
                                               apr_shutdown_how_e how);
 
@@ -7362,13 +7324,13 @@ apr_status_t apr_socket_shutdown(apr_socket_t *thesocket,
 
 
 apr_status_t apr_socket_close(apr_socket_t *thesocket);
-# 321 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_bind(apr_socket_t *sock,
                                           apr_sockaddr_t *sa);
-# 331 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_listen(apr_socket_t *sock,
                                             apr_int32_t backlog);
-# 345 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_accept(apr_socket_t **new_sock,
                                             apr_socket_t *sock,
                                             apr_pool_t *connection_pool);
@@ -7381,27 +7343,27 @@ apr_status_t apr_socket_accept(apr_socket_t **new_sock,
 
 apr_status_t apr_socket_connect(apr_socket_t *sock,
                                              apr_sockaddr_t *sa);
-# 370 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_atreadeof(apr_socket_t *sock,
                                                int *atreadeof);
-# 396 "../include/apr_network_io.h"
+
 apr_status_t apr_sockaddr_info_get(apr_sockaddr_t **sa,
                                           const char *hostname,
                                           apr_int32_t family,
                                           apr_port_t port,
                                           apr_int32_t flags,
                                           apr_pool_t *p);
-# 411 "../include/apr_network_io.h"
+
 apr_status_t apr_getnameinfo(char **hostname,
                                           apr_sockaddr_t *sa,
                                           apr_int32_t flags);
-# 445 "../include/apr_network_io.h"
+
 apr_status_t apr_parse_addr_port(char **addr,
                                               char **scope_id,
                                               apr_port_t *port,
                                               const char *str,
                                               apr_pool_t *p);
-# 459 "../include/apr_network_io.h"
+
 apr_status_t apr_gethostname(char *buf, int len, apr_pool_t *cont);
 
 
@@ -7412,44 +7374,44 @@ apr_status_t apr_gethostname(char *buf, int len, apr_pool_t *cont);
 
 apr_status_t apr_socket_data_get(void **data, const char *key,
                                               apr_socket_t *sock);
-# 477 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_data_set(apr_socket_t *sock, void *data,
                                               const char *key,
                                               apr_status_t (*cleanup)(void*));
-# 498 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_send(apr_socket_t *sock, const char *buf,
                                           apr_size_t *len);
-# 519 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_sendv(apr_socket_t *sock,
                                            const struct iovec *vec,
                                            apr_int32_t nvec, apr_size_t *len);
-# 530 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_sendto(apr_socket_t *sock,
                                             apr_sockaddr_t *where,
                                             apr_int32_t flags, const char *buf,
                                             apr_size_t *len);
-# 548 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_recvfrom(apr_sockaddr_t *from,
                                               apr_socket_t *sock,
                                               apr_int32_t flags, char *buf,
                                               apr_size_t *len);
-# 573 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_sendfile(apr_socket_t *sock,
                                               apr_file_t *file,
                                               apr_hdtr_t *hdtr,
                                               apr_off_t *offset,
                                               apr_size_t *len,
                                               apr_int32_t flags);
-# 601 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_recv(apr_socket_t *sock,
                                    char *buf, apr_size_t *len);
-# 626 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                                              apr_int32_t opt, apr_int32_t on);
-# 640 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_timeout_set(apr_socket_t *sock,
                                                  apr_interval_time_t t);
-# 662 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_opt_get(apr_socket_t *sock,
                                              apr_int32_t opt, apr_int32_t *on);
 
@@ -7469,11 +7431,11 @@ apr_status_t apr_socket_timeout_get(apr_socket_t *sock,
 
 apr_status_t apr_socket_atmark(apr_socket_t *sock,
                                             int *atmark);
-# 690 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_addr_get(apr_sockaddr_t **sa,
                                               apr_interface_e which,
                                               apr_socket_t *sock);
-# 701 "../include/apr_network_io.h"
+
 apr_status_t apr_sockaddr_ip_get(char **addr,
                                               apr_sockaddr_t *sockaddr);
 
@@ -7484,10 +7446,10 @@ apr_status_t apr_sockaddr_ip_get(char **addr,
 
 apr_status_t apr_sockaddr_ip_getbuf(char *buf, apr_size_t buflen,
                                                  apr_sockaddr_t *sockaddr);
-# 722 "../include/apr_network_io.h"
+
 int apr_sockaddr_equal(const apr_sockaddr_t *addr1,
                                     const apr_sockaddr_t *addr2);
-# 733 "../include/apr_network_io.h"
+
 int apr_sockaddr_is_wildcard(const apr_sockaddr_t *addr);
 
 
@@ -7505,14 +7467,14 @@ apr_status_t apr_socket_type_get(apr_socket_t *sock,
 
 apr_status_t apr_getservbyname(apr_sockaddr_t *sockaddr,
                                             const char *servname);
-# 758 "../include/apr_network_io.h"
+
 apr_status_t apr_ipsubnet_create(apr_ipsubnet_t **ipsub,
                                               const char *ipstr,
                                               const char *mask_or_numbits,
                                               apr_pool_t *p);
-# 770 "../include/apr_network_io.h"
+
 int apr_ipsubnet_test(apr_ipsubnet_t *ipsub, apr_sockaddr_t *sa);
-# 791 "../include/apr_network_io.h"
+
 apr_status_t apr_socket_protocol_get(apr_socket_t *sock,
                                                   int *protocol);
 
@@ -7530,17 +7492,17 @@ apr_status_t apr_socket_inherit_set( apr_socket_t *thesocket);
 
 
 apr_status_t apr_socket_inherit_unset( apr_socket_t *thesocket);
-# 823 "../include/apr_network_io.h"
+
 apr_status_t apr_mcast_join(apr_socket_t *sock,
                                          apr_sockaddr_t *join,
                                          apr_sockaddr_t *iface,
                                          apr_sockaddr_t *source);
-# 838 "../include/apr_network_io.h"
+
 apr_status_t apr_mcast_leave(apr_socket_t *sock,
                                           apr_sockaddr_t *addr,
                                           apr_sockaddr_t *iface,
                                           apr_sockaddr_t *source);
-# 850 "../include/apr_network_io.h"
+
 apr_status_t apr_mcast_hops(apr_socket_t *sock,
                                          apr_byte_t ttl);
 
@@ -7560,12 +7522,12 @@ apr_status_t apr_mcast_loopback(apr_socket_t *sock,
 
 apr_status_t apr_mcast_interface(apr_socket_t *sock,
                                               apr_sockaddr_t *iface);
-# 33 "../include/apr_portable.h" 2
 
-# 1 "../include/apr_global_mutex.h" 1
-# 26 "../include/apr_global_mutex.h"
-# 1 "../include/apr_proc_mutex.h" 1
-# 44 "../include/apr_proc_mutex.h"
+
+
+
+
+
 typedef enum {
     APR_LOCK_FCNTL,
     APR_LOCK_FLOCK,
@@ -7577,12 +7539,12 @@ typedef enum {
 
 
 typedef struct apr_proc_mutex_t apr_proc_mutex_t;
-# 79 "../include/apr_proc_mutex.h"
+
 apr_status_t apr_proc_mutex_create(apr_proc_mutex_t **mutex,
                                                 const char *fname,
                                                 apr_lockmech_e mech,
                                                 apr_pool_t *pool);
-# 95 "../include/apr_proc_mutex.h"
+
 apr_status_t apr_proc_mutex_child_init(apr_proc_mutex_t **mutex,
                                                     const char *fname,
                                                     apr_pool_t *pool);
@@ -7593,7 +7555,7 @@ apr_status_t apr_proc_mutex_child_init(apr_proc_mutex_t **mutex,
 
 
 apr_status_t apr_proc_mutex_lock(apr_proc_mutex_t *mutex);
-# 113 "../include/apr_proc_mutex.h"
+
 apr_status_t apr_proc_mutex_trylock(apr_proc_mutex_t *mutex);
 
 
@@ -7640,15 +7602,15 @@ const char * apr_proc_mutex_defname(void);
 
 
 apr_pool_t * apr_proc_mutex_pool_get (const apr_proc_mutex_t *theproc_mutex);
-# 27 "../include/apr_global_mutex.h" 2
-# 46 "../include/apr_global_mutex.h"
+
+
 typedef struct apr_global_mutex_t apr_global_mutex_t;
-# 74 "../include/apr_global_mutex.h"
+
 apr_status_t apr_global_mutex_create(apr_global_mutex_t **mutex,
                                                   const char *fname,
                                                   apr_lockmech_e mech,
                                                   apr_pool_t *pool);
-# 90 "../include/apr_global_mutex.h"
+
 apr_status_t apr_global_mutex_child_init(
                               apr_global_mutex_t **mutex,
                               const char *fname,
@@ -7660,7 +7622,7 @@ apr_status_t apr_global_mutex_child_init(
 
 
 apr_status_t apr_global_mutex_lock(apr_global_mutex_t *mutex);
-# 109 "../include/apr_global_mutex.h"
+
 apr_status_t apr_global_mutex_trylock(apr_global_mutex_t *mutex);
 
 
@@ -7694,18 +7656,18 @@ const char * apr_global_mutex_name(apr_global_mutex_t *mutex);
 
 
 apr_pool_t * apr_global_mutex_pool_get (const apr_global_mutex_t *theglobal_mutex);
-# 35 "../include/apr_portable.h" 2
 
 
-# 1 "../include/apr_dso.h" 1
-# 44 "../include/apr_dso.h"
+
+
+
 typedef struct apr_dso_handle_t apr_dso_handle_t;
 
 
 
 
 typedef void * apr_dso_handle_sym_t;
-# 59 "../include/apr_dso.h"
+
 apr_status_t apr_dso_load(apr_dso_handle_t **res_handle,
                                        const char *path, apr_pool_t *ctx);
 
@@ -7732,22 +7694,22 @@ apr_status_t apr_dso_sym(apr_dso_handle_sym_t *ressym,
 
 
 const char * apr_dso_error(apr_dso_handle_t *dso, char *buf, apr_size_t bufsize);
-# 38 "../include/apr_portable.h" 2
-# 1 "../include/apr_shm.h" 1
-# 43 "../include/apr_shm.h"
+
+
+
 typedef struct apr_shm_t apr_shm_t;
-# 69 "../include/apr_shm.h"
+
 apr_status_t apr_shm_create(apr_shm_t **m,
                                          apr_size_t reqsize,
                                          const char *filename,
                                          apr_pool_t *pool);
-# 114 "../include/apr_shm.h"
+
 apr_status_t apr_shm_create_ex(apr_shm_t **m,
                                             apr_size_t reqsize,
                                             const char *filename,
                                             apr_pool_t *pool,
                                             apr_int32_t flags);
-# 135 "../include/apr_shm.h"
+
 apr_status_t apr_shm_remove(const char *filename,
                                          apr_pool_t *pool);
 
@@ -7756,11 +7718,11 @@ apr_status_t apr_shm_remove(const char *filename,
 
 
 apr_status_t apr_shm_destroy(apr_shm_t *m);
-# 153 "../include/apr_shm.h"
+
 apr_status_t apr_shm_attach(apr_shm_t **m,
                                          const char *filename,
                                          apr_pool_t *pool);
-# 167 "../include/apr_shm.h"
+
 apr_status_t apr_shm_attach_ex(apr_shm_t **m,
                                             const char *filename,
                                             apr_pool_t *pool,
@@ -7772,7 +7734,7 @@ apr_status_t apr_shm_attach_ex(apr_shm_t **m,
 
 
 apr_status_t apr_shm_detach(apr_shm_t *m);
-# 188 "../include/apr_shm.h"
+
 void * apr_shm_baseaddr_get(const apr_shm_t *m);
 
 
@@ -7786,13 +7748,13 @@ apr_size_t apr_shm_size_get(const apr_shm_t *m);
 
 
 apr_pool_t * apr_shm_pool_get (const apr_shm_t *theshm);
-# 39 "../include/apr_portable.h" 2
 
 
-# 1 "/usr/include/dirent.h" 1 3 4
-# 61 "/usr/include/dirent.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/dirent.h" 1 3 4
-# 22 "/usr/include/x86_64-linux-gnu/bits/dirent.h" 3 4
+
+
+
+
+
 struct dirent
   {
 
@@ -7806,8 +7768,8 @@ struct dirent
     unsigned char d_type;
     char d_name[256];
   };
-# 62 "/usr/include/dirent.h" 2 3 4
-# 97 "/usr/include/dirent.h" 3 4
+
+
 enum
   {
     DT_UNKNOWN = 0,
@@ -7829,7 +7791,7 @@ enum
     DT_WHT = 14
 
   };
-# 127 "/usr/include/dirent.h" 3 4
+
 typedef struct __dirstream DIR;
 
 
@@ -7853,14 +7815,14 @@ extern DIR *fdopendir (int __fd);
 
 
 extern int closedir (DIR *__dirp) __attribute__ ((__nonnull__ (1)));
-# 162 "/usr/include/dirent.h" 3 4
+
 extern struct dirent *readdir (DIR *__dirp) __attribute__ ((__nonnull__ (1)));
-# 183 "/usr/include/dirent.h" 3 4
+
 extern int readdir_r (DIR *__restrict __dirp,
         struct dirent *__restrict __entry,
         struct dirent **__restrict __result)
      __attribute__ ((__nonnull__ (1, 2, 3)));
-# 208 "/usr/include/dirent.h" 3 4
+
 extern void rewinddir (DIR *__dirp) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
 
@@ -7877,32 +7839,32 @@ extern long int telldir (DIR *__dirp) __attribute__ ((__nothrow__ )) __attribute
 
 
 extern int dirfd (DIR *__dirp) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 244 "/usr/include/dirent.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 245 "/usr/include/dirent.h" 2 3 4
-# 254 "/usr/include/dirent.h" 3 4
+
+
+
+
 extern int scandir (const char *__restrict __dir,
       struct dirent ***__restrict __namelist,
       int (*__selector) (const struct dirent *),
       int (*__cmp) (const struct dirent **,
       const struct dirent **))
      __attribute__ ((__nonnull__ (1, 2)));
-# 324 "/usr/include/dirent.h" 3 4
+
 extern int alphasort (const struct dirent **__e1,
         const struct dirent **__e2)
      __attribute__ ((__nothrow__ )) __attribute__ ((__pure__)) __attribute__ ((__nonnull__ (1, 2)));
-# 352 "/usr/include/dirent.h" 3 4
+
 extern __ssize_t getdirentries (int __fd, char *__restrict __buf,
     size_t __nbytes,
     __off_t *__restrict __basep)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2, 4)));
-# 42 "../include/apr_portable.h" 2
 
 
-# 1 "/usr/include/fcntl.h" 1 3 4
-# 35 "/usr/include/fcntl.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/fcntl.h" 1 3 4
-# 35 "/usr/include/x86_64-linux-gnu/bits/fcntl.h" 3 4
+
+
+
+
+
 struct flock
   {
     short int l_type;
@@ -7916,15 +7878,15 @@ struct flock
 
     __pid_t l_pid;
   };
-# 61 "/usr/include/x86_64-linux-gnu/bits/fcntl.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/fcntl-linux.h" 1 3 4
-# 62 "/usr/include/x86_64-linux-gnu/bits/fcntl.h" 2 3 4
-# 36 "/usr/include/fcntl.h" 2 3 4
-# 67 "/usr/include/fcntl.h" 3 4
-# 1 "/usr/include/time.h" 1 3 4
-# 68 "/usr/include/fcntl.h" 2 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/stat.h" 1 3 4
-# 46 "/usr/include/x86_64-linux-gnu/bits/stat.h" 3 4
+
+
+
+
+
+
+
+
+
 struct stat
   {
     __dev_t st_dev;
@@ -7960,43 +7922,29 @@ struct stat
     __blksize_t st_blksize;
 
     __blkcnt_t st_blocks;
-# 91 "/usr/include/x86_64-linux-gnu/bits/stat.h" 3 4
+
     struct timespec st_atim;
     struct timespec st_mtim;
     struct timespec st_ctim;
-# 106 "/usr/include/x86_64-linux-gnu/bits/stat.h" 3 4
+
     __syscall_slong_t __glibc_reserved[3];
-# 115 "/usr/include/x86_64-linux-gnu/bits/stat.h" 3 4
+
   };
-# 69 "/usr/include/fcntl.h" 2 3 4
-# 137 "/usr/include/fcntl.h" 3 4
+
+
 extern int fcntl (int __fd, int __cmd, ...);
-# 146 "/usr/include/fcntl.h" 3 4
+
 extern int open (const char *__file, int __oflag, ...) __attribute__ ((__nonnull__ (1)));
-# 170 "/usr/include/fcntl.h" 3 4
+
 extern int openat (int __fd, const char *__file, int __oflag, ...)
      __attribute__ ((__nonnull__ (2)));
-# 192 "/usr/include/fcntl.h" 3 4
+
 extern int creat (const char *__file, mode_t __mode) __attribute__ ((__nonnull__ (1)));
-# 238 "/usr/include/fcntl.h" 3 4
+
 extern int posix_fadvise (int __fd, off_t __offset, off_t __len,
      int __advise) __attribute__ ((__nothrow__ ));
-# 260 "/usr/include/fcntl.h" 3 4
+
 extern int posix_fallocate (int __fd, off_t __offset, off_t __len);
-# 45 "../include/apr_portable.h" 2
-
-
-# 1 "/usr/include/pthread.h" 1 3 4
-# 23 "/usr/include/pthread.h" 3 4
-# 1 "/usr/include/sched.h" 1 3 4
-# 28 "/usr/include/sched.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 29 "/usr/include/sched.h" 2 3 4
-
-
-
-# 1 "/usr/include/time.h" 1 3 4
-# 33 "/usr/include/sched.h" 2 3 4
 
 
 
@@ -8005,18 +7953,32 @@ extern int posix_fallocate (int __fd, off_t __offset, off_t __len);
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/sched.h" 1 3 4
-# 72 "/usr/include/x86_64-linux-gnu/bits/sched.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct sched_param
   {
     int __sched_priority;
   };
-# 103 "/usr/include/x86_64-linux-gnu/bits/sched.h" 3 4
+
 struct __sched_param
   {
     int __sched_priority;
   };
-# 118 "/usr/include/x86_64-linux-gnu/bits/sched.h" 3 4
+
 typedef unsigned long int __cpu_mask;
 
 
@@ -8028,12 +7990,12 @@ typedef struct
 {
   __cpu_mask __bits[1024 / (8 * sizeof (__cpu_mask))];
 } cpu_set_t;
-# 203 "/usr/include/x86_64-linux-gnu/bits/sched.h" 3 4
+
 extern int __sched_cpucount (size_t __setsize, const cpu_set_t *__setp)
   __attribute__ ((__nothrow__ ));
 extern cpu_set_t *__sched_cpualloc (size_t __count) __attribute__ ((__nothrow__ )) ;
 extern void __sched_cpufree (cpu_set_t *__set) __attribute__ ((__nothrow__ ));
-# 42 "/usr/include/sched.h" 2 3 4
+
 
 
 
@@ -8065,17 +8027,17 @@ extern int sched_get_priority_min (int __algorithm) __attribute__ ((__nothrow__ 
 
 
 extern int sched_rr_get_interval (__pid_t __pid, struct timespec *__t) __attribute__ ((__nothrow__ ));
-# 24 "/usr/include/pthread.h" 2 3 4
-# 1 "/usr/include/time.h" 1 3 4
-# 37 "/usr/include/time.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 38 "/usr/include/time.h" 2 3 4
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/time.h" 1 3 4
-# 42 "/usr/include/time.h" 2 3 4
-# 133 "/usr/include/time.h" 3 4
+
+
+
+
+
+
+
+
 struct tm
 {
   int tm_sec;
@@ -8096,7 +8058,7 @@ struct tm
 
 
 };
-# 161 "/usr/include/time.h" 3 4
+
 struct itimerspec
   {
     struct timespec it_interval;
@@ -8105,7 +8067,7 @@ struct itimerspec
 
 
 struct sigevent;
-# 189 "/usr/include/time.h" 3 4
+
 extern clock_t clock (void) __attribute__ ((__nothrow__ ));
 
 
@@ -8125,12 +8087,12 @@ extern time_t mktime (struct tm *__tp) __attribute__ ((__nothrow__ ));
 extern size_t strftime (char *__restrict __s, size_t __maxsize,
    const char *__restrict __format,
    const struct tm *__restrict __tp) __attribute__ ((__nothrow__ ));
-# 223 "/usr/include/time.h" 3 4
+
 extern size_t strftime_l (char *__restrict __s, size_t __maxsize,
      const char *__restrict __format,
      const struct tm *__restrict __tp,
      __locale_t __loc) __attribute__ ((__nothrow__ ));
-# 239 "/usr/include/time.h" 3 4
+
 extern struct tm *gmtime (const time_t *__timer) __attribute__ ((__nothrow__ ));
 
 
@@ -8197,7 +8159,7 @@ extern long int timezone;
 
 
 extern int stime (const time_t *__when) __attribute__ ((__nothrow__ ));
-# 319 "/usr/include/time.h" 3 4
+
 extern time_t timegm (struct tm *__tp) __attribute__ ((__nothrow__ ));
 
 
@@ -8205,7 +8167,7 @@ extern time_t timelocal (struct tm *__tp) __attribute__ ((__nothrow__ ));
 
 
 extern int dysize (int __year) __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
-# 334 "/usr/include/time.h" 3 4
+
 extern int nanosleep (const struct timespec *__requested_time,
         struct timespec *__remaining);
 
@@ -8253,21 +8215,21 @@ extern int timer_gettime (timer_t __timerid, struct itimerspec *__value)
 
 
 extern int timer_getoverrun (timer_t __timerid) __attribute__ ((__nothrow__ ));
-# 25 "/usr/include/pthread.h" 2 3 4
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/setjmp.h" 1 3 4
-# 26 "/usr/include/x86_64-linux-gnu/bits/setjmp.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 27 "/usr/include/x86_64-linux-gnu/bits/setjmp.h" 2 3 4
+
+
+
+
+
 
 
 
 
 typedef long int __jmp_buf[8];
-# 28 "/usr/include/pthread.h" 2 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 29 "/usr/include/pthread.h" 2 3 4
+
+
+
 
 
 
@@ -8321,7 +8283,7 @@ enum
   PTHREAD_PRIO_INHERIT,
   PTHREAD_PRIO_PROTECT
 };
-# 125 "/usr/include/pthread.h" 3 4
+
 enum
 {
   PTHREAD_RWLOCK_PREFER_READER_NP,
@@ -8329,7 +8291,7 @@ enum
   PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP,
   PTHREAD_RWLOCK_DEFAULT_NP = PTHREAD_RWLOCK_PREFER_READER_NP
 };
-# 166 "/usr/include/pthread.h" 3 4
+
 enum
 {
   PTHREAD_INHERIT_SCHED,
@@ -8357,7 +8319,7 @@ enum
   PTHREAD_PROCESS_SHARED
 
 };
-# 201 "/usr/include/pthread.h" 3 4
+
 struct _pthread_cleanup_buffer
 {
   void (*__routine) (void *);
@@ -8381,7 +8343,7 @@ enum
   PTHREAD_CANCEL_ASYNCHRONOUS
 
 };
-# 244 "/usr/include/pthread.h" 3 4
+
 extern int pthread_create (pthread_t *__restrict __newthread,
       const pthread_attr_t *__restrict __attr,
       void *(*__start_routine) (void *),
@@ -8400,7 +8362,7 @@ extern void pthread_exit (void *__retval) __attribute__ ((__noreturn__));
 
 
 extern int pthread_join (pthread_t __th, void **__thread_return);
-# 282 "/usr/include/pthread.h" 3 4
+
 extern int pthread_detach (pthread_t __th) __attribute__ ((__nothrow__ ));
 
 
@@ -8521,7 +8483,7 @@ extern int pthread_attr_getstack (const pthread_attr_t *__restrict __attr,
 
 extern int pthread_attr_setstack (pthread_attr_t *__attr, void *__stackaddr,
       size_t __stacksize) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 440 "/usr/include/pthread.h" 3 4
+
 extern int pthread_setschedparam (pthread_t __target_thread, int __policy,
       const struct sched_param *__param)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (3)));
@@ -8535,10 +8497,10 @@ extern int pthread_getschedparam (pthread_t __target_thread,
 
 extern int pthread_setschedprio (pthread_t __target_thread, int __prio)
      __attribute__ ((__nothrow__ ));
-# 505 "/usr/include/pthread.h" 3 4
+
 extern int pthread_once (pthread_once_t *__once_control,
     void (*__init_routine) (void)) __attribute__ ((__nonnull__ (1, 2)));
-# 517 "/usr/include/pthread.h" 3 4
+
 extern int pthread_setcancelstate (int __state, int *__oldstate);
 
 
@@ -8565,7 +8527,7 @@ typedef struct
   } __cancel_jmp_buf[1];
   void *__pad[4];
 } __pthread_unwind_buf_t __attribute__ ((__aligned__));
-# 551 "/usr/include/pthread.h" 3 4
+
 struct __pthread_cleanup_frame
 {
   void (*__cancel_routine) (void *);
@@ -8573,13 +8535,13 @@ struct __pthread_cleanup_frame
   int __do_it;
   int __cancel_type;
 };
-# 691 "/usr/include/pthread.h" 3 4
+
 extern void __pthread_register_cancel (__pthread_unwind_buf_t *__buf)
                             ;
-# 703 "/usr/include/pthread.h" 3 4
+
 extern void __pthread_unregister_cancel (__pthread_unwind_buf_t *__buf)
                          ;
-# 744 "/usr/include/pthread.h" 3 4
+
 extern void __pthread_unwind_next (__pthread_unwind_buf_t *__buf)
                              __attribute__ ((__noreturn__))
 
@@ -8642,7 +8604,7 @@ extern int pthread_mutex_setprioceiling (pthread_mutex_t *__restrict __mutex,
 
 extern int pthread_mutex_consistent (pthread_mutex_t *__mutex)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 817 "/usr/include/pthread.h" 3 4
+
 extern int pthread_mutexattr_init (pthread_mutexattr_t *__attr)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
@@ -8712,7 +8674,7 @@ extern int pthread_mutexattr_getrobust (const pthread_mutexattr_t *__attr,
 extern int pthread_mutexattr_setrobust (pthread_mutexattr_t *__attr,
      int __robustness)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 899 "/usr/include/pthread.h" 3 4
+
 extern int pthread_rwlock_init (pthread_rwlock_t *__restrict __rwlock,
     const pthread_rwlockattr_t *__restrict
     __attr) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
@@ -8817,7 +8779,7 @@ extern int pthread_cond_broadcast (pthread_cond_t *__cond)
 extern int pthread_cond_wait (pthread_cond_t *__restrict __cond,
          pthread_mutex_t *__restrict __mutex)
      __attribute__ ((__nonnull__ (1, 2)));
-# 1011 "/usr/include/pthread.h" 3 4
+
 extern int pthread_cond_timedwait (pthread_cond_t *__restrict __cond,
        pthread_mutex_t *__restrict __mutex,
        const struct timespec *__restrict __abstime)
@@ -8854,7 +8816,7 @@ extern int pthread_condattr_getclock (const pthread_condattr_t *
 extern int pthread_condattr_setclock (pthread_condattr_t *__attr,
           __clockid_t __clock_id)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 1055 "/usr/include/pthread.h" 3 4
+
 extern int pthread_spin_init (pthread_spinlock_t *__lock, int __pshared)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
@@ -8911,7 +8873,7 @@ extern int pthread_barrierattr_getpshared (const pthread_barrierattr_t *
 extern int pthread_barrierattr_setpshared (pthread_barrierattr_t *__attr,
         int __pshared)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
-# 1122 "/usr/include/pthread.h" 3 4
+
 extern int pthread_key_create (pthread_key_t *__key,
           void (*__destr_function) (void *))
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
@@ -8932,12 +8894,12 @@ extern int pthread_setspecific (pthread_key_t __key,
 extern int pthread_getcpuclockid (pthread_t __thread_id,
       __clockid_t *__clock_id)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2)));
-# 1156 "/usr/include/pthread.h" 3 4
+
 extern int pthread_atfork (void (*__prepare) (void),
       void (*__parent) (void),
       void (*__child) (void)) __attribute__ ((__nothrow__ ));
-# 48 "../include/apr_portable.h" 2
-# 127 "../include/apr_portable.h"
+
+
 struct apr_os_proc_mutex_t {
 
 
@@ -8970,11 +8932,11 @@ typedef pthread_key_t apr_os_threadkey_t;
 typedef pid_t apr_os_proc_t;
 typedef struct timeval apr_os_imp_time_t;
 typedef struct tm apr_os_exp_time_t;
-# 169 "../include/apr_portable.h"
+
 typedef void * apr_os_dso_handle_t;
 
 typedef void* apr_os_shm_t;
-# 183 "../include/apr_portable.h"
+
 struct apr_os_sock_info_t {
     apr_os_sock_t *os_sock;
     struct sockaddr *local;
@@ -8985,7 +8947,7 @@ struct apr_os_sock_info_t {
 };
 
 typedef struct apr_os_sock_info_t apr_os_sock_info_t;
-# 203 "../include/apr_portable.h"
+
     struct apr_os_global_mutex_t {
         apr_pool_t *pool;
         apr_proc_mutex_t *proc_mutex;
@@ -8997,7 +8959,7 @@ typedef struct apr_os_sock_info_t apr_os_sock_info_t;
 
 apr_status_t apr_os_global_mutex_get(apr_os_global_mutex_t *ospmutex,
                                                 apr_global_mutex_t *pmutex);
-# 224 "../include/apr_portable.h"
+
 apr_status_t apr_os_file_get(apr_os_file_t *thefile,
                                           apr_file_t *file);
 
@@ -9048,7 +9010,7 @@ apr_status_t apr_os_imp_time_get(apr_os_imp_time_t **ostime,
 
 apr_status_t apr_os_shm_get(apr_os_shm_t *osshm,
                                          apr_shm_t *shm);
-# 285 "../include/apr_portable.h"
+
 apr_status_t apr_os_thread_get(apr_os_thread_t **thethd,
                                             apr_thread_t *thd);
 
@@ -9092,15 +9054,15 @@ apr_os_thread_t apr_os_thread_current(void);
 
 int apr_os_thread_equal(apr_os_thread_t tid1,
                                      apr_os_thread_t tid2);
-# 341 "../include/apr_portable.h"
+
 apr_status_t apr_os_file_put(apr_file_t **file,
                                           apr_os_file_t *thefile,
                                           apr_int32_t flags, apr_pool_t *cont);
-# 353 "../include/apr_portable.h"
+
 apr_status_t apr_os_pipe_put(apr_file_t **file,
                                           apr_os_file_t *thefile,
                                           apr_pool_t *cont);
-# 367 "../include/apr_portable.h"
+
 apr_status_t apr_os_pipe_put_ex(apr_file_t **file,
                                              apr_os_file_t *thefile,
                                              int register_cleanup,
@@ -9115,11 +9077,11 @@ apr_status_t apr_os_pipe_put_ex(apr_file_t **file,
 apr_status_t apr_os_dir_put(apr_dir_t **dir,
                                          apr_os_dir_t *thedir,
                                          apr_pool_t *cont);
-# 390 "../include/apr_portable.h"
+
 apr_status_t apr_os_sock_put(apr_socket_t **sock,
                                           apr_os_sock_t *thesock,
                                           apr_pool_t *cont);
-# 404 "../include/apr_portable.h"
+
 apr_status_t apr_os_sock_make(apr_socket_t **apr_sock,
                                            apr_os_sock_info_t *os_sock_info,
                                            apr_pool_t *cont);
@@ -9153,11 +9115,11 @@ apr_status_t apr_os_imp_time_put(apr_time_t *aprtime,
 apr_status_t apr_os_exp_time_put(apr_time_exp_t *aprtime,
                                               apr_os_exp_time_t **ostime,
                                               apr_pool_t *cont);
-# 447 "../include/apr_portable.h"
+
 apr_status_t apr_os_shm_put(apr_shm_t **shm,
                                          apr_os_shm_t *osshm,
                                          apr_pool_t *cont);
-# 463 "../include/apr_portable.h"
+
 apr_status_t apr_os_dso_handle_put(apr_dso_handle_t **dso,
                                                 apr_os_dso_handle_t thedso,
                                                 apr_pool_t *pool);
@@ -9169,11 +9131,11 @@ apr_status_t apr_os_dso_handle_put(apr_dso_handle_t **dso,
 
 apr_status_t apr_os_dso_handle_get(apr_os_dso_handle_t *dso,
                                                 apr_dso_handle_t *aprdso);
-# 491 "../include/apr_portable.h"
+
 const char* apr_os_default_encoding(apr_pool_t *pool);
-# 500 "../include/apr_portable.h"
+
 const char* apr_os_locale_encoding(apr_pool_t *pool);
-# 25 "../include/arch/unix/apr_arch_thread_mutex.h" 2
+
 
 
 
@@ -9185,10 +9147,10 @@ struct apr_thread_mutex_t {
     apr_pool_t *pool;
     pthread_mutex_t mutex;
 };
-# 18 "./../locks/unix/thread_mutex.c" 2
 
-# 1 "../include/apr_want.h" 1
-# 20 "./../locks/unix/thread_mutex.c" 2
+
+
+
 
 
 
@@ -9306,15 +9268,15 @@ apr_status_t apr_thread_mutex_destroy(apr_thread_mutex_t *mutex)
 }
 
 apr_pool_t * apr_thread_mutex_pool_get (const apr_thread_mutex_t *thethread_mutex) { return thethread_mutex->pool; }
-# 13 "main1.c" 2
-# 1 "./../locks/unix/proc_mutex.c" 1
-# 19 "./../locks/unix/proc_mutex.c"
-# 1 "../include/arch/unix/apr_arch_proc_mutex.h" 1
-# 23 "../include/arch/unix/apr_arch_proc_mutex.h"
-# 1 "../include/apr_lib.h" 1
-# 32 "../include/apr_lib.h"
-# 1 "/usr/include/ctype.h" 1 3 4
-# 46 "/usr/include/ctype.h" 3 4
+
+
+
+
+
+
+
+
+
 enum
 {
   _ISupper = ((0) < 8 ? ((1 << (0)) << 8) : ((1 << (0)) >> 8)),
@@ -9330,14 +9292,14 @@ enum
   _ISpunct = ((10) < 8 ? ((1 << (10)) << 8) : ((1 << (10)) >> 8)),
   _ISalnum = ((11) < 8 ? ((1 << (11)) << 8) : ((1 << (11)) >> 8))
 };
-# 79 "/usr/include/ctype.h" 3 4
+
 extern const unsigned short int **__ctype_b_loc (void)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
 extern const __int32_t **__ctype_tolower_loc (void)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
 extern const __int32_t **__ctype_toupper_loc (void)
      __attribute__ ((__nothrow__ )) __attribute__ ((__const__));
-# 110 "/usr/include/ctype.h" 3 4
+
 extern int isalnum (int) __attribute__ ((__nothrow__ ));
 extern int isalpha (int) __attribute__ ((__nothrow__ ));
 extern int iscntrl (int) __attribute__ ((__nothrow__ ));
@@ -9356,9 +9318,9 @@ extern int tolower (int __c) __attribute__ ((__nothrow__ ));
 
 
 extern int toupper (int __c) __attribute__ ((__nothrow__ ));
-# 136 "/usr/include/ctype.h" 3 4
+
 extern int isblank (int) __attribute__ ((__nothrow__ ));
-# 150 "/usr/include/ctype.h" 3 4
+
 extern int isascii (int __c) __attribute__ ((__nothrow__ ));
 
 
@@ -9369,7 +9331,7 @@ extern int toascii (int __c) __attribute__ ((__nothrow__ ));
 
 extern int _toupper (int) __attribute__ ((__nothrow__ ));
 extern int _tolower (int) __attribute__ ((__nothrow__ ));
-# 271 "/usr/include/ctype.h" 3 4
+
 extern int isalnum_l (int, __locale_t) __attribute__ ((__nothrow__ ));
 extern int isalpha_l (int, __locale_t) __attribute__ ((__nothrow__ ));
 extern int iscntrl_l (int, __locale_t) __attribute__ ((__nothrow__ ));
@@ -9392,8 +9354,8 @@ extern int tolower_l (int __c, __locale_t __l) __attribute__ ((__nothrow__ ));
 
 extern int __toupper_l (int __c, __locale_t __l) __attribute__ ((__nothrow__ ));
 extern int toupper_l (int __c, __locale_t __l) __attribute__ ((__nothrow__ ));
-# 33 "../include/apr_lib.h" 2
-# 59 "../include/apr_lib.h"
+
+
 typedef struct apr_vformatter_buff_t apr_vformatter_buff_t;
 
 
@@ -9405,55 +9367,55 @@ struct apr_vformatter_buff_t {
 
     char *endpos;
 };
-# 84 "../include/apr_lib.h"
+
 const char * apr_filepath_name_get(const char *pathname);
-# 174 "../include/apr_lib.h"
+
 int apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *b),
            apr_vformatter_buff_t *c, const char *fmt,
            va_list ap);
-# 189 "../include/apr_lib.h"
+
 apr_status_t apr_password_get(const char *prompt, char *pwbuf,
                                            apr_size_t *bufsize);
-# 24 "../include/arch/unix/apr_arch_proc_mutex.h" 2
-
-
-
-
-# 1 "../include/arch/unix/apr_arch_file_io.h" 1
-# 41 "../include/arch/unix/apr_arch_file_io.h"
-# 1 "/usr/include/errno.h" 1 3 4
-# 42 "../include/arch/unix/apr_arch_file_io.h" 2
 
 
 
 
 
-# 1 "/usr/include/strings.h" 1 3 4
-# 48 "../include/arch/unix/apr_arch_file_io.h" 2
 
 
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/stat.h" 1 3 4
-# 105 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/stat.h" 1 3 4
-# 106 "/usr/include/x86_64-linux-gnu/sys/stat.h" 2 3 4
-# 209 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern int stat (const char *__restrict __file,
    struct stat *__restrict __buf) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
 
 
 
 extern int fstat (int __fd, struct stat *__buf) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2)));
-# 238 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
 extern int fstatat (int __fd, const char *__restrict __file,
       struct stat *__restrict __buf, int __flag)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2, 3)));
-# 263 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
 extern int lstat (const char *__restrict __file,
     struct stat *__restrict __buf) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1, 2)));
-# 284 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
 extern int chmod (const char *__file, __mode_t __mode)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
@@ -9483,7 +9445,7 @@ extern int fchmodat (int __fd, const char *__file, __mode_t __mode,
 
 
 extern __mode_t umask (__mode_t __mask) __attribute__ ((__nothrow__ ));
-# 321 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
 extern int mkdir (const char *__path, __mode_t __mode)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (1)));
 
@@ -9536,7 +9498,7 @@ extern int utimensat (int __fd, const char *__path,
 
 
 extern int futimens (int __fd, const struct timespec __times[2]) __attribute__ ((__nothrow__ ));
-# 399 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
 extern int __fxstat (int __ver, int __fildes, struct stat *__stat_buf)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (3)));
 extern int __xstat (int __ver, const char *__filename,
@@ -9546,19 +9508,13 @@ extern int __lxstat (int __ver, const char *__filename,
 extern int __fxstatat (int __ver, int __fildes, const char *__filename,
          struct stat *__stat_buf, int __flag)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (3, 4)));
-# 442 "/usr/include/x86_64-linux-gnu/sys/stat.h" 3 4
+
 extern int __xmknod (int __ver, const char *__path, __mode_t __mode,
        __dev_t *__dev) __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (2, 4)));
 
 extern int __xmknodat (int __ver, int __fd, const char *__path,
          __mode_t __mode, __dev_t *__dev)
      __attribute__ ((__nothrow__ )) __attribute__ ((__nonnull__ (3, 5)));
-# 54 "../include/arch/unix/apr_arch_file_io.h" 2
-# 75 "../include/arch/unix/apr_arch_file_io.h"
-# 1 "/usr/include/x86_64-linux-gnu/sys/param.h" 1 3 4
-# 23 "/usr/include/x86_64-linux-gnu/sys/param.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/sys/param.h" 2 3 4
 
 
 
@@ -9566,20 +9522,26 @@ extern int __xmknodat (int __ver, int __fd, const char *__path,
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/param.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/bits/param.h" 3 4
-# 1 "/usr/include/linux/param.h" 1 3 4
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/asm/param.h" 1 3 4
-# 1 "/usr/include/asm-generic/param.h" 1 3 4
-# 2 "/usr/include/x86_64-linux-gnu/asm/param.h" 2 3 4
-# 5 "/usr/include/linux/param.h" 2 3 4
-# 29 "/usr/include/x86_64-linux-gnu/bits/param.h" 2 3 4
-# 32 "/usr/include/x86_64-linux-gnu/sys/param.h" 2 3 4
-# 76 "../include/arch/unix/apr_arch_file_io.h" 2
-# 93 "../include/arch/unix/apr_arch_file_io.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct apr_file_t {
     apr_pool_t *pool;
     int filedes;
@@ -9606,9 +9568,9 @@ struct apr_file_t {
     struct apr_thread_mutex_t *thlock;
 
 };
-# 142 "../include/arch/unix/apr_arch_file_io.h"
+
 typedef struct stat struct_stat;
-# 151 "../include/arch/unix/apr_arch_file_io.h"
+
 struct apr_dir_t {
     apr_pool_t *pool;
     char *dirname;
@@ -9629,16 +9591,16 @@ apr_fileperms_t apr_unix_mode2perms(mode_t mode);
 apr_status_t apr_file_flush_locked(apr_file_t *thefile);
 apr_status_t apr_file_info_get_locked(apr_finfo_t *finfo, apr_int32_t wanted,
                                       apr_file_t *thefile);
-# 29 "../include/arch/unix/apr_arch_proc_mutex.h" 2
-# 42 "../include/arch/unix/apr_arch_proc_mutex.h"
-# 1 "/usr/include/x86_64-linux-gnu/sys/ipc.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/sys/ipc.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/ipctypes.h" 1 3 4
-# 28 "/usr/include/x86_64-linux-gnu/bits/ipctypes.h" 3 4
+
+
+
+
+
+
 typedef int __ipc_pid_t;
-# 29 "/usr/include/x86_64-linux-gnu/sys/ipc.h" 2 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/ipc.h" 1 3 4
-# 42 "/usr/include/x86_64-linux-gnu/bits/ipc.h" 3 4
+
+
+
 struct ipc_perm
   {
     __key_t __key;
@@ -9653,23 +9615,23 @@ struct ipc_perm
     __syscall_ulong_t __glibc_reserved1;
     __syscall_ulong_t __glibc_reserved2;
   };
-# 30 "/usr/include/x86_64-linux-gnu/sys/ipc.h" 2 3 4
-# 54 "/usr/include/x86_64-linux-gnu/sys/ipc.h" 3 4
+
+
 extern key_t ftok (const char *__pathname, int __proj_id) __attribute__ ((__nothrow__ ));
-# 43 "../include/arch/unix/apr_arch_proc_mutex.h" 2
-
-
-# 1 "/usr/include/x86_64-linux-gnu/sys/sem.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/sys/sem.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 25 "/usr/include/x86_64-linux-gnu/sys/sem.h" 2 3 4
 
 
 
 
 
-# 1 "/usr/include/x86_64-linux-gnu/bits/sem.h" 1 3 4
-# 38 "/usr/include/x86_64-linux-gnu/bits/sem.h" 3 4
+
+
+
+
+
+
+
+
+
 struct semid_ds
 {
   struct ipc_perm sem_perm;
@@ -9681,7 +9643,7 @@ struct semid_ds
   __syscall_ulong_t __glibc_reserved3;
   __syscall_ulong_t __glibc_reserved4;
 };
-# 72 "/usr/include/x86_64-linux-gnu/bits/sem.h" 3 4
+
 struct seminfo
 {
   int semmap;
@@ -9695,8 +9657,8 @@ struct seminfo
   int semvmx;
   int semaem;
 };
-# 31 "/usr/include/x86_64-linux-gnu/sys/sem.h" 2 3 4
-# 41 "/usr/include/x86_64-linux-gnu/sys/sem.h" 3 4
+
+
 struct sembuf
 {
   unsigned short int sem_num;
@@ -9715,28 +9677,28 @@ extern int semget (key_t __key, int __nsems, int __semflg) __attribute__ ((__not
 
 
 extern int semop (int __semid, struct sembuf *__sops, size_t __nsops) __attribute__ ((__nothrow__ ));
-# 46 "../include/arch/unix/apr_arch_proc_mutex.h" 2
 
 
-# 1 "/usr/include/x86_64-linux-gnu/sys/file.h" 1 3 4
-# 50 "/usr/include/x86_64-linux-gnu/sys/file.h" 3 4
+
+
+
 extern int flock (int __fd, int __operation) __attribute__ ((__nothrow__ ));
-# 49 "../include/arch/unix/apr_arch_proc_mutex.h" 2
-# 60 "../include/arch/unix/apr_arch_proc_mutex.h"
-# 1 "/usr/include/x86_64-linux-gnu/sys/mman.h" 1 3 4
-# 25 "/usr/include/x86_64-linux-gnu/sys/mman.h" 3 4
-# 1 "/usr/lib/llvm-3.5/bin/../lib/clang/3.5.0/include/stddef.h" 1 3 4
-# 26 "/usr/include/x86_64-linux-gnu/sys/mman.h" 2 3 4
-# 41 "/usr/include/x86_64-linux-gnu/sys/mman.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/mman.h" 1 3 4
-# 45 "/usr/include/x86_64-linux-gnu/bits/mman.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/mman-linux.h" 1 3 4
-# 46 "/usr/include/x86_64-linux-gnu/bits/mman.h" 2 3 4
-# 42 "/usr/include/x86_64-linux-gnu/sys/mman.h" 2 3 4
-# 57 "/usr/include/x86_64-linux-gnu/sys/mman.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern void *mmap (void *__addr, size_t __len, int __prot,
      int __flags, int __fd, __off_t __offset) __attribute__ ((__nothrow__ ));
-# 76 "/usr/include/x86_64-linux-gnu/sys/mman.h" 3 4
+
 extern int munmap (void *__addr, size_t __len) __attribute__ ((__nothrow__ ));
 
 
@@ -9786,30 +9748,30 @@ extern int munlockall (void) __attribute__ ((__nothrow__ ));
 
 extern int mincore (void *__start, size_t __len, unsigned char *__vec)
      __attribute__ ((__nothrow__ ));
-# 144 "/usr/include/x86_64-linux-gnu/sys/mman.h" 3 4
+
 extern int shm_open (const char *__name, int __oflag, mode_t __mode);
 
 
 extern int shm_unlink (const char *__name);
-# 61 "../include/arch/unix/apr_arch_proc_mutex.h" 2
 
 
 
 
 
-# 1 "/usr/include/semaphore.h" 1 3 4
-# 29 "/usr/include/semaphore.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/semaphore.h" 1 3 4
-# 23 "/usr/include/x86_64-linux-gnu/bits/semaphore.h" 3 4
-# 1 "/usr/include/x86_64-linux-gnu/bits/wordsize.h" 1 3 4
-# 24 "/usr/include/x86_64-linux-gnu/bits/semaphore.h" 2 3 4
-# 36 "/usr/include/x86_64-linux-gnu/bits/semaphore.h" 3 4
+
+
+
+
+
+
+
+
 typedef union
 {
   char __size[32];
   long int __align;
 } sem_t;
-# 30 "/usr/include/semaphore.h" 2 3 4
+
 
 
 
@@ -9854,7 +9816,7 @@ extern int sem_post (sem_t *__sem) __attribute__ ((__nothrow__));
 
 extern int sem_getvalue (sem_t *__restrict __sem, int *__restrict __sval)
      __attribute__ ((__nothrow__ ));
-# 67 "../include/arch/unix/apr_arch_proc_mutex.h" 2
+
 
 
 
@@ -9899,10 +9861,10 @@ struct apr_proc_mutex_t {
 };
 
 void apr_proc_mutex_unix_setup_lock(void);
-# 20 "./../locks/unix/proc_mutex.c" 2
 
-# 1 "../include/apr_hash.h" 1
-# 52 "../include/apr_hash.h"
+
+
+
 typedef struct apr_hash_t apr_hash_t;
 
 
@@ -9939,16 +9901,16 @@ apr_hash_t * apr_hash_make(apr_pool_t *pool);
 
 apr_hash_t * apr_hash_make_custom(apr_pool_t *pool,
                                                apr_hashfunc_t hash_func);
-# 96 "../include/apr_hash.h"
+
 apr_hash_t * apr_hash_copy(apr_pool_t *pool,
                                         const apr_hash_t *h);
-# 107 "../include/apr_hash.h"
+
 void apr_hash_set(apr_hash_t *ht, const void *key,
                                apr_ssize_t klen, const void *val);
-# 117 "../include/apr_hash.h"
+
 void * apr_hash_get(apr_hash_t *ht, const void *key,
                                  apr_ssize_t klen);
-# 147 "../include/apr_hash.h"
+
 apr_hash_index_t * apr_hash_first(apr_pool_t *p, apr_hash_t *ht);
 
 
@@ -9958,7 +9920,7 @@ apr_hash_index_t * apr_hash_first(apr_pool_t *p, apr_hash_t *ht);
 
 
 apr_hash_index_t * apr_hash_next(apr_hash_index_t *hi);
-# 166 "../include/apr_hash.h"
+
 void apr_hash_this(apr_hash_index_t *hi, const void **key,
                                 apr_ssize_t *klen, void **val);
 
@@ -9995,11 +9957,11 @@ unsigned int apr_hash_count(apr_hash_t *ht);
 
 
 void apr_hash_clear(apr_hash_t *ht);
-# 212 "../include/apr_hash.h"
+
 apr_hash_t * apr_hash_overlay(apr_pool_t *p,
                                            const apr_hash_t *overlay,
                                            const apr_hash_t *base);
-# 230 "../include/apr_hash.h"
+
 apr_hash_t * apr_hash_merge(apr_pool_t *p,
                                          const apr_hash_t *h1,
                                          const apr_hash_t *h2,
@@ -10010,11 +9972,11 @@ apr_hash_t * apr_hash_merge(apr_pool_t *p,
                                                      const void *h2_val,
                                                      const void *data),
                                          const void *data);
-# 252 "../include/apr_hash.h"
+
 typedef int (apr_hash_do_callback_fn_t)(void *rec, const void *key,
                                                    apr_ssize_t klen,
                                                    const void *value);
-# 268 "../include/apr_hash.h"
+
 int apr_hash_do(apr_hash_do_callback_fn_t *comp,
                              void *rec, const apr_hash_t *ht);
 
@@ -10022,7 +9984,7 @@ int apr_hash_do(apr_hash_do_callback_fn_t *comp,
 
 
 apr_pool_t * apr_hash_pool_get (const apr_hash_t *thehash);
-# 22 "./../locks/unix/proc_mutex.c" 2
+
 
 apr_status_t apr_proc_mutex_destroy(apr_proc_mutex_t *mutex)
 {
@@ -10037,7 +9999,7 @@ static apr_status_t proc_mutex_no_child_init(apr_proc_mutex_t **mutex,
 {
     return 0;
 }
-# 44 "./../locks/unix/proc_mutex.c"
+
 static apr_status_t proc_mutex_posix_cleanup(void *mutex_)
 {
     apr_proc_mutex_t *mutex = mutex_;
@@ -10073,7 +10035,7 @@ static apr_status_t proc_mutex_posix_create(apr_proc_mutex_t *new_mutex,
 
     new_mutex->interproc = apr_palloc(new_mutex->pool,
                                       sizeof(*new_mutex->interproc));
-# 101 "./../locks/unix/proc_mutex.c"
+
     if (fname) {
         apr_ssize_t flen = strlen(fname);
         char *p = apr_pstrndup(new_mutex->pool, fname, strlen(fname));
@@ -10806,7 +10768,7 @@ static apr_status_t proc_mutex_choose_method(apr_proc_mutex_t *new_mutex, apr_lo
 
 
         new_mutex->inter_meth = &mutex_sysv_methods;
-# 842 "./../locks/unix/proc_mutex.c"
+
         break;
     default:
         return ((20000 + 50000) + 23);
@@ -10952,13 +10914,13 @@ apr_status_t apr_os_proc_mutex_put(apr_proc_mutex_t **pmutex,
 
     return 0;
 }
-# 14 "main1.c" 2
-# 1 "./../memory/unix/apr_pools.c" 1
-# 31 "./../memory/unix/apr_pools.c"
-# 1 "../include/apr_want.h" 1
-# 32 "./../memory/unix/apr_pools.c" 2
-# 1 "../include/apr_env.h" 1
-# 42 "../include/apr_env.h"
+
+
+
+
+
+
+
 apr_status_t apr_env_get(char **value, const char *envvar,
                                       apr_pool_t *pool);
 
@@ -10977,8 +10939,8 @@ apr_status_t apr_env_set(const char *envvar, const char *value,
 
 
 apr_status_t apr_env_delete(const char *envvar, apr_pool_t *pool);
-# 33 "./../memory/unix/apr_pools.c" 2
-# 85 "./../memory/unix/apr_pools.c"
+
+
 struct apr_allocator_t {
 
     apr_uint32_t max_index;
@@ -10997,10 +10959,10 @@ struct apr_allocator_t {
     apr_thread_mutex_t *mutex;
 
     apr_pool_t *owner;
-# 113 "./../memory/unix/apr_pools.c"
+
     apr_memnode_t *free[20];
 };
-# 123 "./../memory/unix/apr_pools.c"
+
 apr_status_t apr_allocator_create(apr_allocator_t **allocator)
 {
     apr_allocator_t *new_allocator;
@@ -11123,7 +11085,7 @@ apr_memnode_t *allocator_alloc(apr_allocator_t *allocator, apr_size_t in_size)
 
         if (allocator->mutex)
             apr_thread_mutex_lock(allocator->mutex);
-# 257 "./../memory/unix/apr_pools.c"
+
         max_index = allocator->max_index;
         ref = &allocator->free[index];
         i = index;
@@ -11208,7 +11170,7 @@ apr_memnode_t *allocator_alloc(apr_allocator_t *allocator, apr_size_t in_size)
             apr_thread_mutex_unlock(allocator->mutex);
 
     }
-# 349 "./../memory/unix/apr_pools.c"
+
     if ((node = malloc(size)) == ((void*)0))
 
         return ((void*)0);
@@ -11306,7 +11268,7 @@ void apr_allocator_free(apr_allocator_t *allocator,
 {
     allocator_free(allocator, node);
 }
-# 467 "./../memory/unix/apr_pools.c"
+
 typedef struct cleanup_t cleanup_t;
 
 
@@ -11317,7 +11279,7 @@ struct process_chain {
 
     struct process_chain *next;
 };
-# 500 "./../memory/unix/apr_pools.c"
+
 struct apr_pool_t {
     apr_pool_t *parent;
     apr_pool_t *child;
@@ -11335,26 +11297,26 @@ struct apr_pool_t {
     apr_memnode_t *active;
     apr_memnode_t *self;
     char *self_first_avail;
-# 535 "./../memory/unix/apr_pools.c"
+
     cleanup_t *pre_cleanups;
 };
-# 545 "./../memory/unix/apr_pools.c"
+
 static apr_byte_t apr_pools_initialized = 0;
 static apr_pool_t *global_pool = ((void*)0);
 
 
 static apr_allocator_t *global_allocator = ((void*)0);
-# 560 "./../memory/unix/apr_pools.c"
+
 static void run_cleanups(cleanup_t **c);
 static void free_proc_chain(struct process_chain *procs);
-# 572 "./../memory/unix/apr_pools.c"
+
 apr_status_t apr_pool_initialize(void)
 {
     apr_status_t rv;
 
     if (apr_pools_initialized++)
         return 0;
-# 587 "./../memory/unix/apr_pools.c"
+
     if ((rv = apr_allocator_create(&global_allocator)) != 0) {
         apr_pools_initialized = 0;
         return rv;
@@ -11412,7 +11374,7 @@ void apr_pool_terminate(void)
 
     global_allocator = ((void*)0);
 }
-# 668 "./../memory/unix/apr_pools.c"
+
 void * apr_palloc(apr_pool_t *pool, apr_size_t in_size)
 {
     apr_memnode_t *active, *node;
@@ -11476,7 +11438,7 @@ void * apr_palloc(apr_pool_t *pool, apr_size_t in_size)
 
     return mem;
 }
-# 740 "./../memory/unix/apr_pools.c"
+
 void * apr_pcalloc(apr_pool_t *pool, apr_size_t size);
 void * apr_pcalloc(apr_pool_t *pool, apr_size_t size)
 {
@@ -11754,7 +11716,7 @@ apr_status_t apr_pool_create_unmanaged_ex(apr_pool_t **newpool,
 
     return 0;
 }
-# 1036 "./../memory/unix/apr_pools.c"
+
 struct psprintf_data {
     apr_vformatter_buff_t vbuff;
     apr_memnode_t *node;
@@ -11918,7 +11880,7 @@ char * apr_pvsprintf(apr_pool_t *pool, const char *fmt, va_list ap)
 
     return strp;
 }
-# 2049 "./../memory/unix/apr_pools.c"
+
 char * apr_psprintf(apr_pool_t *p, const char *fmt, ...)
 {
     va_list ap;
@@ -11969,7 +11931,7 @@ int apr_pool_is_ancestor(apr_pool_t *a, apr_pool_t *b)
 {
     if (a == ((void*)0))
         return 1;
-# 2108 "./../memory/unix/apr_pools.c"
+
     while (b) {
         if (a == b)
             return 1;
@@ -12129,7 +12091,7 @@ void apr_pool_cleanup_kill(apr_pool_t *p, const void *data,
     c = p->cleanups;
     lastp = &p->cleanups;
     while (c) {
-# 2276 "./../memory/unix/apr_pools.c"
+
         if (c->data == data && c->plain_cleanup_fn == cleanup_fn) {
             *lastp = c->next;
 
@@ -12146,7 +12108,7 @@ void apr_pool_cleanup_kill(apr_pool_t *p, const void *data,
     c = p->pre_cleanups;
     lastp = &p->pre_cleanups;
     while (c) {
-# 2301 "./../memory/unix/apr_pools.c"
+
         if (c->data == data && c->plain_cleanup_fn == cleanup_fn) {
             *lastp = c->next;
 
@@ -12228,13 +12190,13 @@ void apr_pool_cleanup_for_exec(void)
 {
     cleanup_pool_for_exec(global_pool);
 }
-# 2402 "./../memory/unix/apr_pools.c"
+
 apr_status_t apr_pool_cleanup_null(void *data)
 {
 
     return 0;
 }
-# 2415 "./../memory/unix/apr_pools.c"
+
 void apr_pool_note_subprocess(apr_pool_t *pool, apr_proc_t *proc,
                                            apr_kill_conditions_e how)
 {
@@ -12258,7 +12220,7 @@ static void free_proc_chain(struct process_chain *procs)
 
     if (!procs)
         return;
-# 2448 "./../memory/unix/apr_pools.c"
+
     for (pc = procs; pc; pc = pc->next) {
         if (apr_proc_wait(pc->proc, ((void*)0), ((void*)0), APR_NOWAIT) != ((20000 + 50000) + 6))
             pc->kill_how = APR_KILL_NEVER;
@@ -12333,7 +12295,7 @@ static void free_proc_chain(struct process_chain *procs)
             (void)apr_proc_wait(pc->proc, ((void*)0), ((void*)0), APR_WAIT);
     }
 }
-# 2530 "./../memory/unix/apr_pools.c"
+
 void * apr_palloc_debug(apr_pool_t *pool, apr_size_t size,
                                      const char *file_line)
 {
@@ -12382,11 +12344,11 @@ apr_status_t apr_pool_create_unmanaged_ex_debug(apr_pool_t **newpool,
 {
     return apr_pool_create_unmanaged_ex(newpool, abort_fn, allocator);
 }
-# 15 "main1.c" 2
-# 1 "./../misc/unix/start.c" 1
-# 20 "./../misc/unix/start.c"
-# 1 "../include/apr_signal.h" 1
-# 57 "../include/apr_signal.h"
+
+
+
+
+
 typedef void apr_sigfunc_t(int);
 
 
@@ -12395,7 +12357,7 @@ typedef void apr_sigfunc_t(int);
 
 
 apr_sigfunc_t * apr_signal(int signo, apr_sigfunc_t * func);
-# 80 "../include/apr_signal.h"
+
 const char * apr_signal_description_get(int signum);
 
 
@@ -12418,14 +12380,14 @@ apr_status_t apr_signal_block(int signum);
 
 
 apr_status_t apr_signal_unblock(int signum);
-# 21 "./../misc/unix/start.c" 2
 
 
 
-# 1 "../include/arch/unix/apr_arch_internal_time.h" 1
-# 22 "../include/arch/unix/apr_arch_internal_time.h"
+
+
+
 void apr_unix_setup_time(void);
-# 25 "./../misc/unix/start.c" 2
+
 
 
 apr_status_t apr_app_initialize(int *argc,
@@ -12464,7 +12426,7 @@ apr_status_t apr_initialize(void)
     }
 
     apr_pool_tag(pool, "apr_initialize");
-# 71 "./../misc/unix/start.c"
+
     apr_signal_init(pool);
 
     return 0;
@@ -12484,14 +12446,14 @@ void apr_terminate2(void)
 {
     apr_terminate();
 }
-# 16 "main1.c" 2
-# 1 "./../time/unix/time.c" 1
-# 43 "./../time/unix/time.c"
+
+
+
 static apr_int32_t get_offset(struct tm *tm)
 {
 
     return tm->tm_gmtoff;
-# 64 "./../time/unix/time.c"
+
 }
 
 apr_status_t apr_time_ansi_put(apr_time_t *result,
@@ -12677,10 +12639,10 @@ void apr_sleep(apr_interval_time_t t)
     select(0, ((void*)0), ((void*)0), ((void*)0), &tv);
 
 }
-# 296 "./../time/unix/time.c"
+
 void apr_unix_setup_time(void)
 {
-# 339 "./../time/unix/time.c"
+
 }
 
 
@@ -12690,11 +12652,11 @@ void apr_time_clock_hires(apr_pool_t *p)
 {
     return;
 }
-# 17 "main1.c" 2
-# 1 "./../atomic/unix/builtins.c" 1
-# 17 "./../atomic/unix/builtins.c"
-# 1 "../include/arch/unix/apr_arch_atomic.h" 1
-# 18 "./../atomic/unix/builtins.c" 2
+
+
+
+
+
 
 
 
@@ -12757,11 +12719,11 @@ void* apr_atomic_xchgptr(volatile void **mem, void *with)
 
     return (void*) __sync_lock_test_and_set(mem, with);
 }
-# 18 "main1.c" 2
-# 1 "./../threadproc/unix/signals.c" 1
-# 18 "./../threadproc/unix/signals.c"
-# 1 "../include/arch/unix/apr_arch_threadproc.h" 1
-# 55 "../include/arch/unix/apr_arch_threadproc.h"
+
+
+
+
+
 struct apr_thread_t {
     apr_pool_t *pool;
     pthread_t *td;
@@ -12814,25 +12776,25 @@ struct apr_procattr_t {
     apr_uid_t uid;
     apr_gid_t gid;
 };
-# 19 "./../threadproc/unix/signals.c" 2
 
 
 
 
 
-# 1 "/usr/include/assert.h" 1 3 4
-# 25 "./../threadproc/unix/signals.c" 2
-# 35 "./../threadproc/unix/signals.c"
+
+
+
+
 apr_status_t apr_proc_kill(apr_proc_t *proc, int signum)
 {
-# 48 "./../threadproc/unix/signals.c"
+
     if (kill(proc->pid, signum) == -1) {
         return (*__errno_location ());
     }
 
     return 0;
 }
-# 74 "./../threadproc/unix/signals.c"
+
 apr_sigfunc_t * apr_signal(int signo, apr_sigfunc_t * func)
 {
     struct sigaction act, oact;
@@ -12842,7 +12804,7 @@ apr_sigfunc_t * apr_signal(int signo, apr_sigfunc_t * func)
     act.sa_flags = 0;
 
     act.sa_flags |= 0x20000000;
-# 103 "./../threadproc/unix/signals.c"
+
     if (sigaction(signo, &act, &oact) < 0)
         return ((__sighandler_t) -1);
     return oact.__sigaction_handler.sa_handler;
@@ -12861,7 +12823,7 @@ const char *apr_signal_description_get(int signum)
 {
     return (signum >= 0) ? sys_siglist[signum] : "unknown signal (number)";
 }
-# 274 "./../threadproc/unix/signals.c"
+
 static void remove_sync_sigs(sigset_t *sig_mask)
 {
 
@@ -12893,7 +12855,7 @@ static void remove_sync_sigs(sigset_t *sig_mask)
 
 
     sigdelset(sig_mask, 5);
-# 315 "./../threadproc/unix/signals.c"
+
     sigdelset(sig_mask, 12);
 
 }
@@ -12927,7 +12889,7 @@ apr_status_t apr_signal_thread(int(*signal_handler)(int signum))
 
 
     remove_sync_sigs(&sig_mask);
-# 379 "./../threadproc/unix/signals.c"
+
     while (1) {
 
         int signal_received;
@@ -12952,7 +12914,7 @@ apr_status_t apr_setup_signal_thread(void)
 {
     sigset_t sig_mask;
     int rv;
-# 416 "./../threadproc/unix/signals.c"
+
     sigfillset(&sig_mask);
     remove_sync_sigs(&sig_mask);
 
@@ -13025,11 +12987,11 @@ apr_status_t apr_signal_unblock(int signum)
 
 
 }
-# 19 "main1.c" 2
-# 1 "./../threadproc/unix/thread.c" 1
-# 19 "./../threadproc/unix/thread.c"
-# 1 "../include/arch/unix/apr_arch_threadproc.h" 1
-# 20 "./../threadproc/unix/thread.c" 2
+
+
+
+
+
 
 
 
@@ -13330,20 +13292,20 @@ apr_status_t apr_thread_once(apr_thread_once_t *control,
 }
 
 apr_pool_t * apr_thread_pool_get (const apr_thread_t *thethread) { return thethread->pool; }
-# 20 "main1.c" 2
-# 1 "./../test/abts.c" 1
-# 17 "./../test/abts.c"
-# 1 "./../test/abts.h" 1
-# 18 "./../test/abts.c" 2
-# 1 "./../test/abts_tests.h" 1
-# 20 "./../test/abts_tests.h"
-# 1 "./../test/abts.h" 1
-# 21 "./../test/abts_tests.h" 2
-# 1 "./../test/testutil.h" 1
-# 19 "./../test/testutil.h"
-# 1 "./../test/abts.h" 1
-# 20 "./../test/testutil.h" 2
-# 22 "./../test/abts_tests.h" 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const struct testlist {
     abts_suite *(*func)(abts_suite *suite);
@@ -13394,12 +13356,12 @@ const struct testlist {
     {testuser},
     {testvsn}
 };
-# 19 "./../test/abts.c" 2
-# 1 "./../test/testutil.h" 1
-# 19 "./../test/testutil.h"
-# 1 "./../test/abts.h" 1
-# 20 "./../test/testutil.h" 2
-# 20 "./../test/abts.c" 2
+
+
+
+
+
+
 
 
 static char status[6] = {'|', '/', '-', '|', '\\', '-'};
@@ -13763,7 +13725,7 @@ void abts_not_impl(abts_case *tc, const char *message, int lineno)
         fflush(stderr);
     }
 }
-# 21 "main1.c" 2
+
 
 
 

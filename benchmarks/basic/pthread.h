@@ -5,15 +5,15 @@ typedef struct
     int volatile value;
 } pthread_mutex_t;
 
-typedef struct
-{
-    int flags;
-    void * stack_base;
-    int stack_size;
-    int guard_size;
-    int sched_policy;
-    int sched_priority;
-} pthread_attr_t;
+/* typedef struct */
+/* { */
+/*     int flags; */
+/*     void * stack_base; */
+/*     int stack_size; */
+/*     int guard_size; */
+/*     int sched_policy; */
+/*     int sched_priority; */
+/* } pthread_attr_t; */
 
 typedef unsigned long int pthread_mutexattr_t;
 typedef union {
