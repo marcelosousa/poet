@@ -56,6 +56,9 @@ separator = "-----------------------------------------\n"
 explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
+  if mod cntr 100 == 0
+  then mtrace ("explore counter event="++ show cntr) $ return ()
+  else return ()
   str <- lift $ showEvents evts
   trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
          ++ ", enevs = " ++ show enevs ++ ", alt = " 
@@ -299,19 +302,22 @@ removeEvent s events eID = do
     Nothing  -> return s
     Just lst -> do
       ss <- GCS.showSigma s
-      ns <- revertState s events prede lst
+      ns <- trace ("removeEvent(eID="++show eID++",tr="++show evtr++")") $ revertState s events prede lst
       sns <- GCS.showSigma ns
       trace("removeEvent(eID="++show eID++") previous state="++ss++"\nnew state="++sns) $ return $! ns 
 
 revertState :: GCS.Sigma s -> Events s -> EventsID -> GCS.LSigma -> ST s (GCS.Sigma s)
 revertState s events prede [] = return s
-revertState s events prede lst =  
+revertState s events prede lst =
   if null prede
   then return s -- error $ "revertState: null prede: " ++ show lst
   else do
-    es <- mapM (\e -> getEvent "revertState" e events >>= \ev -> return $ (e,fromMaybe [] $ lcst ev)) prede
+    ss <- GCS.showSigma s
+    str <- showEvents events
+    es <- trace ("\nrevertState(s=" ++ ss++", local="++show lst++",events="++show prede++")\n") $
+     mapM (\e -> getEvent "revertState" e events >>= \ev -> return $ (e,fromMaybe [] $ lcst ev)) prede
     -- get the changes
-    let (lst',mods) = getChanges lst es
+    (lst',mods) <- getChanges events lst es
     s' <- GCS.modify s mods 
     pprede <- mapM (\e -> getIPred e events) prede >>= return . nub . concat
     revertState s' events pprede lst'
@@ -319,27 +325,54 @@ revertState s events prede lst =
 -- returns the effects that need to be found
 --         the events that needs to go up
 --         the new state
-getChanges :: GCS.LSigma -> [(EventID, GCS.LSigma)] -> (GCS.LSigma, GCS.LSigma)
-getChanges [] prede = ([],[])
-getChanges l@((k,v):lst) prede = 
+getChanges :: Events s -> GCS.LSigma -> [(EventID, GCS.LSigma)] -> ST s (GCS.LSigma, GCS.LSigma)
+getChanges _ [] prede = return ([],[])
+getChanges events l@((k,v):lst) prede = do
   -- split between the predecessors that modify k
   let (left,right) = partition (\(e,evlst) -> any (\(k',v') -> k == k') evlst) prede 
-  in case left of
-    [] -> 
-      let (lst',mods) = getChanges lst prede
-      in ((k,v):lst',mods)
-    -- there is an event that modifies k 
-    [el@(e,evlst)] -> 
+  case left of
+    [] -> do
+      (lst',mods) <- getChanges events lst prede
+      return ((k,v):lst',mods)
+    -- there is an event that modifies k
+    le -> do 
+      el@(e,evlst) <- smallest events le
       let l' = M.fromList l
           evlst' = M.fromList evlst
           -- intersection produces the modifications
           mods' =  evlst' `M.intersection` l'
           -- difference of effects with the modifications gives the missing
           rlst = M.toList $ l' `M.difference` mods' 
-          (lst',mods) = getChanges rlst (el `delete` prede)
-          fmods = M.toList mods' ++ mods
-      in (lst', fmods)
-    _ -> error "getChanges"
+      (lst',mods) <- getChanges events rlst (el `delete` prede)
+      let fmods = M.toList mods' ++ mods
+      return (lst', fmods)
+--    _ -> error $ "getChanges: " ++ show left
+
+smallest :: Events s -> [(EventID, GCS.LSigma)] -> ST s (EventID, GCS.LSigma)
+smallest events [] = error "ordering empty list"
+smallest events [el] = return el
+smallest events ((xID,xLSigma):y:rest) = do
+    (yID,yLSigma) <- smallest events (y:rest)    
+    xPredy <- predecessor events xID yID
+    if xPredy
+    then return (yID,yLSigma)
+    else return (xID,xLSigma)
+
+predecessor :: Events s -> EventID -> EventID -> ST s Bool
+predecessor events x y = do
+    predY <- getIPred y events
+    succY <- getISucc y events
+    predecessor' events predY succY x where
+        predecessor' events [] [] _ = error "predecessor: neither"
+        predecessor' events predY succY x = do
+            if x `elem` predY
+            then return True
+            else if x `elem` succY
+                 then return False
+                 else do
+                   predY' <- mapM (\y -> getIPred y events) predY >>= return . nub . concat
+                   succY' <- mapM (\y -> getISucc y events) succY >>= return . nub . concat
+                   predecessor' events predY' succY' x
 
 -- @ isEnabled: computes the global state given a set of maximal events and checks if tr is enabled
 isEnabled :: Events s -> GCS.Sigma s -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> UnfolderOp s Bool
