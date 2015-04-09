@@ -37,6 +37,7 @@ assertWellFormed_1Global globals s =
         Return _ _ -> error "assertWellFormed_1Global: return is disallowed!"
         Label _ _ s -> sum (map (assertWellFormed_1Global globals) s)
         Goto _ _ -> 0
+        _ -> error $ "assertWellFormed: " ++ show s
 
 
 allowedBinOp :: OpCode -> Bool

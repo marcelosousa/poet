@@ -85,15 +85,7 @@ main = do options <- cmdArgsRun progModes
           runOption options
           
 runOption :: Option -> IO ()
-runOption (Frontend f) = do
-    prog <- extract f
-    let prog' = frontEnd prog
-    putStrLn "ORIGINAL PROGRAM"
-    putStrLn "------------------------------"
-    print prog
-    putStrLn "TRANSFORMED PROGRAM"
-    putStrLn "------------------------------"
-    print prog'
+runOption (Frontend f) = frontend f
 runOption (Middleend f) = do
     prog <- extract f
     let (prog', fflow, flow, thcount) = frontEnd prog
@@ -103,7 +95,18 @@ runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
 runOption (Explore f) = explore f
 runOption Test = test
-        
+
+frontend :: FilePath -> IO ()
+frontend f = do
+  prog <- extract f
+  let prog' = frontEnd prog
+  putStrLn "ORIGINAL PROGRAM"
+  putStrLn "------------------------------"
+  print prog
+  putStrLn "TRANSFORMED PROGRAM"
+  putStrLn "------------------------------"
+  print prog'
+    
 interpreter :: FilePath -> IO ()
 interpreter f = do
   prog <- extract f
