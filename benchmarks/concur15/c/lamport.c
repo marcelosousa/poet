@@ -13,6 +13,7 @@ volatile int X; // boolean variable to test mutual exclusion
 
 void *thr1() {
   while (1) {
+   __before_loop: 
     b1 = 1;
     x = 1;
     if (y != 0) {
@@ -29,7 +30,6 @@ void *thr1() {
       }
     }
     goto breaklbl;
-  __before_loop:;
   }
  breaklbl:
   // begin: critical section
@@ -42,6 +42,7 @@ void *thr1() {
 
 void *thr2() {
   while (1) {
+    __before_loop1:      
     b2 = 1;
     x = 2;
     if (y != 0) {
@@ -57,10 +58,10 @@ void *thr2() {
 	goto __before_loop1;
       }
     }
-    goto breaklbl;
-  __before_loop1:;
+    goto breaklbl1;
+  
   }
- breaklbl:
+ breaklbl1:
   // begin: critical section
   X = 1;
   //  assert(X >= 1);
