@@ -45,7 +45,7 @@ initialExtensions = do
       cevs = [e]
       st = GCS.initialState syst
   trs <- lift $ GCS.enabledTransitions syst st
-  enevs <- V.foldM (\en tr -> expandWith st e cevs tr >>= \es -> return $! (es++en)) [] trs
+  enevs <- V.foldM (\en tr -> expandWith e cevs tr >>= \es -> return $! (es++en)) [] trs
   s@UnfolderState{..} <- trace ("enabled after e=" ++ show e ++ " are " ++ show enevs) get
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
@@ -57,7 +57,7 @@ explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
          ++ ", enevs = " ++ show enevs ++ ", alt = " 
          ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
   --let k = unsafePerformIO $ getChar
@@ -75,22 +75,24 @@ explore c@Conf{..} ê d alt = do
             then head enevs
             else let lp = enevs `intersect` alt
                  in if null lp 
-                    then error $ separator ++ "A `intersect` en(C) = {} at explore(ê = " 
+                    then error $ separator ++ "A `intersect` en(C) = 0 at explore(ê = " 
                                  ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " 
                                  ++ show alt ++ ", stack = " ++ show stack ++ ")\n"
-                                 ++ snd isStr
+                                 -- ++ snd isStr
                     else head lp   
     -- @ initialize disable of e
-    mtrace ("selected event="++show e) $ lift $ setDisabled e d evts 
+    trace ("selected event="++show e) $ lift $ setDisabled e d evts 
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
-    nc <- unfold c e
+    c' <- if statelessMode
+          then updateConfiguration c
+          else return c
+    nc <- unfold c' e
     -- @ recursive call
     push e
     explore nc e d (e `delete` alt)
     pop
     -- @ update the current configuration
-    --c' <- updateConfiguration c
 --    ms@UnfolderState{..} <- get
 --    str' <- lift $ showEvents evts
 --    trace (separator ++ "after explore(ê = " ++ show ê 
@@ -107,48 +109,6 @@ explore c@Conf{..} ê d alt = do
       lift $ prune e core evts
     else return ()
 
-updateConfiguration = undefined
-
-computeCore :: EventsID -> EventsID -> Events s -> ST s EventsID
-computeCore conf d events = do
---  config <- mapM (\e -> predecessors e events >>= return . (e:)) conf
-  let confAndD = conf ++ d
-  evs <- mapM (\e -> getEvent "computeCore" e events) confAndD
---  disas <- mapM (\ev -> mapM (\e -> predecessors e events >>= return . (e:)) $ disa ev) evs
---  altes <- mapM (\ev -> mapM alte ev) evs
-  let altes = concat $ concatMap alte evs 
-      core = confAndD ++ altes
-  return $ nub core 
-
-prune :: EventID -> EventsID -> Events s -> ST s ()
-prune e core events = do
-  ev@Event{..} <- getEvent "prune" e events
-  if e `elem` core
-  then return ()
-  else deleteEvent e events
-  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
-
-deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = mtrace ("deleting event " ++ show e) $ do
-  ev@Event{..} <- getEvent "deleteEvent" e events
-  mapM_ (\e' -> delSuccessor e e' events) pred
-  mapM_ (\e' -> delImmCnfl e e' events) icnf 
-  H.delete events e
-
-isConfiguration :: Events s -> EventsID -> ST s Bool
-isConfiguration evts conf = do
-  cnffree <- allM (\e -> getImmediateConflicts e evts >>= \es -> return $! null (es `intersect` conf)) conf
-  causaclosed <- causalClosed evts conf conf 
-  return $! cnffree && causaclosed
-
-causalClosed :: Events s -> EventsID -> EventsID ->  ST s Bool
-causalClosed evts conf [] = return True
-causalClosed evts conf (e:es) = do 
-  prede <- predecessors e evts
-  if all (\e' -> e' `elem` conf) prede
-  then causalClosed evts conf es
-  else return False
-
 -- We are going to add event e to configuration conf
 -- Need to update enable, and immediateConflicts
 -- computeExtensions
@@ -159,7 +119,7 @@ causalClosed evts conf (e:es) = do
 unfold :: Configuration s -> EventID -> UnfolderOp s (Configuration s)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
-  tr <- lift $ getEvent "unfold" e evts >>= return . snd . evtr
+  tr <- lift $ getEvent "unfold" e evts >>= return . snd3 . evtr
   -- @ 1. compute the new state after executing the event e
   -- copy the state otherwise it will go wrong 
   copyst <- lift $ GCS.copy stc
@@ -180,7 +140,7 @@ unfold conf@Conf{..} e = do
   -- - filter the enabled transitions that are dependent with h(e); those will be the new events
   --   some of these new events will be conflicting extensions
   netrs <- lift $ V.filterM (\tr -> isDependent_te inde tr e evts) entrs
-  nnevs <- V.mapM (expandWith nstc e nmaxevs) netrs >>= return . concat . V.toList 
+  nnevs <- V.mapM (expandWith e nmaxevs) netrs >>= return . concat . V.toList 
   -- @ compute all the events of the configuration 
   let confEvs = e:stack
   -- @ filter from nnevs events that may have immediate conflicts with events in the configuration
@@ -197,27 +157,22 @@ unfold conf@Conf{..} e = do
 
 -- expandWith only adds events that have e in the history
 -- @CRITICAL
-expandWith :: GCS.Sigma s -> EventID -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> UnfolderOp s EventsID
-expandWith st e maxevs tr = do
-  cst <- lift $ GCS.copy st
---  scst <- lift $ GCS.showSigma cst
+expandWith :: EventID -> EventsID -> GCS.TransitionMeta -> UnfolderOp s EventsID
+expandWith e maxevs tr = do
   s@UnfolderState{..} <- trace ("expandWith(e="++show e++",maxevs="++show maxevs++",tr="++show tr++")") $ get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
   succe <- lift $ getISucc e evts 
            >>= mapM (\e -> getEvent "expandWith" e evts >>= \ev -> return (e,ev)) 
            >>= return . filter (\(e,ev) -> evtr ev == tr)
   -- @ computes h0, the maximal history:
-  (ncst, h0) <- computeHistory cst maxevs tr
-  -- sncst <- lift $ GCS.showSigma ncst
-  -- @ check for enabledness
-  tr_dis_h0 <- isEnabled evts ncst tr h0 
-  if null h0 || (not tr_dis_h0)
-  then error $ "expandWith(e="++show e++",tr="++show tr++",h0="++show h0++",tr_dis_h0=" ++ show tr_dis_h0++",maxevs="++show maxevs -- return [] 
-  else trace ("H0="++show h0++" enabled = " ++ show tr_dis_h0) $ do
+  h0 <- computeHistory maxevs tr
+  if null h0
+  then error $ "expandWith(e="++show e++",tr="++show tr++",h0="++show h0++",maxevs="++show maxevs++")"
+  else do
     -- e should be a valid maximal event
     if e `elem` h0
     then do
-      his <- computeHistories ncst tr e [h0] >>= return . nub 
+      his <- computeHistories tr e [h0] >>= return . nub 
       mapM (addEvent stack succe tr) his
       trace ("other histories="++show his) $ addEvent stack succe tr h0
     else error "e must always be in h0"  
@@ -227,8 +182,8 @@ expandWith st e maxevs tr = do
 --     - Set of maximal events, 
 --     - Transition tr
 --   Output: History
-computeHistory :: GCS.Sigma s -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> UnfolderOp s (GCS.Sigma s, EventsID)
-computeHistory st maxevs tr = do
+computeHistory :: EventsID -> GCS.TransitionMeta -> UnfolderOp s EventsID
+computeHistory maxevs tr = do
   s@UnfolderState{..} <- trace ("computeHistory(maxevs="++show maxevs++",tr="++show tr++")") $ get
   -- set of maximal events that are dependent with tr union 
   -- they are events of maxevs that are dependent with tr 
@@ -236,162 +191,60 @@ computeHistory st maxevs tr = do
   (maxevs_h0,maxevs') <- lift $ foldM (\(l,r) e -> 
          isDependent_te inde tr e evts >>= \b -> 
             if b then return (e:l,r) else return (l,e:r)) ([],[]) maxevs
-  -- @ going up the causality of maxevs' until
-  (nst, pmaxevs_h0) <- trace("computeHistory: (maxevs_h0,maxevs') = "++ show (maxevs_h0,maxevs')) $ lift $ pruneConfiguration st inde evts maxevs_h0 tr maxevs'
+  -- @ going up the causality of maxevs' until all maximal events are dependent with tr
+  pmaxevs_h0 <- lift $ pruneConfiguration inde evts maxevs_h0 tr maxevs'
   let h0 = maxevs_h0 ++ pmaxevs_h0
-  trace("result computeHistory(his="++show h0) $ return $! (nst, h0) 
+  return h0
 
 -- @ pruneConfiguration
 --   Given a set of maximal events which are independent with transition tr
 --   go up in the causality to search for the rest of maximal events that are dependent
-pruneConfiguration st inde events pre_his tr es = do
-  -- update the state to remove es
-  st' <- foldM (\s e -> removeEvent s events e) st es
+pruneConfiguration inde events pre_his tr es = do
   -- immd predecessors of es
   predes <- mapM (\e -> getIPred e events) es >>= return . nub . concat
   -- filter the predecessors that are not maximal
+  -- @ FIXME: Optimise this!
   mpredes <- filterM (\e -> successors e events >>= \succe -> return $ null $ succe `intersect` pre_his) predes
   -- split between dependent and independent 
   (es_done,es') <- foldM (\(l,r) e ->
          isDependent_te inde tr e events >>= \b -> 
             if b then return (e:l,r) else return (l,e:r)) ([],[]) mpredes
   if null es'
-  then return $! (st', es_done)
+  then return es_done
   else do
-    (nst, es_res) <- pruneConfiguration st' inde events (pre_his ++ es_done) tr es'
-    return $! (nst, nub $ es_done ++ es_res) 
-
--- @ computeNextHistory
---   build a candidate history out of replacing a maximal event e with its immediate predecessors
-computeNextHistory :: GCS.Sigma s -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> UnfolderOp s (GCS.Sigma s, EventsID)
-computeNextHistory st h tr e = trace ("computeNextHistory(h="++show h++",tr="++show tr++",e="++show e++")") $ do
-  s@UnfolderState{..} <- get
-  cst <- lift $ GCS.copy st
-  -- we want to replace e by its predecessors
-  let h' = e `delete` h
-  -- predecessors of e
-  prede <- lift $ getIPred e evts
-  -- filter the predecessors of e that are not maximal
-  prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
-  -- candidate
-  let candidate = h' ++ prede'
-  -- new state
-  nst <- lift $ removeEvent cst evts e
-  computeHistory nst candidate tr  
+    es_res <- pruneConfiguration inde events (pre_his ++ es_done) tr es'
+    let result = nub $ es_done ++ es_res 
+    return result
 
 -- @ computeHistories : worklist algorithm 
 --   e must always be a part of the histories
-computeHistories :: GCS.Sigma s -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> [EventsID] -> UnfolderOp s [EventsID]
-computeHistories _ tr e [] = return []
-computeHistories cst tr e (h:hs) = do
+computeHistories :: GCS.TransitionMeta -> EventID -> [EventsID] -> UnfolderOp s [EventsID]
+computeHistories tr e [] = return []
+computeHistories tr e (h:hs) = do
   s@UnfolderState{..} <- get
   let h' = e `delete` h
+  hc <- lift $ filterM (\e' -> getEvent "computeNextHistory" e' evts >>= \ev -> return $ fst3 (evtr ev) /= fst3 tr) h' 
   -- replace one of the maximal events with the predecessors
   -- and prune the configuration
-  hs' <- mapM (computeNextHistory cst h tr) h'
-  -- filter the configurations where the transition is still enabled
-  nhs' <- filterM (\(st,h) -> isEnabled evts st tr h) hs'
-  let nhs = map snd nhs'
-  -- add nhs to the worklist and recurse
-  res <- computeHistories cst tr e $ nub $ nhs ++ hs
-  return $! nhs ++ res 
-  
--- @ changes the global state with respect to the local state of the event we want to remove 
-removeEvent :: GCS.Sigma s -> Events s -> EventID -> ST s (GCS.Sigma s)
-removeEvent s events 0 = return s
-removeEvent s events eID = do
-  ev@Event{..} <- getEvent "removeEvent" eID events
-  prede <- getIPred eID events 
-  case lcst of
-    Nothing  -> return s
-    Just lst -> do
-      ss <- GCS.showSigma s
-      ns <- trace ("removeEvent(eID="++show eID++",tr="++show evtr++")") $ revertState s events prede lst
-      sns <- GCS.showSigma ns
-      trace("removeEvent(eID="++show eID++") previous state="++ss++"\nnew state="++sns) $ return $! ns 
+  hs' <- mapM (computeNextHistory e h tr) hc
+  res <- computeHistories tr e $ nub $ hs' ++ hs
+  return $! hs' ++ res
 
-revertState :: GCS.Sigma s -> Events s -> EventsID -> GCS.LSigma -> ST s (GCS.Sigma s)
-revertState s events prede [] = return s
-revertState s events prede lst =
-  if null prede
-  then return s -- error $ "revertState: null prede: " ++ show lst
-  else do
-    ss <- GCS.showSigma s
-    str <- showEvents events
-    es <- trace ("\nrevertState(s=" ++ ss++", local="++show lst++",events="++show prede++")\n") $
-     mapM (\e -> getEvent "revertState" e events >>= \ev -> return $ (e,fromMaybe [] $ lcst ev)) prede
-    -- get the changes
-    (lst',mods) <- getChanges events lst es
-    s' <- GCS.modify s mods 
-    pprede <- mapM (\e -> getIPred e events) prede >>= return . nub . concat
-    revertState s' events pprede lst'
-
--- returns the effects that need to be found
---         the events that needs to go up
---         the new state
-getChanges :: Events s -> GCS.LSigma -> [(EventID, GCS.LSigma)] -> ST s (GCS.LSigma, GCS.LSigma)
-getChanges _ [] prede = return ([],[])
-getChanges events l@((k,v):lst) prede = do
-  -- split between the predecessors that modify k
-  let (left,right) = partition (\(e,evlst) -> any (\(k',v') -> k == k') evlst) prede 
-  case left of
-    [] -> do
-      (lst',mods) <- getChanges events lst prede
-      return ((k,v):lst',mods)
-    -- there is an event that modifies k
-    le -> do 
-      el@(e,evlst) <- smallest events le
-      let l' = M.fromList l
-          evlst' = M.fromList evlst
-          -- intersection produces the modifications
-          mods' =  evlst' `M.intersection` l'
-          -- difference of effects with the modifications gives the missing
-          rlst = M.toList $ l' `M.difference` mods' 
-      (lst',mods) <- getChanges events rlst (el `delete` prede)
-      let fmods = M.toList mods' ++ mods
-      return (lst', fmods)
---    _ -> error $ "getChanges: " ++ show left
-
-smallest :: Events s -> [(EventID, GCS.LSigma)] -> ST s (EventID, GCS.LSigma)
-smallest events [] = error "ordering empty list"
-smallest events [el] = return el
-smallest events ((xID,xLSigma):y:rest) = do
-    (yID,yLSigma) <- smallest events (y:rest)    
-    xPredy <- predecessor events xID yID
-    if xPredy
-    then return (yID,yLSigma)
-    else return (xID,xLSigma)
-
-predecessor :: Events s -> EventID -> EventID -> ST s Bool
-predecessor events x y = do
-    predY <- getIPred y events
-    succY <- getISucc y events
-    predecessor' events predY succY x where
-        predecessor' events [] [] _ = error "predecessor: neither"
-        predecessor' events predY succY x = do
-            if x `elem` predY
-            then return True
-            else if x `elem` succY
-                 then return False
-                 else do
-                   predY' <- mapM (\y -> getIPred y events) predY >>= return . nub . concat
-                   succY' <- mapM (\y -> getISucc y events) succY >>= return . nub . concat
-                   predecessor' events predY' succY' x
-
--- @ isEnabled: computes the global state given a set of maximal events and checks if tr is enabled
-isEnabled :: Events s -> GCS.Sigma s -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> UnfolderOp s Bool
-isEnabled events st (tr,_) h = do
+-- @ computeNextHistory
+--   build a candidate history out of replacing a maximal event e with its immediate predecessors
+computeNextHistory :: EventID -> EventsID -> GCS.TransitionMeta -> EventID -> UnfolderOp s EventsID
+computeNextHistory e h tr e' = trace ("computeNextHistory(e="++show e++"h="++show h++",tr="++show tr++",e'="++show e'++")") $ do
   s@UnfolderState{..} <- get
-  -- cst <- lift $ GCS.copy st
-  let fn = GCS.getTransition syst tr
-  es <- lift $  mapM (\e -> getEvent "isEnabled" e events) h 
-  -- build the global state
-  gst <- lift $ foldM (\ist e -> GCS.modify ist $ fromJust $ lcst e) st es
-  -- check if the transition is enabled
-  checkEn <- lift $ fn gst
-  case checkEn of
-    Nothing -> return $! False
-    _ -> return $! True
+  -- we want to replace e' by its predecessors
+  let h' = e' `delete` h
+  -- predecessors of e
+  prede <- lift $ getIPred e' evts
+  -- filter the predecessors of e that are not maximal
+  -- @ FIXME: Optimise this!
+  prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
+  -- candidate
+  let candidate = h' ++ prede'
+  computeHistory candidate tr  
 
 -- @ addEvent: Given a transition id and the history
 --   adds the correspondent event.
@@ -402,7 +255,7 @@ isEnabled events st (tr,_) h = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: EventsID -> [(EventID,Event)] -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> UnfolderOp s EventsID 
+addEvent :: EventsID -> [(EventID,Event)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
@@ -430,11 +283,10 @@ addEvent stack dup tr history = do
 
 -- @ Compute conflicts  
 --  DFS of the unf prefix from bottom stopping when the event:
---  . Is in the local configuration (TODO: this is wrong!!)
 --  . Is an immediate conflict (or successor) of an event in the local configuration
 --  . Is dependent with tr
 --  Changed for a worklist
-computeConflicts :: GCS.UIndep -> (GCS.TransitionID, GCS.ProcessID) -> EventsID -> EventsID -> Events s -> ST s EventsID
+computeConflicts :: GCS.UIndep -> GCS.TransitionMeta -> EventsID -> EventsID -> Events s -> ST s EventsID
 computeConflicts uidep tr lh lhCnfls events = do 
   ev@Event{..} <- getEvent "computeConflicts" botEID events
   computeConflict [] succ 
@@ -550,10 +402,40 @@ filterAlternative v d = trace ("filterAlternative(v="++show v++", d="++show d++"
       isJust = all (\e -> e `elem` cnfs) d
   return $ isConf && isJust
 
-allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
-allM f [] = return True
-allM f (x:xs) = do
-  b <- f x
-  if b
-  then allM f xs
-  else return False 
+-- stateless part
+updateConfiguration :: Configuration s -> UnfolderOp s (Configuration s)
+updateConfiguration c@Conf{..} = do
+  s@UnfolderState{..} <- get
+  nenevs <- lift $ filterEvents enevs evts
+  return $ c {enevs = nenevs}
+
+computeCore :: EventsID -> EventsID -> Events s -> ST s EventsID
+computeCore conf d events = do
+--  config <- mapM (\e -> predecessors e events >>= return . (e:)) conf
+  let confAndD = conf ++ d
+  evs <- mapM (\e -> getEvent "computeCore" e events) confAndD
+--  disas <- mapM (\ev -> mapM (\e -> predecessors e events >>= return . (e:)) $ disa ev) evs
+--  altes <- mapM (\ev -> mapM alte ev) evs
+  let altes = concat $ concatMap alte evs 
+      core = confAndD ++ altes
+  return $ nub core 
+
+prune :: EventID -> EventsID -> Events s -> ST s ()
+prune e core events = do
+  ev@Event{..} <- getEvent "prune" e events
+  if e `elem` core
+  then return ()
+  else deleteEvent e events
+  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
+
+deleteEvent :: EventID -> Events s -> ST s ()
+deleteEvent e events = trace ("deleting event " ++ show e) $ do
+  check <- filterEvent e events
+  if check
+  then do 
+    ev@Event{..} <- getEvent "deleteEvent" e events
+    mapM_ (\e' -> delSuccessor e e' events) pred
+    mapM_ (\e' -> delImmCnfl e e' events) icnf 
+    H.delete events e
+  else return ()
+

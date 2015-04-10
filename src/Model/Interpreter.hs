@@ -33,7 +33,7 @@ execIt gen thcount str indep sys st = do
         let (n, gen') = randomR (0,V.length trs - 1) gen
         case trs V.!? n of
           Nothing -> error $ "execIt getTransition fail!"
-          Just (trID,procID) -> do
+          Just (procID,trID,_) -> do
             let tr = getTransitionWithID sys trID
                 nstr = str ++ ststr ++ ltrs ++ "\nIndependent transitions=" ++ show indepTr ++ "\nRunning " ++ show (trID,procID) ++ "\n\n"
             fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
@@ -41,9 +41,9 @@ execIt gen thcount str indep sys st = do
             execIt gen' thcount nstr indep sys nst
       else error "diamond check failed"
           
-checkDiamonds :: System s -> [((TransitionID,ProcessID),(TransitionID,ProcessID))] -> Sigma s -> ST s Bool
+checkDiamonds :: System s -> [(TransitionMeta,TransitionMeta)] -> Sigma s -> ST s Bool
 checkDiamonds sys [] s = return True
-checkDiamonds sys (((t1,_),(t2,_)):rest) s = do
+checkDiamonds sys (((_,t1,_),(_,t2,_)):rest) s = do
     check <- checkDiamond sys t1 t2 s
     if check
     then checkDiamonds sys rest s
@@ -70,13 +70,16 @@ checkDiamond sys t1 t2 s = do
     equals s12 s22
             
 isDeadlock :: Int -> Sigma s -> ST s Bool
-isDeadlock thcount st = do
+isDeadlock thcount st = return True 
+{-
+FIXME: Check that all pcs are in -1
+do
     let ident = BS.pack "__poet_mutex_death"
-    (_, mlock) <- safeLookup "isDeadlock" st ident
+    _ <- safeLookup "isDeadlock" st ident
     case mlock of
         Just (Var locks) -> return $ length locks == (thcount+1)
         _ -> error $ "isDeadlock: " ++ show mlock
-        
+ -}       
 interpret :: (System s, UIndep) -> ST s Int
 interpret (sys,indep) = interpretIt 0 indep sys (initialState sys)
 
@@ -104,7 +107,7 @@ interpretIt step indep sys st = do
       then do
          case trs V.!? n of
            Nothing -> error $ "interpret getTransition fail: " ++ show n
-           Just (trID,_) -> do
+           Just (_,trID,_) -> do
              let tr = getTransitionWithID sys trID
              fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
              (nst,_) <- fn st

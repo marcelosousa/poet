@@ -49,7 +49,7 @@ type Counter = Int
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
 data Event = Event {
-    evtr :: (GCS.TransitionID, GCS.ProcessID)  -- Transition id
+    evtr :: GCS.TransitionMeta  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
   , icnf :: EventsID         -- Immediate conflicts: #^
@@ -96,7 +96,7 @@ botEID :: EventID
 botEID = 0
 
 botEvent :: GCS.LSigma -> Event
-botEvent lst = Event (GCS.botID, BS.pack "") [] [] [] [] [] (Just lst) 
+botEvent lst = Event (BS.pack "", GCS.botID, GCS.Other) [] [] [] [] [] (Just lst) 
 
 -- @ Initial state of the unfolder
 iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
@@ -132,11 +132,11 @@ execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s, GCS.LSigma)
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
-  let t = GCS.getTransition syst $ fst evtr
+  let t = GCS.getTransition syst $ snd3 evtr
   fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
   lift $ fn cst
 
-isDependent_te :: GCS.UIndep -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> Events s -> ST s Bool
+isDependent_te :: GCS.UIndep -> GCS.TransitionMeta -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
 isDependent_te indep tr e events = do
   ev@Event{..} <- getEvent "isDependent" e events
@@ -174,7 +174,7 @@ predecessorWith :: EventID -> GCS.ProcessID -> Events s -> ST s EventID
 predecessorWith 0 p events = return GCS.botID
 predecessorWith e p events = do
   pred <- getIPred e events
-  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ snd evtr == p) pred
+  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ fst3 evtr == p) pred
   if null epred 
   then do 
     res <- mapM (\e -> predecessorWith e p events) pred
@@ -202,6 +202,16 @@ getEvent s e events = do
       str <- showEvents events 
       error $ s ++ "-getEvent: " ++ show e ++ "\n" ++ str 
     Just ev -> return ev 
+
+filterEvents :: EventsID -> Events s -> ST s EventsID
+filterEvents es events = filterM (\e -> filterEvent e events) es
+
+filterEvent :: EventID -> Events s -> ST s Bool
+filterEvent e events = do
+  mv <- H.lookup events e
+  case mv of
+    Nothing -> return False
+    Just ev -> return True
 
 -- @ getConfEvs - retrieves all the events of a configuration
 getConfEvs :: EventsID -> Events s -> ST s EventsID
@@ -358,3 +368,38 @@ pop = do
   s@UnfolderState{..} <- get
   let nstack = tail stack
   put s{ stack = nstack }
+
+
+-- @ Util
+
+isConfiguration :: Events s -> EventsID -> ST s Bool
+isConfiguration evts conf = do
+  cnffree <- allM (\e -> getImmediateConflicts e evts >>= \es -> return $! null (es `intersect` conf)) conf
+  causaclosed <- causalClosed evts conf conf 
+  return $! cnffree && causaclosed
+
+causalClosed :: Events s -> EventsID -> EventsID ->  ST s Bool
+causalClosed evts conf [] = return True
+causalClosed evts conf (e:es) = do 
+  prede <- predecessors e evts
+  if all (\e' -> e' `elem` conf) prede
+  then causalClosed evts conf es
+  else return False
+
+allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+allM f [] = return True
+allM f (x:xs) = do
+  b <- f x
+  if b
+  then allM f xs
+  else return False 
+
+fst3 :: (a,b,c) -> a
+fst3 (a,b,c) = a
+
+snd3 :: (a,b,c) -> b
+snd3 (a,b,c) = b
+
+third3 :: (a,b,c) -> c
+third3 (a,b,c) = c
+

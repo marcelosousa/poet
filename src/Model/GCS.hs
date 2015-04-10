@@ -35,7 +35,7 @@ type ISigma s = Sigma s
 -- A state is an Hash Table
 type HashTable s k v = C.HashTable s k v
 --  Later we can try Judy Arrays or Mutable Vectors
-type Sigma s = HashTable s Var SigmaValue -- We may want to add the enabled transitions for efficiency.
+type Sigma s = HashTable s Var Value -- We may want to add the enabled transitions for efficiency.
 type Var = BS.ByteString
 type SigmaValue = (Value, Maybe LockedValue)
 data Value = 
@@ -49,26 +49,30 @@ data LockedValue =
   deriving (Show,Eq,Ord)
   
 -- Local State
-type LSigma = [(Var,SigmaValue)]
+type LSigma = [(Var,Value)]
 
 --type Process = Map TransitionID Transition
 type ProcessID = BS.ByteString
 type TransitionID = Int 
 type TransitionsID = V.Vector TransitionID
-type Transition s = (ProcessID, TransitionID, TransitionFn s)
+type TransitionMeta = (ProcessID, TransitionID, Act)
+type Transition s = (ProcessID, TransitionID, Act, TransitionFn s)
 type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
+
+data Act = Lock Var | Unlock Var | Other
+  deriving (Show,Eq,Ord)
 -- 1. Variable or Array, Constant Index
 --    
 -- 2. Global state reached by the local configuration
 showTransition :: Transition s -> String
-showTransition (a,b,_) = show (a,b)
+showTransition (a,b,c,_) = show (a,b,c)
 
 -- | enabledTransitions 
-enabledTransitions :: System s -> Sigma s -> ST s (V.Vector (TransitionID,ProcessID))
+enabledTransitions :: System s -> Sigma s -> ST s (V.Vector TransitionMeta)
 enabledTransitions sys@System{..} s = do
   s' <- copy s -- this is not necessary if the first part of the transition does not modify the state
-  tr <- V.filterM (\(_,_,t) -> t s' >>= return . maybe False (const True)) transitions  
-  V.mapM (\(a,b,c) -> return (b,a)) tr
+  tr <- V.filterM (\(_,_,_,t) -> t s' >>= return . maybe False (const True)) transitions  
+  V.mapM (\(a,b,c,d) -> return (a,b,c)) tr
 
 -- An independence relation is an irreflexive and symmetric relation
 -- Triangular Matrix to exploit symmetry of independence relation
@@ -81,7 +85,7 @@ snd3 (a,b,c) = b
 -- END OF TYPES 
 
 -- safeLookup: lookup :: (Eq k, Hashable k) => h s k v -> k -> ST s (Maybe v)
-safeLookup :: String -> Sigma s -> Var -> ST s SigmaValue
+safeLookup :: String -> Sigma s -> Var -> ST s Value
 safeLookup err ht k = do
   mv <- H.lookup ht k
   case mv of 
@@ -92,8 +96,8 @@ safeLookup err ht k = do
 -- like what i have below (min, max). Program consolidation could 
 -- optimisize this code.
 -- | isIndependent -- check if two transitions are uncond. indep.
-isIndependent, isDependent :: UIndep -> (TransitionID, ProcessID) -> (TransitionID, ProcessID) -> Bool
-isIndependent uindep (t1,p1) (t2,p2)  
+isIndependent, isDependent :: UIndep -> TransitionMeta -> TransitionMeta -> Bool
+isIndependent uindep (p1,t1,_) (p2,t2,_)  
   | (t1 == botID) || (t2 == botID) || (t1 == t2) || (p1 == p2)  = False
   | otherwise = 
       let t  = min t1 t2
@@ -103,7 +107,7 @@ isIndependent uindep (t1,p1) (t2,p2)
 -- | isDependent - checks if two transitions are dependent
 isDependent uindep t1 t2 = not $ isIndependent uindep t1 t2
 
-getIndepTr :: UIndep -> [(TransitionID,ProcessID)] -> [((TransitionID,ProcessID),(TransitionID,ProcessID))]
+getIndepTr :: UIndep -> [TransitionMeta] -> [(TransitionMeta,TransitionMeta)]
 getIndepTr uindep trs = [ (t1,t2) | t1 <- trs, t2 <- trs, t1 < t2 && isIndependent uindep t1 t2]
 
 -- | botID 0 is the transition id for bottom 
@@ -123,13 +127,13 @@ getTransition sys@System{..} trIdx
   | otherwise = 
       case transitions V.!? trIdx of
         Nothing -> error $ "getTransition fail: " ++ show trIdx
-        Just (_,_,tr) -> tr
+        Just (_,_,_,tr) -> tr
 
 getTransitionWithID :: System s -> TransitionID -> TransitionFn s
 getTransitionWithID sys@System{..} trID = 
   case transitions V.!? trID of
     Nothing -> error $ "getTransition fail: " ++ show trID
-    Just (_,trIDx,tr) -> 
+    Just (_,trIDx,_,tr) -> 
       if trID /= trIDx
       then error $ "getTransitionWithID something went wrong before: " ++ show (trID, trIDx)
       else tr 
@@ -145,12 +149,9 @@ showSigma s = do
   kv <- H.toList s
   return $ showSigma' kv 
 
-showSigma' :: [(Var, SigmaValue)] -> String
+showSigma' :: [(Var, Value)] -> String
 showSigma' [] = ""
-showSigma' ((v,(vs,l)):rest) = 
-    case l of 
-        Nothing -> show v ++ "=" ++ show vs ++ "\n" ++ showSigma' rest
-        Just locks -> show v ++ "=" ++ show (vs,locks) ++ "\n" ++ showSigma' rest
+showSigma' ((v,vs):rest) = show v ++ "=" ++ show vs ++ "\n" ++ showSigma' rest
       
 equals :: Sigma s -> Sigma s -> ST s Bool
 equals s1 s2 = do
@@ -191,7 +192,7 @@ isEqual s1 s2 = do
   l2 <- H.toList s2
   return $ isEqual' l1 l2  
 
-isEqual' :: [(Var,SigmaValue)] -> [(Var,SigmaValue)] -> Bool
+isEqual' :: [(Var,Value)] -> [(Var,Value)] -> Bool
 isEqual' [] [] = True
 isEqual' ((x,v):xs) ((y,t):ys) = x == y && v == t && isEqual' xs ys
 
