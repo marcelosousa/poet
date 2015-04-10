@@ -14,22 +14,22 @@ Event	./Exploration/UNF/APIStateless.hs	51;"	t
 EventID	./Exploration/UNF/APIStateless.hs	32;"	t
 Events	./Exploration/UNF/APIStateless.hs	63;"	t
 EventsID	./Exploration/UNF/APIStateless.hs	33;"	t
-Execute	Main.hs	51;"	d
-Explore	Main.hs	53;"	d
+Execute	Main.hs	52;"	d
+Explore	Main.hs	54;"	d
 FirstFlow	./Frontend.hs	85;"	t
 Flow	./Frontend.hs	84;"	t
-Frontend	Main.hs	49;"	d
+Frontend	Main.hs	50;"	d
 Globals	./Frontend/Util.hs	5;"	t
 HashTable	./Model/GCS.hs	36;"	t
 ISigma	./Model/GCS.hs	34;"	t
 IntVal	./Model/GCS.hs	42;"	d
-Interpret	Main.hs	52;"	d
+Interpret	Main.hs	53;"	d
 LSigma	./Model/GCS.hs	52;"	t
 LabelID	./Frontend/PassFourFive.hs	5;"	t	file:
 LockedValue	./Model/GCS.hs	46;"	t
 MapLabelPC	./Frontend.hs	45;"	t
-Middleend	Main.hs	50;"	d
-Option	Main.hs	49;"	t
+Middleend	Main.hs	51;"	d
+Option	Main.hs	50;"	t
 ProcessID	./Model/GCS.hs	55;"	t
 RW	./Converter.hs	19;"	t
 RWSet	./Converter.hs	22;"	t
@@ -38,91 +38,91 @@ Sigma	./Model/GCS.hs	38;"	t
 SigmaValue	./Model/GCS.hs	40;"	t
 System	./Model/GCS.hs	27;"	t
 System	./Model/GCS.hs	28;"	d
-Test	Main.hs	54;"	d
+Test	Main.hs	55;"	d
 ToDot	./Util/Printer.hs	17;"	t
 Transition	./Model/GCS.hs	58;"	t
 TransitionFn	./Model/GCS.hs	59;"	t
 TransitionID	./Model/GCS.hs	56;"	t
 TransitionsID	./Model/GCS.hs	57;"	t
 UIndep	./Model/GCS.hs	74;"	t
-UnfolderOp	./Exploration/UNF/APIStateless.hs	91;"	t
+UnfolderOp	./Exploration/UNF/APIStateless.hs	92;"	t
 UnfolderState	./Exploration/UNF/APIStateless.hs	80;"	d
 UnfolderState	./Exploration/UNF/APIStateless.hs	80;"	t
 Value	./Model/GCS.hs	41;"	t
 Var	./Model/GCS.hs	39;"	t
 Var	./Model/GCS.hs	47;"	d
 Write	./Converter.hs	19;"	d
-_help	Main.hs	38;"	v
-_helpExec	Main.hs	43;"	v
-_helpExplore	Main.hs	45;"	v
-_helpFE	Main.hs	39;"	v
-_helpInter	Main.hs	41;"	v
-_helpTest	Main.hs	47;"	v
-_program	Main.hs	37;"	v
-_summary	Main.hs	36;"	v
+_help	Main.hs	39;"	v
+_helpExec	Main.hs	44;"	v
+_helpExplore	Main.hs	46;"	v
+_helpFE	Main.hs	40;"	v
+_helpInter	Main.hs	42;"	v
+_helpTest	Main.hs	48;"	v
+_program	Main.hs	38;"	v
+_summary	Main.hs	37;"	v
 add	./Model/GCS.hs	169;"	v
-addAlternative	./Exploration/UNF/APIStateless.hs	299;"	v
-addDisabled	./Exploration/UNF/APIStateless.hs	307;"	v
-addEvent	./Exploration/UNF/Unfolderless.hs	367;"	v	file:
-allM	./Exploration/UNF/Unfolderless.hs	515;"	v	file:
-allowedBinOp	./Frontend/PassTwo.hs	43;"	v	file:
-alt2	./Exploration/UNF/Unfolderless.hs	489;"	v	file:
+addAlternative	./Exploration/UNF/APIStateless.hs	300;"	v
+addDisabled	./Exploration/UNF/APIStateless.hs	308;"	v
+addEvent	./Exploration/UNF/Unfolderless.hs	402;"	v	file:
+allM	./Exploration/UNF/Unfolderless.hs	550;"	v	file:
+allowedBinOp	./Frontend/PassTwo.hs	44;"	v	file:
+alt2	./Exploration/UNF/Unfolderless.hs	524;"	v	file:
 alte	./Exploration/UNF/APIStateless.hs	57;"	v
-apply	./Converter.hs	332;"	v
+apply	./Converter.hs	357;"	v
 applyTrans	./Frontend/PassFourFive.hs	19;"	v	file:
 assertWellFormed_1Global	./Frontend/PassTwo.hs	18;"	v	file:
-assertWellFormed_1GlobalE	./Frontend/PassTwo.hs	47;"	v	file:
-beg	./Exploration/UNF/APIStateless.hs	108;"	v
+assertWellFormed_1GlobalE	./Frontend/PassTwo.hs	48;"	v	file:
+beg	./Exploration/UNF/APIStateless.hs	109;"	v
 bot	./Model/GCS.hs	113;"	v
-botEID	./Exploration/UNF/APIStateless.hs	95;"	v
-botEvent	./Exploration/UNF/APIStateless.hs	98;"	v
+botEID	./Exploration/UNF/APIStateless.hs	96;"	v
+botEvent	./Exploration/UNF/APIStateless.hs	99;"	v
 botExplore	./Exploration/UNF/Unfolderless.hs	34;"	v	file:
 botID	./Model/GCS.hs	109;"	v
-causalClosed	./Exploration/UNF/Unfolderless.hs	136;"	v	file:
+causalClosed	./Exploration/UNF/Unfolderless.hs	141;"	v	file:
 cevs	./Exploration/UNF/APIStateless.hs	40;"	v
-check	./Converter.hs	63;"	v
-check2	./Test/Examples/ExTwo.hs	67;"	v
-check3	./Test/Examples/ExThree.hs	95;"	v
-check4	./Test/Examples/ExFour.hs	73;"	v
-check5	./Test/Examples/ExFive.hs	99;"	v
-check6	./Test/Examples/ExSix.hs	84;"	v
+check	./Converter.hs	64;"	v
+check2	./Test/Examples/ExTwo.hs	71;"	v
+check3	./Test/Examples/ExThree.hs	105;"	v
+check4	./Test/Examples/ExFour.hs	81;"	v
+check5	./Test/Examples/ExFive.hs	109;"	v
+check6	./Test/Examples/ExSix.hs	90;"	v
 checkDiamond	./Model/Interpreter.hs	53;"	v
 checkDiamonds	./Model/Interpreter.hs	45;"	v
 cntr	./Exploration/UNF/APIStateless.hs	85;"	v
-computeConflicts	./Exploration/UNF/Unfolderless.hs	399;"	v	file:
-computeCore	./Exploration/UNF/Unfolderless.hs	106;"	v	file:
-computeHistories	./Exploration/UNF/Unfolderless.hs	276;"	v	file:
-computeHistory	./Exploration/UNF/Unfolderless.hs	222;"	v	file:
-computeNextHistory	./Exploration/UNF/Unfolderless.hs	258;"	v	file:
-computePotentialAlternatives	./Exploration/UNF/Unfolderless.hs	430;"	v	file:
-computeUIndep	./Converter.hs	58;"	v
-convert	./Converter.hs	29;"	v
+computeConflicts	./Exploration/UNF/Unfolderless.hs	434;"	v	file:
+computeCore	./Exploration/UNF/Unfolderless.hs	109;"	v	file:
+computeHistories	./Exploration/UNF/Unfolderless.hs	281;"	v	file:
+computeHistory	./Exploration/UNF/Unfolderless.hs	227;"	v	file:
+computeNextHistory	./Exploration/UNF/Unfolderless.hs	263;"	v	file:
+computePotentialAlternatives	./Exploration/UNF/Unfolderless.hs	465;"	v	file:
+computeUIndep	./Converter.hs	59;"	v
+convert	./Converter.hs	30;"	v
 copy	./Model/GCS.hs	137;"	v
 copyEvents	./Exploration/UNF/APIStateless.hs	75;"	v
-delImmCnfl	./Exploration/UNF/APIStateless.hs	254;"	v
-delSuccessor	./Exploration/UNF/APIStateless.hs	264;"	v
-deleteEvent	./Exploration/UNF/Unfolderless.hs	123;"	v	file:
+delImmCnfl	./Exploration/UNF/APIStateless.hs	255;"	v
+delSuccessor	./Exploration/UNF/APIStateless.hs	265;"	v
+deleteEvent	./Exploration/UNF/Unfolderless.hs	128;"	v	file:
 disa	./Exploration/UNF/APIStateless.hs	56;"	v
 enabledTransitions	./Model/GCS.hs	66;"	v
-end	./Exploration/UNF/APIStateless.hs	109;"	v
+end	./Exploration/UNF/APIStateless.hs	110;"	v
 enevs	./Exploration/UNF/APIStateless.hs	39;"	v
 equals	./Model/GCS.hs	154;"	v
-eval	./Converter.hs	298;"	v
-evalCond	./Converter.hs	358;"	v
+eval	./Converter.hs	323;"	v
+evalCond	./Converter.hs	383;"	v
 evtr	./Exploration/UNF/APIStateless.hs	52;"	v
 evts	./Exploration/UNF/APIStateless.hs	83;"	v
 exec	./Model/Interpreter.hs	15;"	v
 execIt	./Model/Interpreter.hs	18;"	v
-execute	./Exploration/UNF/APIStateless.hs	131;"	v
-execute	Main.hs	116;"	v
-executeMode	Main.hs	64;"	v
-expandWith	./Exploration/UNF/Unfolderless.hs	191;"	v	file:
+execute	./Exploration/UNF/APIStateless.hs	132;"	v
+execute	Main.hs	120;"	v
+executeMode	Main.hs	65;"	v
+expandWith	./Exploration/UNF/Unfolderless.hs	197;"	v	file:
 explore	./Exploration/UNF/Unfolderless.hs	57;"	v	file:
-explore	Main.hs	129;"	v
-exploreMode	Main.hs	71;"	v
-filterAlternative	./Exploration/UNF/Unfolderless.hs	507;"	v	file:
-filterAlternatives	./Exploration/UNF/Unfolderless.hs	499;"	v	file:
-filterResult	./Exploration/UNF/APIStateless.hs	184;"	v
+explore	Main.hs	133;"	v
+exploreMode	Main.hs	72;"	v
+filterAlternative	./Exploration/UNF/Unfolderless.hs	542;"	v	file:
+filterAlternatives	./Exploration/UNF/Unfolderless.hs	534;"	v	file:
+filterResult	./Exploration/UNF/APIStateless.hs	185;"	v
 findAndInstrThreads	./Frontend/PassOne.hs	46;"	v	file:
 findAndInstrThreadsAux	./Frontend/PassOne.hs	54;"	v	file:
 findMain	./Frontend/PassOne.hs	33;"	v	file:
@@ -131,79 +131,82 @@ fixPCStat	./Frontend/PassSix.hs	35;"	v	file:
 flowProgram	./Frontend.hs	103;"	v
 flowStatement	./Frontend.hs	111;"	v
 for2while	./Frontend/PassFourFive.hs	24;"	v	file:
-freshCounter	./Exploration/UNF/APIStateless.hs	333;"	v
+freshCounter	./Exploration/UNF/APIStateless.hs	334;"	v
 freshLabel	./Frontend/PassFourFive.hs	31;"	v	file:
-fromAssign	./Converter.hs	240;"	v
-fromBool	./Converter.hs	354;"	v
-fromCall	./Converter.hs	137;"	v
-fromGoto	./Converter.hs	267;"	v
-fromIf	./Converter.hs	280;"	v
+fromAssign	./Converter.hs	258;"	v
+fromBool	./Converter.hs	379;"	v
+fromCall	./Converter.hs	138;"	v
+fromGoto	./Converter.hs	288;"	v
+fromIf	./Converter.hs	303;"	v
 frontEnd	./Frontend.hs	26;"	v
-frontendMode	Main.hs	58;"	v
+frontend	Main.hs	101;"	v
+frontendMode	Main.hs	59;"	v
 fst3	./Frontend/PassOne.hs	43;"	v	file:
-getAlternatives	./Exploration/UNF/APIStateless.hs	232;"	v
-getChanges	./Exploration/UNF/Unfolderless.hs	321;"	v	file:
-getConfEvs	./Exploration/UNF/APIStateless.hs	207;"	v
-getDisabled	./Exploration/UNF/APIStateless.hs	227;"	v
-getEvent	./Exploration/UNF/APIStateless.hs	197;"	v
+getAlternatives	./Exploration/UNF/APIStateless.hs	233;"	v
+getChanges	./Exploration/UNF/Unfolderless.hs	329;"	v	file:
+getConfEvs	./Exploration/UNF/APIStateless.hs	208;"	v
+getDisabled	./Exploration/UNF/APIStateless.hs	228;"	v
+getEvent	./Exploration/UNF/APIStateless.hs	198;"	v
 getFlow	./Frontend.hs	88;"	v
 getGlobalsDecls	./Frontend/Util.hs	8;"	v
-getIPred	./Exploration/UNF/APIStateless.hs	217;"	v
-getISucc	./Exploration/UNF/APIStateless.hs	222;"	v
-getIdent	./Converter.hs	228;"	v
-getImmediateConflicts	./Exploration/UNF/APIStateless.hs	212;"	v
+getIPred	./Exploration/UNF/APIStateless.hs	218;"	v
+getISucc	./Exploration/UNF/APIStateless.hs	223;"	v
+getIdent	./Converter.hs	246;"	v
+getImmediateConflicts	./Exploration/UNF/APIStateless.hs	213;"	v
 getIndepTr	./Model/GCS.hs	105;"	v
-getInitialDecls	./Converter.hs	76;"	v
+getInitialDecls	./Converter.hs	77;"	v
 getPC	./Frontend.hs	95;"	v
 getTIDValue	./Frontend/PassOne.hs	73;"	v	file:
 getTNameValue	./Frontend/PassOne.hs	80;"	v	file:
 getTransition	./Model/GCS.hs	119;"	v
 getTransitionWithID	./Model/GCS.hs	127;"	v
-getTransitions	./Converter.hs	97;"	v
-getVarArg	./Converter.hs	223;"	v
+getTransitions	./Converter.hs	98;"	v
+getVarArg	./Converter.hs	241;"	v
 iDB	./Frontend/PassFourFive.hs	9;"	v	file:
-iState	./Exploration/UNF/APIStateless.hs	102;"	v
+iState	./Exploration/UNF/APIStateless.hs	103;"	v
 icnf	./Exploration/UNF/APIStateless.hs	55;"	v
+incMaxConfCounter	./Exploration/UNF/APIStateless.hs	343;"	v
 ind11	./Test/Examples/ExOne.hs	56;"	v
 ind12	./Test/Examples/ExOne.hs	57;"	v
-ind2	./Test/Examples/ExTwo.hs	63;"	v
-ind3	./Test/Examples/ExThree.hs	91;"	v
-ind4	./Test/Examples/ExFour.hs	69;"	v
-ind5	./Test/Examples/ExFive.hs	96;"	v
-ind6	./Test/Examples/ExSix.hs	80;"	v
+ind2	./Test/Examples/ExTwo.hs	67;"	v
+ind3	./Test/Examples/ExThree.hs	101;"	v
+ind4	./Test/Examples/ExFour.hs	77;"	v
+ind5	./Test/Examples/ExFive.hs	106;"	v
+ind6	./Test/Examples/ExSix.hs	86;"	v
 inde	./Exploration/UNF/APIStateless.hs	82;"	v
 initialExtensions	./Exploration/UNF/Unfolderless.hs	42;"	v	file:
 initialLState	./Model/GCS.hs	31;"	v
 initialState	./Model/GCS.hs	30;"	v
-input	Main.hs	49;"	v
+input	Main.hs	50;"	v
 interpret	./Model/Interpreter.hs	81;"	v
 interpretIt	./Model/Interpreter.hs	84;"	v
-interpretMode	Main.hs	68;"	v
-interpreter	Main.hs	108;"	v
+interpretMode	Main.hs	69;"	v
+interpreter	Main.hs	112;"	v
 introducePthreadCalls	./Frontend/PassOne.hs	87;"	v	file:
-isConfiguration	./Exploration/UNF/Unfolderless.hs	130;"	v	file:
+isConfiguration	./Exploration/UNF/Unfolderless.hs	135;"	v	file:
 isDeadlock	./Model/Interpreter.hs	73;"	v
 isDependent	./Model/GCS.hs	102;"	v
-isDependent_te	./Exploration/UNF/APIStateless.hs	140;"	v
+isDependent_te	./Exploration/UNF/APIStateless.hs	141;"	v
 isElem	./Model/GCS.hs	178;"	v
-isEnabled	./Exploration/UNF/Unfolderless.hs	344;"	v	file:
+isEnabled	./Exploration/UNF/Unfolderless.hs	379;"	v	file:
 isEqual	./Model/GCS.hs	187;"	v
 isEqual'	./Model/GCS.hs	193;"	v
-isIdentOrConstant	./Frontend/PassTwo.hs	94;"	v	file:
-isIndependent	./Exploration/UNF/APIStateless.hs	146;"	v
+isIdentOrConstant	./Frontend/PassTwo.hs	95;"	v	file:
+isIndependent	./Exploration/UNF/APIStateless.hs	147;"	v
 isIndependent	./Model/GCS.hs	94;"	v
 isMain	./Frontend/PassOne.hs	29;"	v	file:
-isRWDependent	./Converter.hs	69;"	v
+isRWDependent	./Converter.hs	70;"	v
 lcst	./Exploration/UNF/APIStateless.hs	58;"	v
 local2exprStat	./Frontend/PassSix.hs	18;"	v	file:
 local2exprStat'	./Frontend/PassSix.hs	22;"	v	file:
-main	Main.hs	84;"	v
+main	Main.hs	85;"	v
 mapLabelPC	./Frontend.hs	48;"	v
+maxConf	./Exploration/UNF/APIStateless.hs	86;"	v
 maxevs	./Exploration/UNF/APIStateless.hs	38;"	v
 menu	./Model/Interpreter.hs	116;"	v
-middleendMode	Main.hs	61;"	v
+middleendMode	Main.hs	62;"	v
 modify	./Model/GCS.hs	161;"	v
-modifyList	./Converter.hs	131;"	v
+modifyList	./Converter.hs	132;"	v
 mtrace	./Exploration/UNF/APIStateless.hs	25;"	v
 mytrace	./Exploration/UNF/APIStateless.hs	22;"	v
 passFourFive	./Frontend/PassFourFive.hs	13;"	v
@@ -213,133 +216,150 @@ passSix	./Frontend/PassSix.hs	10;"	v
 passThree	./Frontend/PassThree.hs	10;"	v
 passTwo	./Frontend/PassTwo.hs	10;"	v
 pcnf	./Exploration/UNF/APIStateless.hs	84;"	v
+pmdVal	./Converter.hs	25;"	v
 pmdVar	./Converter.hs	24;"	v
-pmjVar	./Converter.hs	26;"	v
-pmtVar	./Converter.hs	25;"	v
+pmjVar	./Converter.hs	27;"	v
+pmtVar	./Converter.hs	26;"	v
 poetFuncNames	./Frontend/PassSeven.hs	13;"	v	file:
-pop	./Exploration/UNF/APIStateless.hs	349;"	v
+pop	./Exploration/UNF/APIStateless.hs	357;"	v
 pred	./Exploration/UNF/APIStateless.hs	53;"	v
-predecessorWith	./Exploration/UNF/APIStateless.hs	173;"	v
-predecessors	./Exploration/UNF/APIStateless.hs	154;"	v
+predecessor	./Exploration/UNF/Unfolderless.hs	362;"	v	file:
+predecessorWith	./Exploration/UNF/APIStateless.hs	174;"	v
+predecessors	./Exploration/UNF/APIStateless.hs	155;"	v
 printCausality	./Util/Printer.hs	32;"	v
 printConflict	./Util/Printer.hs	35;"	v
-progModes	Main.hs	77;"	v
-prune	./Exploration/UNF/Unfolderless.hs	115;"	v	file:
-pruneConfiguration	./Exploration/UNF/Unfolderless.hs	238;"	v	file:
-push	./Exploration/UNF/APIStateless.hs	342;"	v
+progModes	Main.hs	78;"	v
+prune	./Exploration/UNF/Unfolderless.hs	120;"	v	file:
+pruneConfiguration	./Exploration/UNF/Unfolderless.hs	243;"	v	file:
+push	./Exploration/UNF/APIStateless.hs	350;"	v
 rec	./Frontend/PassSix.hs	54;"	v	file:
-recGetTrans	./Converter.hs	100;"	v
-removeEvent	./Exploration/UNF/Unfolderless.hs	292;"	v	file:
+recGetTrans	./Converter.hs	101;"	v
+removeEvent	./Exploration/UNF/Unfolderless.hs	297;"	v	file:
 removeLabel	./Frontend.hs	66;"	v
 replaceMain	./Frontend/PassOne.hs	38;"	v	file:
 replacePthreadExit	./Frontend/PassOne.hs	100;"	v	file:
 replacePthreadExitAux	./Frontend/PassOne.hs	107;"	v	file:
-resetTID	./Converter.hs	52;"	v
-resetTID'	./Converter.hs	55;"	v
-revertState	./Exploration/UNF/Unfolderless.hs	305;"	v	file:
-runOption	Main.hs	88;"	v
+resetTID	./Converter.hs	53;"	v
+resetTID'	./Converter.hs	56;"	v
+revertState	./Exploration/UNF/Unfolderless.hs	310;"	v	file:
+runOption	Main.hs	89;"	v
+runTest1	./Test/Examples.hs	15;"	v
+runTest2	./Test/Examples.hs	19;"	v
+runTest3	./Test/Examples.hs	23;"	v
+runTest4	./Test/Examples.hs	27;"	v
+runTest5	./Test/Examples.hs	31;"	v
+runTest6	./Test/Examples.hs	35;"	v
+runTest7	./Test/Examples.hs	39;"	v
 s1	./Test/Examples/ExOne.hs	41;"	v
 s2	./Test/Examples/ExTwo.hs	13;"	v
 s3	./Test/Examples/ExThree.hs	13;"	v
 s4	./Test/Examples/ExFour.hs	13;"	v
-s5	./Test/Examples/ExFive.hs	70;"	v
+s5	./Test/Examples/ExFive.hs	80;"	v
 s6	./Test/Examples/ExSix.hs	14;"	v
 safeLookup	./Model/GCS.hs	83;"	v
-seed	Main.hs	51;"	v
+seed	Main.hs	52;"	v
 separator	./Exploration/UNF/Unfolderless.hs	54;"	v	file:
-setConflict	./Exploration/UNF/APIStateless.hs	284;"	v
-setDisabled	./Exploration/UNF/APIStateless.hs	292;"	v
-setEvent	./Exploration/UNF/APIStateless.hs	239;"	v
-setLSigma	./Exploration/UNF/APIStateless.hs	243;"	v
-setPreviousConfiguration	./Exploration/UNF/APIStateless.hs	316;"	v
-setPreviousDisabled	./Exploration/UNF/APIStateless.hs	323;"	v
-setSuccessor	./Exploration/UNF/APIStateless.hs	276;"	v
+setConflict	./Exploration/UNF/APIStateless.hs	285;"	v
+setDisabled	./Exploration/UNF/APIStateless.hs	293;"	v
+setEvent	./Exploration/UNF/APIStateless.hs	240;"	v
+setLSigma	./Exploration/UNF/APIStateless.hs	244;"	v
+setPreviousConfiguration	./Exploration/UNF/APIStateless.hs	317;"	v
+setPreviousDisabled	./Exploration/UNF/APIStateless.hs	324;"	v
+setSuccessor	./Exploration/UNF/APIStateless.hs	277;"	v
 showEvents	./Exploration/UNF/APIStateless.hs	67;"	v
 showSigma	./Model/GCS.hs	142;"	v
 showSigma'	./Model/GCS.hs	147;"	v
 showTransition	./Model/GCS.hs	62;"	v
+smallest	./Exploration/UNF/Unfolderless.hs	352;"	v	file:
 snd3	./Model/GCS.hs	77;"	v
-stack	./Exploration/UNF/APIStateless.hs	86;"	v
+stack	./Exploration/UNF/APIStateless.hs	87;"	v
 stateless	./Exploration/UNF/Unfolderless.hs	25;"	v
-statelessMode	./Exploration/UNF/APIStateless.hs	87;"	v
+statelessMode	./Exploration/UNF/APIStateless.hs	88;"	v
 stc	./Exploration/UNF/APIStateless.hs	37;"	v
 succ	./Exploration/UNF/APIStateless.hs	54;"	v
-successors	./Exploration/UNF/APIStateless.hs	163;"	v
+successors	./Exploration/UNF/APIStateless.hs	164;"	v
 sys1	./Test/Examples/ExOne.hs	50;"	v
-sys2	./Test/Examples/ExTwo.hs	57;"	v
-sys3	./Test/Examples/ExThree.hs	85;"	v
-sys4	./Test/Examples/ExFour.hs	63;"	v
-sys5	./Test/Examples/ExFive.hs	89;"	v
-sys6	./Test/Examples/ExSix.hs	74;"	v
+sys2	./Test/Examples/ExTwo.hs	61;"	v
+sys3	./Test/Examples/ExThree.hs	95;"	v
+sys4	./Test/Examples/ExFour.hs	71;"	v
+sys5	./Test/Examples/ExFive.hs	99;"	v
+sys6	./Test/Examples/ExSix.hs	80;"	v
 syst	./Exploration/UNF/APIStateless.hs	81;"	v
 t1	./Test/Examples/ExOne.hs	24;"	v
 t1'	./Test/Examples/ExOne.hs	14;"	v
 t11_4	./Test/Examples/ExFour.hs	23;"	v
 t11_4'	./Test/Examples/ExFour.hs	29;"	v
 t12_4	./Test/Examples/ExFour.hs	24;"	v
-t12_4'	./Test/Examples/ExFour.hs	37;"	v
+t12_4'	./Test/Examples/ExFour.hs	39;"	v
 t1_2	./Test/Examples/ExTwo.hs	24;"	v
 t1_2'	./Test/Examples/ExTwo.hs	29;"	v
 t1_3	./Test/Examples/ExThree.hs	25;"	v
 t1_3'	./Test/Examples/ExThree.hs	33;"	v
-t1_5	./Test/Examples/ExFive.hs	82;"	v
+t1_5	./Test/Examples/ExFive.hs	92;"	v
 t1_5'	./Test/Examples/ExFive.hs	13;"	v
 t1_6	./Test/Examples/ExSix.hs	25;"	v
 t1_6'	./Test/Examples/ExSix.hs	32;"	v
 t2	./Test/Examples/ExOne.hs	38;"	v
 t2'	./Test/Examples/ExOne.hs	28;"	v
 t21_4	./Test/Examples/ExFour.hs	25;"	v
-t21_4'	./Test/Examples/ExFour.hs	45;"	v
-t21_5	./Test/Examples/ExFive.hs	83;"	v
-t21_5'	./Test/Examples/ExFive.hs	21;"	v
+t21_4'	./Test/Examples/ExFour.hs	49;"	v
+t21_5	./Test/Examples/ExFive.hs	93;"	v
+t21_5'	./Test/Examples/ExFive.hs	23;"	v
 t21_6	./Test/Examples/ExSix.hs	26;"	v
-t21_6'	./Test/Examples/ExSix.hs	41;"	v
+t21_6'	./Test/Examples/ExSix.hs	42;"	v
 t22_4	./Test/Examples/ExFour.hs	26;"	v
-t22_4'	./Test/Examples/ExFour.hs	53;"	v
-t22_5	./Test/Examples/ExFive.hs	84;"	v
-t22_5'	./Test/Examples/ExFive.hs	35;"	v
+t22_4'	./Test/Examples/ExFour.hs	59;"	v
+t22_5	./Test/Examples/ExFive.hs	94;"	v
+t22_5'	./Test/Examples/ExFive.hs	40;"	v
 t22_6	./Test/Examples/ExSix.hs	27;"	v
-t22_6'	./Test/Examples/ExSix.hs	50;"	v
+t22_6'	./Test/Examples/ExSix.hs	52;"	v
 t2_2	./Test/Examples/ExTwo.hs	25;"	v
-t2_2'	./Test/Examples/ExTwo.hs	37;"	v
+t2_2'	./Test/Examples/ExTwo.hs	39;"	v
 t2_3	./Test/Examples/ExThree.hs	26;"	v
-t2_3'	./Test/Examples/ExThree.hs	41;"	v
+t2_3'	./Test/Examples/ExThree.hs	43;"	v
 t31_3	./Test/Examples/ExThree.hs	27;"	v
-t31_3'	./Test/Examples/ExThree.hs	49;"	v
-t31_5	./Test/Examples/ExFive.hs	85;"	v
-t31_5'	./Test/Examples/ExFive.hs	44;"	v
+t31_3'	./Test/Examples/ExThree.hs	53;"	v
+t31_5	./Test/Examples/ExFive.hs	95;"	v
+t31_5'	./Test/Examples/ExFive.hs	50;"	v
 t31_6	./Test/Examples/ExSix.hs	28;"	v
-t31_6'	./Test/Examples/ExSix.hs	57;"	v
+t31_6'	./Test/Examples/ExSix.hs	60;"	v
 t32_3	./Test/Examples/ExThree.hs	28;"	v
-t32_3'	./Test/Examples/ExThree.hs	58;"	v
-t32_5	./Test/Examples/ExFive.hs	86;"	v
-t32_5'	./Test/Examples/ExFive.hs	58;"	v
+t32_3'	./Test/Examples/ExThree.hs	63;"	v
+t32_5	./Test/Examples/ExFive.hs	96;"	v
+t32_5'	./Test/Examples/ExFive.hs	67;"	v
 t32_6	./Test/Examples/ExSix.hs	29;"	v
-t32_6'	./Test/Examples/ExSix.hs	64;"	v
+t32_6'	./Test/Examples/ExSix.hs	68;"	v
 t3_2	./Test/Examples/ExTwo.hs	26;"	v
-t3_2'	./Test/Examples/ExTwo.hs	46;"	v
+t3_2'	./Test/Examples/ExTwo.hs	49;"	v
 t41_3	./Test/Examples/ExThree.hs	29;"	v
-t41_3'	./Test/Examples/ExThree.hs	66;"	v
+t41_3'	./Test/Examples/ExThree.hs	73;"	v
 t42_3	./Test/Examples/ExThree.hs	30;"	v
-t42_3'	./Test/Examples/ExThree.hs	75;"	v
-test	Main.hs	139;"	v
-test1	./Test/Tests.hs	15;"	v
-test2	./Test/Tests.hs	19;"	v
-test3	./Test/Tests.hs	23;"	v
-test4	./Test/Tests.hs	27;"	v
-test5	./Test/Tests.hs	31;"	v
-test6	./Test/Tests.hs	35;"	v
-test7	./Test/Tests.hs	39;"	v
-testMode	Main.hs	74;"	v
-tests	./Test/Tests.hs	43;"	v
-toBool	./Converter.hs	349;"	v
+t42_3'	./Test/Examples/ExThree.hs	83;"	v
+test	Main.hs	143;"	v
+test1	./Test/Tests.hs	16;"	v
+test10	./Test/Tests.hs	54;"	v
+test11	./Test/Tests.hs	59;"	v
+test12	./Test/Tests.hs	64;"	v
+test13	./Test/Tests.hs	69;"	v
+test14	./Test/Tests.hs	74;"	v
+test2	./Test/Tests.hs	20;"	v
+test3	./Test/Tests.hs	24;"	v
+test4	./Test/Tests.hs	28;"	v
+test5	./Test/Tests.hs	32;"	v
+test6	./Test/Tests.hs	36;"	v
+test7	./Test/Tests.hs	40;"	v
+test8	./Test/Tests.hs	44;"	v
+test9	./Test/Tests.hs	49;"	v
+testMode	Main.hs	75;"	v
+tests	./Test/Tests.hs	79;"	v
+toBool	./Converter.hs	374;"	v
 toDot	./Util/Printer.hs	18;"	v
-toInitialState	./Converter.hs	87;"	v
-toTransition	./Converter.hs	104;"	v
+toInitialState	./Converter.hs	88;"	v
+toTransition	./Converter.hs	105;"	v
 trace	./Exploration/UNF/APIStateless.hs	27;"	v
 transitions	./Model/GCS.hs	29;"	v
 unfToDot	./Util/Printer.hs	13;"	v
-unfold	./Exploration/UNF/Unfolderless.hs	150;"	v	file:
+unfold	./Exploration/UNF/Unfolderless.hs	156;"	v	file:
 varRename	./Frontend/PassThree.hs	15;"	v	file:
 varRenameAux	./Frontend/PassThree.hs	20;"	v	file:
 varRenameAux'	./Frontend/PassThree.hs	47;"	v	file:

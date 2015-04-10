@@ -83,6 +83,7 @@ data UnfolderState s = UnfolderState {
   , evts :: Events s         -- Unfolding prefix 
   , pcnf :: Configuration s  -- Previous configuration
   , cntr :: Counter          -- Event counter
+  , maxConf :: Counter       -- Maximal config counter
   , stack :: EventsID        -- Call stack
   , statelessMode :: Bool    -- Stateless or not
 }
@@ -103,12 +104,12 @@ iState statelessMode sys indep = do
   events <- H.new
   H.insert events 0 $ botEvent $ GCS.initialLState sys 
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 [0] statelessMode
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
 instance Show (UnfolderState s) where
-    show (u@UnfolderState{..}) = show cntr 
+    show (u@UnfolderState{..}) = show (cntr, maxConf)
 --        beg ++ "UIndep: " ++ show indep ++ "\nEvents: " ++ show events ++ "\nCausality: " ++ show causality 
 --     ++ "\n" ++ show (cevs configurations) ++ "\nEnabled: " ++ show enable 
 --     ++ "\nDisable: " ++ show disable ++ "\nAlternatives: " ++ show alternatives  ++ "\nImmConflicts: " ++ show immediateConflicts ++ "\nCounters: " 
@@ -337,6 +338,13 @@ freshCounter = do
   put s{ cntr = nec }
   return ec
 
+-- @ update maximal config - updates the counter of maximal configurations
+incMaxConfCounter :: UnfolderOp s ()
+incMaxConfCounter = do
+  s@UnfolderState{..} <- get
+  let nec = maxConf + 1
+  put s{ maxConf = nec }
+  
 -- @ push 
 push :: EventID -> UnfolderOp s ()
 push e = do 

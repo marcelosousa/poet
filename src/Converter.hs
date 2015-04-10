@@ -16,7 +16,7 @@ import Frontend.Util
 import Debug.Trace
 
 -- read write data type
-data RW = Read Var | Write Var
+data RW = Read Var | Write Var 
   deriving (Show,Eq,Ord)
 
 type RWSet = [RW]

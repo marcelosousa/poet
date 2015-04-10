@@ -56,20 +56,18 @@ separator = "-----------------------------------------\n"
 explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
-  if mod cntr 100 == 0
-  then mtrace ("explore counter event="++ show cntr) $ return ()
-  else return ()
   str <- lift $ showEvents evts
-  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
          ++ ", enevs = " ++ show enevs ++ ", alt = " 
          ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
   --let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
   if null enevs 
-  then
+  then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
-    computePotentialAlternatives maxevs cevs 
+    computePotentialAlternatives maxevs cevs
+    incMaxConfCounter
   else do
     isStr <- lift $ unfToDot is
     -- @ choose event
@@ -83,7 +81,7 @@ explore c@Conf{..} ê d alt = do
                                  ++ snd isStr
                     else head lp   
     -- @ initialize disable of e
-    lift $ setDisabled e d evts 
+    mtrace ("selected event="++show e) $ lift $ setDisabled e d evts 
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
     nc <- unfold c e
@@ -91,6 +89,8 @@ explore c@Conf{..} ê d alt = do
     push e
     explore nc e d (e `delete` alt)
     pop
+    -- @ update the current configuration
+    --c' <- updateConfiguration c
 --    ms@UnfolderState{..} <- get
 --    str' <- lift $ showEvents evts
 --    trace (separator ++ "after explore(ê = " ++ show ê 
@@ -103,29 +103,33 @@ explore c@Conf{..} ê d alt = do
       Just alt' -> explore c ê (e:d) (alt' \\ stack)
     if statelessMode
     then do
-      core <- lift $ computeCore stack evts
+      core <- lift $ computeCore stack d evts
       lift $ prune e core evts
     else return ()
 
-computeCore :: EventsID -> Events s -> ST s (EventsID)
-computeCore conf events = do
-  config <- mapM (\e -> predecessors e events >>= return . (e:)) conf
-  evs <- mapM (\e -> getEvent "computeCore" e events) conf
-  disas <- mapM (\ev -> mapM (\e -> predecessors e events >>= return . (e:)) $ disa ev) evs
-  altes <- mapM (\ev -> mapM (\v -> mapM (\e -> predecessors e events >>= return . (e:)) v) $ alte ev) evs
-  let evs = config ++ concat disas ++ (concat $ concat altes)
-  return $ nub $ concat evs 
+updateConfiguration = undefined
+
+computeCore :: EventsID -> EventsID -> Events s -> ST s EventsID
+computeCore conf d events = do
+--  config <- mapM (\e -> predecessors e events >>= return . (e:)) conf
+  let confAndD = conf ++ d
+  evs <- mapM (\e -> getEvent "computeCore" e events) confAndD
+--  disas <- mapM (\ev -> mapM (\e -> predecessors e events >>= return . (e:)) $ disa ev) evs
+--  altes <- mapM (\ev -> mapM alte ev) evs
+  let altes = concat $ concatMap alte evs 
+      core = confAndD ++ altes
+  return $ nub core 
 
 prune :: EventID -> EventsID -> Events s -> ST s ()
 prune e core events = do
   ev@Event{..} <- getEvent "prune" e events
-  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
   if e `elem` core
   then return ()
   else deleteEvent e events
+  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
 
 deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = trace ("deleting event " ++ show e) $ do
+deleteEvent e events = mtrace ("deleting event " ++ show e) $ do
   ev@Event{..} <- getEvent "deleteEvent" e events
   mapM_ (\e' -> delSuccessor e e' events) pred
   mapM_ (\e' -> delImmCnfl e e' events) icnf 
@@ -190,7 +194,7 @@ unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   put s{ pcnf = nconf }
   return $! nconf
-    
+
 -- expandWith only adds events that have e in the history
 -- @CRITICAL
 expandWith :: GCS.Sigma s -> EventID -> EventsID -> (GCS.TransitionID, GCS.ProcessID) -> UnfolderOp s EventsID

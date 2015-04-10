@@ -57,7 +57,9 @@ type TransitionID = Int
 type TransitionsID = V.Vector TransitionID
 type Transition s = (ProcessID, TransitionID, TransitionFn s)
 type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
-
+-- 1. Variable or Array, Constant Index
+--    
+-- 2. Global state reached by the local configuration
 showTransition :: Transition s -> String
 showTransition (a,b,_) = show (a,b)
 

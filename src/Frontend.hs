@@ -24,19 +24,19 @@ import Frontend.PassSeven
 --  for easy manipulation and analysis.
 frontEnd :: Program -> (Program, FirstFlow, Flow, Int)
 frontEnd prog = 
-    let globals = getGlobalsDecls prog
-        (prog1, threadCount) = passOne prog
-        pass2res = passTwo globals prog1 -- :: Int
-        prog3 = passThree globals prog1
-        prog45 = passFourFive prog3
-        prog6 = passSix prog45
-        pass7res = pass2res `seq` passSeven prog6 -- :: Bool
-        maplabelpc = mapLabelPC prog6
-        prog8 = removeLabel prog6
-        (firstflow, flow) = flowProgram maplabelpc prog8
-    in if pass7res
-       then (prog8, firstflow, flow, threadCount)
-       else error "frontEnd fatal: something went wrong! Please contact developers."
+  let globals = getGlobalsDecls prog
+      (prog1, threadCount) = passOne prog
+      pass2res = passTwo globals prog1 -- :: Int
+      prog3 = passThree globals prog1
+      prog45 = passFourFive prog3
+      prog6 = passSix prog45
+      pass7res = pass2res `seq` passSeven prog6 -- :: Bool
+      maplabelpc = mapLabelPC prog6
+      prog8 = removeLabel prog6
+      (firstflow, flow) = flowProgram maplabelpc prog8
+  in if pass7res
+     then (prog8, firstflow, flow, threadCount)
+     else error "frontEnd fatal: something went wrong! Please contact developers."
 
 -- Pass 8: transform the program into a graph (data type to be defined)
 -- Pass 8a: get the pc for all the labels; 
