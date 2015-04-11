@@ -37,7 +37,7 @@ execIt gen thcount str indep sys st = do
             let tr = getTransitionWithID sys trID
                 nstr = str ++ ststr ++ ltrs ++ "\nIndependent transitions=" ++ show indepTr ++ "\nRunning " ++ show (trID,procID) ++ "\n\n"
             fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-            (nst,_) <- fn st
+            nst <- fn st
             execIt gen' thcount nstr indep sys nst
       else error "diamond check failed"
           
@@ -57,16 +57,16 @@ checkDiamond sys t1 t2 s = do
         t2fn = getTransition sys t2
     -- t1(s)
     fn11 <- (t1fn s1 >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-    (s1t1,_) <- fn11 s1
+    s1t1 <- fn11 s1
     -- t2(t1(s))
     fn21 <- (t2fn s1t1 >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-    (s12,_) <- fn21 s1t1
+    s12 <- fn21 s1t1
     -- t2(s)
     fn22 <- (t2fn s2 >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-    (s2t2,_) <- fn22 s2
+    s2t2 <- fn22 s2
     -- t1(t2(s))
     fn12 <- (t1fn s2t2 >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-    (s22,_) <- fn12 s2t2
+    s22 <- fn12 s2t2
     equals s12 s22
             
 isDeadlock :: Int -> Sigma s -> ST s Bool
@@ -110,7 +110,7 @@ interpretIt step indep sys st = do
            Just (_,trID,_) -> do
              let tr = getTransitionWithID sys trID
              fn <- (tr st >>= return . M.fromMaybe (error $ "newState: the transition was not enabled"))
-             (nst,_) <- fn st
+             nst <- fn st
              interpretIt (step+1) indep sys nst
       else do 
         return step

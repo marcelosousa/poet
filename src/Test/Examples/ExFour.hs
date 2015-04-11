@@ -34,7 +34,7 @@ t11_4' s = do
           yVal = (IntVal 1)
       H.insert s (BS.pack "pcp") pcVal      
       H.insert s (BS.pack "y") yVal
-      return (s,[(BS.pack "pcp", pcVal),(BS.pack "y", yVal)]) 
+      return s
     _ -> return Nothing
 t12_4' s = do 
   v <- safeLookup "t12" s (BS.pack "pcp")
@@ -44,7 +44,7 @@ t12_4' s = do
           xVal = (IntVal 1)
       H.insert s (BS.pack "pcp") pcVal
       H.insert s (BS.pack "x") xVal
-      return (s,[(BS.pack "pcp", pcVal),(BS.pack "x", xVal)]) 
+      return s
     _ -> return Nothing
 t21_4' s = do 
   v <- safeLookup "t21" s (BS.pack "pcq")
@@ -54,7 +54,7 @@ t21_4' s = do
           zVal = (IntVal 1)
       H.insert s (BS.pack "pcq") pcVal
       H.insert s (BS.pack "z") zVal
-      return (s,[(BS.pack "pcq", pcVal),(BS.pack "z", zVal)]) 
+      return s
     _ -> return Nothing
 t22_4' s = do 
   v <- safeLookup "t22" s (BS.pack "pcq")
@@ -64,14 +64,13 @@ t22_4' s = do
           xVal = (IntVal 2)
       H.insert s (BS.pack "pcq") pcVal
       H.insert s (BS.pack "x") xVal
-      return (s,[(BS.pack "pcq", pcVal),(BS.pack "x", xVal)]) 
+      return s
     _ -> return Nothing
 
 sys4 :: ST s (System s)
 sys4 = do 
   is <- s4
-  lis <- H.toList is
-  return $ System (V.fromList [t11_4,t12_4,t21_4,t22_4]) is lis [Other]
+  return $ System (V.fromList [t11_4,t12_4,t21_4,t22_4]) is [Other]
 
 ind4 :: UIndep
 ind4 = V.generate 4 (\i -> V.generate 4 (\j -> check4 i j)) 

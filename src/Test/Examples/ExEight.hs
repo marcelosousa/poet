@@ -17,7 +17,7 @@ t11' s = do
       let pcVal = (IntVal 2)
       H.insert s (BS.pack "pcq") pcVal
       H.insert s (BS.pack "lock") (IntVal 0)
-      return (s,[(BS.pack "pcq", pcVal),(BS.pack "lock", (IntVal 0))]) 
+      return s
     _ -> return Nothing
 
 t12' s = do
@@ -26,7 +26,7 @@ t12' s = do
     (IntVal 2) -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcq") (IntVal 3)
       H.insert s (BS.pack "x") (IntVal 1)
-      return (s,[(BS.pack "pcq", (IntVal 3)),(BS.pack "x", (IntVal 1))]) 
+      return s
     _ -> return Nothing
 
 t21' s = do
@@ -38,7 +38,7 @@ t21' s = do
         lockVal = (IntVal 1)
     H.insert s (BS.pack "pcr") pcVal
     H.insert s (BS.pack "lock") lockVal
-    return (s,[(BS.pack "pcr", pcVal),(BS.pack "lock", lockVal)])
+    return s
   else return Nothing
 t22' s = do
   v <- safeLookup "t22" s (BS.pack "pcr")
@@ -46,7 +46,7 @@ t22' s = do
     (IntVal 2) -> return $ Just $ \s -> do
       H.insert s (BS.pack "pcr") (IntVal 3)
       H.insert s (BS.pack "x") (IntVal 2)
-      return (s,[(BS.pack "pcr", (IntVal 3)),(BS.pack "x", (IntVal 2))]) 
+      return s
     _ -> return Nothing
 t23' s = do
   v <- safeLookup "t23" s (BS.pack "pcr")
@@ -55,7 +55,7 @@ t23' s = do
       let pcVal = (IntVal 4)
       H.insert s (BS.pack "pcr") pcVal
       H.insert s (BS.pack "lock") (IntVal 0)
-      return (s,[(BS.pack "pcr", pcVal),(BS.pack "lock", (IntVal 0))]) 
+      return s
     _ -> return Nothing
 
 s7 :: ST s (Sigma s)
@@ -77,8 +77,7 @@ t23 = (BS.pack "r", 4, [Unlock $ V  $ BS.pack "lock"], t23')
 sys8 :: ST s (System s)
 sys8 = do 
   is <- s7
-  lis <- H.toList is
-  return $ System (V.fromList [t11,t12,t21,t22,t23]) is lis [Lock $ V $ BS.pack "lock"]
+  return $ System (V.fromList [t11,t12,t21,t22,t23]) is [Lock $ V $ BS.pack "lock"]
 
 ind8 :: UIndep
 ind8 = V.generate 5 (\i -> V.generate 5 (\j -> check i j)) 

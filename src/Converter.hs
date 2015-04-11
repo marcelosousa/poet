@@ -38,7 +38,7 @@ convert (Program (decls, defs)) pcs flow thCount = do
 --      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
       vtrs = V.fromList trs
       uind = computeUIndep annot
-      sys = System vtrs is fils $ (Lock (V pmdVar)):[Lock (A pmtVar (toInteger th)) | th <- [0 .. thCount-1]] ++ [Lock (A pmjVar (toInteger th)) | th <- [0 .. thCount-1]]
+      sys = System vtrs is $ (Lock (V pmdVar)):[Lock (A pmtVar (toInteger th)) | th <- [0 .. thCount-1]] ++ [Lock (A pmjVar (toInteger th)) | th <- [0 .. thCount-1]]
   return (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
@@ -147,7 +147,7 @@ fromCall flow pcVar pc name [param] = do
                       iVal = IntVal 1
                   H.insert s pcVar pcVal
                   H.insert s ident iVal
-                  return (s, [(pcVar, pcVal),(ident, iVal)])                   
+                  return s
                 else return Nothing
           return [(fn, act, acts)]
         -- @ Array of Locks              
@@ -166,7 +166,7 @@ fromCall flow pcVar pc name [param] = do
                       iVal = Array vs'
                   H.insert s pcVar pcVal
                   H.insert s ident iVal
-                  return (s, [(pcVar, pcVal),(ident, iVal)])
+                  return s
                 else return Nothing
           return [(fn, act, acts)]         
     "__poet_mutex_unlock" ->
@@ -184,7 +184,7 @@ fromCall flow pcVar pc name [param] = do
                       iVal = IntVal 0
                   H.insert s pcVar pcVal
                   H.insert s ident iVal
-                  return (s, [(pcVar, pcVal),(ident, iVal)])                   
+                  return s
                 else return Nothing
           return [(fn, act, acts)]
         -- @ Array of Locks
@@ -203,7 +203,7 @@ fromCall flow pcVar pc name [param] = do
                       iVal = Array vs'
                   H.insert s pcVar pcVal
                   H.insert s ident iVal
-                  return (s, [(pcVar, pcVal),(ident, iVal)])
+                  return s
                 else return Nothing
           return [(fn, act, acts)]                      
     _ -> error "fromCall: call not supported"
@@ -244,14 +244,14 @@ fromAssign flow pcVar pc _lhs _rhs = do
                     let ident = BS.pack i
                         iVal = val
                     H.insert s ident iVal
-                    return (s, [(pcVar, pcVal),(ident, iVal)])
+                    return s
                   Index (Ident i) (Const (IntValue idx)) -> do
                     let ident = BS.pack i
                     Array vs <- safeLookup "call" s ident
                     let vs' = modifyList vs val idx
                         iVal = Array vs'
                     H.insert s ident iVal
-                    return (s, [(pcVar, pcVal),(ident, iVal)])
+                    return s
             else return Nothing
     return [(fn, act)]
 
@@ -265,7 +265,7 @@ fromGoto flow pcVar pc = do
             then return $ Just $ \s -> do
                 let pcVal = IntVal next
                 H.insert s pcVar pcVal
-                return (s, [(pcVar, pcVal)])
+                return s
             else return Nothing
     return [(fn, [Write $ V pcVar])]
 
@@ -283,11 +283,11 @@ fromIf flow pcVar pc _cond = do
                 then do
                   let pcVal = IntVal t
                   H.insert s pcVar pcVal
-                  return (s, [(pcVar, pcVal)])
+                  return s
                 else do
                   let pcVal = IntVal e
                   H.insert s pcVar pcVal
-                  return (s, [(pcVar, pcVal)])
+                  return s
             else return Nothing
     return [(fn, [Write $ V pcVar])]
 

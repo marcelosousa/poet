@@ -124,7 +124,7 @@ unfold conf@Conf{..} e = do
   -- copy the state otherwise it will go wrong 
   copyst <- lift $ GCS.copy stc
   -- execute the event e
-  (nstc, lcst) <- execute copyst e
+  nstc <- execute copyst e
   snstc <- lift $ GCS.showSigma nstc
   -- update the local state of e
   -- _ <- trace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
@@ -335,7 +335,7 @@ addEvent stack dup tr history = do
     -- @  c) Compute the immediate conflicts
     cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts >>= return . nub
     -- @ 3. Insert the new event in the hash table
-    let e = Event tr history [] cnfls [] [] Nothing 
+    let e = Event tr history [] cnfls [] []
     lift $ setEvent neID e evts 
     -- @ 4. Update all events in the history to include neID as their successor
     lift $ mapM (\e -> setSuccessor neID e evts) history

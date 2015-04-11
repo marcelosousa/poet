@@ -34,7 +34,7 @@ t1_2' s = do
           xVal = (IntVal 1)
       H.insert s (BS.pack "pcp") pcVal
       H.insert s (BS.pack "x") xVal
-      return (s,[(BS.pack "pcp", pcVal),(BS.pack "x", xVal)]) 
+      return s
     _ -> return Nothing
 t2_2' s = do
   v <- safeLookup "t2" s (BS.pack "pcq")
@@ -44,7 +44,7 @@ t2_2' s = do
       H.insert s (BS.pack "pcq") pcVal
       x <- safeLookup "t2" s (BS.pack "x")
       H.insert s (BS.pack "l1") x
-      return (s,[(BS.pack "pcq", pcVal),(BS.pack "l1", x)]) 
+      return s
     _ -> return Nothing
 t3_2' s = do
   v <- safeLookup "t3" s (BS.pack "pcr")
@@ -54,14 +54,13 @@ t3_2' s = do
       H.insert s (BS.pack "pcr") pcVal
       x <- safeLookup "t3" s (BS.pack "x")
       H.insert s (BS.pack "l2") x
-      return (s,[(BS.pack "pcr", pcVal),(BS.pack "l2", x)]) 
+      return s
     _ -> return Nothing
 
 sys2 :: ST s (System s)
 sys2 = do 
   is <- s2
-  lis <- H.toList is
-  return $ System (V.fromList [t1_2,t2_2,t3_2]) is lis [Other]
+  return $ System (V.fromList [t1_2,t2_2,t3_2]) is [Other]
 
 ind2 :: UIndep
 ind2 = V.generate 3 (\i -> V.generate 3 (\j -> check2 i j)) 

@@ -28,7 +28,6 @@ data System s =
   System {
     transitions :: V.Vector (Transition s),
     initialState :: ISigma s,
-    initialLState :: LSigma,
     initialActs :: Acts
   }
 
@@ -52,7 +51,7 @@ type TransitionID = Int
 type TransitionsID = V.Vector TransitionID
 type TransitionMeta = (ProcessID, TransitionID, Acts)
 type Transition s = (ProcessID, TransitionID, Acts, TransitionFn s)
-type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
+type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
 
 -- read write data type
 data RW = Read Variable | Write Variable
@@ -130,7 +129,7 @@ botID = -1
 
 -- | bottom transition is simply: return . id
 bot :: TransitionFn s
-bot s = return $ Just (\s' -> return (s',[]))    
+bot s = return $ Just (\s' -> return s')    
 
 -- GETTERS
 
@@ -173,13 +172,6 @@ equals s1 s2 = do
   kv2 <- H.toList s2
   return $ sort kv1 == sort kv2
 
--- Modifies the current state with some local states
-modify :: Sigma s -> LSigma -> ST s (Sigma s)
-modify s [] = return s
-modify s ((k,v):r) = do 
-  H.insert s k v
-  modify s r
--- modify s l = trace ("modify: " ++ show l) $ H.fromList l
    
 -- Add a state to a list of states if that state is not already in the list
 add :: Sigma s -> [Sigma s] -> ST s [Sigma s]

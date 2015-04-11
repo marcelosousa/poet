@@ -55,7 +55,7 @@ data Event = Event {
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
-  , lcst :: Maybe GCS.LSigma  -- Local state 
+--  , lcst :: Maybe GCS.LSigma  -- Local state 
 } deriving (Show,Eq,Ord)
 
 -- @ Events represents the unfolding prefix as LPES
@@ -95,14 +95,14 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.LSigma -> GCS.Acts -> Event
-botEvent lst acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] (Just lst) 
+botEvent :: GCS.Acts -> Event
+botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
 
 -- @ Initial state of the unfolder
 iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
 iState statelessMode sys indep = do
   events <- H.new
-  H.insert events 0 $ botEvent (GCS.initialLState sys) (GCS.initialActs sys) 
+  H.insert events 0 $ botEvent (GCS.initialActs sys) 
   let pconf = Conf undefined [] [] []
   return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode
 
@@ -127,7 +127,7 @@ gc s@UnfolderState{..} =
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s, GCS.LSigma)
+execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
@@ -249,16 +249,6 @@ getAlternatives e events = do
 setEvent :: EventID -> Event -> Events s -> ST s ()
 setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
   H.insert events eID e
-
-setLSigma :: EventID -> GCS.LSigma -> Events s -> ST s ()
-setLSigma eID st events = -- trace ("setLSigma: " ++ show eID) $ 
- do
-  ev@Event{..} <- getEvent "setLSigma" eID events
-  let lcst' = case lcst of
-        Nothing -> Just st
-        Just st' -> if st == st' then Just st else error "setLSigma: different local states"
-      ev' = ev{ lcst = lcst' } 
-  setEvent eID ev' events 
 
 -- @ delImmCnfl 
 delImmCnfl :: EventID -> EventID -> Events s -> ST s ()

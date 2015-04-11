@@ -18,7 +18,7 @@ t1_5' s = do
           xVal = (IntVal 1)
       H.insert s (BS.pack "pcp") pcVal
       H.insert s (BS.pack "x") xVal
-      return (s,[(BS.pack "pcp", pcVal),(BS.pack "x", xVal)]) 
+      return s
     _ -> return Nothing
 t21_5' s = do
   v <- safeLookup "t21" s (BS.pack "pcq")
@@ -31,11 +31,11 @@ t21_5' s = do
             lockVal = (IntVal 1)
         H.insert s (BS.pack "pcq") pcVal
         H.insert s (BS.pack "lock") lockVal
-        return (s,[(BS.pack "pcq", pcVal),(BS.pack "lock", lockVal)]) 
+        return s
       else do
         let pcVal = (IntVal 3)
         H.insert s (BS.pack "pcq") pcVal
-        return (s,[(BS.pack "pcq", pcVal)]) 
+        return s
     _ -> return Nothing
 t22_5' s = do
   v <- safeLookup "t22" s (BS.pack "pcq")
@@ -45,7 +45,7 @@ t22_5' s = do
       let pcVal = (IntVal 3)
       H.insert s (BS.pack "pcq") pcVal
       H.insert s (BS.pack "x2") x
-      return (s,[(BS.pack "pcq", pcVal),(BS.pack "x2", x)]) 
+      return s
     _ -> return Nothing
 t31_5' s = do
   v <- safeLookup "t31" s (BS.pack "pcr")
@@ -58,11 +58,11 @@ t31_5' s = do
             lockVal = (IntVal 1)
         H.insert s (BS.pack "pcr") pcVal
         H.insert s (BS.pack "lock") lockVal
-        return (s,[(BS.pack "pcr", pcVal),(BS.pack "lock", lockVal)]) 
+        return s
       else do
         let pcVal = (IntVal 3)
         H.insert s (BS.pack "pcr") pcVal
-        return (s,[(BS.pack "pcr", pcVal)]) 
+        return s
     _ -> return Nothing
 t32_5' s = do
   v <- safeLookup "t32" s (BS.pack "pcr")
@@ -72,7 +72,7 @@ t32_5' s = do
       let pcVal = (IntVal 3)
       H.insert s (BS.pack "pcr") pcVal
       H.insert s (BS.pack "x3") x
-      return (s,[(BS.pack "pcr", pcVal),(BS.pack "x3", x)]) 
+      return s
     _ -> return Nothing
 
 
@@ -98,8 +98,7 @@ t32_5 = (BS.pack "r", 4, [Other], t32_5')
 sys5 :: ST s (System s)
 sys5 = do 
   is <- s5
-  lis <- H.toList is
-  return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is lis [Other]
+  return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is [Other]
 
 -- [("t1","t2"),("t1","t4"),("t3","t5"),("t2","t5"),("t3","t4")]
 ind5 :: UIndep
