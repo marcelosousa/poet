@@ -44,7 +44,7 @@ convert (Program (decls, defs)) pcs flow thCount = do
 --      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
       vtrs = V.fromList trs
       uind = computeUIndep annot
-      sys = System vtrs is fils
+      sys = System vtrs is fils [Lock pmdVar, Lock pmtVar, Lock pmjVar]
   return (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
@@ -111,21 +111,21 @@ toTransition procName tID flow s =
                 return $ map (\(tr, act, rw) -> ((procName, tID, act, tr), (tID,rw))) trrws
             Assign _ _lhs _rhs -> do
                 trrws  <- fromAssign flow pcVar pc _lhs _rhs
-                return $ map (\(tr, rw) -> ((procName, tID, Other, tr), (tID,rw))) trrws
+                return $ map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws
         If pc _cond _then _else -> do
             trrws <- fromIf flow pcVar pc _cond 
             _thentr <- recGetTrans flow procName _then
             _elsetr <- recGetTrans flow procName _else
-            let _condtr = map (\(tr, rw) -> ((procName, tID, Other, tr), (tID,rw))) trrws 
+            let _condtr = map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
             return $ _condtr ++ _thentr ++ _elsetr
         IfThen pc _cond _then -> do
             trrws <- fromIf flow pcVar pc _cond 
             _thentr <- recGetTrans flow procName _then
-            let _condtr = map (\(tr, rw) -> ((procName, tID, Other, tr), (tID,rw))) trrws 
+            let _condtr = map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
             return $ _condtr ++ _thentr
         Goto pc loc -> do
             trrws  <- fromGoto flow pcVar pc
-            return $ map (\(tr, rw) -> ((procName, tID, Other, tr), (tID,rw))) trrws 
+            return $ map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
 
 modifyList :: [a] -> a -> Integer -> [a]
 modifyList xs a idx = 
@@ -133,7 +133,7 @@ modifyList xs a idx =
   in left ++ (a:right)
   
 -- encodes Call
-fromCall :: Flow -> Var -> PC -> String -> [Expression] -> ST s [(TransitionFn s, Act, RWSet)]
+fromCall :: Flow -> Var -> PC -> String -> [Expression] -> ST s [(TransitionFn s, Acts, RWSet)]
 fromCall flow pcVar pc name [param] = do
   let Continue next = getFlow flow pc
       argVar = getVarArg param
@@ -144,7 +144,7 @@ fromCall flow pcVar pc name [param] = do
         -- @ Lock Variable
         Ident i -> do 
           let ident = BS.pack i
-              act = Lock ident
+              act = [Lock ident]
               fn = \s -> do
                 IntVal curPC <- safeLookup "call" s pcVar
                 IntVal v <- safeLookup "call" s ident
@@ -160,7 +160,7 @@ fromCall flow pcVar pc name [param] = do
         -- @ Array of Locks              
         Index (Ident i) (Const (IntValue idx)) -> do
           let ident = BS.pack i
-              act = Lock ident
+              act = [Lock ident]
               fn = \s -> do 
                 IntVal curPC <- safeLookup "call" s pcVar
                 Array vs <- safeLookup "call" s ident
@@ -180,7 +180,7 @@ fromCall flow pcVar pc name [param] = do
         -- @ Lock Variable
         Ident i -> do 
           let ident = BS.pack i
-              act = Lock ident
+              act = [Lock ident]
               fn = \s -> do
                 IntVal curPC <- safeLookup "call" s pcVar
                 if curPC == pc
@@ -195,7 +195,7 @@ fromCall flow pcVar pc name [param] = do
         -- @ Array of Locks
         Index (Ident i) (Const (IntValue idx)) -> do
           let ident = BS.pack i
-              act = Lock ident
+              act = [Lock ident]
               fn = \s -> do
                 IntVal curPC <- safeLookup "call" s pcVar
                 if curPC == pc

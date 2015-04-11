@@ -172,9 +172,13 @@ expandWith e maxevs tr = do
     -- e should be a valid maximal event
     if e `elem` h0
     then do
-      his <- computeHistories tr e [h0] >>= return . nub 
+      his <- if GCS.isBlocking (third3 tr) 
+             then do
+               prede <- lift $ predecessors e evts 
+               computeHistoriesBlocking tr e prede (e `delete` h0)
+             else computeHistories tr e [h0] >>= return . nub 
       mapM (addEvent stack succe tr) his
-      trace ("other histories="++show his) $ addEvent stack succe tr h0
+      addEvent stack succe tr h0
     else error "e must always be in h0"  
 
 -- @ computeHistory 
@@ -226,25 +230,84 @@ computeHistories tr e (h:hs) = do
   hc <- lift $ filterM (\e' -> getEvent "computeNextHistory" e' evts >>= \ev -> return $ fst3 (evtr ev) /= fst3 tr) h' 
   -- replace one of the maximal events with the predecessors
   -- and prune the configuration
-  hs' <- mapM (computeNextHistory e h tr) hc
+  hs' <- mapM (computeNextHistory h tr) hc
   res <- computeHistories tr e $ nub $ hs' ++ hs
   return $! hs' ++ res
 
 -- @ computeNextHistory
 --   build a candidate history out of replacing a maximal event e with its immediate predecessors
-computeNextHistory :: EventID -> EventsID -> GCS.TransitionMeta -> EventID -> UnfolderOp s EventsID
-computeNextHistory e h tr e' = trace ("computeNextHistory(e="++show e++"h="++show h++",tr="++show tr++",e'="++show e'++")") $ do
+computeNextHistory :: EventsID -> GCS.TransitionMeta -> EventID -> UnfolderOp s EventsID
+computeNextHistory h tr e' = trace ("computeNextHistory(h="++show h++",tr="++show tr++",e'="++show e'++")") $ do
   s@UnfolderState{..} <- get
   -- we want to replace e' by its predecessors
   let h' = e' `delete` h
-  -- predecessors of e
+  -- predecessors of e'
   prede <- lift $ getIPred e' evts
-  -- filter the predecessors of e that are not maximal
+  -- filter the predecessors of e' that are not maximal
   -- @ FIXME: Optimise this!
   prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
   -- candidate
   let candidate = h' ++ prede'
   computeHistory candidate tr  
+
+computeHistoriesBlocking :: GCS.TransitionMeta -> EventID -> EventsID -> EventsID -> UnfolderOp s [EventsID]
+computeHistoriesBlocking tr e _ [] = return []
+computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
+  s@UnfolderState{..} <- get
+  ev <- lift $ getEvent "computeHistoriesBlocking" e evts
+  if fst3 (evtr ev) == procID
+  then do -- @ proc(e) == tr. Hence e' must be a blocking event, namely an unlock
+    ev' <- lift $ getEvent "computeHistoriesBlocking" e' evts
+    let acte' = third3 $ evtr ev'
+    if any (\a -> (GCS.Unlock (GCS.varOf a)) `elem` acte') act
+    then do
+      me'' <- findNextUnlock tr prede e'
+      case me'' of
+        -- @ [e] is not a valid history 
+        Nothing -> return []
+        -- @ [e] is a valid history
+        Just [] -> return [[e]]
+        -- @ [e,e''] is a valid history
+        --   and by construction e'' is unlock
+        Just [e''] -> do
+          let hN = [e,e'']
+          rest <- computeHistoriesBlocking tr e prede [e'']
+          if rest == []
+          then return [hN]
+          else return $ hN:rest
+    else error "computeHistoriesBlocking: can't happen!"
+  else return [] -- @ proc(e) != tr
+computeHistoriesBlocking _ _ _ _ = error "computeHistoriesBlocking: fatal!"
+
+-- 
+findNextUnlock :: GCS.TransitionMeta -> EventsID -> EventID -> UnfolderOp s (Maybe EventsID)
+findNextUnlock tr@(_,_,act) prede e' = do
+  s@UnfolderState{..} <- get
+  iprede' <- lift $ getIPred e' evts
+  (es_done,es) <- lift $ foldM (\(l,r) e ->
+         isDependent_te inde tr e evts >>= \b -> 
+            if b then return (e:l,r) else return (l,e:r)) ([],[]) iprede'
+  -- @ es_done is either empty or has one event
+  case es_done of 
+    [] -> do
+      lres <- mapM (findNextUnlock tr prede) es >>= return . nub . catMaybes
+      case lres of
+        [] -> return $ Just []
+        [x] -> return $ Just x
+        _ -> error "findNextUnlock: not sure what happens here!"
+    [e] -> do
+      ev <- lift $ getEvent "computeHistoriesBlocking" e evts
+      let acte = third3 $ evtr ev
+      if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` acte) act
+      then if e `elem` prede
+           then return Nothing
+           else findNextUnlock tr prede e
+      else if any (\a -> (GCS.Unlock (GCS.varOf a)) `elem` acte) act
+           then if e `elem` prede
+                then return $ Just []
+                else return $ Just [e]
+           else error "findNextUnlock: cant happen!"
+    _ -> error "findNextUnlock: two events are dependent and that can't happen"
 
 -- @ addEvent: Given a transition id and the history
 --   adds the correspondent event.

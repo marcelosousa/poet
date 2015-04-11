@@ -22,12 +22,12 @@ s3 = do
   return ht
 
 t1_3, t2_3, t31_3, t32_3, t41_3, t42_3 :: Transition s
-t1_3 = (BS.pack "p",0,Other,t1_3')
-t2_3 = (BS.pack "q",1,Other,t2_3')
-t31_3 = (BS.pack "r",2,Other,t31_3')
-t32_3 = (BS.pack "r",3,Other,t32_3')
-t41_3 = (BS.pack "s",4,Other,t41_3')
-t42_3 = (BS.pack "s",5,Other,t42_3')
+t1_3 = (BS.pack "p",0,[Other],t1_3')
+t2_3 = (BS.pack "q",1,[Other],t2_3')
+t31_3 = (BS.pack "r",2,[Other],t31_3')
+t32_3 = (BS.pack "r",3,[Other],t32_3')
+t41_3 = (BS.pack "s",4,[Other],t41_3')
+t42_3 = (BS.pack "s",5,[Other],t42_3')
 
 t1_3', t2_3', t31_3', t32_3', t41_3', t42_3' :: TransitionFn s 
 t1_3' s = do
@@ -95,7 +95,7 @@ sys3 :: ST s (System s)
 sys3 = do 
   is <- s3
   lis <- H.toList is
-  return $ System (V.fromList [t1_3,t2_3,t31_3,t32_3,t41_3,t42_3]) is lis
+  return $ System (V.fromList [t1_3,t2_3,t31_3,t32_3,t41_3,t42_3]) is lis [Other]
 
 ind3 :: UIndep
 ind3 = V.generate 6 (\i -> V.generate 6 (\j -> check3 i j)) 

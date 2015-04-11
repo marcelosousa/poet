@@ -22,11 +22,11 @@ s6 = do
   return ht
 
 t1_6, t21_6, t22_6, t31_6, t32_6 :: Transition s
-t1_6 = (BS.pack "p",0, Other,t1_6')
-t21_6 = (BS.pack "q",1,Other,t21_6')
-t22_6 = (BS.pack "q",2,Other,t22_6')
-t31_6 = (BS.pack "r",3,Other,t31_6')
-t32_6 = (BS.pack "r",4,Other,t32_6')
+t1_6 = (BS.pack "p",0, [Other],t1_6')
+t21_6 = (BS.pack "q",1,[Other],t21_6')
+t22_6 = (BS.pack "q",2,[Other],t22_6')
+t31_6 = (BS.pack "r",3,[Other],t31_6')
+t32_6 = (BS.pack "r",4,[Other],t32_6')
 
 t1_6', t21_6', t22_6', t31_6', t32_6' :: TransitionFn s
 t1_6' s = do
@@ -80,7 +80,7 @@ sys6 :: ST s (System s)
 sys6 = do 
   is <- s6
   lis <- H.toList is
-  return $ System (V.fromList [t1_6,t21_6,t22_6,t31_6,t32_6]) is lis
+  return $ System (V.fromList [t1_6,t21_6,t22_6,t31_6,t32_6]) is lis [Other]
 
 ind6 :: UIndep
 ind6 = V.generate 5 (\i -> V.generate 5 (\j -> check6 i j)) 

@@ -28,7 +28,8 @@ data System s =
   System {
     transitions :: V.Vector (Transition s),
     initialState :: ISigma s,
-    initialLState :: LSigma
+    initialLState :: LSigma,
+    initialActs :: Acts
   }
 
 type ISigma s = Sigma s
@@ -55,15 +56,25 @@ type LSigma = [(Var,Value)]
 type ProcessID = BS.ByteString
 type TransitionID = Int 
 type TransitionsID = V.Vector TransitionID
-type TransitionMeta = (ProcessID, TransitionID, Act)
-type Transition s = (ProcessID, TransitionID, Act, TransitionFn s)
+type TransitionMeta = (ProcessID, TransitionID, Acts)
+type Transition s = (ProcessID, TransitionID, Acts, TransitionFn s)
 type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
 
+type Acts = [Act]
 data Act = Lock Var | Unlock Var | Other
   deriving (Show,Eq,Ord)
+
+varOf :: Act -> Var
+varOf (Lock v) = v
+varOf (Unlock v) = v
+varOf Other = error "varOf Other"
 -- 1. Variable or Array, Constant Index
 --    
 -- 2. Global state reached by the local configuration
+
+isBlocking :: Acts -> Bool
+isBlocking = any (\act -> act /= Other)
+
 showTransition :: Transition s -> String
 showTransition (a,b,c,_) = show (a,b,c)
 

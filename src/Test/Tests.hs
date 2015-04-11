@@ -9,36 +9,38 @@ import Test.Examples.ExThree
 import Test.Examples.ExFour
 import Test.Examples.ExFive
 import Test.Examples.ExSix
+import Test.Examples.ExSeven
+import Test.Examples.ExEight
 
 import Control.Monad.ST.Safe
 import Test.HUnit
 
-test1 mode = 
-  let r1 = runST (sys1 >>= \sys -> stateless mode sys ind11 >>= return . show)
+test1 = 
+  let r1 = runST (sys1 >>= \sys -> stateless False sys ind11 >>= return . show)
   in TestCase (assertEqual "WxWx" "(5,2)" r1)
 
-test2 mode = 
-  let r1 = runST (sys1 >>= \sys -> stateless mode sys ind12 >>= return . show)
+test2 = 
+  let r1 = runST (sys1 >>= \sys -> stateless False sys ind12 >>= return . show)
   in TestCase (assertEqual "WxWy" "(3,1)" r1)
 
-test3 mode = 
-  let r1 = runST (sys2 >>= \sys -> stateless mode sys ind2 >>= return . show)
+test3 = 
+  let r1 = runST (sys2 >>= \sys -> stateless False sys ind2 >>= return . show)
   in TestCase (assertEqual "WxRxRx" "(11,4)" r1)
 
-test4 mode = 
-  let r1 = runST (sys3 >>= \sys -> stateless mode sys ind3 >>= return . show)
+test4 = 
+  let r1 = runST (sys3 >>= \sys -> stateless False sys ind3 >>= return . show)
   in TestCase (assertEqual "paper" "(13,4)" r1)
 
-test5 mode = 
-  let r1 = runST (sys4 >>= \sys -> stateless mode sys ind4 >>= return . show)
+test5 = 
+  let r1 = runST (sys4 >>= \sys -> stateless False sys ind4 >>= return . show)
   in TestCase (assertEqual "ex4" "(7,2)" r1)
 
-test6 mode = 
-  let r1 = runST (sys5 >>= \sys -> stateless mode sys ind5 >>= return . show)
+test6 = 
+  let r1 = runST (sys5 >>= \sys -> stateless False sys ind5 >>= return . show)
   in TestCase (assertEqual "cesar" "(12,4)" r1)
 
-test7 mode = 
-  let r1 = runST (sys6 >>= \sys -> stateless mode sys ind6 >>= return . show)
+test7 = 
+  let r1 = runST (sys6 >>= \sys -> stateless False sys ind6 >>= return . show)
   in TestCase (assertEqual "histories" "(15,4)" r1)
 
 test8  = 
@@ -75,15 +77,35 @@ test14 =
   let r1 = runST (sys6 >>= \sys -> stateless True sys ind6 >>= return . show . maxConf)
       r2 = runST (sys6 >>= \sys -> stateless False sys ind6 >>= return . show . maxConf)
   in TestCase (assertEqual "histories" r1 r2)
-  
-tests mode = TestList 
-  [ TestLabel "test1" (test1 mode)
-  , TestLabel "test2" (test2 mode)
-  , TestLabel "test3" (test3 mode)
-  , TestLabel "test4" (test4 mode)
-  , TestLabel "test5" (test5 mode)
-  , TestLabel "test6" (test6 mode)
-  , TestLabel "test7" (test7 mode)
+
+-- locks tests
+test15 = 
+  let r1 = runST (sys7 >>= \sys -> stateless False sys ind7 >>= return . show)
+  in TestCase (assertEqual "lock-simple" "(13,2)" r1)
+
+test16 = 
+  let r1 = runST (sys7 >>= \sys -> stateless True sys ind7 >>= return . show . maxConf)
+      r2 = runST (sys7 >>= \sys -> stateless False sys ind7 >>= return . show . maxConf)
+  in TestCase (assertEqual "lock-simple-fullvsless" r1 r2)
+
+test17 = 
+  let r1 = runST (sys8 >>= \sys -> stateless False sys ind8 >>= return . show)
+  in TestCase (assertEqual "unlock-simple" "(9,2)" r1)
+
+test18 = 
+  let r1 = runST (sys8 >>= \sys -> stateless True sys ind8 >>= return . show . maxConf)
+      r2 = runST (sys8 >>= \sys -> stateless False sys ind8 >>= return . show . maxConf)
+  in TestCase (assertEqual "unlock-simple-fullvsless" r1 r2)
+
+
+tests = TestList 
+  [ TestLabel "test1" test1
+  , TestLabel "test2" test2
+  , TestLabel "test3" test3
+  , TestLabel "test4" test4
+  , TestLabel "test5" test5
+  , TestLabel "test6" test6
+  , TestLabel "test7" test7
   , TestLabel "test8" test8
   , TestLabel "test9" test9 
   , TestLabel "test10" test10
@@ -91,4 +113,8 @@ tests mode = TestList
   , TestLabel "test12" test12 
   , TestLabel "test13" test13 
   , TestLabel "test14" test14 
+  , TestLabel "test15" test15
+  , TestLabel "test16" test16
+  , TestLabel "test17" test17
+  , TestLabel "test18" test18
   ]

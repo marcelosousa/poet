@@ -21,9 +21,9 @@ s2 = do
   return ht
 
 t1_2, t2_2, t3_2 :: Transition s
-t1_2 = (BS.pack "p",0,Other,t1_2')
-t2_2 = (BS.pack "q",1,Other,t2_2')
-t3_2 = (BS.pack "r",2,Other,t3_2')
+t1_2 = (BS.pack "p",0,[Other],t1_2')
+t2_2 = (BS.pack "q",1,[Other],t2_2')
+t3_2 = (BS.pack "r",2,[Other],t3_2')
 
 t1_2', t2_2', t3_2' :: TransitionFn s 
 t1_2' s = do
@@ -61,7 +61,7 @@ sys2 :: ST s (System s)
 sys2 = do 
   is <- s2
   lis <- H.toList is
-  return $ System (V.fromList [t1_2,t2_2,t3_2]) is lis
+  return $ System (V.fromList [t1_2,t2_2,t3_2]) is lis [Other]
 
 ind2 :: UIndep
 ind2 = V.generate 3 (\i -> V.generate 3 (\j -> check2 i j)) 

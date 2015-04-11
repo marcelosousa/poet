@@ -89,17 +89,17 @@ s5 = do
   return ht
 
 t1_5, t21_5,t22_5,t31_5,t32_5 :: Transition s
-t1_5  = (BS.pack "p", 0, Other, t1_5')
-t21_5 = (BS.pack "q", 1, Other, t21_5')
-t22_5 = (BS.pack "q", 2, Other, t22_5')
-t31_5 = (BS.pack "r", 3, Other, t31_5')
-t32_5 = (BS.pack "r", 4, Other, t32_5')
+t1_5  = (BS.pack "p", 0, [Other], t1_5')
+t21_5 = (BS.pack "q", 1, [Other], t21_5')
+t22_5 = (BS.pack "q", 2, [Other], t22_5')
+t31_5 = (BS.pack "r", 3, [Other], t31_5')
+t32_5 = (BS.pack "r", 4, [Other], t32_5')
 
 sys5 :: ST s (System s)
 sys5 = do 
   is <- s5
   lis <- H.toList is
-  return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is lis
+  return $ System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) is lis [Other]
 
 -- [("t1","t2"),("t1","t4"),("t3","t5"),("t2","t5"),("t3","t4")]
 ind5 :: UIndep

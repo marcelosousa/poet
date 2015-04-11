@@ -95,7 +95,7 @@ runOption (Middleend f) = do
 runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
 runOption (Explore f) = explore f False
-runOption Test = test False
+runOption Test = test
 
 frontend :: FilePath -> IO ()
 frontend f = do
@@ -139,9 +139,9 @@ explore f mode = do
   putStrLn $ "total number of events of the unfolding: " ++ show size
   writeFile (replaceExtension f ".dot") unfst
 
-test :: Bool -> IO ()
-test mode = do
-    succCount <- runTestTT (tests mode)
+test :: IO ()
+test = do
+    succCount <- runTestTT tests
     print succCount
     
 {-

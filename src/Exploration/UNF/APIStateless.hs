@@ -95,14 +95,14 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.LSigma -> Event
-botEvent lst = Event (BS.pack "", GCS.botID, GCS.Other) [] [] [] [] [] (Just lst) 
+botEvent :: GCS.LSigma -> GCS.Acts -> Event
+botEvent lst acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] (Just lst) 
 
 -- @ Initial state of the unfolder
 iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
 iState statelessMode sys indep = do
   events <- H.new
-  H.insert events 0 $ botEvent $ GCS.initialLState sys 
+  H.insert events 0 $ botEvent (GCS.initialLState sys) (GCS.initialActs sys) 
   let pconf = Conf undefined [] [] []
   return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode
 
