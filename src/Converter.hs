@@ -15,12 +15,6 @@ import Frontend.Util
 
 import Debug.Trace
 
--- read write data type
-data RW = Read Var | Write Var 
-  deriving (Show,Eq,Ord)
-
-type RWSet = [RW]
-
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1
 pmtVar = BS.pack "__poet_mutex_threads"
@@ -44,7 +38,7 @@ convert (Program (decls, defs)) pcs flow thCount = do
 --      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
       vtrs = V.fromList trs
       uind = computeUIndep annot
-      sys = System vtrs is fils [Lock pmdVar, Lock pmtVar, Lock pmjVar]
+      sys = System vtrs is fils $ (Lock (V pmdVar)):[Lock (A pmtVar (toInteger th)) | th <- [0 .. thCount-1]] ++ [Lock (A pmjVar (toInteger th)) | th <- [0 .. thCount-1]]
   return (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
@@ -136,15 +130,14 @@ modifyList xs a idx =
 fromCall :: Flow -> Var -> PC -> String -> [Expression] -> ST s [(TransitionFn s, Acts, RWSet)]
 fromCall flow pcVar pc name [param] = do
   let Continue next = getFlow flow pc
-      argVar = getVarArg param
-      acts = [Write pcVar, Write argVar]
   case name of 
     "__poet_mutex_lock" ->
       case param of
         -- @ Lock Variable
         Ident i -> do 
           let ident = BS.pack i
-              act = [Lock ident]
+              acts = [Write (V pcVar), Write (V ident)]
+              act = [Lock $ V ident]
               fn = \s -> do
                 IntVal curPC <- safeLookup "call" s pcVar
                 IntVal v <- safeLookup "call" s ident
@@ -160,7 +153,8 @@ fromCall flow pcVar pc name [param] = do
         -- @ Array of Locks              
         Index (Ident i) (Const (IntValue idx)) -> do
           let ident = BS.pack i
-              act = [Lock ident]
+              acts = [Write (V pcVar), Write (A ident idx)]
+              act = [Lock $ A ident idx]              
               fn = \s -> do 
                 IntVal curPC <- safeLookup "call" s pcVar
                 Array vs <- safeLookup "call" s ident
@@ -180,7 +174,8 @@ fromCall flow pcVar pc name [param] = do
         -- @ Lock Variable
         Ident i -> do 
           let ident = BS.pack i
-              act = [Lock ident]
+              acts = [Write (V pcVar), Write (V ident)]
+              act = [Unlock $ V ident]
               fn = \s -> do
                 IntVal curPC <- safeLookup "call" s pcVar
                 if curPC == pc
@@ -195,7 +190,8 @@ fromCall flow pcVar pc name [param] = do
         -- @ Array of Locks
         Index (Ident i) (Const (IntValue idx)) -> do
           let ident = BS.pack i
-              act = [Lock ident]
+              acts = [Write (V pcVar), Write (A ident idx)]
+              act = [Unlock $ A ident idx]
               fn = \s -> do
                 IntVal curPC <- safeLookup "call" s pcVar
                 if curPC == pc
@@ -217,13 +213,14 @@ getVarArg (Ident i) = BS.pack i
 getVarArg (Index (Ident i) _) = BS.pack i
 getVarArg e = error $ "getVarArg: " ++ show e
 
-getIdent :: Expression -> [Var]
+getIdent :: Expression -> [Variable]
 getIdent expr = case expr of
   BinOp op lhs rhs -> getIdent lhs ++ getIdent rhs
   UnaryOp op rhs -> getIdent rhs
   Const v -> []
-  Ident i -> [BS.pack i]
-  Index (Ident i) rhs -> (BS.pack i):getIdent rhs
+  Ident i -> [V $ BS.pack i]
+  Index (Ident i) (Const (IntValue idx)) -> [A (BS.pack i) idx]
+  Index (Ident i) rhs -> (V $ BS.pack i):getIdent rhs
   Call _ args -> concatMap getIdent args
   _ -> error $ "eval: disallowed " ++ show expr
 
@@ -234,7 +231,7 @@ fromAssign flow pcVar pc _lhs _rhs = do
     let Continue next = getFlow flow pc
         _lhsi = map Write $ getIdent _lhs
         _rhsi = map Read $ getIdent _rhs
-        act = (Write pcVar):(_lhsi ++ _rhsi)
+        act = (Write $ V pcVar):(_lhsi ++ _rhsi)
         fn = \s -> do
             IntVal curPC <- safeLookup "goto" s pcVar
             if curPC == pc
@@ -270,7 +267,7 @@ fromGoto flow pcVar pc = do
                 H.insert s pcVar pcVal
                 return (s, [(pcVar, pcVal)])
             else return Nothing
-    return [(fn, [Write pcVar])]
+    return [(fn, [Write $ V pcVar])]
 
 
 -- encodes fromIf
@@ -292,7 +289,7 @@ fromIf flow pcVar pc _cond = do
                   H.insert s pcVar pcVal
                   return (s, [(pcVar, pcVal)])
             else return Nothing
-    return [(fn, [Write pcVar])]
+    return [(fn, [Write $ V pcVar])]
 
 eval :: Expression -> Sigma s -> ST s Value
 eval expr s = case expr of

@@ -127,7 +127,7 @@ unfold conf@Conf{..} e = do
   (nstc, lcst) <- execute copyst e
   snstc <- lift $ GCS.showSigma nstc
   -- update the local state of e
-  _ <- trace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
+  -- _ <- trace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
   -- @ 2. compute the new set of maximal events
   iprede <- lift $ getIPred e evts
   let nmaxevs = e:(maxevs \\ iprede)
@@ -252,7 +252,7 @@ computeNextHistory h tr e' = trace ("computeNextHistory(h="++show h++",tr="++sho
 
 computeHistoriesBlocking :: GCS.TransitionMeta -> EventID -> EventsID -> EventsID -> UnfolderOp s [EventsID]
 computeHistoriesBlocking tr e _ [] = return []
-computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
+computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = trace ("computeHistoriesBlock" ) $ do
   s@UnfolderState{..} <- get
   ev <- lift $ getEvent "computeHistoriesBlocking" e evts
   if fst3 (evtr ev) == procID
@@ -275,13 +275,13 @@ computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
           if rest == []
           then return [hN]
           else return $ hN:rest
-    else error "computeHistoriesBlocking: can't happen!"
+    else error $ "computeHistoriesBlocking: can't happen! " ++ show act ++ " " ++ show acte'
   else return [] -- @ proc(e) != tr
 computeHistoriesBlocking _ _ _ _ = error "computeHistoriesBlocking: fatal!"
 
 -- 
 findNextUnlock :: GCS.TransitionMeta -> EventsID -> EventID -> UnfolderOp s (Maybe EventsID)
-findNextUnlock tr@(_,_,act) prede e' = do
+findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e'="++show e'++")") $ do
   s@UnfolderState{..} <- get
   iprede' <- lift $ getIPred e' evts
   (es_done,es) <- lift $ foldM (\(l,r) e ->
@@ -292,7 +292,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
     [] -> do
       lres <- mapM (findNextUnlock tr prede) es >>= return . nub . catMaybes
       case lres of
-        [] -> return $ Just []
+        [] -> return Nothing -- $ Just []
         [x] -> return $ Just x
         _ -> error "findNextUnlock: not sure what happens here!"
     [e] -> do
@@ -306,7 +306,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
            then if e `elem` prede
                 then return $ Just []
                 else return $ Just [e]
-           else error "findNextUnlock: cant happen!"
+           else trace ("returning nothing") $ return Nothing -- REVISE: error $ "findNextUnlock: cant happen! " ++ show e
     _ -> error "findNextUnlock: two events are dependent and that can't happen"
 
 -- @ addEvent: Given a transition id and the history

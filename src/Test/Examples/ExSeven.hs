@@ -77,18 +77,18 @@ s7 = do
   return ht
 
 t11,t12,t13,t21,t22,t23 :: Transition s
-t11 = (BS.pack "q", 0, [Lock (BS.pack "lock")], t11')
+t11 = (BS.pack "q", 0, [Lock $ V $ BS.pack "lock"], t11')
 t12 = (BS.pack "q", 1, [Other], t12')
-t13 = (BS.pack "q", 2, [Unlock (BS.pack "lock")], t13')
-t21 = (BS.pack "r", 3, [Lock (BS.pack "lock")], t21')
+t13 = (BS.pack "q", 2, [Unlock $ V $ BS.pack "lock"], t13')
+t21 = (BS.pack "r", 3, [Lock $ V $ BS.pack "lock"], t21')
 t22 = (BS.pack "r", 4, [Other], t22')
-t23 = (BS.pack "r", 5, [Unlock (BS.pack "lock")], t23')
+t23 = (BS.pack "r", 5, [Unlock $ V $ BS.pack "lock"], t23')
 
 sys7 :: ST s (System s)
 sys7 = do 
   is <- s7
   lis <- H.toList is
-  return $ System (V.fromList [t11,t12,t13,t21,t22,t23]) is lis [Unlock (BS.pack "lock")]
+  return $ System (V.fromList [t11,t12,t13,t21,t22,t23]) is lis [Unlock $ V $ BS.pack "lock"]
 
 -- [("t1","t2"),("t1","t4"),("t3","t5"),("t2","t5"),("t3","t4")]
 ind7 :: UIndep

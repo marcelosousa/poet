@@ -38,15 +38,9 @@ type HashTable s k v = C.HashTable s k v
 --  Later we can try Judy Arrays or Mutable Vectors
 type Sigma s = HashTable s Var Value -- We may want to add the enabled transitions for efficiency.
 type Var = BS.ByteString
-type SigmaValue = (Value, Maybe LockedValue)
 data Value = 
       IntVal Int 
     | Array [Value]
-  deriving (Show,Eq,Ord)
-
-data LockedValue = 
-      Var [(Var,PC)]
-    | ArrayLock [LockedValue]
   deriving (Show,Eq,Ord)
   
 -- Local State
@@ -60,11 +54,20 @@ type TransitionMeta = (ProcessID, TransitionID, Acts)
 type Transition s = (ProcessID, TransitionID, Acts, TransitionFn s)
 type TransitionFn s = Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s,LSigma)))
 
-type Acts = [Act]
-data Act = Lock Var | Unlock Var | Other
+-- read write data type
+data RW = Read Variable | Write Variable
   deriving (Show,Eq,Ord)
 
-varOf :: Act -> Var
+type RWSet = [RW]
+
+data Variable = V Var | A Var Integer
+  deriving (Show,Eq,Ord)
+  
+type Acts = [Act]
+data Act = Lock Variable | Unlock Variable | Other
+  deriving (Show,Eq,Ord)
+
+varOf :: Act -> Variable
 varOf (Lock v) = v
 varOf (Unlock v) = v
 varOf Other = error "varOf Other"
