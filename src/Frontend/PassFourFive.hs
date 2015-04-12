@@ -12,7 +12,7 @@ iDB = 0
 passFourFive :: Program -> Program
 passFourFive (Program (decl,defs)) = 
     let defs' = fst $ unzip $ map (applyTrans iDB for2while) defs -- Pass 4
-        defs'' = fst $ unzip $ map (applyTrans iDB while2if) defs' -- Pass 5
+        defs'' = fst $ foldr (\def (rest,db) -> let (def',db') = applyTrans db while2if def in (def':rest,db')) ([],iDB) defs' -- Pass 5
     in Program (decl,defs'')
 
 applyTrans :: DataBase -> (DataBase -> AnnStatement PC -> ([AnnStatement PC],DataBase)) -> Definition -> (Definition,DataBase)

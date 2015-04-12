@@ -24,19 +24,19 @@ import Frontend.PassSeven
 --  for easy manipulation and analysis.
 frontEnd :: Program -> (Program, FirstFlow, Flow, Int)
 frontEnd prog = 
-    let globals = getGlobalsDecls prog
-        (prog1, threadCount) = passOne prog
-        pass2res = passTwo globals prog1 -- :: Int
-        prog3 = passThree globals prog1
-        prog45 = passFourFive prog3
-        prog6 = passSix prog45
-        pass7res = pass2res `seq` passSeven prog6 -- :: Bool
-        maplabelpc = mapLabelPC prog6
-        prog8 = removeLabel prog6
-        (firstflow, flow) = flowProgram maplabelpc prog8
-    in if pass7res
-       then (prog8, firstflow, flow, threadCount)
-       else error "frontEnd fatal: something went wrong! Please contact developers."
+  let globals = getGlobalsDecls prog
+      (prog1, threadCount) = passOne prog
+      pass2res = passTwo globals prog1 -- :: Int
+      prog3 = passThree globals prog1
+      prog45 = passFourFive prog3
+      prog6 = passSix prog45
+      pass7res = pass2res `seq` passSeven prog6 -- :: Bool
+      maplabelpc = mapLabelPC prog6
+      prog8 = removeLabel prog6
+      (firstflow, flow) = flowProgram maplabelpc prog8
+  in if pass7res
+     then (prog8, firstflow, flow, threadCount)
+     else error "frontEnd fatal: something went wrong! Please contact developers."
 
 -- Pass 8: transform the program into a graph (data type to be defined)
 -- Pass 8a: get the pc for all the labels; 
@@ -75,7 +75,7 @@ removeLabel (Program (decls,defs)) =
             let _then' = concatMap removeLabelStat _then
                 _else' = concatMap removeLabelStat _else
             in [If pc cond _then' _else']
-          Label pc i body -> body
+          Label pc i body -> concatMap removeLabelStat body
           Goto pc i -> [Goto pc i]
           _ -> error $ "getPC fatal: disallowed " ++ show s
           
@@ -114,8 +114,8 @@ flowStatement mlpc nextPC [s] = case s of
     IfThen pc _ _then -> 
       let nextTPC = getPC $ head _then
           nextPC' = if length _then > 1 then (Just $ getPC $ _then!!1) else nextPC
-          this = case nextPC of
-              Nothing -> error "flowStatement: can't happen"
+          this = case nextPC' of
+              Nothing -> error $ "flowStatement: can't happen " ++ show s ++ " " ++ show nextPC
               Just _nextPC -> (pc, Branch (nextTPC, _nextPC))
           (thenFlow, etpc) = flowStatement mlpc nextPC' _then
       in (this:thenFlow, pc:etpc)
@@ -133,10 +133,10 @@ flowStatement mlpc nextPC [s] = case s of
           Nothing -> error "flowStatement: goto nowhere!"
           Just lpc -> ([(pc, Continue lpc)], [lpc]) 
     _ -> error $ "flowStatement fatal: disallowed " ++ show s
-flowStatement mlpc _ (s:n:ss) = case s of
+flowStatement mlpc nextPC (s:n:ss) = case s of
     ExprStat pc e -> 
       let this = (pc, Continue $ getPC n)
-          (next, epc) = flowStatement mlpc Nothing (n:ss)
+          (next, epc) = flowStatement mlpc nextPC (n:ss)
       in (this:next, epc)
     IfThen pc _ _then -> 
       let nextFPC = getPC n 

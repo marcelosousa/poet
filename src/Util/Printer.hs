@@ -6,13 +6,14 @@ import qualified Data.HashTable.Class as H
 import qualified Data.ByteString.Char8 as BS
 
 import Exploration.UNF.APIStateless
+import Model.GCS
 
 import qualified Data.Map as M
 
-unfToDot :: UnfolderState s -> ST s (Int,String)
+unfToDot :: UnfolderState s -> ST s (Int,Int,String)
 unfToDot sys@UnfolderState{..} = do
     events <- H.toList evts
-    return (length events, "digraph unfolding {\n" ++ toDot events stack ++ "}")
+    return (cntr, maxConf, "digraph unfolding {\n" ++ toDot events stack ++ "}")
 
 class ToDot a where
     toDot :: a -> EventsID -> String
@@ -24,9 +25,20 @@ instance ToDot (EventID, Event) where
     toDot (eID, ev@Event{..}) stack = 
       let causality = foldr (printCausality eID) "" succ
           conflict = foldr (printConflict eID) "" icnf
-          (tID,pID) = evtr
-          label = show eID ++ " [label=\"eID = " ++ show eID ++ " tr=(" ++ show tID ++ "," ++ BS.unpack pID ++ ")\"]\n"
+          (pID,tID,act) = evtr
+          label = show eID ++ " [label=\"eID = " ++ show eID ++ " tr=(" ++ show tID ++ "," ++ BS.unpack pID ++ "," ++ showActs act++")\"]\n"
       in causality ++ conflict ++ label
+
+showActs :: Acts -> String
+showActs acts = foldr (\act res -> showAct act ++ "," ++ res) "" acts
+
+showAct :: Act -> String
+showAct Other = "Other"
+showAct (Lock (V var)) = "Lock " ++ BS.unpack var
+showAct (Lock (A var idx)) = "Lock " ++ BS.unpack var ++ " " ++ show idx
+showAct (Unlock (V var)) = "Unlock" ++ BS.unpack var
+showAct (Unlock (A var idx)) = "Unlock" ++ BS.unpack var ++ " " ++ show idx
+
 
 printCausality :: EventID -> EventID -> String -> String
 printCausality e1 e2 s = show e1 ++ " -> " ++ show e2 ++ ";\n" ++ s

@@ -49,13 +49,13 @@ type Counter = Int
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
 data Event = Event {
-    evtr :: (GCS.TransitionID, GCS.ProcessID)  -- Transition id
+    evtr :: GCS.TransitionMeta  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
-  , lcst :: Maybe GCS.LSigma  -- Local state 
+--  , lcst :: Maybe GCS.LSigma  -- Local state 
 } deriving (Show,Eq,Ord)
 
 -- @ Events represents the unfolding prefix as LPES
@@ -83,6 +83,7 @@ data UnfolderState s = UnfolderState {
   , evts :: Events s         -- Unfolding prefix 
   , pcnf :: Configuration s  -- Previous configuration
   , cntr :: Counter          -- Event counter
+  , maxConf :: Counter       -- Maximal config counter
   , stack :: EventsID        -- Call stack
   , statelessMode :: Bool    -- Stateless or not
 }
@@ -94,21 +95,21 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.LSigma -> Event
-botEvent lst = Event (GCS.botID, BS.pack "") [] [] [] [] [] (Just lst) 
+botEvent :: GCS.Acts -> Event
+botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
 
 -- @ Initial state of the unfolder
 iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
 iState statelessMode sys indep = do
   events <- H.new
-  H.insert events 0 $ botEvent $ GCS.initialLState sys 
+  H.insert events 0 $ botEvent (GCS.initialActs sys) 
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 [0] statelessMode
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
 instance Show (UnfolderState s) where
-    show (u@UnfolderState{..}) = show cntr 
+    show (u@UnfolderState{..}) = show (cntr, maxConf)
 --        beg ++ "UIndep: " ++ show indep ++ "\nEvents: " ++ show events ++ "\nCausality: " ++ show causality 
 --     ++ "\n" ++ show (cevs configurations) ++ "\nEnabled: " ++ show enable 
 --     ++ "\nDisable: " ++ show disable ++ "\nAlternatives: " ++ show alternatives  ++ "\nImmConflicts: " ++ show immediateConflicts ++ "\nCounters: " 
@@ -126,18 +127,18 @@ gc s@UnfolderState{..} =
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s, GCS.LSigma)
+execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
-  let t = GCS.getTransition syst $ fst evtr
+  let t = GCS.getTransition syst $ snd3 evtr
   fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
   lift $ fn cst
 
-isDependent_te :: GCS.UIndep -> (GCS.TransitionID, GCS.ProcessID) -> EventID -> Events s -> ST s Bool
+isDependent_te :: GCS.UIndep -> GCS.TransitionMeta -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
-isDependent_te indep tr e events = do
+isDependent_te indep tr e events = trace ("isDependent(tr="++show tr++", e=" ++show e++")")$ do
   ev@Event{..} <- getEvent "isDependent" e events
   return $ GCS.isDependent indep tr evtr
 
@@ -173,7 +174,7 @@ predecessorWith :: EventID -> GCS.ProcessID -> Events s -> ST s EventID
 predecessorWith 0 p events = return GCS.botID
 predecessorWith e p events = do
   pred <- getIPred e events
-  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ snd evtr == p) pred
+  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ fst3 evtr == p) pred
   if null epred 
   then do 
     res <- mapM (\e -> predecessorWith e p events) pred
@@ -201,6 +202,16 @@ getEvent s e events = do
       str <- showEvents events 
       error $ s ++ "-getEvent: " ++ show e ++ "\n" ++ str 
     Just ev -> return ev 
+
+filterEvents :: EventsID -> Events s -> ST s EventsID
+filterEvents es events = filterM (\e -> filterEvent e events) es
+
+filterEvent :: EventID -> Events s -> ST s Bool
+filterEvent e events = do
+  mv <- H.lookup events e
+  case mv of
+    Nothing -> return False
+    Just ev -> return True
 
 -- @ getConfEvs - retrieves all the events of a configuration
 getConfEvs :: EventsID -> Events s -> ST s EventsID
@@ -238,16 +249,6 @@ getAlternatives e events = do
 setEvent :: EventID -> Event -> Events s -> ST s ()
 setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
   H.insert events eID e
-
-setLSigma :: EventID -> GCS.LSigma -> Events s -> ST s ()
-setLSigma eID st events = -- trace ("setLSigma: " ++ show eID) $ 
- do
-  ev@Event{..} <- getEvent "setLSigma" eID events
-  let lcst' = case lcst of
-        Nothing -> Just st
-        Just st' -> if st == st' then Just st else error "setLSigma: different local states"
-      ev' = ev{ lcst = lcst' } 
-  setEvent eID ev' events 
 
 -- @ delImmCnfl 
 delImmCnfl :: EventID -> EventID -> Events s -> ST s ()
@@ -337,6 +338,13 @@ freshCounter = do
   put s{ cntr = nec }
   return ec
 
+-- @ update maximal config - updates the counter of maximal configurations
+incMaxConfCounter :: UnfolderOp s ()
+incMaxConfCounter = do
+  s@UnfolderState{..} <- get
+  let nec = maxConf + 1
+  put s{ maxConf = nec }
+  
 -- @ push 
 push :: EventID -> UnfolderOp s ()
 push e = do 
@@ -350,3 +358,38 @@ pop = do
   s@UnfolderState{..} <- get
   let nstack = tail stack
   put s{ stack = nstack }
+
+
+-- @ Util
+
+isConfiguration :: Events s -> EventsID -> ST s Bool
+isConfiguration evts conf = do
+  cnffree <- allM (\e -> getImmediateConflicts e evts >>= \es -> return $! null (es `intersect` conf)) conf
+  causaclosed <- causalClosed evts conf conf 
+  return $! cnffree && causaclosed
+
+causalClosed :: Events s -> EventsID -> EventsID ->  ST s Bool
+causalClosed evts conf [] = return True
+causalClosed evts conf (e:es) = do 
+  prede <- predecessors e evts
+  if all (\e' -> e' `elem` conf) prede
+  then causalClosed evts conf es
+  else return False
+
+allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+allM f [] = return True
+allM f (x:xs) = do
+  b <- f x
+  if b
+  then allM f xs
+  else return False 
+
+fst3 :: (a,b,c) -> a
+fst3 (a,b,c) = a
+
+snd3 :: (a,b,c) -> b
+snd3 (a,b,c) = b
+
+third3 :: (a,b,c) -> c
+third3 (a,b,c) = c
+

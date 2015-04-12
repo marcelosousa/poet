@@ -15,14 +15,8 @@ import Frontend.Util
 
 import Debug.Trace
 
--- read write data type
-data RW = Read Var | Write Var
-  deriving (Show,Eq,Ord)
-
-type RWSet = [RW]
-
 pmdVar = BS.pack "__poet_mutex_death"
-pmdVal = (IntVal 1, Just $ Var [])
+pmdVal = IntVal 1
 pmtVar = BS.pack "__poet_mutex_threads"
 pmjVar = BS.pack "__poet_mutex_threads_join"
 
@@ -32,20 +26,19 @@ convert (Program (decls, defs)) pcs flow thCount = do
   --   minus the pcs
   let ils = getInitialDecls decls
       pmtiv = Array $ map IntVal $ replicate thCount 1
-      pmtivl = Just $ ArrayLock $ map Var $ replicate thCount []
-      ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), (IntVal pc, Nothing))) pcs
+      ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
       iils = ils++ipcs
-      fils = (pmdVar, pmdVal):(pmtVar, (pmtiv, pmtivl)):(pmjVar, (pmtiv, pmtivl)):iils
+      fils = (pmdVar, pmdVal):(pmtVar, pmtiv):(pmjVar, pmtiv):iils
   is <- toInitialState iils
   H.insert is pmdVar pmdVal
-  H.insert is pmtVar (pmtiv, pmtivl)
-  H.insert is pmjVar (pmtiv, pmtivl)
+  H.insert is pmtVar pmtiv
+  H.insert is pmjVar pmtiv
   atrs <- mapM (getTransitions flow) defs >>= return . resetTID . concat
   let (trs,annot) = unzip atrs
 --      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
       vtrs = V.fromList trs
       uind = computeUIndep annot
-      sys = System vtrs is fils
+      sys = System vtrs is $ (Lock (V pmdVar)):[Lock (A pmtVar (toInteger th)) | th <- [0 .. thCount-1]] ++ [Lock (A pmjVar (toInteger th)) | th <- [0 .. thCount-1]]
   return (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
@@ -53,7 +46,7 @@ resetTID :: [(Transition s, (TransitionID, RWSet))] -> [(Transition s, (Transiti
 resetTID = reverse . snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
 
 resetTID' :: Int -> (Transition s, (TransitionID, RWSet)) -> (Int, (Transition s, (TransitionID, RWSet)))
-resetTID' c ((pid,_,fn),(_,annot)) = (c+1,((pid,c,fn),(c,annot)))
+resetTID' c ((pid,_,act,fn),(_,annot)) = (c+1,((pid,c,act,fn),(c,annot)))
 
 computeUIndep :: [(TransitionID, RWSet)] -> UIndep
 computeUIndep rwsets = 
@@ -78,8 +71,8 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
   where 
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
-      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, (IntVal 0, Nothing))]
-      GlobalDecl _ (Ident i) (Just (IntValue v)) -> [(BS.pack i, (IntVal $ fromInteger v, Nothing))]
+      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, IntVal 0)]
+      GlobalDecl _ (Ident i) (Just (IntValue v)) -> [(BS.pack i, (IntVal $ fromInteger v))]
       GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
 
@@ -109,24 +102,24 @@ toTransition procName tID flow s =
           case _expr of
             Call fname args -> do
                 trrws  <- fromCall flow pcVar pc fname args
-                return $ map (\(tr, rw) -> ((procName, tID, tr), (tID,rw))) trrws
+                return $ map (\(tr, act, rw) -> ((procName, tID, act, tr), (tID,rw))) trrws
             Assign _ _lhs _rhs -> do
                 trrws  <- fromAssign flow pcVar pc _lhs _rhs
-                return $ map (\(tr, rw) -> ((procName, tID, tr), (tID,rw))) trrws
+                return $ map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws
         If pc _cond _then _else -> do
             trrws <- fromIf flow pcVar pc _cond 
             _thentr <- recGetTrans flow procName _then
             _elsetr <- recGetTrans flow procName _else
-            let _condtr = map (\(tr, rw) -> ((procName, tID, tr), (tID,rw))) trrws 
+            let _condtr = map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
             return $ _condtr ++ _thentr ++ _elsetr
         IfThen pc _cond _then -> do
             trrws <- fromIf flow pcVar pc _cond 
             _thentr <- recGetTrans flow procName _then
-            let _condtr = map (\(tr, rw) -> ((procName, tID, tr), (tID,rw))) trrws 
+            let _condtr = map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
             return $ _condtr ++ _thentr
         Goto pc loc -> do
             trrws  <- fromGoto flow pcVar pc
-            return $ map (\(tr, rw) -> ((procName, tID, tr), (tID,rw))) trrws 
+            return $ map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
 
 modifyList :: [a] -> a -> Integer -> [a]
 modifyList xs a idx = 
@@ -134,121 +127,100 @@ modifyList xs a idx =
   in left ++ (a:right)
   
 -- encodes Call
-fromCall :: Flow -> Var -> PC -> String -> [Expression] -> ST s [(TransitionFn s, RWSet)]
+fromCall :: Flow -> Var -> PC -> String -> [Expression] -> ST s [(TransitionFn s, Acts, RWSet)]
 fromCall flow pcVar pc name [param] = do
   let Continue next = getFlow flow pc
-      argVar = getVarArg param
-      acts = [Write pcVar, Write argVar]
-      fn = \s -> do
-        (IntVal curPC,_) <- safeLookup "call" s pcVar
-        if curPC == pc
-        then return $ Just $ \s ->
-          case name of
-            "__poet_mutex_lock" ->
-              case param of
-                -- @ Lock Variable
-                Ident i -> do 
-                  let ident = BS.pack i
-                  (IntVal v, mlock) <- safeLookup "call" s ident
-                  if v == 0
-                  then do -- @ lock is not taken
-                    let pcVal = (IntVal next, Nothing)
-                        iVal = (IntVal 1, Nothing)
-                    H.insert s pcVar pcVal
-                    H.insert s ident iVal
-                    return (s, [(pcVar, pcVal),(ident, iVal)])
-                  else -- @ lock is already taken
-                    case mlock of
-                      Nothing -> error "should not happen"
-                      Just (Var locks) -> do
-                        let pcVal = (IntVal (-1), Nothing)
-                            iVal = (IntVal v, Just $ Var $ (pcVar,pc):locks)
-                        H.insert s pcVar pcVal
-                        H.insert s ident iVal
-                        return (s, [(pcVar, pcVal),(ident, iVal)]) 
-                -- @ Array of Locks                   
-                Index (Ident i) (Const (IntValue idx)) -> do
-                  let ident = BS.pack i
-                  (Array vs, mlock) <- safeLookup "call" s ident
-                  let IntVal v = vs!!(fromInteger idx)
-                  if v == 0
-                  then do -- @ lock is not taken
-                    let pcVal = (IntVal next, Nothing)
-                    H.insert s pcVar pcVal
-                    let vs' = modifyList vs (IntVal 1) idx
-                        iVal = (Array vs', mlock)
-                    H.insert s ident iVal
-                    return (s, [(pcVar, pcVal),(ident, iVal)])
-                  else  -- @ lock is already taken
-                    case mlock of
-                      Nothing -> error "should not happen"                                                    
-                      Just (ArrayLock locks) -> do
-                        let Var vlock = locks!!(fromInteger idx)
-                            nidx = Var $ (pcVar,pc):vlock
-                            locks' = modifyList locks nidx idx
-                            pcVal = (IntVal (-1), Nothing)
-                            iVal = (Array vs, Just $ ArrayLock locks')
-                        H.insert s pcVar pcVal
-                        H.insert s ident iVal
-                        return (s, [(pcVar, pcVal),(ident, iVal)])
-            "__poet_mutex_unlock" -> 
-              case param of
-                -- @ Lock Variable
-                Ident i -> do 
-                  let ident = BS.pack i
-                  (IntVal v, mlock) <- safeLookup "call" s ident
-                  if v == 0
-                  then error "unlock a free lock"
-                  else -- @ Lock is taken
-                    case mlock of
-                      Nothing -> error "should not happen"
-                      Just (Var locks) -> do
-                        let pcVal = (IntVal next, Nothing)
-                            iVal = (IntVal 0, Just $ Var [])
-                            pcValfn = \pc -> (IntVal pc, Nothing)
-                        H.insert s pcVar pcVal
-                        H.insert s ident iVal
-                        mapM_ (\(pcVar',pc') -> H.insert s pcVar' (pcValfn pc')) locks
-                        let ch = map (\(pcVar',pc') -> (pcVar', pcValfn pc')) locks
-                        return (s, [(pcVar, pcVal),(ident, iVal)]++ch)                    
-                Index (Ident i) (Const (IntValue idx)) -> do
-                  let ident = BS.pack i
-                  (Array vs, mlock) <- safeLookup "call" s ident
-                  let IntVal v = vs!!(fromInteger idx)
-                  if v == 0
-                  then error "unlock a free lock"
-                  else 
-                    case mlock of
-                      Nothing -> error "should not happen"
-                      Just (ArrayLock locks) -> do
-                        let Var vlock = locks!!(fromInteger idx)
-                            vs' = modifyList vs (IntVal 0) idx
-                            nidx = Var []
-                            locks' = modifyList locks nidx idx
-                            pcVal = (IntVal next, Nothing)
-                            iVal = (Array vs', Just $ ArrayLock locks')
-                            pcValfn = \pc -> (IntVal pc, Nothing)
-                        H.insert s pcVar pcVal
-                        H.insert s ident iVal
-                        mapM_ (\(pcVar',pc') -> H.insert s pcVar' (pcValfn pc')) vlock
-                        let ch = map (\(pcVar',pc') -> (pcVar', pcValfn pc')) vlock
-                        return (s, [(pcVar, pcVal),(ident, iVal)]++ch)                            
-            _ -> error "fromCall: call not supported"
-        else return Nothing
-  return [(fn, acts)] 
+  case name of 
+    "__poet_mutex_lock" ->
+      case param of
+        -- @ Lock Variable
+        Ident i -> do 
+          let ident = BS.pack i
+              acts = [Write (V pcVar), Write (V ident)]
+              act = [Lock $ V ident]
+              fn = \s -> do
+                IntVal curPC <- safeLookup "call" s pcVar
+                IntVal v <- safeLookup "call" s ident
+                if curPC == pc && v == 0
+                then return $ Just $ \s -> do
+                  let pcVal = IntVal next
+                      iVal = IntVal 1
+                  H.insert s pcVar pcVal
+                  H.insert s ident iVal
+                  return s
+                else return Nothing
+          return [(fn, act, acts)]
+        -- @ Array of Locks              
+        Index (Ident i) (Const (IntValue idx)) -> do
+          let ident = BS.pack i
+              acts = [Write (V pcVar), Write (A ident idx)]
+              act = [Lock $ A ident idx]              
+              fn = \s -> do 
+                IntVal curPC <- safeLookup "call" s pcVar
+                Array vs <- safeLookup "call" s ident
+                let IntVal v = vs!!(fromInteger idx)
+                if curPC == pc && v == 0
+                then return $ Just $ \s -> do
+                  let pcVal = IntVal next
+                      vs' = modifyList vs (IntVal 1) idx
+                      iVal = Array vs'
+                  H.insert s pcVar pcVal
+                  H.insert s ident iVal
+                  return s
+                else return Nothing
+          return [(fn, act, acts)]         
+    "__poet_mutex_unlock" ->
+      case param of
+        -- @ Lock Variable
+        Ident i -> do 
+          let ident = BS.pack i
+              acts = [Write (V pcVar), Write (V ident)]
+              act = [Unlock $ V ident]
+              fn = \s -> do
+                IntVal curPC <- safeLookup "call" s pcVar
+                if curPC == pc
+                then return $ Just $ \s -> do
+                  let pcVal = IntVal next
+                      iVal = IntVal 0
+                  H.insert s pcVar pcVal
+                  H.insert s ident iVal
+                  return s
+                else return Nothing
+          return [(fn, act, acts)]
+        -- @ Array of Locks
+        Index (Ident i) (Const (IntValue idx)) -> do
+          let ident = BS.pack i
+              acts = [Write (V pcVar), Write (A ident idx)]
+              act = [Unlock $ A ident idx]
+              fn = \s -> do
+                IntVal curPC <- safeLookup "call" s pcVar
+                if curPC == pc
+                then return $ Just $ \s -> do
+                  IntVal curPC <- safeLookup "call" s pcVar
+                  Array vs <- safeLookup "call" s ident
+                  let pcVal = IntVal next
+                      vs' = modifyList vs (IntVal 0) idx
+                      iVal = Array vs'
+                  H.insert s pcVar pcVal
+                  H.insert s ident iVal
+                  return s
+                else return Nothing
+          return [(fn, act, acts)]                      
+    _ -> error "fromCall: call not supported"
 
 getVarArg :: Expression -> Var
 getVarArg (Ident i) = BS.pack i
 getVarArg (Index (Ident i) _) = BS.pack i
 getVarArg e = error $ "getVarArg: " ++ show e
 
-getIdent :: Expression -> [Var]
+getIdent :: Expression -> [Variable]
 getIdent expr = case expr of
   BinOp op lhs rhs -> getIdent lhs ++ getIdent rhs
   UnaryOp op rhs -> getIdent rhs
   Const v -> []
-  Ident i -> [BS.pack i]
-  Index (Ident i) rhs -> (BS.pack i):getIdent rhs
+  Ident i -> [V $ BS.pack i]
+  Index (Ident i) (Const (IntValue idx)) -> [A (BS.pack i) idx]
+  Index (Ident i) rhs -> (V $ BS.pack i):getIdent rhs
   Call _ args -> concatMap getIdent args
   _ -> error $ "eval: disallowed " ++ show expr
 
@@ -259,27 +231,27 @@ fromAssign flow pcVar pc _lhs _rhs = do
     let Continue next = getFlow flow pc
         _lhsi = map Write $ getIdent _lhs
         _rhsi = map Read $ getIdent _rhs
-        act = (Write pcVar):(_lhsi ++ _rhsi)
+        act = (Write $ V pcVar):(_lhsi ++ _rhsi)
         fn = \s -> do
-            (IntVal curPC,_) <- safeLookup "goto" s pcVar
+            IntVal curPC <- safeLookup "goto" s pcVar
             if curPC == pc
             then return $ Just $ \s -> do
-                let pcVal = (IntVal next, Nothing)
+                let pcVal = IntVal next
                 H.insert s pcVar pcVal
                 val <- eval _rhs s
                 case _lhs of 
                   Ident i -> do
                     let ident = BS.pack i
-                        iVal = (val, Nothing)
+                        iVal = val
                     H.insert s ident iVal
-                    return (s, [(pcVar, pcVal),(ident, iVal)])
+                    return s
                   Index (Ident i) (Const (IntValue idx)) -> do
                     let ident = BS.pack i
-                    (Array vs, mlock) <- safeLookup "call" s ident
+                    Array vs <- safeLookup "call" s ident
                     let vs' = modifyList vs val idx
-                        iVal = (Array vs', mlock)
+                        iVal = Array vs'
                     H.insert s ident iVal
-                    return (s, [(pcVar, pcVal),(ident, iVal)])
+                    return s
             else return Nothing
     return [(fn, act)]
 
@@ -288,14 +260,14 @@ fromGoto :: Flow -> Var -> PC -> ST s [(TransitionFn s, RWSet)]
 fromGoto flow pcVar pc = do
     let Continue next = getFlow flow pc
         fn = \s -> do
-            (IntVal curPC,_) <- safeLookup "goto" s pcVar
+            IntVal curPC <- safeLookup "goto" s pcVar
             if curPC == pc
             then return $ Just $ \s -> do
-                let pcVal = (IntVal next, Nothing)
+                let pcVal = IntVal next
                 H.insert s pcVar pcVal
-                return (s, [(pcVar, pcVal)])
+                return s
             else return Nothing
-    return [(fn, [Write pcVar])]
+    return [(fn, [Write $ V pcVar])]
 
 
 -- encodes fromIf
@@ -303,21 +275,21 @@ fromIf :: Flow -> Var -> PC -> Expression -> ST s [(TransitionFn s, RWSet)]
 fromIf flow pcVar pc _cond = do
     let Branch (t,e) = getFlow flow pc
         fn = \s -> do
-            (IntVal curPC,_) <- safeLookup "if" s pcVar
+            IntVal curPC <- safeLookup "if" s pcVar
             if curPC == pc
             then return $ Just $ \s -> do
                 valCond <- evalCond _cond s 
                 if valCond
                 then do
-                  let pcVal = (IntVal t, Nothing)
+                  let pcVal = IntVal t
                   H.insert s pcVar pcVal
-                  return (s, [(pcVar, pcVal)])
+                  return s
                 else do
-                  let pcVal = (IntVal e, Nothing) 
+                  let pcVal = IntVal e
                   H.insert s pcVar pcVal
-                  return (s, [(pcVar, pcVal)])
+                  return s
             else return Nothing
-    return [(fn, [Write pcVar])]
+    return [(fn, [Write $ V pcVar])]
 
 eval :: Expression -> Sigma s -> ST s Value
 eval expr s = case expr of
@@ -340,11 +312,11 @@ eval expr s = case expr of
   Const (IntValue v) -> return $ IntVal $ fromInteger v
   Ident i -> do
     let ident = BS.pack i
-    (v,_) <- safeLookup "eval" s ident
+    v <- safeLookup "eval" s ident
     return v
   Index (Ident i) rhs -> do
     let ident = BS.pack i
-    (v,_) <- safeLookup "eval" s ident  
+    v <- safeLookup "eval" s ident  
     vhs <- eval rhs s
     case v of
       IntVal idx -> error $ "eval: fatal error " ++ show expr
