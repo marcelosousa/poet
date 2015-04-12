@@ -92,6 +92,7 @@ data UnfolderState s = UnfolderState {
   , stack :: EventsID        -- Call stack
   , statelessMode :: Bool    -- Stateless or not
   , stas :: States s         -- Hash Table for cutoffs
+  , cutoffMode :: Bool       -- Cutoffs or not
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -105,15 +106,15 @@ botEvent :: GCS.Sigma s -> GCS.Acts -> Event
 botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] -- st 1
 
 -- @ Initial state of the unfolder
-iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
-iState statelessMode sys indep = do
+iState :: Bool -> Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
+iState statelessMode cutoffMode sys indep = do
   events <- H.new
   H.insert events 0 $ botEvent (GCS.initialState sys) (GCS.initialActs sys)
   states <- H.new
   rawState <- H.toList $ GCS.initialState sys
   H.insert states rawState 1
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
@@ -142,7 +143,7 @@ execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
   let t = GCS.getTransition syst $ snd3 evtr
-  fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
+  fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show e))
   lift $ fn cst
 
 isDependent_te :: GCS.UIndep -> GCS.TransitionMeta -> EventID -> Events s -> ST s Bool
