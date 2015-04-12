@@ -10,6 +10,7 @@ import Test.Examples.ExFive
 import Test.Examples.ExSix
 import Test.Examples.ExSeven
 import Test.Examples.ExEight
+import Test.Examples.ExNine
 
 import Control.Monad.ST.Safe
 import Test.HUnit
@@ -49,6 +50,11 @@ runTest8 mode = do
 runTest9 mode = do
   let evs = runST (sys8 >>= \sys -> stateless mode sys ind8 >>= showEvents . evts)
   putStrLn evs
+
+runTest10 mode = do
+  let evs = runST (sys9 >>= \sys -> stateless mode sys ind9 >>= showEvents . evts)
+  putStrLn evs
+
 {-
 -- Example 6 - very simple cyclic state space
 t1_6, t2_6 :: Transition

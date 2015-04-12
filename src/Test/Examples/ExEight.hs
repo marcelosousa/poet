@@ -8,7 +8,7 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
 
--- Example 7 - Lock example
+-- Example 8 - Lock example
 t11',t12',t21',t22',t23' :: TransitionFn s
 t11' s = do
   v <- safeLookup "t11" s (BS.pack "pcq")
