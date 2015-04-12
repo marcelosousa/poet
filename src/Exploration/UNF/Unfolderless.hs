@@ -337,7 +337,7 @@ findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: EventsID -> [(EventID,Event s)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
+addEvent :: EventsID -> [(EventID,Event)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
@@ -348,9 +348,9 @@ addEvent stack dup tr history = do
     let localHistory = prede `seq` nub $ concat prede ++ history 
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
-    -- gstlc <- computeStateLocalConfiguration tr localHistory
-    -- isCutoff <- cutoff gstlc sizeLocalHistory
-    if False -- isCutoff
+    gstlc <- computeStateLocalConfiguration tr (GCS.initialState syst) localHistory
+    isCutoff <- cutoff gstlc sizeLocalHistory
+    if isCutoff
     then return []
     else do
       -- @ 1. Fresh event id 
@@ -371,14 +371,41 @@ addEvent stack dup tr history = do
   else return $! map fst hasDup 
 
 -- @ Compute the global state of the local configuration
-computeStateLocalConfiguration :: GCS.TransitionMeta -> EventsID -> UnfolderOp s (GCS.Sigma s)
-computeStateLocalConfiguration tr prede = do
+-- getISucc :: EventID -> Events s -> ST s EventsID
+-- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
+computeStateLocalConfiguration :: GCS.TransitionMeta -> GCS.Sigma s -> EventsID -> UnfolderOp s (GCS.Sigma s)
+computeStateLocalConfiguration (_,trID,_) ist prede = do
   s@UnfolderState{..} <- get
-  undefined
-
+  st' <- computeStateHistory ist [0] prede
+  let tr = GCS.getTransitionWithID syst trID
+  fn <- lift $ (tr st' >>= return . fromMaybe (error $ "newState: the transition was not enabled"))
+  nst <- lift $ fn st'
+  return nst
+  
+computeStateHistory :: GCS.Sigma s -> EventsID -> EventsID -> UnfolderOp s (GCS.Sigma s)
+computeStateHistory cst [] _ = return cst
+computeStateHistory cst (ce:rest) prede = do
+  s@UnfolderState{..} <- get
+  cesucc <- lift $ getISucc ce evts
+  let chosen = filter (\e -> e `elem` cesucc) prede
+      rest' = nub $ rest ++ chosen
+  nst <- if ce == 0 
+         then return $ cst
+         else execute cst ce
+  computeStateHistory nst rest' prede     
+    
 -- @ Check if there is a cutoff
 cutoff :: GCS.Sigma s -> Int -> UnfolderOp s Bool
-cutoff _ _ = return False
+cutoff st si = do
+    s@UnfolderState{..} <- get
+    rst <- lift $ H.toList st
+    mv <- lift $ H.lookup stas rst
+    case mv of
+      Nothing -> do
+        lift $ H.insert stas rst si
+        return False
+      Just v -> return $ v < si
+    
 
 -- @ Compute conflicts  
 --  DFS of the unf prefix from bottom stopping when the event:

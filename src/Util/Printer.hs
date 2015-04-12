@@ -18,10 +18,10 @@ unfToDot sys@UnfolderState{..} = do
 class ToDot a where
     toDot :: a -> EventsID -> String
     
-instance ToDot [(EventID, Event s)] where
+instance ToDot [(EventID, Event)] where
     toDot events stack = foldr (\el res -> toDot el stack ++ res) "" events
 
-instance ToDot (EventID, Event s) where
+instance ToDot (EventID, Event) where
     toDot (eID, ev@Event{..}) stack = 
       let causality = foldr (printCausality eID) "" succ
           conflict = foldr (printConflict eID) "" icnf

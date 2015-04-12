@@ -48,7 +48,7 @@ type Counter = Int
 
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
-data Event s = Event {
+data Event = Event {
     evtr :: GCS.TransitionMeta  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
@@ -61,12 +61,11 @@ data Event s = Event {
     
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
-type Events s = GCS.HashTable s EventID (Event s)
+type Events s = GCS.HashTable s EventID Event
 
 -- @ HashTable of States to EventID
---  FIXME: Optimise
---type States s = GCS.HashTable s (GCS.Sigma s) EventsID
-type States s = [(GCS.Sigma s, EventID)]
+type States s = GCS.HashTable s GCS.SigmaRaw Int -- EventsID
+--type States s = [(GCS.Sigma s, EventID)]
 
 -- @ Show an 
 showEvents :: Events s -> ST s String
@@ -102,7 +101,7 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.Sigma s -> GCS.Acts -> Event s
+botEvent :: GCS.Sigma s -> GCS.Acts -> Event
 botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] -- st 1
 
 -- @ Initial state of the unfolder
@@ -110,8 +109,10 @@ iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
 iState statelessMode sys indep = do
   events <- H.new
   H.insert events 0 $ botEvent (GCS.initialState sys) (GCS.initialActs sys)
-  let states = [(GCS.initialState sys,0)] 
-      pconf = Conf undefined [] [] []
+  states <- H.new
+  rawState <- H.toList $ GCS.initialState sys
+  H.insert states rawState 1
+  let pconf = Conf undefined [] [] []
   return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
@@ -201,7 +202,7 @@ filterResult es =
                else error "predecessorWith: multiple possibilities"    
 -- GETTERS
 -- retrieves the event associated with the event id 
-getEvent :: String -> EventID -> Events s -> ST s (Event s)
+getEvent :: String -> EventID -> Events s -> ST s Event
 {-# INLINE getEvent #-}
 getEvent s e events = do
   mv <- H.lookup events e 
@@ -254,7 +255,7 @@ getAlternatives e events = do
 
 -- SETTERS
 
-setEvent :: EventID -> Event s -> Events s -> ST s ()
+setEvent :: EventID -> Event -> Events s -> ST s ()
 setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
   H.insert events eID e
 

@@ -15,6 +15,7 @@ import qualified Data.Vector as V
 import qualified Data.ByteString as BS
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
+import Data.Hashable
 import qualified Data.Word as W
 import qualified Data.Set as S
 import Data.Maybe 
@@ -36,12 +37,21 @@ type ISigma s = Sigma s
 type HashTable s k v = C.HashTable s k v
 --  Later we can try Judy Arrays or Mutable Vectors
 type Sigma s = HashTable s Var Value -- We may want to add the enabled transitions for efficiency.
+type SigmaRaw = [(Var,Value)]
 type Var = BS.ByteString
 data Value = 
       IntVal Int 
     | Array [Value]
   deriving (Show,Eq,Ord)
-  
+ 
+instance Hashable Value where
+    hash v = case v of
+      IntVal i -> hash i
+      Array vals -> hash vals
+    hashWithSalt s v = case v of
+      IntVal i -> hashWithSalt s i
+      Array vals -> hashWithSalt s vals
+      
 -- Local State
 type LSigma = [(Var,Value)]
 
