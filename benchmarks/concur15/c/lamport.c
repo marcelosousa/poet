@@ -29,7 +29,7 @@ void *thr1() {
       }
     }
     goto breaklbl;
-  __before_loop:;
+  __before_loop:
   }
  breaklbl:
   // begin: critical section
@@ -58,7 +58,7 @@ void *thr2() {
       }
     }
     goto breaklbl;
-  __before_loop1:;
+  __before_loop1:
   }
  breaklbl:
   // begin: critical section

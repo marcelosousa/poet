@@ -4,8 +4,8 @@
 
 #include "pthread.h"
 
-volatile int i=1;
-volatile int j=1;
+volatile int i;
+volatile int j;
 
 #define NUM 5
 
@@ -40,6 +40,8 @@ int main()
   pthread_t id1; 
   pthread_t id2;
   
+  i =1;
+  j =1;
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
 
