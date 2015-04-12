@@ -55,12 +55,9 @@ data Event s = Event {
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
-  , lcst :: GCS.Sigma s          -- Global state of local configuration
-  , size :: Int              -- Size of local configuration
-} --deriving (Show,Eq,Ord)
-
-instance Show (Event s) where
-    show (Event evtr pred succ icnf disa alte _ size) = ""
+--  , lcst :: GCS.Sigma s          -- Global state of local configuration
+--  , size :: Int              -- Size of local configuration
+} deriving (Show,Eq,Ord)
     
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
@@ -106,7 +103,7 @@ botEID :: EventID
 botEID = 0
 
 botEvent :: GCS.Sigma s -> GCS.Acts -> Event s
-botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] st 1
+botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] -- st 1
 
 -- @ Initial state of the unfolder
 iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 

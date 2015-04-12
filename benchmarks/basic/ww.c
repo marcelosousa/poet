@@ -24,7 +24,7 @@ int main(){
     pthread_t p_t;
     pthread_t q_t;
     
-    //pthread_mutex_init(&l, NULL);
+    pthread_mutex_init(l, NULL);
 
     /* create the threads and execute */
     pthread_create(p_t, NULL, p, NULL);

@@ -92,7 +92,6 @@ explore c@Conf{..} ê d alt = do
     push e
     explore nc e d (e `delete` alt)
     pop
-    -- @ update the current configuration
 --    ms@UnfolderState{..} <- get
 --    str' <- lift $ showEvents evts
 --    trace (separator ++ "after explore(ê = " ++ show ê 
@@ -279,7 +278,20 @@ computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = trace ("computeHi
   else return [] -- @ proc(e) != tr
 computeHistoriesBlocking _ _ _ _ = error "computeHistoriesBlocking: fatal!"
 
--- 
+--
+mycatMaybes :: Eq a => [Maybe a] -> Maybe [a]
+mycatMaybes [] = Nothing
+mycatMaybes [ma] =
+    case ma of
+        Nothing -> Nothing
+        Just x  -> Just [x]
+mycatMaybes (ma:rest) = 
+    case ma of
+        Nothing -> mycatMaybes rest
+        Just x -> case mycatMaybes rest of 
+            Nothing -> Just [x]
+            Just r -> Just $ nub $ x:r
+ 
 findNextUnlock :: GCS.TransitionMeta -> EventsID -> EventID -> UnfolderOp s (Maybe EventsID)
 findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e'="++show e'++")") $ do
   s@UnfolderState{..} <- get
@@ -290,10 +302,11 @@ findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e
   -- @ es_done is either empty or has one event
   case es_done of 
     [] -> do
-      lres <- mapM (findNextUnlock tr prede) es >>= return . nub . catMaybes
+      lres <- mapM (findNextUnlock tr prede) es >>= return . mycatMaybes
       case lres of
-        [] -> return Nothing -- $ Just []
-        [x] -> return $ Just x
+        Nothing -> return Nothing
+        Just [] -> return $ Just []
+        Just [x] -> return $ Just x
         _ -> error "findNextUnlock: not sure what happens here!"
     [e] -> do
       ev <- lift $ getEvent "computeHistoriesBlocking" e evts
@@ -306,8 +319,14 @@ findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e
            then if e `elem` prede
                 then return $ Just []
                 else return $ Just [e]
-           else trace ("returning nothing") $ return Nothing -- REVISE: error $ "findNextUnlock: cant happen! " ++ show e
+           else do
+             let iacts = GCS.initialActs syst
+             if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` iacts) act
+             then return Nothing
+             else return $ Just []
+--               trace ("returning nothing") $ return Nothing -- REVISE: error $ "findNextUnlock: cant happen! " ++ show e
     _ -> error "findNextUnlock: two events are dependent and that can't happen"
+
 
 -- @ addEvent: Given a transition id and the history
 --   adds the correspondent event.
@@ -329,9 +348,9 @@ addEvent stack dup tr history = do
     let localHistory = prede `seq` nub $ concat prede ++ history 
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
-    gstlc <- computeStateLocalConfiguration tr localHistory
-    isCutoff <- cutoff gstlc sizeLocalHistory
-    if isCutoff
+    -- gstlc <- computeStateLocalConfiguration tr localHistory
+    -- isCutoff <- cutoff gstlc sizeLocalHistory
+    if False -- isCutoff
     then return []
     else do
       -- @ 1. Fresh event id 
@@ -342,7 +361,7 @@ addEvent stack dup tr history = do
       -- @  c) Compute the immediate conflicts
       cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts >>= return . nub
       -- @ 3. Insert the new event in the hash table
-      let e = Event tr history [] cnfls [] [] gstlc sizeLocalHistory
+      let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
       lift $ setEvent neID e evts 
       -- @ 4. Update all events in the history to include neID as their successor
       lift $ mapM (\e -> setSuccessor neID e evts) history
@@ -359,7 +378,7 @@ computeStateLocalConfiguration tr prede = do
 
 -- @ Check if there is a cutoff
 cutoff :: GCS.Sigma s -> Int -> UnfolderOp s Bool
-cutoff = undefined
+cutoff _ _ = return False
 
 -- @ Compute conflicts  
 --  DFS of the unf prefix from bottom stopping when the event:

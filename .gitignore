@@ -1,5 +1,7 @@
 dist
 cabal-dev
+*.pdf
+*.dot
 *.o
 *.hi
 *.chi
