@@ -13,7 +13,9 @@ void *thr1() {
   while (flag2 >= 1) {
     if (turn != 0) {
       flag1 = 0;
-      while (turn != 0) {};
+      //while (turn != 0) {}; // poet modified
+		thr1_spinloop:
+		if (turn != 0) goto thr1_spinloop;
       flag1 = 1;
     }
   }
@@ -24,7 +26,7 @@ void *thr1() {
   turn = 1;
   flag1 = 0;
   
-  return NULL;
+  // return NULL; poet
 }
 
 void *thr2() {
@@ -32,7 +34,9 @@ void *thr2() {
   while (flag1 >= 1) {
     if (turn != 1) {
       flag2 = 0;
-      while (turn != 1) {};
+      // while (turn != 1) {}; // poet modified
+		thr2_spinloop:
+		if (turn != 1) goto thr2_spinloop;
       flag2 = 1;
     }
   }
@@ -43,7 +47,7 @@ void *thr2() {
   turn = 0;
   flag2 = 0;
   
-  return NULL;
+  // return NULL; // poet
 }
 
 int main() {
@@ -57,10 +61,10 @@ int main() {
   __CPROVER_ASYNC_1: thr2();
   */
 
-  pthread_create(&t1, 0, thr1, 0);
-  pthread_create(&t2, 0, thr2, 0);
-  pthread_join(t1, 0);
-  pthread_join(t2, 0);
+  pthread_create(t1, NULL, thr1, NULL); // poet modified
+  pthread_create(t2, NULL, thr2, NULL); // poet modified
+  pthread_join(t1, NULL); // poet modified
+  pthread_join(t2, NULL); // poet modified
 
-  return 0;
+  // return 0; // poet modified
 }
