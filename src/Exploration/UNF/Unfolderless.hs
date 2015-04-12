@@ -57,7 +57,7 @@ explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
          ++ ", enevs = " ++ show enevs ++ ", alt = " 
          ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
   --let k = unsafePerformIO $ getChar
@@ -158,14 +158,14 @@ unfold conf@Conf{..} e = do
 -- @CRITICAL
 expandWith :: EventID -> EventsID -> GCS.TransitionMeta -> UnfolderOp s EventsID
 expandWith e maxevs tr = do
-  s@UnfolderState{..} <- mtrace ("expandWith(e="++show e++",maxevs="++show maxevs++",tr="++show tr++")") $ get 
+  s@UnfolderState{..} <- trace ("expandWith(e="++show e++",maxevs="++show maxevs++",tr="++show tr++")") $ get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
   succe <- lift $ getISucc e evts 
            >>= mapM (\e -> getEvent "expandWith" e evts >>= \ev -> return (e,ev)) 
            >>= return . filter (\(e,ev) -> evtr ev == tr)
   -- @ computes h0, the maximal history:
   h0 <- computeHistory maxevs tr
-  if mtrace ("h0(tr="++show tr++")="++ show h0) $ null h0
+  if trace ("h0(tr="++show tr++")="++ show h0) $ null h0
   then error $ "expandWith(e="++show e++",tr="++show tr++",h0="++show h0++",maxevs="++show maxevs++")"
   else do
     -- e should be a valid maximal event
@@ -187,7 +187,7 @@ expandWith e maxevs tr = do
 --   Output: History
 computeHistory :: EventsID -> GCS.TransitionMeta -> UnfolderOp s EventsID
 computeHistory maxevs tr = do
-  s@UnfolderState{..} <- mtrace ("computeHistory(maxevs="++show maxevs++",tr="++show tr++")") $ get
+  s@UnfolderState{..} <- trace ("computeHistory(maxevs="++show maxevs++",tr="++show tr++")") $ get
   -- set of maximal events that are dependent with tr union 
   -- they are events of maxevs that are dependent with tr 
   -- or dependent predecessors of the independent ones that are maximal
@@ -202,7 +202,7 @@ computeHistory maxevs tr = do
 -- @ pruneConfiguration
 --   Given a set of maximal events which are independent with transition tr
 --   go up in the causality to search for the rest of maximal events that are dependent
-pruneConfiguration inde events pre_his tr es = mtrace ("pruneConf(pre_his="++show pre_his++", es="++show es++")") $ do
+pruneConfiguration inde events pre_his tr es = trace ("pruneConf(pre_his="++show pre_his++", es="++show es++")") $ do
   -- immd predecessors of es
   predes <- mapM (\e -> getIPred e events) es >>= return . nub . concat
   -- filter the predecessors that are not maximal
@@ -354,7 +354,7 @@ addEvent stack dup tr history = trace ("addEvent(tr="++show tr++",h="++show hist
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       isCutoff <- cutoff gstlc sizeLocalHistory
       if isCutoff
-      then mtrace ("Found cutoff!!") $ return []
+      then mtrace ("Found cutoff: (tr="++show tr++", h="++show history++")") $ return []
       else do
         -- @ 1. Fresh event id 
         neID <- freshCounter
