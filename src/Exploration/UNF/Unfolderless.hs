@@ -318,31 +318,48 @@ findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: EventsID -> [(EventID,Event)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
+addEvent :: EventsID -> [(EventID,Event s)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
   then do 
     s@UnfolderState{..} <- get
-    -- @ 1. Fresh event id 
-    neID <- freshCounter
-    -- @ 2. Compute the immediate conflicts
     -- @  a) Computes the local history of the new event
-    prede <- trace ("addEvent(tr=" ++ show tr++",history="++show history++",neID="++ show neID ++ ")") $ lift $ mapM (\e -> predecessors e evts) history  
+    prede <- lift $ mapM (\e -> predecessors e evts) history  
     let localHistory = prede `seq` nub $ concat prede ++ history 
-    -- @  b) Computes the immediate conflicts of all events in the local configuration
-    lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
-    -- @  c) Compute the immediate conflicts
-    cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts >>= return . nub
-    -- @ 3. Insert the new event in the hash table
-    let e = Event tr history [] cnfls [] []
-    lift $ setEvent neID e evts 
-    -- @ 4. Update all events in the history to include neID as their successor
-    lift $ mapM (\e -> setSuccessor neID e evts) history
-    -- @ 5. Update all events in the immediate conflicts to include neID as one 
-    lift $ mapM (\e -> setConflict neID e evts) cnfls 
-    return $! [neID]
+        sizeLocalHistory = length localHistory + 1
+    --   If we don't need cutoffs, no need to compute the linearization and the new state
+    gstlc <- computeStateLocalConfiguration tr localHistory
+    isCutoff <- cutoff gstlc sizeLocalHistory
+    if isCutoff
+    then return []
+    else do
+      -- @ 1. Fresh event id 
+      neID <- freshCounter
+      -- @ 2. Compute the immediate conflicts
+      -- @  b) Computes the immediate conflicts of all events in the local configuration
+      lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
+      -- @  c) Compute the immediate conflicts
+      cnfls <- lift $ computeConflicts inde tr localHistory lhCnfls evts >>= return . nub
+      -- @ 3. Insert the new event in the hash table
+      let e = Event tr history [] cnfls [] [] gstlc sizeLocalHistory
+      lift $ setEvent neID e evts 
+      -- @ 4. Update all events in the history to include neID as their successor
+      lift $ mapM (\e -> setSuccessor neID e evts) history
+      -- @ 5. Update all events in the immediate conflicts to include neID as one 
+      lift $ mapM (\e -> setConflict neID e evts) cnfls 
+      return $! [neID]
   else return $! map fst hasDup 
+
+-- @ Compute the global state of the local configuration
+computeStateLocalConfiguration :: GCS.TransitionMeta -> EventsID -> UnfolderOp s (GCS.Sigma s)
+computeStateLocalConfiguration tr prede = do
+  s@UnfolderState{..} <- get
+  undefined
+
+-- @ Check if there is a cutoff
+cutoff :: GCS.Sigma s -> Int -> UnfolderOp s Bool
+cutoff = undefined
 
 -- @ Compute conflicts  
 --  DFS of the unf prefix from bottom stopping when the event:

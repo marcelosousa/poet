@@ -48,25 +48,34 @@ type Counter = Int
 
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
-data Event = Event {
+data Event s = Event {
     evtr :: GCS.TransitionMeta  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
---  , lcst :: Maybe GCS.LSigma  -- Local state 
-} deriving (Show,Eq,Ord)
+  , lcst :: GCS.Sigma s          -- Global state of local configuration
+  , size :: Int              -- Size of local configuration
+} --deriving (Show,Eq,Ord)
 
+instance Show (Event s) where
+    show (Event evtr pred succ icnf disa alte _ size) = ""
+    
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
-type Events s = GCS.HashTable s EventID Event
+type Events s = GCS.HashTable s EventID (Event s)
+
+-- @ HashTable of States to EventID
+--  FIXME: Optimise
+--type States s = GCS.HashTable s (GCS.Sigma s) EventsID
+type States s = [(GCS.Sigma s, EventID)]
 
 -- @ Show an 
 showEvents :: Events s -> ST s String
 showEvents evs = do
   m <- H.toList evs
-  let km = sort m
+  let km = sortBy (\a b -> compare (fst a) (fst b)) m
       r = foldl (\a m -> show m ++ "\n" ++ a) "" km
       --r = if length km > 54 then show $ [km !! 33, km !! 54] else "" -- foldl (\a m -> show m ++ "\n" ++ a) "" km
   return r
@@ -86,6 +95,7 @@ data UnfolderState s = UnfolderState {
   , maxConf :: Counter       -- Maximal config counter
   , stack :: EventsID        -- Call stack
   , statelessMode :: Bool    -- Stateless or not
+  , stas :: States s         -- Hash Table for cutoffs
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -95,16 +105,17 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.Acts -> Event
-botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
+botEvent :: GCS.Sigma s -> GCS.Acts -> Event s
+botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] st 1
 
 -- @ Initial state of the unfolder
 iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
 iState statelessMode sys indep = do
   events <- H.new
-  H.insert events 0 $ botEvent (GCS.initialActs sys) 
-  let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode
+  H.insert events 0 $ botEvent (GCS.initialState sys) (GCS.initialActs sys)
+  let states = [(GCS.initialState sys,0)] 
+      pconf = Conf undefined [] [] []
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
@@ -193,7 +204,7 @@ filterResult es =
                else error "predecessorWith: multiple possibilities"    
 -- GETTERS
 -- retrieves the event associated with the event id 
-getEvent :: String -> EventID -> Events s -> ST s Event
+getEvent :: String -> EventID -> Events s -> ST s (Event s)
 {-# INLINE getEvent #-}
 getEvent s e events = do
   mv <- H.lookup events e 
@@ -246,7 +257,7 @@ getAlternatives e events = do
 
 -- SETTERS
 
-setEvent :: EventID -> Event -> Events s -> ST s ()
+setEvent :: EventID -> Event s -> Events s -> ST s ()
 setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
   H.insert events eID e
 

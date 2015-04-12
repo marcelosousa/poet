@@ -1,21 +1,21 @@
 #include "pthread.h"
-    
+
 int x=0;
 pthread_mutex_t l;
 
 void *p(){
     int y=0;
-    pthread_mutex_lock(&l);
+    pthread_mutex_lock(l);
     y = x;
     x = 1;
-    pthread_mutex_unlock(&l);
+    pthread_mutex_unlock(l);
     //return NULL;
 }
 
 void *q(){
-    pthread_mutex_lock(&l);
+    pthread_mutex_lock(l);
     x = 2;
-    pthread_mutex_unlock(&l);
+    pthread_mutex_unlock(l);
     //return NULL;
 }
 

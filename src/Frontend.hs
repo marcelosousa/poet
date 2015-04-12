@@ -35,7 +35,7 @@ frontEnd prog =
       prog8 = removeLabel prog6
       (firstflow, flow) = flowProgram maplabelpc prog8
   in if pass7res
-     then (prog8, firstflow, flow, threadCount)
+     then (prog1, firstflow, flow, threadCount)
      else error "frontEnd fatal: something went wrong! Please contact developers."
 
 -- Pass 8: transform the program into a graph (data type to be defined)
