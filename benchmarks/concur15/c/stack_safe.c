@@ -19,26 +19,26 @@ unsigned int arr[SIZE];
 
 volatile int x = 0, y = 0;
 
-void lock(int id){
-  if(id){
-    x = 1;
-    //   FENCE();
-    // __VERIFIER_assume(y == 0);
-  }else{
-    y = 1;
-    // FENCE();
-    // __VERIFIER_assume(x == 0);
-  }
-};
+/* void lock(int id){ */
+/*   if(id){ */
+/*     x = 1; */
+/*     //   FENCE(); */
+/*     // __VERIFIER_assume(y == 0); */
+/*   }else{ */
+/*     y = 1; */
+/*     // FENCE(); */
+/*     // __VERIFIER_assume(x == 0); */
+/*   } */
+/* }; */
 
-void unlock(int id){
-  //  FENCE();
-  if(id){
-    x = 0;
-  }else{
-    y = 0;
-  }
-};
+/* void unlock(int id){ */
+/*   //  FENCE(); */
+/*   if(id){ */
+/*     x = 0; */
+/*   }else{ */
+/*     y = 0; */
+/*   } */
+/* }; */
 
 /* void inc_top(void) */
 /* { */
@@ -89,49 +89,111 @@ void *t1()
 {
   int i;
   unsigned int tmp;
+  int id; 
+  int push_cond;
+  int Top; 
 
   for(i=0; i<SIZE; i++)
   {
-    lock(0);   
+    id =0;
+    
+    // inlined lock code
+    if(id){
+      x = 1;
+    }else{
+      y = 1;
+    }
+   
     tmp = 42%SIZE;
-    if ((push(arr,tmp)==OVERFLOW))
-      assert(0);
-    unlock(0);
+    
+    // inlined push code 
+    if (top==SIZE)
+      {
+	//printf("stack overflow\n");
+	push_cond = OVERFLOW;
+      }
+    else
+      {
+	Top = top;
+	arr[Top] = tmp;
+	top = Top +1;
+      }
+    // push_cond = 0;
+    
+    if (push_cond == OVERFLOW)
+      __poet_false; //assert(0);
+    
+    // inlined unlock code
+    //unlock(0);
+    if(id){
+      x = 0;
+    }else{
+      y = 0;
+    }
+
   }
 }
 
 void *t2(void *arg) 
 {
   int i;
+  int id;
+  int pop_cond;
+  int Top; 
+
+  id =1;
 
   for(i=0; i<SIZE; i++)
   {
-    lock(1);
+    //lock(1);
+    // inlined lock code
+    if(id){
+      x = 1;
+    }else{
+      y = 1;
+    }
+
     if (top>0)
     {    
-      if ((pop(arr)==UNDERFLOW))
-        assert(0);
+      if (top==0)
+	{
+	  pop_cond = UNDERFLOW;
+	}
+      else
+	{
+	  Top = top; 
+	  top = Top - 1;
+	  //return stack[get_top()];
+	}
+      if (pop_cond==UNDERFLOW)
+	__poet_false;
     }    
-    unlock(1);
+    //unlock(1);
+     // inlined unlock code
+    if(id){
+      x = 0;
+    }else{
+      y = 0;
+    }
   }
 }
 
 
 int main(void) 
 {
-  #ifndef GOTO
+  //  #ifndef GOTO
   pthread_t id1, id2;
 
-  pthread_create(&id1, NULL, t1, NULL);
-  pthread_create(&id2, NULL, t2, NULL);
+  pthread_create(id1, NULL, t1, NULL);
+  pthread_create(id2, NULL, t2, NULL);
 
   pthread_join(id1, NULL);
   pthread_join(id2, NULL);
 
-  #else
-  __CPROVER_ASYNC_0: t1(NULL);
-  t2(NULL);
-  #endif
-return 0;
+/*   #else */
+/*   __CPROVER_ASYNC_0: t1(NULL); */
+/*   t2(NULL); */
+/*   #endif */
+/* return 0; */
 }
 
