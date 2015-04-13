@@ -7,17 +7,17 @@
 
 #define FENCE() asm volatile ("mfence" ::: "memory")
 
-#ifdef ENABLE_PSO_FENCES
-#define PSO_FENCE() FENCE()
-#else
-#define PSO_FENCE() /*No FENCE*/
-#endif
+/* #ifdef ENABLE_PSO_FENCES */
+/* #define PSO_FENCE() FENCE() */
+/* #else */
+/* #define PSO_FENCE() /\*No FENCE*\/ */
+/* #endif */
 
 #include <pthread.h>
-#include <stdlib.h>
-#include <assert.h>
+//#include <stdlib.h>
+//#include <assert.h>
 
-void __VERIFIER_assume(int);
+//void __VERIFIER_assume(int);
 
 struct singleton_t{
   volatile int data; // data == 1 if initialized
@@ -41,20 +41,20 @@ volatile int init_count = 0;
 volatile int x = 0, y = 0;
 
 void lock(int id){
-  FENCE();
+  //  FENCE();
   if(id){
     x = 1;
-    FENCE();
-    __VERIFIER_assume(y == 0);
+    //FENCE();
+    //__VERIFIER_assume(y == 0);
   }else{
     y = 1;
-    FENCE();
-    __VERIFIER_assume(x == 0);
+    // FENCE();
+    //__VERIFIER_assume(x == 0);
   }
 };
 
 void unlock(int id){
-  FENCE();
+  //FENCE();
   if(id){
     x = 0;
   }else{
@@ -82,11 +82,11 @@ struct singleton_t *instance(int id){
 
 };
 
-void *user(void *_arg){
+void *user1(){
   /* Each user just accesses the singleton instance a number of
    * times. */
 
-  int id = *(int*)_arg;
+  int id = 1;
 
   int i;
   while(1){
@@ -97,18 +97,33 @@ void *user(void *_arg){
   return NULL;
 };
 
-int main(int argc, char *argv[]){
+void *user2(){
+  /* Each user just accesses the singleton instance a number of
+   * times. */
+
+  int id = 2;
+
+  int i;
+  while(1){
+    struct singleton_t *tmp = instance(id);
+    //assert(tmp);
+    assert(tmp->data == 1);
+  }
+  //return NULL;
+};
+
+int main(){
   int ids[2] = {0,1};
   int i;
-  #ifndef GOTO
+  //  #ifndef GOTO
   pthread_t threads[2];
-  pthread_create(&threads[0],NULL,user,&ids[0]);
-  pthread_create(&threads[1],NULL,user,&ids[1]);
+  pthread_create(threads[0],NULL,user1,NULL);
+  pthread_create(threads[1],NULL,user2,NULL);
   pthread_join(threads[0],NULL);
   pthread_join(threads[1],NULL);
-  #else
-  __CPROVER_ASYNC_0: user(&ids[0]);
-  user(&ids[1]);
-  #endif
-  return 0;
+  //  #else
+  //__CPROVER_ASYNC_0: user(&ids[0]);
+  //user(&ids[1]);
+  //#endif
+  //return 0;
 };
