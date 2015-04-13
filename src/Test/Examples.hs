@@ -10,45 +10,51 @@ import Test.Examples.ExFive
 import Test.Examples.ExSix
 import Test.Examples.ExSeven
 import Test.Examples.ExEight
+import Test.Examples.ExNine
 
 import Control.Monad.ST.Safe
 import Test.HUnit
 
 runTest1 mode = do
-  let evs = runST (sys1 >>= \sys -> stateless mode sys ind11 >>= showEvents . evts)
+  let evs = runST (sys1 >>= \sys -> stateless mode False sys ind11 >>= showEvents . evts)
   putStrLn evs
 
 runTest2 mode = do
-  let evs = runST (sys1 >>= \sys -> stateless mode sys ind12 >>= showEvents . evts)
+  let evs = runST (sys1 >>= \sys -> stateless mode False sys ind12 >>= showEvents . evts)
   putStrLn evs
 
 runTest3 mode = do
-  let evs = runST (sys2 >>= \sys -> stateless mode sys ind2 >>= showEvents . evts)
+  let evs = runST (sys2 >>= \sys -> stateless mode False sys ind2 >>= showEvents . evts)
   putStrLn evs
 
 runTest4 mode = do
-  let evs = runST (sys3 >>= \sys -> stateless mode sys ind3 >>= showEvents . evts)
+  let evs = runST (sys3 >>= \sys -> stateless mode False sys ind3 >>= showEvents . evts)
   putStrLn evs
 
 runTest5 mode = do
-  let evs = runST (sys4 >>= \sys -> stateless mode sys ind4 >>= showEvents . evts)
+  let evs = runST (sys4 >>= \sys -> stateless mode False sys ind4 >>= showEvents . evts)
   putStrLn evs
 
 runTest6 mode = do
-  let evs = runST (sys5 >>= \sys -> stateless mode sys ind5 >>= showEvents . evts)
+  let evs = runST (sys5 >>= \sys -> stateless mode False sys ind5 >>= showEvents . evts)
   putStrLn evs
 
 runTest7 mode = do
-  let evs = runST (sys6 >>= \sys -> stateless mode sys ind6 >>= showEvents . evts)
+  let evs = runST (sys6 >>= \sys -> stateless mode False sys ind6 >>= showEvents . evts)
   putStrLn evs
   
 runTest8 mode = do
-  let evs = runST (sys7 >>= \sys -> stateless mode sys ind7 >>= showEvents . evts)
+  let evs = runST (sys7 >>= \sys -> stateless mode False sys ind7 >>= showEvents . evts)
   putStrLn evs
 
 runTest9 mode = do
-  let evs = runST (sys8 >>= \sys -> stateless mode sys ind8 >>= showEvents . evts)
+  let evs = runST (sys8 >>= \sys -> stateless mode False sys ind8 >>= showEvents . evts)
   putStrLn evs
+
+runTest10 mode = do
+  let evs = runST (sys9 >>= \sys -> stateless mode False sys ind9 >>= showEvents . evts)
+  putStrLn evs
+
 {-
 -- Example 6 - very simple cyclic state space
 t1_6, t2_6 :: Transition

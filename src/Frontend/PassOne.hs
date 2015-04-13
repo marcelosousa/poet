@@ -87,12 +87,12 @@ introducePthreadCalls :: [(Ident,Ident,Int)] -> Definition -> Definition
 introducePthreadCalls names f@(FunctionDef pc "main" params stats) = 
     let mcall = ExprStat pc $ Call "pthread_exit" [Ident "NULL"]
     in FunctionDef pc "main" params $ stats++[mcall]
-introducePthreadCalls names f@(FunctionDef pc name params stats) =     
+introducePthreadCalls names f@(FunctionDef pc name params stats) =   
     let mcall = ExprStat pc $ Call "pthread_exit" [Ident "NULL"]
         i = Const $ IntValue $ toInteger $ getTNameValue name names
         tnames = fst3 $ unzip3 $ names
         pcall = ExprStat pc (Call "__poet_mutex_lock" [Index (Ident "__poet_mutex_threads") i])
-    in if name `elem` tnames 
+    in if name `elem` tnames
        then FunctionDef pc name params $ pcall:stats++[mcall]
        else f
 
@@ -109,6 +109,20 @@ replacePthreadExitAux "main" threadInfo s =
          ExprStat pc (Call "pthread_exit" [Ident "NULL"]) ->
            let dcall = ExprStat pc (Call "__poet_mutex_lock" [Ident "__poet_mutex_death"])
            in [dcall]
+         ExprStat pc (Call "pthread_mutex_lock" param) ->
+           let dcall = ExprStat pc (Call "__poet_mutex_lock" param)
+           in [dcall]
+         ExprStat pc (Call "pthread_mutex_unlock" param) ->
+           let dcall = ExprStat pc (Call "__poet_mutex_unlock" param)
+           in [dcall]
+         ExprStat pc (Call "pthread_mutex_init" [Ident l, Ident "NULL"]) ->
+           [ExprStat pc (Assign CAssignOp (Ident l) (Const $ IntValue 0))]
+         ExprStat pc (Ident var) -> 
+           [ExprStat pc (Assign CAssignOp (Ident var) (Const $ IntValue 0))]
+         Local pc expr Nothing -> 
+           [ExprStat pc (Assign CAssignOp expr (Const $ IntValue 0))]
+         Local pc expr (Just v) ->
+           [ExprStat pc (Assign CAssignOp expr v)]           
          _ -> [s]
 replacePthreadExitAux name threadInfo s =
     case s of
@@ -117,4 +131,18 @@ replacePthreadExitAux name threadInfo s =
                pcall = ExprStat pc (Call "__poet_mutex_unlock" [Index (Ident "__poet_mutex_threads_join") i])
                dcall = ExprStat pc (Call "__poet_mutex_lock" [Ident "__poet_mutex_death"])
            in [pcall,dcall]
+         ExprStat pc (Call "pthread_mutex_lock" param) ->
+           let dcall = ExprStat pc (Call "__poet_mutex_lock" param)
+           in [dcall]
+         ExprStat pc (Call "pthread_mutex_unlock" param) ->
+           let dcall = ExprStat pc (Call "__poet_mutex_unlock" param)
+           in [dcall]     
+         ExprStat pc (Call "pthread_mutex_init" [Ident l, Ident "NULL"]) ->
+           [ExprStat pc (Assign CAssignOp (Ident l) (Const $ IntValue 0))]
+         ExprStat pc (Ident var) -> 
+           [ExprStat pc (Assign CAssignOp (Ident var) (Const $ IntValue 0))]
+         Local pc expr Nothing -> 
+           [ExprStat pc (Assign CAssignOp expr (Const $ IntValue 0))]
+         Local pc expr (Just v) ->
+           [ExprStat pc (Assign CAssignOp expr v)]    
          _ -> [s]

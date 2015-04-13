@@ -120,7 +120,7 @@ toTransition procName tID flow s =
         Goto pc loc -> do
             trrws  <- fromGoto flow pcVar pc
             return $ map (\(tr, rw) -> ((procName, tID, [Other], tr), (tID,rw))) trrws 
-
+        _ -> error $ "toTransition: " ++ show s
 modifyList :: [a] -> a -> Integer -> [a]
 modifyList xs a idx = 
   let (left,_:right) = splitAt (fromInteger idx) xs

@@ -55,18 +55,23 @@ data Event = Event {
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
---  , lcst :: Maybe GCS.LSigma  -- Local state 
+--  , lcst :: GCS.Sigma s          -- Global state of local configuration
+--  , size :: Int              -- Size of local configuration
 } deriving (Show,Eq,Ord)
-
+    
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
 type Events s = GCS.HashTable s EventID Event
+
+-- @ HashTable of States to EventID
+type States s = GCS.HashTable s GCS.SigmaRaw Int -- EventsID
+--type States s = [(GCS.Sigma s, EventID)]
 
 -- @ Show an 
 showEvents :: Events s -> ST s String
 showEvents evs = do
   m <- H.toList evs
-  let km = sort m
+  let km = sortBy (\a b -> compare (fst a) (fst b)) m
       r = foldl (\a m -> show m ++ "\n" ++ a) "" km
       --r = if length km > 54 then show $ [km !! 33, km !! 54] else "" -- foldl (\a m -> show m ++ "\n" ++ a) "" km
   return r
@@ -86,6 +91,8 @@ data UnfolderState s = UnfolderState {
   , maxConf :: Counter       -- Maximal config counter
   , stack :: EventsID        -- Call stack
   , statelessMode :: Bool    -- Stateless or not
+  , stas :: States s         -- Hash Table for cutoffs
+  , cutoffMode :: Bool       -- Cutoffs or not
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -95,16 +102,19 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.Acts -> Event
-botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
+botEvent :: GCS.Sigma s -> GCS.Acts -> Event
+botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] -- st 1
 
 -- @ Initial state of the unfolder
-iState :: Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
-iState statelessMode sys indep = do
+iState :: Bool -> Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
+iState statelessMode cutoffMode sys indep = do
   events <- H.new
-  H.insert events 0 $ botEvent (GCS.initialActs sys) 
+  H.insert events 0 $ botEvent (GCS.initialState sys) (GCS.initialActs sys)
+  states <- H.new
+  rawState <- H.toList $ GCS.initialState sys
+  H.insert states rawState 1
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
@@ -133,7 +143,7 @@ execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
   let t = GCS.getTransition syst $ snd3 evtr
-  fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show cst))
+  fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show e))
   lift $ fn cst
 
 isDependent_te :: GCS.UIndep -> GCS.TransitionMeta -> EventID -> Events s -> ST s Bool

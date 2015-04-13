@@ -44,7 +44,7 @@ fixPCStat pcCount s =
               (_else', npc') = rec npc fixPCStat _else
           in (If pcCount cond _then' _else', npc')
         Label _ i body -> 
-          let (body', npc) = rec pcCount' fixPCStat body
+          let (body', npc) = rec pcCount fixPCStat body
           in (Label pcCount i body', npc)
         Goto _ i -> 
           (Goto pcCount i, pcCount') 
