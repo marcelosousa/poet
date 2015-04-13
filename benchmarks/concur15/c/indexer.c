@@ -35,30 +35,33 @@ int cas(int volatile * tab, int h, int val, int new_val)
 
 
 
-void * thread_routine()
+void * t0()
 {
   int tid;
-  int m = 0, w, h;
-  tid = *((int *)arg);
+  int m = 0;
+  int w, h;
+  tid = 0;
   
   while(1){
     if ( m < MAX ){
-      w = (++m) * 11 + tid;
+      m = m +1 ;
+      w = m * 11 + tid;
     }
     else{
-      pthread_exit(NULL);
+      //pthread_exit(NULL);
+      goto END;
     }
     
     h = (w * 7) % SIZE;
     
-    if (h<0)
-      assert(0);
+    //if (h<0)
+    // assert(0);
 
     while ( cas(table, h, 0, w) == 0){
       h = (h+1) % SIZE;
     }
   }
-
+ END: ;
 }
 
 
