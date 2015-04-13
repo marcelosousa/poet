@@ -3,21 +3,30 @@
 int x=0;
 
 void *p(){
-    while(1){
+   // while(1){
       x=1;
-    }
+      x=1;
+      x=1;
+      x=1;
+   // }
 }
 
 void *q(){
-    while(1){
+   // while(1){
         x=2;
-    }
+        x=2;
+        x=2;
+        x=2;
+   // }
 }
 
 void *r(){
-    while(1){
+   // while(1){
         x=3;
-    }
+        x=3;
+        x=3;
+        x=3;
+   // }
 }
 
 int main(){
