@@ -40,7 +40,6 @@ void *thr2() {
   
   turn = 0;
   flag2 = 0;
-  //return NULL;
 }
 
 int main() {
@@ -54,5 +53,4 @@ int main() {
   pthread_join(t1, NULL);
   pthread_join(t2, NULL);
 
-  //  return 0;
 }

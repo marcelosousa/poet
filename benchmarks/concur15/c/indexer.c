@@ -19,7 +19,7 @@ pthread_t  tids[NUM_THREADS];
 int cas(int volatile * tab, int h, int val, int new_val)
 {
   int ret_val = 0;
-  pthread_mutex_lock(&cas_mutex[h]);
+  pthread_mutex_lock(cas_mutex[h]);
   
  
   if ( tab[h] == val ) {
@@ -27,7 +27,7 @@ int cas(int volatile * tab, int h, int val, int new_val)
     ret_val = 1;
   }
 
-  pthread_mutex_unlock(&cas_mutex[h]);
+  pthread_mutex_unlock(cas_mutex[h]);
 
   
   return ret_val;
@@ -54,8 +54,9 @@ void * t0()
     
     h = (w * 7) % SIZE;
     
-    //if (h<0)
-    // assert(0);
+    if (h<0){
+        __poet_fail();   // assert(0);
+    }
 
     while ( cas(table, h, 0, w) == 0){
       h = (h+1) % SIZE;

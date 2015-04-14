@@ -1,7 +1,5 @@
 /* Adapted from: https://svn.sosy-lab.org/software/sv-benchmarks/trunk/c/pthread/fib_bench_false-unreach-call.c */
 
-//#include <assert.h>
-
 #include "pthread.h"
 
 volatile int i;
@@ -31,7 +29,6 @@ void *t2()
     s = t + i;
     j = s;
   }
-  // pthread_exit(NULL);
 }
 
 int main()
@@ -49,6 +46,4 @@ int main()
   if (l >= 144 || j >= 144) { 
       __poet_fail();
   } 
-
-  //  return 0;
 }

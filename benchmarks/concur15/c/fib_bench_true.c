@@ -1,7 +1,5 @@
 /* Adapted from: https://svn.sosy-lab.org/software/sv-benchmarks/trunk/c/pthread/fib_bench_true-unreach-call.c */
 
-//#include <assert.h>
-
 #include "pthread.h"
 
 volatile int i=1; 
@@ -39,17 +37,14 @@ void *t2()
 int
 main()
 {
-  //#ifndef GOTO
   pthread_t id1;
   pthread_t id2;
 
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
-
-  /* if (i > 144 || j > 144) { */
-  /*   assert(0); */
-  /* } */
-  pthread_join(id1, NULL); 
-  pthread_join(id2, NULL); 
-  //  return 0;
+  
+  int l=i;
+  if (l > 144 || j > 144) { 
+      __poet_fail();
+  } 
 }
