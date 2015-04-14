@@ -45,12 +45,10 @@ int main()
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
 
-  // svs: add poet_fail call here
-  /* if (i >= 144 || j >= 144) { */
-  /*   assert(0); */
-  /* } */
-  pthread_join(id1, NULL);
-  pthread_join(id2, NULL);
+  int l=i;
+  if (l >= 144 || j >= 144) { 
+      __poet_fail();
+  } 
 
   //  return 0;
 }
