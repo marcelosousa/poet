@@ -77,14 +77,14 @@ int main() {
     pthread_t t2;
     pthread_t t3;
     pthread_t t4;
-    pthread_create(t1, 0, writer0, 0);
-    pthread_create(t2, 0, reader0, 0);
-    pthread_create(t3, 0, writer1, 0);
-    pthread_create(t4, 0, reader1, 0);
-    pthread_join(t1, 0);
-    pthread_join(t2, 0);
-    pthread_join(t3, 0);
-    pthread_join(t4, 0);
+    pthread_create(t1, NULL, writer0, NULL);
+    pthread_create(t2, NULL, reader0, NULL);
+    pthread_create(t3, NULL, writer1, NULL);
+    pthread_create(t4, NULL, reader1, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
+    pthread_join(t4, NULL);
     
-    return 0;
+    //    return 0;
 }

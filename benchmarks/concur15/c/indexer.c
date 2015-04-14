@@ -69,17 +69,28 @@ int main()
 {
   int i, arg;
 
-  for (i = 0; i < SIZE; i++)
-    pthread_mutex_init(&cas_mutex[i], NULL);
+  //  for (i = 0; i < SIZE; i++)
+  pthread_mutex_init(cas_mutex[0], NULL);
+  pthread_mutex_init(cas_mutex[1], NULL);
+  pthread_mutex_init(cas_mutex[2], NULL);
+  pthread_mutex_init(cas_mutex[3], NULL);
+  pthread_mutex_init(cas_mutex[4], NULL);
+  pthread_mutex_init(cas_mutex[5], NULL);
+  pthread_mutex_init(cas_mutex[6], NULL);
+  pthread_mutex_init(cas_mutex[7], NULL);
 
-  for (i = 0; i < NUM_THREADS; i++){
-    arg=i;
-    pthread_create(&tids[i], NULL,  thread_routine, &arg);
-  }
 
-  for (i = 0; i < NUM_THREADS; i++){
-    pthread_join(tids[i], NULL);
-  }
+  //  for (i = 0; i < NUM_THREADS; i++){
+  //  arg=i;
+  pthread_create(tids[0], NULL,  thread_routine0, NULL);
+  pthread_create(tids[1], NULL,  thread_routine1, NULL);
 
-  return 0;
+    //}
+
+  //  for (i = 0; i < NUM_THREADS; i++){
+  pthread_join(tids[0], NULL);
+  pthread_join(tids[1], NULL);
+    // }
+
+  //return 0;
 }
