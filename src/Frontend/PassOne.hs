@@ -115,8 +115,10 @@ replacePthreadExitAux "main" threadInfo s =
          ExprStat pc (Call "pthread_mutex_unlock" param) ->
            let dcall = ExprStat pc (Call "__poet_mutex_unlock" param)
            in [dcall]
-         ExprStat pc (Call "pthread_mutex_init" [Ident l, Ident "NULL"]) ->
-           [ExprStat pc (Assign CAssignOp (Ident l) (Const $ IntValue 0))]
+--         ExprStat pc (Call "pthread_mutex_init" [Ident l, Ident "NULL"]) ->
+--           [ExprStat pc (Assign CAssignOp (Ident l) (Const $ IntValue 0))]
+         ExprStat pc (Call "pthread_mutex_init" [expr, Ident "NULL"]) ->
+           [ExprStat pc (Assign CAssignOp expr (Const $ IntValue 0))]
          ExprStat pc (Ident var) -> 
            [ExprStat pc (Assign CAssignOp (Ident var) (Const $ IntValue 0))]
          Local pc expr Nothing -> 

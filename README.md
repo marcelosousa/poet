@@ -56,6 +56,12 @@ Running Poet
 TODO
 ----
 
-  pthread_mutex_init
-  pthread_mutex_lock
-  pthread_mutex_unlock
+1. Testcases for stateful vs stateless
+2. Testcases where cutoffs are beneficial 
+3. Print sorted states of maximal configurations to check that stateful and stateless have the same result
+4. Profile to find out why stateful is taking longer than stateless
+
+Message of experiments
+----------------------
+1. Stateful is better than stateless if the unfolding can fit in memory
+2. Cutoffs can result in exponential savings

@@ -23,6 +23,7 @@ withinRestrictions s =
               if name `elem` poetFuncNames
               then True
               else error $ "sanityCheck: " ++ show e
+            _ -> error $ "sanityCheck: disallowed " ++ show s
         IfThen _ _ _then -> 
           all withinRestrictions _then
         If pc cond _then _else -> 
