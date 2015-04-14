@@ -104,9 +104,9 @@ frontend :: FilePath -> IO ()
 frontend f = do
   prog <- extract f
   let prog' = frontEnd prog
-  putStrLn "ORIGINAL PROGRAM"
-  putStrLn "------------------------------"
-  print prog
+--  putStrLn "ORIGINAL PROGRAM"
+--  putStrLn "------------------------------"
+--  print prog
   putStrLn "TRANSFORMED PROGRAM"
   putStrLn "------------------------------"
   print prog'
