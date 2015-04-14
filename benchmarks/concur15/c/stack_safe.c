@@ -17,7 +17,8 @@
 int volatile top=0;
 unsigned int arr[SIZE];
 
-volatile int x = 0, y = 0;
+int volatile x = 0;
+int volatile y = 0;
 
 /* void lock(int id){ */
 /*   if(id){ */
@@ -92,7 +93,7 @@ void *t1()
   int id; 
   int push_cond;
   int Top; 
-
+  
   for(i=0; i<SIZE; i++)
   {
     id =0;
@@ -120,9 +121,10 @@ void *t1()
       }
     // push_cond = 0;
     
-    if (push_cond == OVERFLOW)
-      __poet_false; //assert(0);
-    
+    if (push_cond == OVERFLOW){
+      //    __poet_false; //assert(0);
+      goto thr1_exit; 
+    }
     // inlined unlock code
     //unlock(0);
     if(id){
@@ -132,9 +134,10 @@ void *t1()
     }
 
   }
+ thr1_exit: i = 0;
 }
 
-void *t2(void *arg) 
+void *t2() 
 {
   int i;
   int id;
@@ -155,18 +158,20 @@ void *t2(void *arg)
 
     if (top>0)
     {    
-      /* if (top==0) */
-      /* 	{ */
-      /* 	  pop_cond = UNDERFLOW; */
-      /* 	} */
+      if (top==0)
+      	{
+      	  pop_cond = UNDERFLOW;
+      	}
       else
 	{
 	  Top = top; 
 	  top = Top - 1;
 	  //return stack[get_top()];
 	}
-      if (pop_cond==UNDERFLOW)
-	__poet_false;
+      if (pop_cond==UNDERFLOW){
+	//	__poet_false;
+	goto thr2_exit;
+      }
     }    
     //unlock(1);
      // inlined unlock code
@@ -176,13 +181,16 @@ void *t2(void *arg)
       y = 0;
     }
   }
+ thr2_exit: i =0;
 }
 
 
-int main(void) 
+
+int main() 
 {
   //  #ifndef GOTO
-  pthread_t id1, id2;
+  pthread_t id1;
+  pthread_t id2;
 
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
