@@ -55,7 +55,7 @@ void * thr0()
 	ret_val1 = 1;
       }
       pthread_mutex_unlock(cas_mutex[h]);
-      ret_val == ret_val1;
+      ret_val = ret_val1;
     }
   }
  END: tid = 0;
@@ -101,7 +101,7 @@ void * thr1()
 	ret_val1 = 1;
       }
       pthread_mutex_unlock(cas_mutex[h]);
-      ret_val == ret_val1;
+      ret_val = ret_val1;
     }
   }
  END: tid = 1;
