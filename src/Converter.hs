@@ -128,6 +128,14 @@ modifyList xs a idx =
   
 -- encodes Call
 fromCall :: Flow -> Var -> PC -> String -> [Expression] -> ST s [(TransitionFn s, Acts, RWSet)]
+fromCall flow pcVar pc "__poet_fail" [] = do
+  let acts = [Write (V pcVar)]
+      fn = \s -> do
+             IntVal curPC <- safeLookup "call" s pcVar
+             if curPC == pc
+             then return $ Just $ \s -> error "poet found an assertion violation!"
+             else return Nothing
+  return [(fn, [Other], acts)]
 fromCall flow pcVar pc name [param] = do
   let Continue next = getFlow flow pc
   case name of 

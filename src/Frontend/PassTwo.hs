@@ -88,6 +88,7 @@ assertWellFormed_1GlobalE globals e =
         Call ident _ -> case ident of
             "__poet_mutex_lock" -> 0
             "__poet_mutex_unlock" -> 0
+            "__poet_fail" -> 0
             _ -> error $ "assertWellFormed_1GlobalE: function calls are disallowed " ++ show e
         _ -> error $ "assertWellFormed_1GlobalE: disallowed expression " ++ show e
 

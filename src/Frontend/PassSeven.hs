@@ -11,7 +11,7 @@ passSeven (Program (decls,defs)) =
 
 poetFuncNames :: [String]
 poetFuncNames = 
-    ["__poet_mutex_lock", "__poet_mutex_unlock"]
+    ["__poet_mutex_lock", "__poet_mutex_unlock", "__poet_fail"]
     
 withinRestrictions :: AnnStatement PC -> Bool
 withinRestrictions s =

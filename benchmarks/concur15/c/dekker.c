@@ -16,7 +16,9 @@ void *thr1() {
     }
   }
   x = 0;
-  //  assert(x<=0);
+  if(x>0){
+      __poet_fail(); //  assert(x<=0);
+  }
   turn = 1;
   flag1 = 0;
   //  return NULL;
@@ -32,7 +34,10 @@ void *thr2() {
   }
 
   x = 1;
-  //  assert(x>=1);
+  if(x<1){
+      __poet_fail(); //assert(x>=1);
+  }
+  
   turn = 0;
   flag2 = 0;
   //return NULL;
