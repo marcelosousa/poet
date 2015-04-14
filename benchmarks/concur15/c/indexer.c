@@ -13,29 +13,7 @@
 int volatile table[SIZE];
 pthread_mutex_t  cas_mutex[SIZE];
 
-pthread_t  tids[NUM_THREADS];
-
-
-int cas(int volatile * tab, int h, int val, int new_val)
-{
-  int ret_val = 0;
-  pthread_mutex_lock(cas_mutex[h]);
-  
- 
-  if ( tab[h] == val ) {
-    tab[h] = new_val;
-    ret_val = 1;
-  }
-
-  pthread_mutex_unlock(cas_mutex[h]);
-
-  
-  return ret_val;
-} 
-
-
-
-void * t0()
+void * thr0()
 {
   int tid;
   int m = 0;
@@ -55,21 +33,88 @@ void * t0()
     h = (w * 7) % SIZE;
     
     if (h<0){
-        __poet_fail();   // assert(0);
+      __poet_fail();   // assert(0);
     }
+    // cas functon inlined
+    int ret_val = 0;
+    pthread_mutex_lock(cas_mutex[h]);
+    if ( table[h] == 0 ) {
+      table[h] = w;
+      ret_val = 1;
+    }
+    pthread_mutex_unlock(cas_mutex[h]);
 
-    while ( cas(table, h, 0, w) == 0){
+    while ( ret_val == 0){
       h = (h+1) % SIZE;
+      
+      // cas functon inlined
+      int ret_val1 = 0;
+      pthread_mutex_lock(cas_mutex[h]);
+      if ( table[h] == 0 ) {
+	table[h] = w;
+	ret_val1 = 1;
+      }
+      pthread_mutex_unlock(cas_mutex[h]);
+      ret_val == ret_val1;
     }
   }
- END: ;
+ END: tid = 0;
 }
+
+void * thr1()
+{
+  int tid;
+  int m = 0;
+  int w, h;
+  tid = 1;
+  
+  while(1){
+    if ( m < MAX ){
+      m = m +1 ;
+      w = m * 11 + tid;
+    }
+    else{
+      goto END;
+    }
+    
+    h = (w * 7) % SIZE;
+    
+    if (h<0){
+      __poet_fail();   // assert(0);
+    }
+    // cas functon inlined
+    int ret_val = 0;
+    pthread_mutex_lock(cas_mutex[h]);
+    if ( table[h] == 0 ) {
+      table[h] = w;
+      ret_val = 1;
+    }
+    pthread_mutex_unlock(cas_mutex[h]);
+    
+    while ( ret_val == 0){
+      h = (h+1) % SIZE;
+      // cas functon inlined
+      int ret_val1 = 0;
+      pthread_mutex_lock(cas_mutex[h]);
+      if ( table[h] == 0 ) {
+	table[h] = w;
+	ret_val1 = 1;
+      }
+      pthread_mutex_unlock(cas_mutex[h]);
+      ret_val == ret_val1;
+    }
+  }
+ END: tid = 1;
+}
+
+
 
 
 int main()
 {
-  int i, arg;
-
+  //  int i, arg;
+  pthread_t  tid1; 
+  pthread_t  tid2; 
   //  for (i = 0; i < SIZE; i++)
   pthread_mutex_init(cas_mutex[0], NULL);
   pthread_mutex_init(cas_mutex[1], NULL);
@@ -83,14 +128,14 @@ int main()
 
   //  for (i = 0; i < NUM_THREADS; i++){
   //  arg=i;
-  pthread_create(tids[0], NULL,  thread_routine0, NULL);
-  pthread_create(tids[1], NULL,  thread_routine1, NULL);
+  pthread_create(tid1, NULL,  thr0, NULL);
+  pthread_create(tid2, NULL,  thr1, NULL);
 
     //}
 
   //  for (i = 0; i < NUM_THREADS; i++){
-  pthread_join(tids[0], NULL);
-  pthread_join(tids[1], NULL);
+  pthread_join(tid1, NULL);
+  pthread_join(tid2, NULL);
     // }
 
   //return 0;

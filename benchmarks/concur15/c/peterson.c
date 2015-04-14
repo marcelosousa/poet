@@ -1,24 +1,24 @@
 /* Adapted from: https://svn.sosy-lab.org/software/sv-benchmarks/trunk/c/pthread-atomic/peterson_true-unreach-call.c */
 
-#ifdef ENABLE_PSO_FENCES
-#define ENABLE_TSO_FENCES
-#endif
+/* #ifdef ENABLE_PSO_FENCES */
+/* #define ENABLE_TSO_FENCES */
+/* #endif */
 
-#define FENCE() asm volatile ("mfence" ::: "memory")
+/* #define FENCE() asm volatile ("mfence" ::: "memory") */
 
-#ifdef ENABLE_TSO_FENCES
-#define TSO_FENCE() FENCE()
-#else
-#define TSO_FENCE() /*No FENCE*/
-#endif
+/* #ifdef ENABLE_TSO_FENCES */
+/* #define TSO_FENCE() FENCE() */
+/* #else */
+/* #define TSO_FENCE() /\*No FENCE*\/ */
+/* #endif */
 
-#ifdef ENABLE_PSO_FENCES
-#define PSO_FENCE() FENCE()
-#else
-#define PSO_FENCE() /*No FENCE*/
-#endif
+/* #ifdef ENABLE_PSO_FENCES */
+/* #define PSO_FENCE() FENCE() */
+/* #else */
+/* #define PSO_FENCE() /\*No FENCE*\/ */
+/* #endif */
 
-void __VERIFIER_assume(int);
+/* void __VERIFIER_assume(int); */
 
 /* Testcase from Threader's distribution. For details see:
    http://www.model.in.tum.de/~popeea/research/threader
