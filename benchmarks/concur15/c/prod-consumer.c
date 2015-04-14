@@ -62,24 +62,27 @@ int main()
 {
 
   pthread_t producer;
-  pthread_t consumers[2];
+  pthread_t cons1, cons2;
   
   int i; 
   
   // initialize the global buffer 
-  memset(buffer, 0, sizeof(int)*SIZE);
+  //memset(buffer, 0, sizeof(int)*SIZE);
+  
+  for (i=0; i <SIZE; i=i+1)
+    buffer[i] =0;
 
   pthread_mutex_init(buff_lock, NULL);
 
   pthread_create(producer, NULL, p1, NULL);
-  pthread_create(consumers[0],  NULL, c1, NULL);
-  pthread_create(consumers[1],  NULL, c2, NULL);
+  pthread_create(cons1,  NULL, c1, NULL);
+  pthread_create(cons2,  NULL, c2, NULL);
 
 
 
   pthread_join(producer, NULL); 
-  pthread_join(consumers[0], NULL); 
-  pthread_join(consumers[1], NULL); 
+  pthread_join(cons1, NULL); 
+  pthread_join(cons2, NULL); 
 
 
   // return 0; 
