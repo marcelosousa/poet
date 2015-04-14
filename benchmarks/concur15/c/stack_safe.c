@@ -5,7 +5,7 @@
 //void __VERIFIER_assume(int);
 
 //#include <assert.h>
-#include <pthread.h>
+#include "pthread.h"
 //#include <stdio.h>
 
 #define TRUE	  1
@@ -94,7 +94,7 @@ void *t1()
   int push_cond;
   int Top; 
   
-  for(i=0; i<SIZE; i++)
+  for(i=0; i<SIZE; i=i+1)
   {
     id =0;
     
@@ -146,7 +146,7 @@ void *t2()
 
   id =1;
 
-  for(i=0; i<SIZE; i++)
+  for(i=0; i<SIZE; i=i+1)
   {
     //lock(1);
     // inlined lock code

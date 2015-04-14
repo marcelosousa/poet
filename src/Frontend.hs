@@ -144,7 +144,7 @@ flowStatement mlpc nextPC (s:n:ss) = case s of
           this = (pc, Branch (nextTPC, nextFPC))
           (thenFlow, etpc) = flowStatement mlpc (Just nextFPC) _then
           finalThen = map (\et -> (et, Continue nextFPC)) etpc
-          (next, epc) = flowStatement mlpc Nothing (n:ss)
+          (next, epc) = flowStatement mlpc nextPC (n:ss)
       in (this:(thenFlow++next), epc)
     If pc cond _then _else -> 
       let nextPC = getPC n 
@@ -155,7 +155,7 @@ flowStatement mlpc nextPC (s:n:ss) = case s of
           finalThen = map (\et -> (et, Continue nextPC)) etpc
           (elseFlow, eepc) = flowStatement mlpc (Just nextPC) _else
           finalElse = map (\et -> (et, Continue nextPC)) eepc
-          (next, epc) = flowStatement mlpc Nothing (n:ss)
+          (next, epc) = flowStatement mlpc (Just nextPC) (n:ss)
       in (this:(thenFlow++elseFlow++next), epc)
     Goto pc i ->
       case M.lookup i mlpc of
