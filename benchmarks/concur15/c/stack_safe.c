@@ -8,17 +8,17 @@
 #include <pthread.h>
 //#include <stdio.h>
 
-#define TRUE	  (1)
-#define FALSE	  (0) 
-#define SIZE	  (5)
-#define OVERFLOW  (-1)
-#define UNDERFLOW (-2)
+#define TRUE	  1
+#define FALSE	  0 
+#define SIZE	  5
+#define OVERFLOW  -1
+#define UNDERFLOW -2
 
-int volatile top=0;
+int  top=0;
 unsigned int arr[SIZE];
 
-int volatile x = 0;
-int volatile y = 0;
+int  x = 0;
+int  y = 0;
 
 /* void lock(int id){ */
 /*   if(id){ */
