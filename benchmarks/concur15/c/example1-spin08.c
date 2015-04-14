@@ -1,6 +1,6 @@
 #include "pthread.h" 
 
-const int N = 64; 
+int N = 64; 
 int d = 0; 
 
 pthread_mutex_t l1; 

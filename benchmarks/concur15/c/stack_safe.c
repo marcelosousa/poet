@@ -155,10 +155,10 @@ void *t2(void *arg)
 
     if (top>0)
     {    
-      if (top==0)
-	{
-	  pop_cond = UNDERFLOW;
-	}
+      /* if (top==0) */
+      /* 	{ */
+      /* 	  pop_cond = UNDERFLOW; */
+      /* 	} */
       else
 	{
 	  Top = top; 
