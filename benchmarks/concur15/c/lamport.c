@@ -35,7 +35,9 @@ void *thr1() {
  breaklbl:
   // begin: critical section
   X = 0;
-  //  assert(X <= 0);
+  if(X > 0){
+      __poet_fail();   //  assert(X <= 0);
+  }
   // end: critical section
   y = 0;
   b1 = 0;
@@ -66,7 +68,9 @@ void *thr2() {
  breaklbl1:
   // begin: critical section
   X = 1;
-  //  assert(X >= 1);
+  if(X < 1){
+      __poet_fail();  //  assert(X >= 1);
+  }
   // end: critical section
   y = 0;
   b2 = 0;
