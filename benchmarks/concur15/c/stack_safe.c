@@ -5,11 +5,11 @@
 //void __VERIFIER_assume(int);
 
 //#include <assert.h>
-#include <pthread.h>
+#include "pthread.h"
 //#include <stdio.h>
 
-#define TRUE	  1
-#define FALSE	  0 
+/* #define TRUE	  1 */
+/* #define FALSE	  0  */
 #define SIZE	  5
 #define OVERFLOW  -1
 #define UNDERFLOW -2
@@ -94,7 +94,7 @@ void *t1()
   int push_cond;
   int Top; 
   
-  for(i=0; i<SIZE; i++)
+  for(i=0; i<SIZE; i=i+1)
   {
     id =0;
     
@@ -146,33 +146,26 @@ void *t2()
 
   id =1;
 
-  for(i=0; i<SIZE; i++)
+  for(i=0; i<SIZE; i=i+1)
   {
     //lock(1);
     // inlined lock code
     if(id){
       x = 1;
-    }else{
+    } 
+    else{
       y = 1;
     }
-
-    if (top>0)
-    {    
-      if (top==0)
-      	{
-      	  pop_cond = UNDERFLOW;
-      	}
-      else
-	{
-	  Top = top; 
-	  top = Top - 1;
-	  //return stack[get_top()];
-	}
-      if (pop_cond==UNDERFLOW){
-	//	__poet_false;
-	goto thr2_exit;
-      }
-    }    
+    
+    if (top>0){
+      Top = top; 
+      top = Top - 1;
+    }
+    else { // pop_cond == UNDERFLOW
+      //	__poet_false;
+      goto thr2_exit;
+    }
+    
     //unlock(1);
      // inlined unlock code
     if(id){
