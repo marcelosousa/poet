@@ -123,6 +123,22 @@ replacePthreadExitAux "main" threadInfo s =
            [ExprStat pc (Assign CAssignOp expr (Const $ IntValue 0))]
          Local pc expr (Just v) ->
            [ExprStat pc (Assign CAssignOp expr v)]           
+         IfThen pc expr _then -> 
+           let _then' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _then
+           in [IfThen pc expr _then']
+         If pc expr _then _else ->
+           let _then' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _then
+               _else' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _else
+           in [If pc expr _then' _else']
+         While pc expr _body ->
+           let _body' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _body
+           in [While pc expr _body']
+         For pc _expr1 _expr2 _expr3 _body ->
+           let _body' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _body
+           in [For pc _expr1 _expr2 _expr3 _body']
+         Label pc i _stat -> 
+           let _stat' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _stat
+           in [Label pc i _stat']
          _ -> [s]
 replacePthreadExitAux name threadInfo s =
     case s of
@@ -144,5 +160,21 @@ replacePthreadExitAux name threadInfo s =
          Local pc expr Nothing -> 
            [ExprStat pc (Assign CAssignOp expr (Const $ IntValue 0))]
          Local pc expr (Just v) ->
-           [ExprStat pc (Assign CAssignOp expr v)]    
+           [ExprStat pc (Assign CAssignOp expr v)]
+         IfThen pc expr _then -> 
+           let _then' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _then
+           in [IfThen pc expr _then']
+         If pc expr _then _else ->
+           let _then' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _then
+               _else' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _else
+           in [If pc expr _then' _else']
+         While pc expr _body ->
+           let _body' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _body
+           in [While pc expr _body']
+         For pc _expr1 _expr2 _expr3 _body ->
+           let _body' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _body
+           in [For pc _expr1 _expr2 _expr3 _body']
+         Label pc i _stat -> 
+           let _stat' = foldr (\s r -> replacePthreadExitAux "main" threadInfo s ++ r) [] _stat
+           in [Label pc i _stat']
          _ -> [s]
