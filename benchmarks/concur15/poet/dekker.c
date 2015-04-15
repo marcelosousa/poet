@@ -12,6 +12,7 @@ void *thr1() {
   while (flag2 >= 1) {
     if (turn != 0) {
       flag1 = 0;
+      busy_1: if (turn != 0) { goto busy_1; }
       flag1 = 1;
     }
   }
@@ -29,6 +30,7 @@ void *thr2() {
   while (flag1 >= 1) {
     if (turn != 1) {
       flag2 = 0;
+      busy_2: if (turn != 0) { goto busy_2; } //while (turn != 0) {};
       flag2 = 1;
     }
   }
