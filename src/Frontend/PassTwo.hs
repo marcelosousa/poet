@@ -67,7 +67,7 @@ assertWellFormed_1GlobalE globals e =
          if x `elem` globals
          then 1
          else 0
-        Index lhs@(Ident _) rhs -> 
+        Index lhs rhs -> 
           let lhsr = assertWellFormed_1GlobalE globals lhs 
               rhsr = assertWellFormed_1GlobalE globals rhs
               r = lhsr + rhsr
@@ -76,7 +76,7 @@ assertWellFormed_1GlobalE globals e =
              else if isIdentOrConstant rhs
                   then r
                   else error $ "Index operation only with ident or constant: " ++ show e
-        Index _ _ -> error $ "assertWellFormed_1GlobalE: lhs of Index is not an identifier: " ++ show e
+--        Index lhs rhs -> error $ "assertWellFormed_1GlobalE: lhs of Index is not an identifier: " ++ show e
         Assign CAssignOp lhs rhs ->
           let lhsr = assertWellFormed_1GlobalE globals lhs 
               rhsr = assertWellFormed_1GlobalE globals rhs
