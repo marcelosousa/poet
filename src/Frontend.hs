@@ -110,7 +110,12 @@ flowProgram mlpc (Program (decls,defs)) =
 flowStatement :: MapLabelPC -> Maybe PC -> Statement -> (Flow, [PC])
 flowStatement mlpc _ [] = error "flowStatement: empty list"
 flowStatement mlpc nextPC [s] = case s of
-    ExprStat pc e -> ([], [pc])
+    ExprStat pc e -> 
+      case nextPC of 
+        Nothing -> ([], [pc])
+        Just nextPC' -> 
+          let this = (pc, Continue nextPC')
+          in ([this], [nextPC'])
     IfThen pc _ _then -> 
       let nextTPC = getPC $ head _then
           nextPC' = if length _then > 1 then (Just $ getPC $ _then!!1) else nextPC
