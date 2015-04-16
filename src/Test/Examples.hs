@@ -11,6 +11,7 @@ import Test.Examples.ExSix
 import Test.Examples.ExSeven
 import Test.Examples.ExEight
 import Test.Examples.ExNine
+import Test.Examples.ExTen
 
 import Control.Monad.ST.Safe
 import Test.HUnit
@@ -53,6 +54,10 @@ runTest9 mode = do
 
 runTest10 mode = do
   let evs = runST (sys9 >>= \sys -> stateless mode False sys ind9 >>= showEvents . evts)
+  putStrLn evs
+
+runTest11 mode = do
+  let evs = runST (sys10 >>= \sys -> stateless mode False sys ind10 >>= showEvents . evts)
   putStrLn evs
 
 {-
