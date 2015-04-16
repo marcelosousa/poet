@@ -57,12 +57,12 @@ explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
          ++ ", enevs = " ++ show enevs ++ ", alt = " 
          ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
-  let k = unsafePerformIO $ getChar
+  --let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  if k `seq` null enevs 
+  if null enevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
@@ -105,7 +105,7 @@ explore c@Conf{..} ê d alt = do
     if statelessMode
     then do
       core <- lift $ computeCore stack d evts
-      mtrace ("calling prune with c="++show stack++", d="++show d) $ lift $ prune e core evts
+      trace ("calling prune with c="++show stack++", d="++show d) $ lift $ prune e core evts
     else return ()
 
 -- We are going to add event e to configuration conf
@@ -338,7 +338,7 @@ findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
 addEvent :: EventsID -> [(EventID,Event)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
-addEvent stack dup tr history = mtrace ("addEvent(tr="++show tr++",h="++show history++")" ) $ do
+addEvent stack dup tr history = trace ("addEvent(tr="++show tr++",h="++show history++")" ) $ do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
   then do 
@@ -466,7 +466,7 @@ computeConflicts uidep tr lh lhCnfls events = do
 -- e whose roots are not in C.
 -- @@ compute potential alternatives @ revised: 08-04-15
 computePotentialAlternatives :: EventsID -> EventsID -> UnfolderOp s ()
-computePotentialAlternatives maxevs evs =  mtrace ("computePotentialAlternatives") $ do
+computePotentialAlternatives maxevs evs =  trace ("computePotentialAlternatives") $ do
   s@UnfolderState{..} <- get
   -- @ compute the events of the configuration
   -- let confEvs = stack -- lift $ getConfEvs maxevs evts
@@ -543,7 +543,7 @@ filterAlternatives (v:vs) ods = do
   else filterAlternatives vs ods
  
 filterAlternative :: Alternative -> EventsID -> UnfolderOp s Bool
-filterAlternative v d = mtrace ("filterAlternative(v="++show v++", d="++show d++")") $ do
+filterAlternative v d = trace ("filterAlternative(v="++show v++", d="++show d++")") $ do
   s@UnfolderState{..} <- get
   cnfs <- lift $ mapM (\e -> getImmediateConflicts e evts) v >>= return . concat
   let isConf = not $ any (\e -> e `elem` stack) cnfs
@@ -569,15 +569,17 @@ computeCore conf d events = do
   return $ nub core 
 
 prune :: EventID -> EventsID -> Events s -> ST s ()
-prune e core events = mtrace ("pruning " ++ show e) $ do
+prune e core events = trace ("pruning " ++ show e) $ do
   ev@Event{..} <- getEvent "prune" e events
   if e `elem` core
-  then return ()
+  then resetAlternatives e events
   else deleteEvent e events
   mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
 
+  
+
 deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = mtrace ("deleting event " ++ show e) $ do
+deleteEvent e events = trace ("deleting event " ++ show e) $ do
   check <- filterEvent e events
   if check
   then do 

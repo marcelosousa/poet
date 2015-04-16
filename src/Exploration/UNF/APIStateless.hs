@@ -314,6 +314,13 @@ addAlternative e v events = -- trace ("adding alternative " ++ show v ++ " of " 
       ev' = ev{ alte = altEv }
   setEvent e ev' events 
 
+resetAlternatives :: EventID -> Events s -> ST s ()
+resetAlternatives e events = do
+  ev@Event{..} <- getEvent "resetAlternative" e events
+  let altEv = []
+      ev' = ev{ alte = altEv }
+  setEvent e ev' events
+
 addDisabled :: EventID -> EventID -> Events s -> ST s ()
 addDisabled e ê events = -- trace ("addDisa: " ++ show e ++ " of " ++ show ê) $ 
  do
