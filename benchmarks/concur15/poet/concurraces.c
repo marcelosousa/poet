@@ -2,37 +2,48 @@
 
 #include "pthread.h"
 
-pthread_mutex_t l1; 
-pthread_mutex_t l2; 
-pthread_mutex_t l3; 
-pthread_mutex_t l4; 
-pthread_mutex_t l5; 
+int a=0;
+int b=0;
+int c=0;
+int d=0;
+int e=0;
+int f=0;
+int g=0;
+int h=0;
+int i=0;
+int j=0;
+int k=0;
+int l=0;
+int m=0;
+int n=0; 
 
-void *t1(){pthread_mutex_lock(l1);}
-void *t2(){pthread_mutex_lock(l1);}
-void *t3(){pthread_mutex_lock(l2);}
-void *t4(){pthread_mutex_lock(l2);}
-void *t5(){pthread_mutex_lock(l3);}
-void *t6(){pthread_mutex_lock(l3);}
-void *t7(){pthread_mutex_lock(l4);}
-void *t8(){pthread_mutex_lock(l4);}
-void *t9(){pthread_mutex_lock(l5);}
-void *t10(){pthread_mutex_lock(l5);}
-
+void *t1(){a=1;}
+void *t2(){a=2;}
+void *t3(){b=1;}
+void *t4(){b=2;}
+void *t5(){c=1;}
+void *t6(){c=2;}
+void *t7(){d=1;}
+void *t8(){d=2;}
+void *t9(){e=1;}
+void *t10(){e=2;}
+void *t11(){f=1;}
+void *t12(){f=2;}
+void *t13(){g=1;}
+void *t14(){g=2;}
+void *t15(){h=1;}
+void *t16(){h=2;}
+void *t17(){i=1;}
+void *t18(){i=2;}
+void *t19(){j=1;}
+void *t20(){j=2;}
+/*void *t21(){k=1;}
+void *t22(){k=2;}
+void *t23(){l=1;}
+void *t24(){l=2;}
+*/
 int main()
 {
-
-  pthread_t id1; 
-  pthread_t id2;
-  pthread_t id3;
-  pthread_t id4;
-  pthread_t id5;
-  pthread_t id6;
-  pthread_t id7;
-  pthread_t id8;
-  pthread_t id9;
-  pthread_t id10;
-      
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
   pthread_create(id3, NULL, t3, NULL);
@@ -43,15 +54,19 @@ int main()
   pthread_create(id8, NULL, t8, NULL);
   pthread_create(id9, NULL, t9, NULL);
   pthread_create(id10, NULL, t10, NULL);
-
-  pthread_join(id1, NULL);
-  pthread_join(id2, NULL);
-  pthread_join(id3, NULL);
-  pthread_join(id4, NULL);
-  pthread_join(id5, NULL);
-  pthread_join(id6, NULL);
-  pthread_join(id7, NULL);
-  pthread_join(id8, NULL);
-  pthread_join(id9, NULL);
-  pthread_join(id10, NULL);
+  pthread_create(id11, NULL, t11, NULL);
+  pthread_create(id12, NULL, t12, NULL);
+  pthread_create(id13, NULL, t13, NULL);
+  pthread_create(id14, NULL, t14, NULL);
+  pthread_create(id15, NULL, t15, NULL);
+  pthread_create(id16, NULL, t16, NULL);
+  pthread_create(id17, NULL, t17, NULL);
+  pthread_create(id18, NULL, t18, NULL);
+  pthread_create(id19, NULL, t19, NULL);
+  pthread_create(id20, NULL, t20, NULL);
+/*  pthread_create(id21, NULL, t21, NULL);
+  pthread_create(id22, NULL, t22, NULL);
+  pthread_create(id23, NULL, t23, NULL);
+  pthread_create(id24, NULL, t24, NULL);
+*/
 }
