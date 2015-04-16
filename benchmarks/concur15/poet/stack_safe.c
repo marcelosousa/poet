@@ -101,8 +101,10 @@ void *t1()
     // inlined lock code
     if(id){
       x = 1;
+    Loop1: if(y!=0) goto Loop1;
     }else{
       y = 1;
+    Loop2: if(x!=0) goto Loop2;
     }
    
     tmp = 42%SIZE;
@@ -152,9 +154,11 @@ void *t2()
     // inlined lock code
     if(id){
       x = 1;
+    Loop3: if(y!=0) goto Loop3;      
     } 
     else{
       y = 1;
+    Loop4: if(x!=0) goto Loop4;      
     }
     
     if (top>0){
