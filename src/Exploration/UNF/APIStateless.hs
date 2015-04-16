@@ -73,7 +73,6 @@ showEvents evs = do
   m <- H.toList evs
   let km = sortBy (\a b -> compare (fst a) (fst b)) m
       r = foldl (\a m -> show m ++ "\n" ++ a) "" km
-      --r = if length km > 54 then show $ [km !! 33, km !! 54] else "" -- foldl (\a m -> show m ++ "\n" ++ a) "" km
   return r
 
 copyEvents :: Events s -> ST s (Events s)
@@ -93,6 +92,7 @@ data UnfolderState s = UnfolderState {
   , statelessMode :: Bool    -- Stateless or not
   , stas :: States s         -- Hash Table for cutoffs
   , cutoffMode :: Bool       -- Cutoffs or not
+  , cutoffCntr :: Counter    -- Cutoff counter
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -114,12 +114,12 @@ iState statelessMode cutoffMode sys indep = do
   rawState <- H.toList $ GCS.initialState sys
   H.insert states rawState 1
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode 0
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
 instance Show (UnfolderState s) where
-    show (u@UnfolderState{..}) = show (cntr, maxConf)
+    show (u@UnfolderState{..}) = show (cntr, maxConf, cutoffCntr)
 --        beg ++ "UIndep: " ++ show indep ++ "\nEvents: " ++ show events ++ "\nCausality: " ++ show causality 
 --     ++ "\n" ++ show (cevs configurations) ++ "\nEnabled: " ++ show enable 
 --     ++ "\nDisable: " ++ show disable ++ "\nAlternatives: " ++ show alternatives  ++ "\nImmConflicts: " ++ show immediateConflicts ++ "\nCounters: " 
@@ -361,6 +361,13 @@ incMaxConfCounter = do
   s@UnfolderState{..} <- get
   let nec = maxConf + 1
   put s{ maxConf = nec }
+
+-- @ updates the counter of cutoffs
+incCutoffCounter :: UnfolderOp s ()
+incCutoffCounter = do
+  s@UnfolderState{..} <- get
+  let nec = cutoffCntr + 1
+  put s{ cutoffCntr = nec }
   
 -- @ push 
 push :: EventID -> UnfolderOp s ()

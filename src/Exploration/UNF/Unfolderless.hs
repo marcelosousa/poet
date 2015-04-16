@@ -354,7 +354,9 @@ addEvent stack dup tr history = trace ("addEvent(tr="++show tr++",h="++show hist
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       isCutoff <- cutoff gstlc sizeLocalHistory
       if isCutoff
-      then mtrace ("Found cutoff: (tr="++show tr++", h="++show history++")") $ return []
+      then do 
+        incCutoffCounter
+        mtrace ("Found cutoff: (tr="++show tr++", h="++show history++")") $ return []
       else do
         -- @ 1. Fresh event id 
         neID <- freshCounter

@@ -10,10 +10,10 @@ import Model.GCS
 
 import qualified Data.Map as M
 
-unfToDot :: UnfolderState s -> ST s (Int,Int,String)
+unfToDot :: UnfolderState s -> ST s (Int,Int,Int, String)
 unfToDot sys@UnfolderState{..} = do
     events <- H.toList evts
-    return (cntr, maxConf, "digraph unfolding {\n" ++ toDot events stack ++ "}")
+    return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stack ++ "}")
 
 class ToDot a where
     toDot :: a -> EventsID -> String
