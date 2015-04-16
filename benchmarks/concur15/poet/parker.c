@@ -7,14 +7,6 @@
 
 /* BOUND 10 */
 
-/* #define FENCE() asm volatile ("mfence" ::: "memory") */
-
-/* #ifdef ENABLE_PSO_FENCES */
-/* #define PSO_FENCE() FENCE() */
-/* #else */
-/* #define PSO_FENCE() /\*No FENCE*\/ */
-/* #endif */
-
 /* void __VERIFIER_assume(int); */
 
 #include "pthread.h"
