@@ -1,6 +1,7 @@
 /* Adapted from: https://svn.sosy-lab.org/software/sv-benchmarks/trunk/c/pthread/fib_bench_false-unreach-call.c */
 
-#include "pthread.h"
+#include <pthread.h>
+#include <assert.h>
 
 int i=1;
 int j=1;
@@ -37,11 +38,11 @@ int main()
   pthread_t id1; 
   pthread_t id2;
   
-  pthread_create(id1, NULL, t1, NULL);
-  pthread_create(id2, NULL, t2, NULL);
+  pthread_create(&id1, NULL, t1, NULL);
+  pthread_create(&id2, NULL, t2, NULL);
 
   int l=i;
   if (l >= 144 || j >= 144) { 
-      __poet_fail();
+      assert(0); //__poet_fail();
   } 
 }

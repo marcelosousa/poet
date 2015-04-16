@@ -1,6 +1,6 @@
 #include "pthread.h" 
 
-int N = 32; 
+int N = 15; 
 int d = 0; 
 
 pthread_mutex_t l1; 
@@ -29,7 +29,7 @@ void *thr2()
     // lock 
     pthread_mutex_lock(l1); 
     int l = d;
-    d = l - j;
+    d = l + j;
     //unlock 
     pthread_mutex_unlock(l1); 
     j = j + 2; 

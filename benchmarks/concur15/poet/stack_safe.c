@@ -101,8 +101,10 @@ void *t1()
     // inlined lock code
     if(id){
       x = 1;
+    Loop1: if(y!=0) goto Loop1;
     }else{
       y = 1;
+    Loop2: if(x!=0) goto Loop2;
     }
    
     tmp = 42%SIZE;
@@ -118,12 +120,12 @@ void *t1()
 	Top = top;
 	arr[Top] = tmp;
 	top = Top +1;
+	push_cond = 0;
       }
-    // push_cond = 0;
     
     if (push_cond == OVERFLOW){
-      //    __poet_false; //assert(0);
-      goto thr1_exit; 
+      __poet_fail();
+      //      goto thr1_exit; 
     }
     // inlined unlock code
     //unlock(0);
@@ -134,7 +136,7 @@ void *t1()
     }
 
   }
- thr1_exit: i = 0;
+  // thr1_exit: i = 0;
 }
 
 void *t2() 
@@ -152,9 +154,11 @@ void *t2()
     // inlined lock code
     if(id){
       x = 1;
+    Loop3: if(y!=0) goto Loop3;      
     } 
     else{
       y = 1;
+    Loop4: if(x!=0) goto Loop4;      
     }
     
     if (top>0){
@@ -162,8 +166,7 @@ void *t2()
       top = Top - 1;
     }
     else { // pop_cond == UNDERFLOW
-      //	__poet_false;
-      goto thr2_exit;
+      __poet_fail();
     }
     
     //unlock(1);
@@ -174,7 +177,6 @@ void *t2()
       y = 0;
     }
   }
- thr2_exit: i =0;
 }
 
 
