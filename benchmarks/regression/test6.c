@@ -13,19 +13,17 @@ void *p(){
 }
 
 void *q(){
-    y = 1;
+    z = 7;
 }
 
 void *r(){
-    if (y == 0){
-      z=1;
-    }
+    if ( z == 0){
+      x = 1; 
+   }
 }
 
 void *s(){
-    if (z == 1){
-      x=2;
-    }
+    y = z;
 }
 
 int main(){
