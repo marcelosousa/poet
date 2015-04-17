@@ -14,7 +14,7 @@ void *t1()
   int s;
   for (k = 0; k < NUM; k=k+1){
     t = j;
-    s = i + t; 
+    s = i + t;
     i= s;
   }
 }

@@ -148,7 +148,7 @@ execute cst e = do
 
 isDependent_te :: GCS.UIndep -> GCS.TransitionMeta -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
-isDependent_te indep tr e events = trace ("isDependent(tr="++show tr++", e=" ++show e++")")$ do
+isDependent_te indep tr e events = do --trace ("isDependent(tr="++show tr++", e=" ++show e++")")$ 
   ev@Event{..} <- getEvent "isDependent" e events
   return $ GCS.isDependent indep tr evtr
 

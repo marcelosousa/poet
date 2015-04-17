@@ -46,7 +46,7 @@ initialExtensions = do
       st = GCS.initialState syst
   trs <- lift $ GCS.enabledTransitions syst st
   enevs <- V.foldM (\en tr -> expandWith e cevs tr >>= \es -> return $! (es++en)) [] trs
-  s@UnfolderState{..} <- trace ("enabled after e=" ++ show e ++ " are " ++ show enevs) get
+  s@UnfolderState{..} <- get -- trace ("enabled after e=" ++ show e ++ " are " ++ show enevs) get
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
   return $! iConf
@@ -56,10 +56,10 @@ separator = "-----------------------------------------\n"
 explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
-  str <- lift $ showEvents evts
-  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
-         ++ ", enevs = " ++ show enevs ++ ", alt = " 
-         ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
+  -- str <- lift $ showEvents evts
+  --trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  --     ++ ", enevs = " ++ show enevs ++ ", alt = " 
+  --     ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
   --let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
   if null enevs 
@@ -81,7 +81,7 @@ explore c@Conf{..} ê d alt = do
                                  -- ++ snd isStr
                     else head lp   
     -- @ initialize disable of e
-    trace ("selected event="++show e) $ lift $ setDisabled e d evts 
+    lift $ setDisabled e d evts 
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
     c' <- if statelessMode
@@ -98,14 +98,14 @@ explore c@Conf{..} ê d alt = do
 --          ++ ", e = " ++ show e ++ ", enevs = " ++ show enevs 
 --          ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack++")\n"++str') $ return ()
     -- @ filter alternatives
-    malt <- trace ("alt2(d="++show (e:d)++")") $ alt2 (e:d) (e:d) -- maxevs e
+    malt <- alt2 (e:d) (e:d) -- maxevs e
     case malt of
       Nothing -> return ()
       Just alt' -> explore c ê (e:d) (alt' \\ stack)
     if statelessMode
     then do
       core <- lift $ computeCore stack d evts
-      trace ("calling prune with c="++show stack++", d="++show d) $ lift $ prune e core evts
+      lift $ prune e core evts
     else return ()
 
 -- We are going to add event e to configuration conf
@@ -158,14 +158,14 @@ unfold conf@Conf{..} e = do
 -- @CRITICAL
 expandWith :: EventID -> EventsID -> GCS.TransitionMeta -> UnfolderOp s EventsID
 expandWith e maxevs tr = do
-  s@UnfolderState{..} <- trace ("expandWith(e="++show e++",maxevs="++show maxevs++",tr="++show tr++")") $ get 
+  s@UnfolderState{..} <- get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
   succe <- lift $ getISucc e evts 
            >>= mapM (\e -> getEvent "expandWith" e evts >>= \ev -> return (e,ev)) 
            >>= return . filter (\(e,ev) -> evtr ev == tr)
   -- @ computes h0, the maximal history:
   h0 <- computeHistory maxevs tr
-  if trace ("h0(tr="++show tr++")="++ show h0) $ null h0
+  if null h0
   then error $ "expandWith(e="++show e++",tr="++show tr++",h0="++show h0++",maxevs="++show maxevs++")"
   else do
     -- e should be a valid maximal event
@@ -187,7 +187,7 @@ expandWith e maxevs tr = do
 --   Output: History
 computeHistory :: EventsID -> GCS.TransitionMeta -> UnfolderOp s EventsID
 computeHistory maxevs tr = do
-  s@UnfolderState{..} <- trace ("computeHistory(maxevs="++show maxevs++",tr="++show tr++")") $ get
+  s@UnfolderState{..} <- get
   -- set of maximal events that are dependent with tr union 
   -- they are events of maxevs that are dependent with tr 
   -- or dependent predecessors of the independent ones that are maximal
@@ -202,7 +202,7 @@ computeHistory maxevs tr = do
 -- @ pruneConfiguration
 --   Given a set of maximal events which are independent with transition tr
 --   go up in the causality to search for the rest of maximal events that are dependent
-pruneConfiguration inde events pre_his tr es = trace ("pruneConf(pre_his="++show pre_his++", es="++show es++")") $ do
+pruneConfiguration inde events pre_his tr es = do
   -- immd predecessors of es
   predes <- mapM (\e -> getIPred e events) es >>= return . nub . concat
   -- filter the predecessors that are not maximal
@@ -236,7 +236,7 @@ computeHistories tr e (h:hs) = do
 -- @ computeNextHistory
 --   build a candidate history out of replacing a maximal event e with its immediate predecessors
 computeNextHistory :: EventsID -> GCS.TransitionMeta -> EventID -> UnfolderOp s EventsID
-computeNextHistory h tr e' = trace ("computeNextHistory(h="++show h++",tr="++show tr++",e'="++show e'++")") $ do
+computeNextHistory h tr e' = do
   s@UnfolderState{..} <- get
   -- we want to replace e' by its predecessors
   let h' = e' `delete` h
@@ -251,7 +251,7 @@ computeNextHistory h tr e' = trace ("computeNextHistory(h="++show h++",tr="++sho
 
 computeHistoriesBlocking :: GCS.TransitionMeta -> EventID -> EventsID -> EventsID -> UnfolderOp s [EventsID]
 computeHistoriesBlocking tr e _ [] = return []
-computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = trace ("computeHistoriesBlock" ) $ do
+computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
   s@UnfolderState{..} <- get
   ev <- lift $ getEvent "computeHistoriesBlocking" e evts
   if fst3 (evtr ev) == procID
@@ -293,7 +293,7 @@ mycatMaybes (ma:rest) =
             Just r -> Just $ nub $ x:r
  
 findNextUnlock :: GCS.TransitionMeta -> EventsID -> EventID -> UnfolderOp s (Maybe EventsID)
-findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e'="++show e'++")") $ do
+findNextUnlock tr@(_,_,act) prede e' = do
   s@UnfolderState{..} <- get
   iprede' <- lift $ getIPred e' evts
   (es_done,es) <- lift $ foldM (\(l,r) e ->
@@ -338,7 +338,7 @@ findNextUnlock tr@(_,_,act) prede e' = trace ("findNextUnlock(tr="++show tr++",e
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
 addEvent :: EventsID -> [(EventID,Event)] -> GCS.TransitionMeta -> EventsID -> UnfolderOp s EventsID 
-addEvent stack dup tr history = trace ("addEvent(tr="++show tr++",h="++show history++")" ) $ do
+addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
   then do 
@@ -356,7 +356,7 @@ addEvent stack dup tr history = trace ("addEvent(tr="++show tr++",h="++show hist
       if isCutoff
       then do 
         incCutoffCounter
-        mtrace ("Found cutoff: (tr="++show tr++", h="++show history++")") $ return []
+        return []
       else do
         -- @ 1. Fresh event id 
         neID <- freshCounter
@@ -396,7 +396,7 @@ addEvent stack dup tr history = trace ("addEvent(tr="++show tr++",h="++show hist
 -- getISucc :: EventID -> Events s -> ST s EventsID
 -- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
 computeStateLocalConfiguration :: GCS.TransitionMeta -> GCS.Sigma s -> EventsID -> UnfolderOp s (GCS.Sigma s)
-computeStateLocalConfiguration (_,trID,_) ist prede = trace ("local config of " ++ show trID ++ " " ++ show prede) $ do
+computeStateLocalConfiguration (_,trID,_) ist prede = do
   s@UnfolderState{..} <- get
   st' <- computeStateHistory ist [0] [] prede
   let tr = GCS.getTransitionWithID syst trID
@@ -406,7 +406,7 @@ computeStateLocalConfiguration (_,trID,_) ist prede = trace ("local config of " 
   
 computeStateHistory :: GCS.Sigma s -> EventsID -> EventsID -> EventsID -> UnfolderOp s (GCS.Sigma s)
 computeStateHistory cst [] _ _ = return cst
-computeStateHistory cst (ce:rest) l prede = trace ("executing " ++ show ce) $ do
+computeStateHistory cst (ce:rest) l prede = do
   s@UnfolderState{..} <- get
   cesucc <- lift $ getISucc ce evts
   let l' = ce:l -- events already processed
@@ -468,7 +468,7 @@ computeConflicts uidep tr lh lhCnfls events = do
 -- e whose roots are not in C.
 -- @@ compute potential alternatives @ revised: 08-04-15
 computePotentialAlternatives :: EventsID -> EventsID -> UnfolderOp s ()
-computePotentialAlternatives maxevs evs =  trace ("computePotentialAlternatives") $ do
+computePotentialAlternatives maxevs evs =  do
   s@UnfolderState{..} <- get
   -- @ compute the events of the configuration
   -- let confEvs = stack -- lift $ getConfEvs maxevs evts
@@ -534,7 +534,7 @@ alt2 (d:ds) ods = do
   mv <- filterAlternatives vs ods
   case mv of
     Nothing -> alt2 ds ods
-    v -> trace ("alt2 success: " ++ show v) $ return v
+    v -> return v
   
 filterAlternatives :: Alternatives -> EventsID -> UnfolderOp s (Maybe Alternative)
 filterAlternatives [] _ = return Nothing
@@ -545,7 +545,7 @@ filterAlternatives (v:vs) ods = do
   else filterAlternatives vs ods
  
 filterAlternative :: Alternative -> EventsID -> UnfolderOp s Bool
-filterAlternative v d = trace ("filterAlternative(v="++show v++", d="++show d++")") $ do
+filterAlternative v d = do
   s@UnfolderState{..} <- get
   cnfs <- lift $ mapM (\e -> getImmediateConflicts e evts) v >>= return . concat
   let isConf = not $ any (\e -> e `elem` stack) cnfs
@@ -571,7 +571,7 @@ computeCore conf d events = do
   return $ nub core 
 
 prune :: EventID -> EventsID -> Events s -> ST s ()
-prune e core events = trace ("pruning " ++ show e) $ do
+prune e core events = do
   ev@Event{..} <- getEvent "prune" e events
   if e `elem` core
   then resetAlternatives e events
@@ -581,7 +581,7 @@ prune e core events = trace ("pruning " ++ show e) $ do
   
 
 deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = trace ("deleting event " ++ show e) $ do
+deleteEvent e events = do
   check <- filterEvent e events
   if check
   then do 
