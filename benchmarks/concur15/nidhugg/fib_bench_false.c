@@ -2,7 +2,6 @@
 
 #include <pthread.h>
 #include <assert.h>
-
 int i=1;
 int j=1;
 
@@ -15,7 +14,7 @@ void *t1()
   int s;
   for (k = 0; k < NUM; k=k+1){
     t = j;
-    s = i + t; 
+    s = i + t;
     i= s;
   }
 }
@@ -43,6 +42,6 @@ int main()
 
   int l=i;
   if (l >= 144 || j >= 144) { 
-      assert(0); //__poet_fail();
+      assert(0);
   } 
 }

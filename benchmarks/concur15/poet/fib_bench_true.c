@@ -1,30 +1,27 @@
-/* Adapted from: https://svn.sosy-lab.org/software/sv-benchmarks/trunk/c/pthread/fib_bench_true-unreach-call.c */
+/* Adapted from: https://svn.sosy-lab.org/software/sv-benchmarks/trunk/c/pthread/fib_bench_false-unreach-call.c */
 
 #include "pthread.h"
 
-volatile int i=1; 
-volatile int j=1;
+int i=1;
+int j=1;
 
 #define NUM 5
 
 void *t1()
 {
-  int k; 
-  k = 0;
+  int k = 0;
   int t;
   int s;
-
   for (k = 0; k < NUM; k=k+1){
     t = j;
-    s = i + t; 
+    s = i + t;
     i= s;
   }
 }
 
 void *t2()
 {
-  int k;
-  k = 0;
+  int k = 0;
   int t;
   int s;
   for (k = 0; k < NUM; k=k+1){
@@ -34,15 +31,15 @@ void *t2()
   }
 }
 
-int
-main()
+int main()
 {
-  pthread_t id1;
-  pthread_t id2;
 
+  pthread_t id1; 
+  pthread_t id2;
+  
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
-  
+
   int l=i;
   if (l > 144 || j > 144) { 
       __poet_fail();

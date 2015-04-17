@@ -48,14 +48,13 @@ void * thr0()
       h = (h+1) % SIZE;
       
       // cas functon inlined
-      int ret_val1 = 0;
+      ret_val = 0;
       pthread_mutex_lock(cas_mutex[h]);
       if ( table[h] == 0 ) {
 	table[h] = w;
-	ret_val1 = 1;
+	ret_val = 1;
       }
       pthread_mutex_unlock(cas_mutex[h]);
-      ret_val = ret_val1;
     }
   }
  END: tid = 0;
@@ -94,14 +93,13 @@ void * thr1()
     while ( ret_val == 0){
       h = (h+1) % SIZE;
       // cas functon inlined
-      int ret_val1 = 0;
+      ret_val = 0;
       pthread_mutex_lock(cas_mutex[h]);
       if ( table[h] == 0 ) {
 	table[h] = w;
-	ret_val1 = 1;
+	ret_val = 1;
       }
       pthread_mutex_unlock(cas_mutex[h]);
-      ret_val = ret_val1;
     }
   }
  END: tid = 1;

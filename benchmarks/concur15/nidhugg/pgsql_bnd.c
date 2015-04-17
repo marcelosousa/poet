@@ -1,6 +1,7 @@
 /* Adapted from PGSQL benchmark from http://link.springer.com/chapter/10.1007%2F978-3-642-37036-6_28 */
 
-#include "pthread.h"
+#include <assert.h>
+#include <pthread.h>
 
 #define LOOP 4
 
@@ -14,15 +15,13 @@ int __unbuffered_tmp2 = 0;
 void* worker_1()
 {
   int ret;
-  int i=0;
-  int j=0;
-  while(i<LOOP){
-    while(!latch1 && j<LOOP){ j=j+1; }
-    if(!latch1)  goto Exit1; //return NULL;
+  for(int i=0;i<LOOP;i=i+1) {
+    for(int j=0;!latch1 && j<LOOP;j=j+1);
+    if(!latch1)  goto Exit1; //return 0;
     
     if(latch1){
       if(!flag1){
-        __poet_fail(); //assert(!latch1 || flag1);
+        assert(0); //assert(!latch1 || flag1);
       }
     }
 
@@ -32,7 +31,6 @@ void* worker_1()
       flag2 = 1;
       latch2 = 1;
     }
-  i=i+1;
   }
  Exit1: ret =0;
 }
@@ -40,15 +38,13 @@ void* worker_1()
 void* worker_2()
 {
   int ret;
-  int i=0;
-  int j=0;
-  while(i<LOOP){
-    while(!latch2 && j<LOOP){ j=j+1; }
-    if(!latch2) goto Exit2; //return NULL;
+  for(int i=0;i<LOOP;i=i+1) {
+    for(int j=0;!latch2 && j<LOOP;j=j+1);
+    if(!latch2) goto Exit2; //return 0;
     
     if (latch2){ 
       if (!flag2){
-        __poet_fail(); //assert(!latch2 || flag2);
+        assert(0); //assert(!latch2 || flag2);
       }
     }
     
@@ -64,6 +60,6 @@ void* worker_2()
 
 int main() {
   pthread_t t1, t2;
-  pthread_create(t1, NULL, worker_1, NULL);
-  pthread_create(t2, NULL, worker_2, NULL);
+  pthread_create(&t1, 0, worker_1, 0);
+  pthread_create(&t2, 0, worker_2, 0);
 }

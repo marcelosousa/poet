@@ -1,6 +1,6 @@
 /* Adapted from PGSQL benchmark from http://link.springer.com/chapter/10.1007%2F978-3-642-37036-6_28 */
 
-/* BOUND 8 */
+/* BOUND 10 */
 
 //#include <stdbool.h>
 #include <pthread.h>
@@ -41,7 +41,6 @@ void* worker_2()
   while(1) {
     //    __VERIFIER_assume(latch2);
   L2: if(!latch2) goto L2;
-    
     //    assert(!latch2 || flag2);
     if(latch2){
       if(!flag2){
@@ -60,6 +59,6 @@ void* worker_2()
 int main() {
   pthread_t t1;
   pthread_t t2;
-  pthread_create(&t1, NULL, worker_1, NULL);
-  pthread_create(&t2, NULL, worker_2, NULL);
+  pthread_create(&t1, 0, worker_1, 0);
+  pthread_create(&t2, 0, worker_2, 0);
 }
