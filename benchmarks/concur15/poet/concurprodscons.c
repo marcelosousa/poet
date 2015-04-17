@@ -32,7 +32,7 @@ void *prod2()
         pthread_mutex_lock(l2);
         if(buf_2 < MAX){
             aux=buf_2;
-            buf_2=aux+2;
+            buf_2=aux+1;
             aux=0;
         }
         pthread_mutex_unlock(l2);         

@@ -2,14 +2,14 @@
 
 int N = 6; 
 int d = 0; 
+int c = 0;
 
 pthread_mutex_t l1; 
 
 void *thr1()
 {
-  int i =0; 
   int l =0;
-  while (i < N)
+  while (c < N)
     {
       // lock 
       pthread_mutex_lock(l1); 
@@ -18,7 +18,7 @@ void *thr1()
       l=0;
       //unlock
       pthread_mutex_unlock(l1); 
-      i = i + 5;
+      i = i + 1;
     }
 
 }

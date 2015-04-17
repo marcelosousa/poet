@@ -3,8 +3,8 @@
 /* BOUND 8 */
 
 //#include <stdbool.h>
-//#include <assert.h>
-#include "pthread.h"
+#include <pthread.h>
+#include <assert.h>
 
 //void __VERIFIER_assume(int);
 
@@ -23,7 +23,7 @@ void* worker_1()
     //assert(!latch1 || flag1);
     if(latch1){
       if(!flag1){
-        __poet_fail();
+        assert(0);
       }
     }
 
@@ -45,7 +45,7 @@ void* worker_2()
     //    assert(!latch2 || flag2);
     if(latch2){
       if(!flag2){
-        __poet_fail();
+        assert(0);
       }
     }
     latch2 = 0;
@@ -60,6 +60,6 @@ void* worker_2()
 int main() {
   pthread_t t1;
   pthread_t t2;
-  pthread_create(t1, NULL, worker_1, NULL);
-  pthread_create(t2, NULL, worker_2, NULL);
+  pthread_create(&t1, NULL, worker_1, NULL);
+  pthread_create(&t2, NULL, worker_2, NULL);
 }
