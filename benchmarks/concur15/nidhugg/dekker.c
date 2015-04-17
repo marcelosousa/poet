@@ -13,17 +13,17 @@ void *thr1() {
   while (flag2 >= 1) {
     if (turn != 0) {
       flag1 = 0;
-      __VERIFIER_assume(turn == 0);
+      busy_1: if (turn != 0) { goto busy_1; }
       flag1 = 1;
     }
   }
   x = 0;
   if(x>0){
-      assert(0); //assert(x<=0);
+       assert(0); //  assert(x<=0);
   }
   turn = 1;
   flag1 = 0;
-  //  return NULL;
+  //  return 0;
 }
 
 void *thr2() {
@@ -31,7 +31,7 @@ void *thr2() {
   while (flag1 >= 1) {
     if (turn != 1) {
       flag2 = 0;
-      __VERIFIER_assume(turn == 1);
+      busy_2: if (turn != 1) { goto busy_2; } //while (turn != 0) {};
       flag2 = 1;
     }
   }
