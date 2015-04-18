@@ -3,8 +3,6 @@
 #include <pthread.h>
 #include <assert.h>
 
-void __VERIFIER_assume(int);
-
 int flag1 = 0, flag2 = 0; // boolean flags
 int turn; // integer variable to hold the ID of the thread whose turn is it
 int x; // boolean variable to test mutual exclusion

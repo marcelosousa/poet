@@ -3,6 +3,7 @@
  * Test 3: SSB 
 */
 #include "pthread.h"
+#define N 4
 
 int x=0;
 int y=0;
@@ -23,8 +24,14 @@ void *r(){
 }
 
 void *s(){
-    if (z == 1){
-      x=2;
+    int aux=0;
+    while(y<N){
+      if (z == 1){
+        x=2;
+      }
+      aux=y;
+      y=aux+1;
+      aux=0;
     }
 }
 

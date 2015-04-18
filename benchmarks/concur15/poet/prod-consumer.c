@@ -1,89 +1,71 @@
+/*  */
+
 #include "pthread.h"
 
-#define SIZE 3
+#define MAX   6
+#define MIN   0
 
-#define MAXVAL 1000
+int buf=0;
+pthread_mutex_t l1; 
 
-int buffer[SIZE];
-pthread_mutex_t buff_lock; 
-
-void *p1()
+void *prod1()
 {
-  int i; 
-  int j = 1;
-  while(1) {
-    if(j >= MAXVAL){
-      j = 1;
+    int aux=0;
+    while(1){
+        pthread_mutex_lock(l1);
+        if(buf < MAX){
+            aux=buf;
+            buf=aux+1;
+            aux=0;
+        }
+        pthread_mutex_unlock(l1);         
     }
-    for(i=0; i< SIZE; i = i+1){
-      if(buffer[i] == 0){
-	pthread_mutex_lock(buff_lock); 
-	buffer[i] = j;
-	pthread_mutex_unlock(buff_lock);
-	j = j +1; 
-      }
-    }
-  }
 }
 
-void *c1()
+
+void *prod2()
 {
-  int i; 
-  while (1){
-    for (i = SIZE-1; i >=0 ; i= i-1){
-      //check if buffer[i] is non zero
-      if (buffer[i] !=0) {
-	pthread_mutex_lock(buff_lock);
-	//consume the data by setting it to zero
-	buffer[i] = 0;
-	pthread_mutex_unlock(buff_lock);
-      }
+    int aux=0;
+    while(1){
+        pthread_mutex_lock(l1);
+        if(buf < MAX){
+            aux=buf;
+            buf=aux+2;
+            aux=0;
+        }
+        pthread_mutex_unlock(l1);         
     }
-  }
 }
 
-void *c2()
+
+void *cons()
 {
-  int i; 
-  while (1){
-    for (i = SIZE-1; i >=0 ; i= i-1){
-      //check if buffer[i] is non zero
-      if (buffer[i] !=0) {
-	pthread_mutex_lock(buff_lock);
-	//consume the data by setting it to zero
-	buffer[i] = 0;
-	pthread_mutex_unlock(buff_lock);
-      }
+    int aux=0;
+    while(1){
+       pthread_mutex_lock(l1);
+       if(buf > MIN){
+           aux=buf;
+           buf=aux-1;
+//           aux=0;
+       }
+       pthread_mutex_unlock(l1); 
     }
-  }
 }
 
 int main()
 {
 
-  pthread_t producer;
-  pthread_t cons1, cons2;
+  pthread_t id1; 
+  pthread_t id2;
+  pthread_t id3;
+
+  pthread_mutex_init(l1, NULL); 
   
-  int i; 
-  
-  // initialize the global buffer 
-  //memset(buffer, 0, sizeof(int)*SIZE);
-  
-  for (i=0; i <SIZE; i=i+1)
-    buffer[i] =0;
+  pthread_create(id1, NULL, prod1, NULL);
+  pthread_create(id2, NULL, prod2, NULL);
+  pthread_create(id3, NULL, cons, NULL);
 
-  pthread_mutex_init(buff_lock, NULL);
-
-  pthread_create(producer, NULL, p1, NULL);
-  pthread_create(cons1,  NULL, c1, NULL);
-  pthread_create(cons2,  NULL, c2, NULL);
-
-
-
-  pthread_join(producer, NULL); 
-  pthread_join(cons1, NULL); 
-  pthread_join(cons2, NULL); 
-
-
-  // return 0; 
+  pthread_join(id1, NULL);
+  pthread_join(id2, NULL);
+  pthread_join(id3, NULL);
 }
