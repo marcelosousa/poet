@@ -67,6 +67,7 @@ explore c@Conf{..} ê d alt = do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
     computePotentialAlternatives maxevs cevs
+    incAccSize
     incMaxConfCounter
   else do
     isStr <- lift $ unfToDot is
@@ -105,7 +106,7 @@ explore c@Conf{..} ê d alt = do
     if statelessMode
     then do
       core <- lift $ computeCore stack d evts
-      lift $ prune e core evts
+      prune e core
     else return ()
 
 -- We are going to add event e to configuration conf
@@ -358,6 +359,7 @@ addEvent stack dup tr history = do
         incCutoffCounter
         return []
       else do
+        incSize
         -- @ 1. Fresh event id 
         neID <- freshCounter
         -- @ 2. Compute the immediate conflicts
@@ -374,6 +376,7 @@ addEvent stack dup tr history = do
         lift $ mapM (\e -> setConflict neID e evts) cnfls 
         return $! [neID]
     else do
+        incSize
         -- @ 1. Fresh event id 
         neID <- freshCounter
         -- @ 2. Compute the immediate conflicts
@@ -570,25 +573,25 @@ computeCore conf d events = do
       core = confAndD ++ altes
   return $ nub core 
 
-prune :: EventID -> EventsID -> Events s -> ST s ()
-prune e core events = do
-  ev@Event{..} <- getEvent "prune" e events
+prune :: EventID -> EventsID -> UnfolderOp s ()
+prune e core = do
+  s@UnfolderState{..} <- get
+  ev@Event{..} <- lift $ getEvent "prune" e evts
   if e `elem` core
-  then resetAlternatives e events
-  else deleteEvent e events
-  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e events) v) alte
+  then lift $ resetAlternatives e evts
+  else deleteEvent e
+  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e) v) alte
 
-  
-
-deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = trace ("deleting event " ++ show e) $ do
-  check <- filterEvent e events
+deleteEvent :: EventID -> UnfolderOp s ()
+deleteEvent e = trace ("deleting event " ++ show e) $ do
+  s@UnfolderState{..} <- get
+  check <- lift $ filterEvent e evts
   if check
-  then do 
-    ev@Event{..} <- getEvent "deleteEvent" e events
-    mapM_ (\e' -> delSuccessor e e' events) pred
-    mapM_ (\e' -> delImmCnfl e e' events) icnf 
-    mapM_ (\e' -> deleteEvent e' events) succ
-    H.delete events e
+  then do
+    ev@Event{..} <- lift $ getEvent "deleteEvent" e evts
+    lift $ mapM_ (\e' -> delSuccessor e e' evts) pred
+    lift $ mapM_ (\e' -> delImmCnfl e e' evts) icnf 
+    mapM_ (\e' -> deleteEvent e') succ
+    lift $ H.delete evts e
   else return ()
 

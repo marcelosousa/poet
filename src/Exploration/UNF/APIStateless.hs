@@ -93,6 +93,8 @@ data UnfolderState s = UnfolderState {
   , stas :: States s         -- Hash Table for cutoffs
   , cutoffMode :: Bool       -- Cutoffs or not
   , cutoffCntr :: Counter    -- Cutoff counter
+  , size :: Counter          -- Size of |U|
+  , cumsize :: Integer       -- Sum of the sizes
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder
@@ -114,7 +116,7 @@ iState statelessMode cutoffMode sys indep = do
   rawState <- H.toList $ GCS.initialState sys
   H.insert states rawState 1
   let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode 0
+  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode 0 1 0
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
@@ -368,6 +370,27 @@ incCutoffCounter = do
   s@UnfolderState{..} <- get
   let nec = cutoffCntr + 1
   put s{ cutoffCntr = nec }
+
+-- @ increment the size of U
+incSize :: UnfolderOp s ()
+incSize = do
+  s@UnfolderState{..} <- get
+  let nsize = size + 1
+  put s{ size = nsize }
+
+-- @ decrement the size of U
+decSize :: UnfolderOp s ()
+decSize = do
+  s@UnfolderState{..} <- get
+  let nsize = size - 1
+  put s{ size = nsize }
+
+-- @ add the current size
+incAccSize :: UnfolderOp s ()
+incAccSize = do
+  s@UnfolderState{..} <- get
+  let ncumsize = cumsize + (toInteger size)
+  put s{ cumsize = ncumsize }
   
 -- @ push 
 push :: EventID -> UnfolderOp s ()
