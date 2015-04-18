@@ -17,31 +17,31 @@ import Test.HUnit
 
 test1 = 
   let r1 = runST (sys1 >>= \sys -> stateless False False sys ind11 >>= return . show)
-  in TestCase (assertEqual "WxWx" "(5,2)" r1)
+  in TestCase (assertEqual "WxWx" "(5,2,0)" r1)
 
 test2 = 
   let r1 = runST (sys1 >>= \sys -> stateless False False sys ind12 >>= return . show)
-  in TestCase (assertEqual "WxWy" "(3,1)" r1)
+  in TestCase (assertEqual "WxWy" "(3,1,0)" r1)
 
 test3 = 
   let r1 = runST (sys2 >>= \sys -> stateless False False sys ind2 >>= return . show)
-  in TestCase (assertEqual "WxRxRx" "(11,4)" r1)
+  in TestCase (assertEqual "WxRxRx" "(11,4,0)" r1)
 
 test4 = 
   let r1 = runST (sys3 >>= \sys -> stateless False False sys ind3 >>= return . show)
-  in TestCase (assertEqual "paper" "(13,4)" r1)
+  in TestCase (assertEqual "paper" "(13,4,0)" r1)
 
 test5 = 
   let r1 = runST (sys4 >>= \sys -> stateless False False sys ind4 >>= return . show)
-  in TestCase (assertEqual "ex4" "(7,2)" r1)
+  in TestCase (assertEqual "ex4" "(7,2,0)" r1)
 
 test6 = 
   let r1 = runST (sys5 >>= \sys -> stateless False False sys ind5 >>= return . show)
-  in TestCase (assertEqual "cesar" "(12,4)" r1)
+  in TestCase (assertEqual "cesar" "(12,4,0)" r1)
 
 test7 = 
   let r1 = runST (sys6 >>= \sys -> stateless False False sys ind6 >>= return . show)
-  in TestCase (assertEqual "histories" "(15,4)" r1)
+  in TestCase (assertEqual "histories" "(15,4,0)" r1)
 
 test8  = 
   let r1 = runST (sys1 >>= \sys -> stateless True False sys ind11 >>= return . show . maxConf)
@@ -81,7 +81,7 @@ test14 =
 -- locks tests
 test15 = 
   let r1 = runST (sys7 >>= \sys -> stateless False False sys ind7 >>= return . show)
-  in TestCase (assertEqual "lock-simple" "(13,2)" r1)
+  in TestCase (assertEqual "lock-simple" "(13,2,0)" r1)
 
 test16 = 
   let r1 = runST (sys7 >>= \sys -> stateless True False sys ind7 >>= return . show . maxConf)
@@ -90,7 +90,7 @@ test16 =
 
 test17 = 
   let r1 = runST (sys8 >>= \sys -> stateless False False sys ind8 >>= return . show)
-  in TestCase (assertEqual "unlock-simple" "(9,2)" r1)
+  in TestCase (assertEqual "unlock-simple" "(9,2,0)" r1)
 
 test18 = 
   let r1 = runST (sys8 >>= \sys -> stateless True False sys ind8 >>= return . show . maxConf)
