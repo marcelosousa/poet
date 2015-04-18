@@ -10,7 +10,7 @@
 #define MAX   4
 #define NUM_THREADS  2
 
-int volatile table[SIZE];
+int table[SIZE];
 pthread_mutex_t  cas_mutex[SIZE];
 
 void * thr0()
@@ -27,7 +27,7 @@ void * thr0()
     }
     else{
       //pthread_exit(NULL);
-      goto END;
+      goto END0;
     }
     
     h = (w * 7) % SIZE;
@@ -57,7 +57,7 @@ void * thr0()
       pthread_mutex_unlock(cas_mutex[h]);
     }
   }
- END: tid = 0;
+ END0: tid = 0;
 }
 
 void * thr1()
@@ -73,7 +73,7 @@ void * thr1()
       w = m * 11 + tid;
     }
     else{
-      goto END;
+      goto END1;
     }
     
     h = (w * 7) % SIZE;
@@ -102,7 +102,7 @@ void * thr1()
       pthread_mutex_unlock(cas_mutex[h]);
     }
   }
- END: tid = 1;
+ END1: tid = 1;
 }
 
 

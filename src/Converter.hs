@@ -177,6 +177,26 @@ fromCall flow pcVar pc name [param] = do
                   return s
                 else return Nothing
           return [(fn, act, acts)]         
+        Index (Ident i) (Ident idxident) -> do
+          let ident = BS.pack i
+              idxi = BS.pack idxident
+              acts = [Write (V pcVar), Write (V ident), Read (V idxi)]
+              act = [Lock $ V ident]              
+              fn = \s -> do 
+                IntVal curPC <- safeLookup "call lock array pc" s pcVar
+                Array vs <- safeLookup ("call lock array: " ++ show ident) s ident
+                IntVal idx <- safeLookup "call lock array ident" s idxi
+                let IntVal v = vs!!idx
+                if curPC == pc && v == 0
+                then return $ Just $ \s -> do
+                  let pcVal = IntVal next
+                      vs' = modifyList vs (IntVal 1) (toInteger idx)
+                      iVal = Array vs'
+                  H.insert s pcVar pcVal
+                  H.insert s ident iVal
+                  return s
+                else return Nothing
+          return [(fn, act, acts)]         
     "__poet_mutex_unlock" ->
       case param of
         -- @ Lock Variable
@@ -213,7 +233,27 @@ fromCall flow pcVar pc name [param] = do
                   H.insert s ident iVal
                   return s
                 else return Nothing
-          return [(fn, act, acts)]                      
+          return [(fn, act, acts)]     
+        Index (Ident i) (Ident idxident) -> do
+          let ident = BS.pack i
+              idxi = BS.pack idxident
+              acts = [Write (V pcVar), Write (V ident), Read (V idxi)]
+              act = [Unlock $ V ident]
+              fn = \s -> do
+                IntVal curPC <- safeLookup "call" s pcVar
+                if curPC == pc
+                then return $ Just $ \s -> do
+                  IntVal curPC <- safeLookup "call unlock array" s pcVar
+                  Array vs <- safeLookup "call unlock array " s ident
+                  IntVal idx <- safeLookup "call unlock array ident" s idxi
+                  let pcVal = IntVal next
+                      vs' = modifyList vs (IntVal 0) (toInteger idx)
+                      iVal = Array vs'
+                  H.insert s pcVar pcVal
+                  H.insert s ident iVal
+                  return s
+                else return Nothing
+          return [(fn, act, acts)]                 
     _ -> error "fromCall: call not supported"
 
 getVarArg :: Expression -> Var

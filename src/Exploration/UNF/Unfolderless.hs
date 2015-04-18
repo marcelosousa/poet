@@ -581,7 +581,7 @@ prune e core events = do
   
 
 deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = do
+deleteEvent e events = trace ("deleting event " ++ show e) $ do
   check <- filterEvent e events
   if check
   then do 
