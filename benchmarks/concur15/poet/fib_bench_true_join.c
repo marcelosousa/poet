@@ -2,8 +2,8 @@
 
 #include "pthread.h"
 
-volatile int i=1; 
-volatile int j=1;
+int i=1; 
+int j=1;
 
 #define NUM 5
 

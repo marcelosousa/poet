@@ -2,7 +2,7 @@
  * POET Regression Suite 
  * Test 3: SSB 
 */
-#include <pthread.h>
+#include "pthread.h"
 
 int x=0;
 int y=0;
@@ -23,8 +23,10 @@ void *r(){
 }
 
 void *s(){
+    int i =0;
     if (z == 1){
       x=2;
+      while(i<1){i=i+1;}
     }
 }
 
@@ -36,10 +38,10 @@ int main(){
     pthread_t s_t;
 
     /* create the threads and execute */
-    pthread_create(&p_t, NULL, p, NULL);
-    pthread_create(&q_t, NULL, q, NULL);
-    pthread_create(&r_t, NULL, r, NULL);
-    pthread_create(&s_t, NULL, s, NULL);
+    pthread_create(p_t, NULL, p, NULL);
+    pthread_create(q_t, NULL, q, NULL);
+    pthread_create(r_t, NULL, r, NULL);
+    pthread_create(s_t, NULL, s, NULL);
 
     /* wait for the threads to finish */
     pthread_join(p_t, NULL);

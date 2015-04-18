@@ -46,7 +46,7 @@ void *cons()
        if(buf > MIN){
            aux=buf;
            buf=aux-1;
-           aux=0;
+//           aux=0;
        }
        pthread_mutex_unlock(&l1); 
     }

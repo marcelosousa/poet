@@ -33,9 +33,9 @@ void *t13(){g=1;}
 void *t14(){g=2;}
 void *t15(){h=1;}
 void *t16(){h=2;}
-/*void *t17(){i=1;}
+void *t17(){i=1;}
 void *t18(){i=2;}
-void *t19(){j=1;}
+/*void *t19(){j=1;}
 void *t20(){j=2;}
 void *t21(){k=1;}
 void *t22(){k=2;}
@@ -60,9 +60,9 @@ int main()
   pthread_create(id14, NULL, t14, NULL);
   pthread_create(id15, NULL, t15, NULL);
   pthread_create(id16, NULL, t16, NULL);
-/*  pthread_create(id17, NULL, t17, NULL);
+  pthread_create(id17, NULL, t17, NULL);
   pthread_create(id18, NULL, t18, NULL);
-  pthread_create(id19, NULL, t19, NULL);
+/*  pthread_create(id19, NULL, t19, NULL);
   pthread_create(id20, NULL, t20, NULL);
   pthread_create(id21, NULL, t21, NULL);
   pthread_create(id22, NULL, t22, NULL);

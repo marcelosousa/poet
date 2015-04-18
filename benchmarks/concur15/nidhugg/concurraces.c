@@ -64,9 +64,9 @@ int main()
   pthread_create(&id16, 0, t16, 0);
   pthread_create(&id17, 0, t17, 0);
   pthread_create(&id18, 0, t18, 0);
-  pthread_create(&id19, 0, t19, 0);
+/*  pthread_create(&id19, 0, t19, 0);
   pthread_create(&id20, 0, t20, 0);
-/*  pthread_create(&id21, 0, t21, 0);
+  pthread_create(&id21, 0, t21, 0);
   pthread_create(&id22, 0, t22, 0);
   pthread_create(&id23, 0, t23, 0);
   pthread_create(&id24, 0, t24, 0);
