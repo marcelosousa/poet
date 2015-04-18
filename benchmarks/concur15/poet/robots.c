@@ -4,6 +4,7 @@
 #define SIZE 12
 
 int array[SIZE][SIZE];
+int bla[10];
 
 void *robot1() {
     int x = 0;

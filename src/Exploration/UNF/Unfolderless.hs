@@ -581,13 +581,14 @@ prune e core events = do
   
 
 deleteEvent :: EventID -> Events s -> ST s ()
-deleteEvent e events = do
+deleteEvent e events = trace ("deleting event " ++ show e) $ do
   check <- filterEvent e events
   if check
   then do 
     ev@Event{..} <- getEvent "deleteEvent" e events
     mapM_ (\e' -> delSuccessor e e' events) pred
     mapM_ (\e' -> delImmCnfl e e' events) icnf 
+    mapM_ (\e' -> deleteEvent e' events) succ
     H.delete events e
   else return ()
 

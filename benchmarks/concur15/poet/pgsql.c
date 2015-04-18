@@ -40,7 +40,7 @@ void* worker_2()
 {
   while(1) {
     //    __VERIFIER_assume(latch2);
-  L2: if(!latch2) goto L2;
+  L2: if(latch2 != 1) goto L2;
     
     //    assert(!latch2 || flag2);
     if(latch2){
