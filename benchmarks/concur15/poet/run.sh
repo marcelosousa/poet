@@ -19,6 +19,8 @@
 { echo "poet cutoffs:"; time poet explore ccnf19.c -c=1; } &>> log/ccnf19.log
 { echo "poet without cutoffs:"; time poet explore ssb.c; } &> log/ssb.log
 { echo "poet cutoffs:"; time poet explore ssb.c -c=1; } &>> log/ssb.log
+{ echo "poet without cutoffs:"; time poet explore ssb1.c; } &> log/ssb1.log
+{ echo "poet cutoffs:"; time poet explore ssb1.c -c=1; } &>> log/ssb1.log
 { echo "poet without cutoffs:"; time poet explore ssb3.c; } &> log/ssb3.log
 { echo "poet cutoffs:"; time poet explore ssb3.c -c=1; } &>> log/ssb3.log
 { echo "poet without cutoffs:"; time poet explore ssb4.c; } &> log/ssb4.log
