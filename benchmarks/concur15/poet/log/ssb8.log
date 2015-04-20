@@ -1,0 +1,12 @@
+poet without cutoffs:
+poet: ssb8.c: copyFile: does not exist (No such file or directory)
+
+real	0m0.006s
+user	0m0.003s
+sys	0m0.003s
+poet cutoffs:
+poet: ssb8.c: copyFile: does not exist (No such file or directory)
+
+real	0m0.005s
+user	0m0.005s
+sys	0m0.000s

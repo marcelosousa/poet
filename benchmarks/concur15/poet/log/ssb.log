@@ -1,0 +1,18 @@
+poet without cutoffs:
+total number of events of the unfolding: 49
+total number of maximal configurations: 4
+total number of cutoffs: 0
+average size of U at maximal configurations: 38
+
+real	0m0.026s
+user	0m0.014s
+sys	0m0.012s
+poet cutoffs:
+total number of events of the unfolding: 47
+total number of maximal configurations: 4
+total number of cutoffs: 1
+average size of U at maximal configurations: 37
+
+real	0m0.027s
+user	0m0.013s
+sys	0m0.014s
