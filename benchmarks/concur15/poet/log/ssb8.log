@@ -1,12 +1,19 @@
 poet without cutoffs:
-poet: ssb8.c: copyFile: does not exist (No such file or directory)
+total number of events of the unfolding: 66791
+total number of maximal configurations: 2022
+total number of cutoffs: 0
+average size of U at maximal configurations: 32782
 
-real	0m0.006s
-user	0m0.003s
-sys	0m0.003s
+real    62m18.631s
+user    62m16.188s
+sys     0m2.328s
+
 poet cutoffs:
-poet: ssb8.c: copyFile: does not exist (No such file or directory)
+total number of events of the unfolding: 11747
+total number of maximal configurations: 470
+total number of cutoffs: 240
+average size of U at maximal configurations: 6267
 
-real	0m0.005s
-user	0m0.005s
-sys	0m0.000s
+real	0m32.060s
+user	0m31.942s
+sys	0m0.111s
