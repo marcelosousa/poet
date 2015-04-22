@@ -1,0 +1,9 @@
+CONCUR'15 Benchmarks
+--------------------
+
+Since the poet front-end is still experimental and does not 
+accept the standard C language, for each benchmark there is 
+a version for poet in the *poet* directory and another for 
+nidhugg in the *nidhugg* directory.
+
+Both directories contain bash scripts to reproduce the experiments.
