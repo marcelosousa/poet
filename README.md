@@ -42,26 +42,15 @@ This will create an executable *poet* at dist/build/poet/
 Running Poet
 -------------
   
-  So far, only the frontend mode is enabled that can be executed with the following command:  
-    *poet frontend file.c*
-
-  Example: $ poet frontend /tmp/t.c      
-    ORIGINAL PROGRAM  
-    TRANSFORMED PROGRAM  
-    
-  The first program (ORIGINAL) is an ugly pretty-print from the initial simplec AST.  
-  The second program (TRANSFORMER) is the simplec program that will be passed to the converter
-  that will generate an instance of the model of computation.
-
-TODO
-----
-
-1. Testcases for stateful vs stateless
-2. Testcases where cutoffs are beneficial 
-3. Print sorted states of maximal configurations to check that stateful and stateless have the same result
-4. Profile to find out why stateful is taking longer than stateless
-
-Message of experiments
-----------------------
-1. Stateful is better than stateless if the unfolding can fit in memory
-2. Cutoffs can result in exponential savings
+  There are several available modes:
+   1. poet frontend - prints the result of the front-end
+   2. poet execute  - executes the system with a non-deterministic schedule
+   3. poet explore  - invokes the explicit-state model checker
+   
+  For more information, poet --help.
+  
+Note:
+ Due to a difference in the Haskell library for command arguments, 
+ it may be the case for some operating systems it is required to prefix
+ the input file with -i=.
+ 
