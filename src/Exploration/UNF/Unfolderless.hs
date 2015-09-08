@@ -58,12 +58,13 @@ explore :: Configuration s -> EventID -> EventsID -> Alternative -> UnfolderOp s
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stack++")\n"++str) $ return ()
-  let k = unsafePerformIO $ getChar
+  -- let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  k `seq` if null enevs 
+  -- k `seq` if null enevs 
+  if null enevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative

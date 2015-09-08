@@ -7,6 +7,7 @@
 module Main where
 
 import Control.Monad.ST
+import Control.Monad.ST.Safe
 
 import System.Console.CmdArgs
 import System.FilePath.Posix
@@ -45,7 +46,8 @@ _helpInter = unlines ["poet interpret receives a concurrent C program in a restr
 _helpExec = unlines ["poet interpret receives a concurrent C program in a restricted subset of the language and executes one run of the corresponding model of computation"
                   ,"Example: poet execute -i=file.c -s=int (optional)"]                 
 _helpExplore = unlines ["poet explore receives a concurrent C program in a restricted subset of the language and explores the state space of the corresponding model of computation using a partial order representation"
-                  ,"Example: poet explore -i=file.c"]                 
+                  ,"Example: poet explore -i=file.c"]
+_helpDebug = unlines ["poet debug receives a concurrent C program in a restricted subset of the language and explores the state space and explores the unfolding. At the end, it prints the LPES."]
 _helpTest = unlines ["poet test runs the explore mode over the set of examples in Test/Examples"]
                    
 data Option = Frontend {input :: FilePath}
@@ -53,6 +55,7 @@ data Option = Frontend {input :: FilePath}
             | Execute {input :: FilePath, seed :: Int}
             | Interpret {input :: FilePath}
             | Explore {input :: FilePath, stateful :: Int, cutoff :: Int}
+            | Debug {input :: FilePath, cutoff :: Int}
             | Test 
   deriving (Show, Data, Typeable, Eq)
 
@@ -69,6 +72,10 @@ executeMode = Execute {input = def &= args
 interpretMode :: Option
 interpretMode = Interpret {input = def &= args} &= help _helpInter
 
+debugMode :: Option
+debugMode = Debug {input = def &= args
+                  ,cutoff = def} &= help _helpDebug
+
 exploreMode :: Option
 exploreMode = Explore {input = def &= args
                       ,stateful = def &= help "stateful mode (0=False [default], 1=True)"
@@ -78,7 +85,7 @@ testMode :: Option
 testMode = Test {} &= help _helpTest
 
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode, exploreMode, testMode]
+progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode, exploreMode, testMode, debugMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -98,6 +105,7 @@ runOption (Middleend f) = do
 runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
 runOption (Explore f stmode cutoffs) =  explore f (not $ toBool stmode) (toBool cutoffs)
+runOption (Debug f cutoffs) = debug f False (toBool cutoffs)
 runOption Test = test
 
 
@@ -149,6 +157,13 @@ explore f mode cutoffs = do
   --putStrLn $ "execution time(s): " ++ (show $ diffUTCTime stop start)
   --writeFile (replaceExtension f ".dot") unfst
 
+debug :: FilePath -> Bool -> Bool -> IO ()
+debug f mode cutoffs = do 
+    prog <- extract f
+    let (prog', fflow, flow, thcount) = frontEnd prog
+        pes = runST (convert prog' fflow flow thcount >>= uncurry (Exp.stateless mode cutoffs) >>=  \s -> showEvents $ evts s)
+    putStrLn pes
+    
 test :: IO ()
 test = do
     succCount <- runTestTT tests
