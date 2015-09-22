@@ -1,5 +1,5 @@
 {-#LANGUAGE RecordWildCards #-}
-module Exploration.UNF.Unfolderless (stateless) where
+module Exploration.UNF.Unfolder (unfolder) where
 
 import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
@@ -22,8 +22,8 @@ import System.IO.Unsafe
 import Prelude hiding (pred)
 import Test.Examples.ExEleven
 
-stateless :: Bool -> Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
-stateless statelessMode cutoffMode sys indep = do
+unfolder :: Bool -> Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
+unfolder statelessMode cutoffMode sys indep = do
   is <- iState statelessMode cutoffMode sys indep  
   (a,s) <- runStateT botExplore is 
   return $! s

@@ -1,6 +1,6 @@
 module Test.Examples where
 
-import Exploration.UNF.Unfolderless
+import Exploration.UNF.Unfolder
 import Exploration.UNF.APIStateless
 import Test.Examples.ExOne
 import Test.Examples.ExTwo
@@ -17,47 +17,47 @@ import Control.Monad.ST.Safe
 import Test.HUnit
 
 runTest1 mode = do
-  let evs = runST (sys1 >>= \sys -> stateless mode False sys ind11 >>= showEvents . evts)
+  let evs = runST (sys1 >>= \sys -> unfolder mode False sys ind11 >>= showEvents . evts)
   putStrLn evs
 
 runTest2 mode = do
-  let evs = runST (sys1 >>= \sys -> stateless mode False sys ind12 >>= showEvents . evts)
+  let evs = runST (sys1 >>= \sys -> unfolder mode False sys ind12 >>= showEvents . evts)
   putStrLn evs
 
 runTest3 mode = do
-  let evs = runST (sys2 >>= \sys -> stateless mode False sys ind2 >>= showEvents . evts)
+  let evs = runST (sys2 >>= \sys -> unfolder mode False sys ind2 >>= showEvents . evts)
   putStrLn evs
 
 runTest4 mode = do
-  let evs = runST (sys3 >>= \sys -> stateless mode False sys ind3 >>= showEvents . evts)
+  let evs = runST (sys3 >>= \sys -> unfolder mode False sys ind3 >>= showEvents . evts)
   putStrLn evs
 
 runTest5 mode = do
-  let evs = runST (sys4 >>= \sys -> stateless mode False sys ind4 >>= showEvents . evts)
+  let evs = runST (sys4 >>= \sys -> unfolder mode False sys ind4 >>= showEvents . evts)
   putStrLn evs
 
 runTest6 mode = do
-  let evs = runST (sys5 >>= \sys -> stateless mode False sys ind5 >>= showEvents . evts)
+  let evs = runST (sys5 >>= \sys -> unfolder mode False sys ind5 >>= showEvents . evts)
   putStrLn evs
 
 runTest7 mode = do
-  let evs = runST (sys6 >>= \sys -> stateless mode False sys ind6 >>= showEvents . evts)
+  let evs = runST (sys6 >>= \sys -> unfolder mode False sys ind6 >>= showEvents . evts)
   putStrLn evs
   
 runTest8 mode = do
-  let evs = runST (sys7 >>= \sys -> stateless mode False sys ind7 >>= showEvents . evts)
+  let evs = runST (sys7 >>= \sys -> unfolder mode False sys ind7 >>= showEvents . evts)
   putStrLn evs
 
 runTest9 mode = do
-  let evs = runST (sys8 >>= \sys -> stateless mode False sys ind8 >>= showEvents . evts)
+  let evs = runST (sys8 >>= \sys -> unfolder mode False sys ind8 >>= showEvents . evts)
   putStrLn evs
 
 runTest10 mode = do
-  let evs = runST (sys9 >>= \sys -> stateless mode False sys ind9 >>= showEvents . evts)
+  let evs = runST (sys9 >>= \sys -> unfolder mode False sys ind9 >>= showEvents . evts)
   putStrLn evs
 
 runTest11 mode = do
-  let evs = runST (sys10 >>= \sys -> stateless mode False sys ind10 >>= showEvents . evts)
+  let evs = runST (sys10 >>= \sys -> unfolder mode False sys ind10 >>= showEvents . evts)
   putStrLn evs
 
 {-
