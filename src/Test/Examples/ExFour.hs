@@ -1,5 +1,6 @@
 module Test.Examples.ExFour where
 
+import Domain.Concrete
 import Model.GCS
 
 import Control.Monad.ST.Safe
@@ -7,7 +8,7 @@ import Control.Monad.ST.Safe
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-
+import Util.Generic
 -- Example 4
 s4 :: ST s (Sigma s)
 s4 = do 

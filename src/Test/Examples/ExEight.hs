@@ -1,12 +1,13 @@
 module Test.Examples.ExEight (sys8, ind8) where
 
+import Domain.Concrete
 import Model.GCS
-
 import Control.Monad.ST.Safe
 
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
+import Util.Generic
 
 -- Example 8 - Lock example
 t11',t12',t21',t22',t23' :: TransitionFn s

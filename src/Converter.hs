@@ -14,6 +14,8 @@ import Frontend
 import Frontend.Util
 
 import Debug.Trace
+import Domain.Concrete
+import Util.Generic
 
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1

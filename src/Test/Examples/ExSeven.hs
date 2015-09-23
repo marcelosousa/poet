@@ -1,5 +1,6 @@
 module Test.Examples.ExSeven (sys7, ind7) where
 
+import Domain.Concrete
 import Model.GCS
 
 import Control.Monad.ST.Safe
@@ -7,7 +8,7 @@ import Control.Monad.ST.Safe
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-
+import Util.Generic
 -- Example 7 - Lock example
 t11',t12',t13',t21',t22',t23' :: TransitionFn s
 t11' s = do

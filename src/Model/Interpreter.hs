@@ -10,6 +10,7 @@ import Control.Monad.ST
 import System.IO.Unsafe
 
 import Model.GCS
+import Domain.Concrete
 
 exec :: StdGen -> Int -> (System s, UIndep) -> ST s String
 exec gen thcount (sys,indep) = execIt gen thcount "" indep sys (initialState sys)

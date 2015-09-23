@@ -1,5 +1,6 @@
 module Test.Examples.ExFive where
 
+import Domain.Concrete
 import Model.GCS
 
 import Control.Monad.ST.Safe
@@ -7,7 +8,7 @@ import Control.Monad.ST.Safe
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-
+import Util.Generic
 -- Example 5 - Cesar's example
 t1_5',t21_5',t22_5',t31_5',t32_5' :: TransitionFn s
 t1_5' s = do

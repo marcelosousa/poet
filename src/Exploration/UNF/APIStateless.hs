@@ -5,7 +5,7 @@ import Prelude hiding (succ)
 
 import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
-
+import Domain.Concrete
 -- Data Structures
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
@@ -13,6 +13,7 @@ import qualified Data.Set as S
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
 import Data.List
+import Util.Generic
 -- import PetriNet
 
 import qualified Model.GCS as GCS
@@ -34,7 +35,7 @@ type EventsID = [EventID]
 
 -- @ Configuration  
 data Configuration s = Conf {
-    stc :: GCS.Sigma s   -- state at this configuration
+    stc :: Sigma s   -- state at this configuration
   , maxevs :: EventsID  -- maximal events of the configuration
   , enevs  :: EventsID  -- enabled events of the configuration
   , cevs   :: EventsID  -- special events: the ones that have imm conflicts
@@ -61,10 +62,10 @@ data Event = Event {
     
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
-type Events s = GCS.HashTable s EventID Event
+type Events s = HashTable s EventID Event
 
 -- @ HashTable of States to EventID
-type States s = GCS.HashTable s GCS.SigmaRaw Int -- EventsID
+type States s = HashTable s SigmaRaw Int -- EventsID
 --type States s = [(GCS.Sigma s, EventID)]
 
 -- @ Show an 
@@ -104,7 +105,7 @@ type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.Sigma s -> GCS.Acts -> Event
+botEvent :: Sigma s -> GCS.Acts -> Event
 botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] -- st 1
 
 -- @ Initial state of the unfolder
@@ -139,7 +140,7 @@ gc s@UnfolderState{..} =
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
+execute :: Sigma s -> EventID -> UnfolderOp s (Sigma s)
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
@@ -422,21 +423,4 @@ causalClosed evts conf (e:es) = do
   if all (\e' -> e' `elem` conf) prede
   then causalClosed evts conf es
   else return False
-
-allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
-allM f [] = return True
-allM f (x:xs) = do
-  b <- f x
-  if b
-  then allM f xs
-  else return False 
-
-fst3 :: (a,b,c) -> a
-fst3 (a,b,c) = a
-
-snd3 :: (a,b,c) -> b
-snd3 (a,b,c) = b
-
-third3 :: (a,b,c) -> c
-third3 (a,b,c) = c
 

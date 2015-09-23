@@ -5,7 +5,7 @@ import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
 
 import Data.List
-import Data.Maybe
+import Data.Maybe hiding (catMaybes)
 import qualified Data.Set as S
 import Data.Set (isSubsetOf)
 import qualified Data.Vector as V
@@ -14,13 +14,15 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Map as M
 
 import Exploration.UNF.APIStateless
+import Exploration.UNF.Cutoff.McMillan
 import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
 import qualified Debug.Trace as DT
 
 import System.IO.Unsafe
 import Prelude hiding (pred)
-import Test.Examples.ExEleven
+import Domain.Concrete
+import Util.Generic
 
 unfolder :: Bool -> Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s)
 unfolder statelessMode cutoffMode sys indep = do
@@ -124,10 +126,10 @@ unfold conf@Conf{..} e = do
   tr <- lift $ getEvent "unfold" e evts >>= return . snd3 . evtr
   -- @ 1. compute the new state after executing the event e
   -- copy the state otherwise it will go wrong 
-  copyst <- lift $ GCS.copy stc
+  copyst <- lift $ copy stc
   -- execute the event e
   nstc <- execute copyst e
-  snstc <- lift $ GCS.showSigma nstc
+  snstc <- lift $ showSigma nstc
   -- update the local state of e
   -- _ <- trace ("unfold(e="++show e++")\nlcst state="++show lcst) $ lift $ setLSigma e lcst evts 
   -- @ 2. compute the new set of maximal events
@@ -282,19 +284,6 @@ computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
 computeHistoriesBlocking tr e es hs = error $ "computeHistoriesBlocking fatal :" ++ show (tr,e,es,hs)
 
 --
-mycatMaybes :: Eq a => [Maybe a] -> Maybe [a]
-mycatMaybes [] = Nothing
-mycatMaybes [ma] =
-    case ma of
-        Nothing -> Nothing
-        Just x  -> Just [x]
-mycatMaybes (ma:rest) = 
-    case ma of
-        Nothing -> mycatMaybes rest
-        Just x -> case mycatMaybes rest of 
-            Nothing -> Just [x]
-            Just r -> Just $ nub $ x:r
- 
 findNextUnlock :: GCS.TransitionMeta -> EventsID -> EventID -> UnfolderOp s (Maybe EventsID)
 findNextUnlock tr@(_,_,act) prede e' = do
   s@UnfolderState{..} <- get
@@ -305,7 +294,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
   -- @ es_done is either empty or has one event
   case es_done of 
     [] -> do
-      lres <- mapM (findNextUnlock tr prede) es >>= return . mycatMaybes
+      lres <- mapM (findNextUnlock tr prede) es >>= return . catMaybes
       case lres of
         Nothing -> return Nothing
         Just [] -> return $ Just []
@@ -353,7 +342,7 @@ addEvent stack dup tr history = do
     --   If we don't need cutoffs, no need to compute the linearization and the new state
     if cutoffMode
     then do
-      copyst <- lift $ GCS.copy $ GCS.initialState syst
+      copyst <- lift $ copy $ GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       isCutoff <- cutoff gstlc sizeLocalHistory
       if isCutoff
@@ -400,7 +389,7 @@ addEvent stack dup tr history = do
 --   by donig a topological sorting
 -- getISucc :: EventID -> Events s -> ST s EventsID
 -- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
-computeStateLocalConfiguration :: GCS.TransitionMeta -> GCS.Sigma s -> EventsID -> UnfolderOp s (GCS.Sigma s)
+computeStateLocalConfiguration :: GCS.TransitionMeta -> Sigma s -> EventsID -> UnfolderOp s (Sigma s)
 computeStateLocalConfiguration (_,trID,_) ist prede = do
   s@UnfolderState{..} <- get
   st' <- computeStateHistory ist [0] [] prede
@@ -409,7 +398,7 @@ computeStateLocalConfiguration (_,trID,_) ist prede = do
   nst <- lift $ fn st'
   return nst
   
-computeStateHistory :: GCS.Sigma s -> EventsID -> EventsID -> EventsID -> UnfolderOp s (GCS.Sigma s)
+computeStateHistory :: Sigma s -> EventsID -> EventsID -> EventsID -> UnfolderOp s (Sigma s)
 computeStateHistory cst [] _ _ = return cst
 computeStateHistory cst (ce:rest) l prede = do
   s@UnfolderState{..} <- get
@@ -422,20 +411,7 @@ computeStateHistory cst (ce:rest) l prede = do
          then return $ cst
          else execute cst ce
   computeStateHistory nst rest' l' prede     
-    
--- @ Check if there is a cutoff
-cutoff :: GCS.Sigma s -> Int -> UnfolderOp s Bool
-cutoff st si = do
-    s@UnfolderState{..} <- get
-    rst <- lift $ H.toList st
-    mv <- lift $ H.lookup stas rst
-    case mv of
-      Nothing -> do
-        lift $ H.insert stas rst si
-        return False
-      Just v -> return $ v < si
-    
-
+        
 -- @ Compute conflicts  
 --  DFS of the unf prefix from bottom stopping when the event:
 --  . Is an immediate conflict (or successor) of an event in the local configuration
