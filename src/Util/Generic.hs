@@ -3,10 +3,15 @@ module Util.Generic where
 import Control.Applicative
 import Control.Monad
 import Control.Monad.ST.Safe
+import qualified Data.ByteString as BS
 import Data.Hashable
 import qualified Data.HashTable.Class as H
 import Data.List
 import qualified Data.Maybe as M
+import qualified Data.HashTable.ST.Cuckoo as C
+
+type Var = BS.ByteString
+type HashTable s k v = C.HashTable s k v
 
 allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 allM f [] = return True

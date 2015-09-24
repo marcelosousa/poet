@@ -17,7 +17,7 @@ import System.Random
 import Language.SimpleC
 import Frontend (frontEnd)
 import Converter
-import Model.Interpreter
+import Domain.Concrete
 import qualified Exploration.UNF.Unfolder as Exp
 import Exploration.UNF.APIStateless hiding (execute)
 import Util.Printer
@@ -36,7 +36,8 @@ import Test.Examples
 
 
 _program, _summary :: String
-_summary = unlines ["POET - v0.1","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs.","Copyright 2015 @ Marcelo Sousa"]
+_summary = unlines ["POET - v0.1","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs."
+                   ,"Copyright 2015 @ Marcelo Sousa"]
 _program = "poet"
 _help    = "The input files of poet are C files written in a restricted subset of the C language. For more info, check the documentation!"
 _helpFE = unlines ["poet frontend receives a concurrent C program in a restricted subset of the language and performs a series of transformations to simplify the analysis"

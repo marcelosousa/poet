@@ -5,8 +5,8 @@ import Prelude hiding (succ)
 
 import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
-import Domain.Concrete
 -- Data Structures
+import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
 import qualified Data.Set as S
@@ -17,7 +17,7 @@ import Util.Generic
 -- import PetriNet
 
 import qualified Model.GCS as GCS
-
+import qualified Model.Independence as I
 import qualified Debug.Trace as T
 
 mytrace True a b = T.trace a b
@@ -34,11 +34,11 @@ type EventID = Int
 type EventsID = [EventID]
 
 -- @ Configuration  
-data Configuration s = Conf {
-    stc :: Sigma s   -- state at this configuration
-  , maxevs :: EventsID  -- maximal events of the configuration
-  , enevs  :: EventsID  -- enabled events of the configuration
-  , cevs   :: EventsID  -- special events: the ones that have imm conflicts
+data Configuration st = Conf {
+    cons :: st        -- state at this configuration
+  , mevs :: EventsID  -- maximal events of the configuration
+  , eevs :: EventsID  -- enabled events of the configuration
+  , cevs :: EventsID  -- special events: the ones that have imm conflicts
 }
 
 -- @ An alternative is a conflicting extension of the configuration
@@ -50,23 +50,17 @@ type Counter = Int
 -- @ Value of the main HashTable
 --   (transition_id, predecessors, successors, #^, D, V)
 data Event = Event {
-    evtr :: GCS.TransitionMeta  -- Transition id
+    evtr :: GCS.TransitionInfo  -- Transition id
   , pred :: EventsID         -- Immediate predecessors
   , succ :: EventsID         -- Immediate successors
   , icnf :: EventsID         -- Immediate conflicts: #^
   , disa :: EventsID         -- Disabled events: D
   , alte :: Alternatives     -- Valid alternatives: V
---  , lcst :: GCS.Sigma s          -- Global state of local configuration
---  , size :: Int              -- Size of local configuration
 } deriving (Show,Eq,Ord)
     
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
 type Events s = HashTable s EventID Event
-
--- @ HashTable of States to EventID
-type States s = HashTable s SigmaRaw Int -- EventsID
---type States s = [(GCS.Sigma s, EventID)]
 
 -- @ Show an 
 showEvents :: Events s -> ST s String
@@ -80,53 +74,62 @@ copyEvents :: Events s -> ST s (Events s)
 copyEvents s = do
   kv <- H.toList s
   H.fromList kv
+
+-- @ HashTable of States to EventID for Cutoffs
+type States s st = HashTable s st EventID
  
 -- @ The state of the unfolder at any moment
-data UnfolderState s = UnfolderState {
-    syst :: GCS.System s      -- The system being analyzed
-  , inde :: GCS.UIndep        -- Independence relation
+data UnfolderState st s = UnfolderState {
+    syst :: GCS.System st    -- The system being analyzed
+  , indr :: I.UIndep         -- Independence relation
   , evts :: Events s         -- Unfolding prefix 
-  , pcnf :: Configuration s  -- Previous configuration
+  , pcnf :: Configuration st -- Previous configuration
+  , stak :: EventsID         -- Call stack
   , cntr :: Counter          -- Event counter
+  , stas :: States s st      -- Hash Table for cutoffs
   , maxConf :: Counter       -- Maximal config counter
-  , stack :: EventsID        -- Call stack
-  , statelessMode :: Bool    -- Stateless or not
-  , stas :: States s         -- Hash Table for cutoffs
-  , cutoffMode :: Bool       -- Cutoffs or not
   , cutoffCntr :: Counter    -- Cutoff counter
   , size :: Counter          -- Size of |U|
   , cumsize :: Integer       -- Sum of the sizes
+  , statelessMode :: Bool    -- Stateless or not
+  , cutoffMode :: Bool       -- Cutoffs or not
 }
-
--- @ Abbreviation of the type of an operation of the unfolder
-type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
-
--- @ Bottom event and event_id
-botEID :: EventID
-botEID = 0
-
-botEvent :: Sigma s -> GCS.Acts -> Event
-botEvent st acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] [] -- st 1
-
--- @ Initial state of the unfolder
-iState :: Bool -> Bool -> GCS.System s -> GCS.UIndep -> ST s (UnfolderState s) 
-iState statelessMode cutoffMode sys indep = do
-  events <- H.new
-  H.insert events 0 $ botEvent (GCS.initialState sys) (GCS.initialActs sys)
-  states <- H.new
-  rawState <- H.toList $ GCS.initialState sys
-  H.insert states rawState 1
-  let pconf = Conf undefined [] [] []
-  return $ UnfolderState sys indep events pconf 1 0 [0] statelessMode states cutoffMode 0 1 0
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
-instance Show (UnfolderState s) where
+instance Show (UnfolderState st s) where
     show (u@UnfolderState{..}) = show (cntr, maxConf, cutoffCntr)
 --        beg ++ "UIndep: " ++ show indep ++ "\nEvents: " ++ show events ++ "\nCausality: " ++ show causality 
 --     ++ "\n" ++ show (cevs configurations) ++ "\nEnabled: " ++ show enable 
 --     ++ "\nDisable: " ++ show disable ++ "\nAlternatives: " ++ show alternatives  ++ "\nImmConflicts: " ++ show immediateConflicts ++ "\nCounters: " 
 --     ++ show counters ++ end
+
+-- @ Abbreviation of the type of an operation of the unfolder
+type UnfolderOp st s a = StateT (UnfolderState st s) (ST s) a
+
+-- @ Bottom event and event_id
+botEID :: EventID
+botEID = 0
+
+botEvent :: GCS.Acts -> Event
+botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
+
+-- @ Initial state of the unfolder
+iState :: (Hashable st, Eq st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s) 
+iState statelessMode cutoffMode syst indr = do
+  evts <- H.new
+  H.insert evts 0 $ botEvent $ GCS.initialActs syst
+  stas <- H.new
+  let initialState = GCS.initialState syst
+  H.insert stas initialState botEID
+  let pcnf = Conf undefined [] [] [] -- this seems suspicious!
+      stak = [botEID]
+      cntr = 1
+      maxConf = 0
+      cutoffCntr = 0
+      size = 1
+      cumsize = 0
+  return $ UnfolderState syst indr evts pcnf stak cntr stas maxConf cutoffCntr size cumsize statelessMode cutoffMode
 
 {-
 gc :: UnfolderState -> UnfolderState
@@ -140,27 +143,26 @@ gc s@UnfolderState{..} =
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: Sigma s -> EventID -> UnfolderOp s (Sigma s)
+execute :: st -> EventID -> UnfolderOp st s [st]
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
-  let t = GCS.getTransition syst $ snd3 evtr
-  fn <- lift $ (t cst >>= return . M.fromMaybe (error $ "newState: the transition was not enabled " ++ show e))
-  lift $ fn cst
+  let fn = GCS.getTransition syst $ snd3 evtr
+  return $ fn cst
 
-isDependent_te :: GCS.UIndep -> GCS.TransitionMeta -> EventID -> Events s -> ST s Bool
+isDependent_te :: I.UIndep -> GCS.TransitionInfo -> EventID -> Events s -> ST s Bool
 {-# INLINE isDependent_te #-}
 isDependent_te indep tr e events = do --trace ("isDependent(tr="++show tr++", e=" ++show e++")")$ 
   ev@Event{..} <- getEvent "isDependent" e events
-  return $ GCS.isDependent indep tr evtr
+  return $ I.isDependent indep tr evtr
 
-isIndependent :: GCS.UIndep -> EventID -> EventID -> Events s -> ST s Bool
+isIndependent :: I.UIndep -> EventID -> EventID -> Events s -> ST s Bool
 {-# INLINE isIndependent #-}
 isIndependent indep e ê events = do
   ev <- getEvent "isIndependent" e events 
   êv <- getEvent "isIndependent" ê events
-  return $ GCS.isIndependent indep (evtr ev) (evtr êv) 
+  return $ I.isIndependent indep (evtr ev) (evtr êv) 
 
 -- Useful Functions
 predecessors, successors :: EventID -> Events s -> ST s EventsID
@@ -333,14 +335,14 @@ addDisabled e ê events = -- trace ("addDisa: " ++ show e ++ " of " ++ show ê) 
   setEvent ê ev' events 
    
 -- @ set previous configuration
-setPreviousConfiguration :: Configuration s -> UnfolderOp s ()
+setPreviousConfiguration :: Configuration st -> UnfolderOp st s ()
 setPreviousConfiguration conf = do
   s@UnfolderState{..} <- get
   let ns = s{ pcnf = conf } 
   put ns
 
 -- @ set previous disable set
-setPreviousDisabled :: Events s -> UnfolderOp s ()
+setPreviousDisabled :: Events s -> UnfolderOp st s ()
 setPreviousDisabled events = do
   s@UnfolderState{..} <- get
   kv <- lift $ H.toList events
@@ -350,7 +352,7 @@ setPreviousDisabled events = do
   return () 
 
 -- @ freshCounter - updates the counter of events
-freshCounter :: UnfolderOp s Counter
+freshCounter :: UnfolderOp st s Counter
 freshCounter = do
   s@UnfolderState{..} <- get
   let ec = cntr
@@ -359,57 +361,55 @@ freshCounter = do
   return ec
 
 -- @ update maximal config - updates the counter of maximal configurations
-incMaxConfCounter :: UnfolderOp s ()
+incMaxConfCounter :: UnfolderOp st s ()
 incMaxConfCounter = do
   s@UnfolderState{..} <- get
   let nec = maxConf + 1
   put s{ maxConf = nec }
 
 -- @ updates the counter of cutoffs
-incCutoffCounter :: UnfolderOp s ()
+incCutoffCounter :: UnfolderOp st s ()
 incCutoffCounter = do
   s@UnfolderState{..} <- get
   let nec = cutoffCntr + 1
   put s{ cutoffCntr = nec }
 
 -- @ increment the size of U
-incSize :: UnfolderOp s ()
+incSize :: UnfolderOp st s ()
 incSize = do
   s@UnfolderState{..} <- get
   let nsize = size + 1
   put s{ size = nsize }
 
 -- @ decrement the size of U
-decSize :: UnfolderOp s ()
+decSize :: UnfolderOp st s ()
 decSize = do
   s@UnfolderState{..} <- get
   let nsize = size - 1
   put s{ size = nsize }
 
 -- @ add the current size
-incAccSize :: UnfolderOp s ()
+incAccSize :: UnfolderOp st s ()
 incAccSize = do
   s@UnfolderState{..} <- get
   let ncumsize = cumsize + (toInteger size)
   put s{ cumsize = ncumsize }
   
 -- @ push 
-push :: EventID -> UnfolderOp s ()
+push :: EventID -> UnfolderOp st s ()
 push e = do 
   s@UnfolderState{..} <- get
-  let nstack = e:stack
-  put s{ stack = nstack }
+  let nstack = e:stak
+  put s{ stak = nstack }
 
 -- @ pop
-pop :: UnfolderOp s ()
+pop :: UnfolderOp st s ()
 pop = do
   s@UnfolderState{..} <- get
-  let nstack = tail stack
-  put s{ stack = nstack }
-
+  let nstack = tail stak
+  put s{ stak = nstack }
 
 -- @ Util
-
 isConfiguration :: Events s -> EventsID -> ST s Bool
 isConfiguration evts conf = do
   cnffree <- allM (\e -> getImmediateConflicts e evts >>= \es -> return $! null (es `intersect` conf)) conf

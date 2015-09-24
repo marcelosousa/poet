@@ -10,10 +10,10 @@ import Model.GCS
 
 import qualified Data.Map as M
 
-unfToDot :: UnfolderState s -> ST s (Int,Int,Int, String)
+unfToDot :: UnfolderState st s -> ST s (Int,Int,Int, String)
 unfToDot sys@UnfolderState{..} = do
     events <- H.toList evts
-    return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stack ++ "}")
+    return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stak ++ "}")
 
 class ToDot a where
     toDot :: a -> EventsID -> String
@@ -39,6 +39,8 @@ showAct (Lock (A var idx)) = "Lock " ++ BS.unpack var ++ " " ++ show idx
 showAct (Unlock (V var)) = "Unlock" ++ BS.unpack var
 showAct (Unlock (A var idx)) = "Unlock" ++ BS.unpack var ++ " " ++ show idx
 
+showTransition :: Transition st -> String
+showTransition = show . fst
 
 printCausality :: EventID -> EventID -> String -> String
 printCausality e1 e2 s = show e1 ++ " -> " ++ show e2 ++ ";\n" ++ s

@@ -8,50 +8,46 @@ import Control.Monad.ST.Safe
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-import Util.Generic
+import Util.Generic hiding (safeLookup)
 
 -- Example 1 - Two writes of different variables
 -- Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
-t1' :: TransitionFn s 
-t1' s = do
-  v <- safeLookup "t1" s (BS.pack "pcp")
-  case v of
-    IntVal 1 -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcp") $ IntVal 2
-      H.insert s (BS.pack "x") $ IntVal 1
-      return s
-    _ -> return Nothing
+t1' :: TransitionFn Sigma
+t1' s =
+  let v = safeLookup "t1" s (BS.pack "pcp")
+  in case v of
+    IntVal 1 ->
+      let ns = insert (BS.pack "pcp") (IntVal 2) s
+          ns' = insert s (BS.pack "x") (IntVal 1) ns
+      in [ns']
+    _ -> []
 
-t1 :: Transition s
-t1 = (BS.pack "p", 0, [Other], t1')
+t1 :: Transition Sigma
+t1 = ((BS.pack "p", 0, [Other]), t1')
 
+t2' :: TransitionFn Sigma
+t2' s =
+  let v = safeLookup "t2" s (BS.pack "pcq")
+  in case v of
+    IntVal 1 ->
+      let ns = insert (BS.pack "pcq") (IntVal 2) s
+          ns' = insert (BS.pack "y") (IntVal 1) ns
+      in [ns']
+    _ -> []
 
-t2' :: TransitionFn s 
-t2' s = do
-  v <- safeLookup "t2" s (BS.pack "pcq")
-  case v of
-    IntVal 1 -> return $ Just $ \s -> do
-      H.insert s (BS.pack "pcq") $ IntVal 2
-      H.insert s (BS.pack "y") $ IntVal 1
-      return s
-    _ -> return Nothing
+t2 :: Transition Sigma
+t2 = ((BS.pack "q", 1, [Other]), t2')
 
-t2 :: Transition s
-t2 = (BS.pack "q", 1, [Other], t2')
+s1 :: Sigma
+s1 = 
+  let pairs = [(BS.pack "pcp",IntVal 1)
+              ,(BS.pack "pcq",IntVal 1)
+              ,(BS.pack "x",IntVal 0)
+              ,(BS.pack "y",IntVal 0)] 
+  in toSigma pairs
 
-s1 :: ST s (Sigma s)
-s1 = do 
-  ht <- H.new
-  H.insert ht (BS.pack "pcp") $ IntVal 1 
-  H.insert ht (BS.pack "pcq") $ IntVal 1 
-  H.insert ht (BS.pack "x") $ IntVal 0 
-  H.insert ht (BS.pack "y") $ IntVal 0
-  return ht
-
-sys1 :: ST s (System s)
-sys1 = do 
-  is <- s1
-  return $ System (V.fromList [t1,t2]) is [Other]
+sys1 :: System Sigma
+sys1 = System (V.fromList [t1,t2]) s1 [Other]
 
 ind11,ind12 :: UIndep
 ind11 = V.generate 2 (\i -> V.generate 2 (\j -> False)) 
