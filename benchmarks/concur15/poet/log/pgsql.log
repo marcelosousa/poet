@@ -1,9 +1,6 @@
 poet cutoffs:
-total number of events of the unfolding: 51
-total number of maximal configurations: 4
-total number of cutoffs: 8
-average size of U at maximal configurations: 40
+poet: getFlow: no match for 33
 
-real	0m0.026s
-user	0m0.017s
-sys	0m0.008s
+real	0m0.012s
+user	0m0.000s
+sys	0m0.012s

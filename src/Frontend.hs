@@ -46,11 +46,11 @@ type MapLabelPC = Map Ident PC
 
 mapLabelPC :: Program -> MapLabelPC
 mapLabelPC (Program (decls,defs)) = 
-    let rawmap = concatMap mapLabelPCDef defs 
-        idents = length $ nub $ fst $ unzip rawmap
-    in if length rawmap == idents
-       then M.fromList rawmap
-       else error "mapLabelPC: two labels with the same ident were defined"
+  let rawmap = concatMap mapLabelPCDef defs 
+      idents = length $ nub $ fst $ unzip rawmap
+  in if length rawmap == idents
+     then M.fromList rawmap
+     else error "mapLabelPC: two labels with the same ident were defined"
   where
       mapLabelPCDef (FunctionDef _ _ _ ss) = concatMap mapLabelPCStat ss
       mapLabelPCStat s = case s of

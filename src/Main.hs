@@ -37,7 +37,7 @@ import Test.Examples
 
 
 _program, _summary :: String
-_summary = unlines ["POET - v0.1","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs."
+_summary = unlines ["POET - v0.2","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs."
                    ,"Copyright 2015 @ Marcelo Sousa"]
 _program = "poet"
 _help    = "The input files of poet are C files written in a restricted subset of the C language. For more info, check the documentation!"
@@ -100,10 +100,11 @@ main = do options <- cmdArgsRun progModes
 runOption :: Option -> IO ()
 runOption (Frontend f) = frontend f
 runOption (Middleend f) = do
-    prog <- extract f
-    let (prog', fflow, flow, thcount) = frontEnd prog
-        ind = snd $ convert prog' fflow flow thcount
-    print ind
+  prog <- extract f
+  let (prog', fflow, flow, thcount) = frontEnd prog
+      ind = snd $ convert prog' fflow flow thcount
+  print ind
+  print flow
 runOption (Execute f seed) = execute f seed
 runOption (Interpret f) = interpreter f
 runOption (Explore f stmode cutoffs) =  explore f (not $ toBool stmode) (toBool cutoffs)

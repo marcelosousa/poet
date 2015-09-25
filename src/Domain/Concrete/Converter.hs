@@ -1,19 +1,19 @@
 module Domain.Concrete.Converter where
 
+import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import qualified Data.Vector as V
-import qualified Data.ByteString.Char8 as BS
 import Debug.Trace
 
 import Domain.Concrete.Independence
 import Domain.Concrete.Type
 
+import Frontend
+import Frontend.Util
 import Language.SimpleC.AST hiding (Value)
 import Language.C.Syntax.AST (CBinaryOp(..),CUnaryOp(..))
 import Model.GCS
 import Model.Independence
-import Frontend
-import Frontend.Util
 import Util.Generic hiding (safeLookup)
 
 pmdVar = BS.pack "__poet_mutex_death"
@@ -21,9 +21,6 @@ pmdVal = IntVal 1
 pmtVar = BS.pack "__poet_mutex_threads"
 pmjVar = BS.pack "__poet_mutex_threads_join"
 
---class Converter st where
---    convert :: Program -> FirstFlow -> Flow -> Int -> (System st, UIndep)
-    
 convert :: Program -> FirstFlow -> Flow -> Int -> (System Sigma, UIndep)
 convert (Program (decls, defs)) pcs flow thCount =
   -- @ get the initial local state: this will be the set of global variables 

@@ -25,7 +25,7 @@ void *r(){
 
 void *s(){
     int aux=0;
-    while(y<N){
+    if(y<N){
       if (z == 1){
         x=2;
       }
