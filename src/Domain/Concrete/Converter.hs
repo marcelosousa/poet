@@ -33,7 +33,7 @@ convert (Program (decls, defs)) pcs flow thCount =
       ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
       iils = ils++ipcs
       fils = (pmdVar, pmdVal):(pmtVar, pmtiv):(pmjVar, pmtiv):iils
-      is = toState fils
+      is = toSigma fils
       atrs = resetTID $ concatMap (getTransitions flow) defs
       (trs,annot) = unzip atrs
 --      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs

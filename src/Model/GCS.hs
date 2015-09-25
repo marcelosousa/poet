@@ -51,7 +51,7 @@ isBlocking = any (\act -> act /= Other)
 -- | enabledTransitions
 enabledTransitions :: System st -> st -> V.Vector TransitionInfo
 enabledTransitions sys@System{..} s =
-  let enTr = V.filter (\(_,t) -> null $ t s) transitions
+  let enTr = V.filter (\(_,t) -> not $ null $ t s) transitions
   in V.map fst enTr
 
 -- | botID 0 is the transition id for bottom 

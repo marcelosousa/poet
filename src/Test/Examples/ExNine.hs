@@ -1,33 +1,23 @@
 module Test.Examples.ExNine (sys9, ind9) where
 
-import Domain.Concrete
-import Model.GCS
-
-import Control.Monad.ST.Safe
-
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-import Util.Generic
-t11' :: TransitionFn s
-t11' s = do
-  return $ Just $ \s -> do
-    H.insert s (BS.pack "x") (IntVal 1)
-    return s
+import Domain.Concrete.Type
+import Model.GCS
+import Model.Independence
+import Util.Generic hiding (safeLookup)
 
-t11 :: Transition s
-t11 = (BS.pack "m", 0, [Other], t11')
+t11' :: TransitionFn Sigma
+t11' s = [insert (BS.pack "x") (IntVal 1) s]
 
-s :: ST s (Sigma s)  
-s = do 
-  ht <- H.new
-  H.insert ht (BS.pack "x") (IntVal 0)
-  return ht
+t11 :: Transition Sigma
+t11 = ((BS.pack "m", 0, [Other]), t11')
+
+s9 :: Sigma
+s9 = toSigma [(BS.pack "x", IntVal 0)] 
   
-sys9 :: ST s (System s)
-sys9 = do 
-  is <- s
-  return $ System (V.fromList [t11]) is [Other]
+sys9 :: System Sigma
+sys9 = System (V.fromList [t11]) s9 [Other]
 
 ind9 :: UIndep
 ind9 = V.generate 1 (\i -> V.generate 1 (\j -> False)) 

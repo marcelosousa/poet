@@ -1,86 +1,80 @@
 module Test.Examples.ExSix where
 
-import Domain.Concrete
-import Model.GCS
-
-import Control.Monad.ST.Safe
-
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-import Util.Generic
+import Domain.Concrete.Type
+import Model.GCS
+import Model.Independence
+import Util.Generic hiding (safeLookup)
 
 -- Example 6
-s6 :: ST s (Sigma s)
-s6 = do 
-  ht <- H.new
-  H.insert ht (BS.pack "pcp") (IntVal 1) 
-  H.insert ht (BS.pack "pcq") (IntVal 1) 
-  H.insert ht (BS.pack "pcr") (IntVal 1)
-  H.insert ht (BS.pack "x") (IntVal 1) 
-  H.insert ht (BS.pack "x1") (IntVal 0) 
-  H.insert ht (BS.pack "x2") (IntVal 0)  
-  return ht
+s6 :: Sigma
+s6 =
+  let pairs = [(BS.pack "pcp", IntVal 1)
+              ,(BS.pack "pcq", IntVal 1)
+              ,(BS.pack "pcr", IntVal 1)
+              ,(BS.pack "x", IntVal 0)  
+              ,(BS.pack "x1", IntVal 0)  
+              ,(BS.pack "x2", IntVal 0)]
+  in toSigma pairs 
 
-t1_6, t21_6, t22_6, t31_6, t32_6 :: Transition s
-t1_6 = (BS.pack "p",0, [Other],t1_6')
-t21_6 = (BS.pack "q",1,[Other],t21_6')
-t22_6 = (BS.pack "q",2,[Other],t22_6')
-t31_6 = (BS.pack "r",3,[Other],t31_6')
-t32_6 = (BS.pack "r",4,[Other],t32_6')
+t1_6, t21_6, t22_6, t31_6, t32_6 :: Transition Sigma
+t1_6  = ((BS.pack "p",0,[Other]),t1_6')
+t21_6 = ((BS.pack "q",1,[Other]),t21_6')
+t22_6 = ((BS.pack "q",2,[Other]),t22_6')
+t31_6 = ((BS.pack "r",3,[Other]),t31_6')
+t32_6 = ((BS.pack "r",4,[Other]),t32_6')
 
-t1_6', t21_6', t22_6', t31_6', t32_6' :: TransitionFn s
-t1_6' s = do
-  v <- safeLookup "t1" s (BS.pack "pcp")
-  case v of
-    (IntVal 1) -> return $ Just $ \s -> do
-      x <- safeLookup "t1" s (BS.pack "x")
-      let pcVal = (IntVal 2) 
-      H.insert s (BS.pack "pcp") pcVal
-      H.insert s (BS.pack "x1") x
-      return s
-    _ -> return Nothing
-t21_6' s = do
-  v <- safeLookup "t21" s (BS.pack "pcq")
-  case v of
-    (IntVal 1) -> return $ Just $ \s -> do
-      x <- safeLookup "t1" s (BS.pack "x")
-      let pcVal = (IntVal 2)
-      H.insert s (BS.pack "pcq") pcVal
-      H.insert s (BS.pack "x2") x
-      return s
-    _ -> return Nothing
-t22_6' s = do 
-  v <- safeLookup "t22" s (BS.pack "pcq")
-  case v of
-    (IntVal 2) -> return $ Just $ \s -> do
+t1_6', t21_6', t22_6', t31_6', t32_6' :: TransitionFn Sigma
+t1_6' s =
+  let v = safeLookup "t1" s (BS.pack "pcp")
+  in case v of
+    IntVal 1 ->
+      let x = safeLookup "t1" s (BS.pack "x")
+          pcVal = (IntVal 2) 
+          ns = insert (BS.pack "pcp") pcVal s
+          ns' = insert (BS.pack "x1") x ns
+      in [ns']
+    _ -> []
+t21_6' s =
+  let v = safeLookup "t21" s (BS.pack "pcq")
+  in case v of
+    IntVal 1 ->
+      let x = safeLookup "t1" s (BS.pack "x")
+          pcVal = (IntVal 2)
+          ns = insert (BS.pack "pcq") pcVal s
+          ns' = insert (BS.pack "x2") x ns
+      in [ns']
+    _ -> []
+t22_6' s =
+  let v = safeLookup "t22" s (BS.pack "pcq")
+  in case v of
+    IntVal 2 ->
       let pcVal = (IntVal 3) 
-      H.insert s (BS.pack "pcq") pcVal
-      return s
-    _ -> return Nothing
-t31_6' s = do 
-  v <- safeLookup "t31" s (BS.pack "pcr")
-  case v of
-    (IntVal 1) -> return $ Just $ \s -> do
+          ns = insert (BS.pack "pcq") pcVal s
+      in [ns]
+    _ -> []
+t31_6' s =
+  let v = safeLookup "t31" s (BS.pack "pcr")
+  in case v of
+    IntVal 1 ->
       let pcVal = (IntVal 2) 
-      H.insert s (BS.pack "pcr") pcVal
-      return s
-    _ -> return Nothing
-t32_6' s = do
-  v <- safeLookup "t32" s (BS.pack "pcr")
-  case v of
-    (IntVal 2) -> return $ Just $ \s -> do
+          ns = insert (BS.pack "pcr") pcVal s
+      in [ns]
+    _ -> []
+t32_6' s =
+  let v = safeLookup "t32" s (BS.pack "pcr")
+  in case v of
+    IntVal 2 ->
       let pcVal = (IntVal 3) 
           xVal = (IntVal 2)
-      H.insert s (BS.pack "pcr") pcVal
-      H.insert s (BS.pack "x") xVal
-      return s
-    _ -> return Nothing
+          ns = insert (BS.pack "pcr") pcVal s
+          ns' = insert (BS.pack "x") xVal ns
+      in [ns']
+    _ -> []
 
-sys6 :: ST s (System s)
-sys6 = do 
-  is <- s6
-  return $ System (V.fromList [t1_6,t21_6,t22_6,t31_6,t32_6]) is [Other]
+sys6 :: System Sigma
+sys6 = System (V.fromList [t1_6,t21_6,t22_6,t31_6,t32_6]) s6 [Other]
 
 ind6 :: UIndep
 ind6 = V.generate 5 (\i -> V.generate 5 (\j -> check6 i j)) 

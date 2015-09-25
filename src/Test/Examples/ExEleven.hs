@@ -1,79 +1,74 @@
 module Test.Examples.ExEleven (sys11, ind11) where
 
-import Domain.Concrete
-import Model.GCS
-
-import Control.Monad.ST.Safe
-
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
-import Util.Generic
-t11' :: TransitionFn s
-t11' s = do
-  v <- safeLookup "t11" s (BS.pack "pcp")
-  case v of
-      (IntVal 1) -> return $ Just $ \s -> do
-        H.insert s (BS.pack "x") (IntVal 1)
-        H.insert s (BS.pack "pcp") (IntVal 2)
-        return s
-      _ -> return Nothing
+import Domain.Concrete.Type
+import Model.GCS
+import Model.Independence
+import Util.Generic hiding (safeLookup)
 
-t11 :: Transition s
-t11 = (BS.pack "p", 0, [Other], t11')
+t11' :: TransitionFn Sigma
+t11' s =
+  let v = safeLookup "t11" s (BS.pack "pcp")
+  in case v of
+      IntVal 1 ->
+        let ns = insert (BS.pack "x") (IntVal 1) s
+            ns' = insert (BS.pack "pcp") (IntVal 2) ns
+        in [ns']
+      _ -> []
 
-t12' :: TransitionFn s
-t12' s = do
-  v <- safeLookup "t12" s (BS.pack "pcp")
-  case v of
-      (IntVal 2) -> return $ Just $ \s -> do
-        H.insert s (BS.pack "y") (IntVal 1)
-        H.insert s (BS.pack "pcp") (IntVal 3)
-        return s
-      _ -> return Nothing
+t11 :: Transition Sigma
+t11 = ((BS.pack "p", 0, [Other]), t11')
 
-t12 :: Transition s
-t12 = (BS.pack "p", 1, [Other], t12')
+t12' :: TransitionFn Sigma
+t12' s =
+  let v = safeLookup "t12" s (BS.pack "pcp")
+  in case v of
+      IntVal 2 ->
+        let ns = insert (BS.pack "y") (IntVal 1) s
+            ns' = insert (BS.pack "pcp") (IntVal 3) ns
+        in [ns']
+      _ -> []
 
-t21' :: TransitionFn s
-t21' s = do
-  v <- safeLookup "t21" s (BS.pack "pcq")
-  case v of
-      (IntVal 1) -> return $ Just $ \s -> do
-        H.insert s (BS.pack "y") (IntVal 2)
-        H.insert s (BS.pack "pcq") (IntVal 2)
-        return s
-      _ -> return Nothing
+t12 :: Transition Sigma
+t12 = ((BS.pack "p", 1, [Other]), t12')
 
-t21 :: Transition s
-t21 = (BS.pack "q", 2, [Other], t21')
+t21' :: TransitionFn Sigma
+t21' s =
+  let v = safeLookup "t21" s (BS.pack "pcq")
+  in case v of
+      IntVal 1 ->
+        let ns = insert (BS.pack "y") (IntVal 2) s
+            ns' = insert (BS.pack "pcq") (IntVal 2) ns
+        in [ns']
+      _ -> []
 
-t22' :: TransitionFn s
-t22' s = do
-  v <- safeLookup "t22" s (BS.pack "pcq")
-  case v of
-      (IntVal 2) -> return $ Just $ \s -> do
-        H.insert s (BS.pack "x") (IntVal 2)
-        H.insert s (BS.pack "pcq") (IntVal 3)
-        return s
-      _ -> return Nothing
+t21 :: Transition Sigma
+t21 = ((BS.pack "q", 2, [Other]), t21')
 
-t22 :: Transition s
-t22 = (BS.pack "q", 3, [Other], t22')
+t22' :: TransitionFn Sigma
+t22' s =
+  let v = safeLookup "t22" s (BS.pack "pcq")
+  in case v of
+      IntVal 2 ->
+        let ns = insert (BS.pack "x") (IntVal 2) s
+            ns' = insert (BS.pack "pcq") (IntVal 3) ns
+        in [ns']
+      _ -> []
 
-s :: ST s (Sigma s)  
-s = do 
-  ht <- H.new
-  H.insert ht (BS.pack "x") (IntVal 0)
-  H.insert ht (BS.pack "y") (IntVal 0)
-  H.insert ht (BS.pack "pcp") (IntVal 1)
-  H.insert ht (BS.pack "pcq") (IntVal 1)
-  return ht
+t22 :: Transition Sigma
+t22 = ((BS.pack "q", 3, [Other]), t22')
+
+s11 :: Sigma
+s11 =
+  let pairs = [(BS.pack "x", IntVal 0)
+              ,(BS.pack "y", IntVal 0)
+              ,(BS.pack "pcp", IntVal 1)
+              ,(BS.pack "pcq", IntVal 1)]
+  in toSigma pairs 
   
-sys11 :: ST s (System s)
-sys11 = do 
-  is <- s
-  return $ System (V.fromList [t11,t12,t21,t22]) is [Other]
+sys11 :: System Sigma
+sys11 = System (V.fromList [t11,t12,t21,t22]) s11 [Other]
 
 ind11 :: UIndep
 ind11 = V.generate 4 (\i -> V.generate 4 (\j -> check i j))

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Concrete.Type
 -- Copyright :  (c) 2015 Marcelo Sousa
@@ -22,6 +23,10 @@ data Value =
     | Array [Value]
   deriving (Show,Eq,Ord)
 
+instance Hashable Sigma where
+  hash = hash . M.toList
+  hashWithSalt s st = hashWithSalt s $ M.toList st
+  
 instance Hashable Value where
   hash v = case v of
     IntVal i -> hash i
@@ -30,11 +35,14 @@ instance Hashable Value where
     IntVal i -> hashWithSalt s i
     Array vals -> hashWithSalt s vals
       
-toState :: LSigma -> Sigma
-toState = M.fromList
+toSigma :: LSigma -> Sigma
+toSigma = M.fromList
 
 insert :: Var -> Value -> Sigma -> Sigma
 insert = M.insert
+
+join :: Sigma -> Sigma -> Sigma
+join = M.union
 
 safeLookup :: String -> Sigma -> Var -> Value
 safeLookup err st k =

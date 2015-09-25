@@ -60,13 +60,13 @@ separator = "-----------------------------------------\n"
 explore :: (Hashable st, Eq st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
-  str <- lift $ showEvents evts
-  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
-       ++ ", enevs = " ++ show eevs ++ ", alt = " 
-       ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
+  --str <- lift $ showEvents evts
+  --trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  --     ++ ", enevs = " ++ show eevs ++ ", alt = " 
+  --     ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
   -- let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  -- k `seq` if null enevs 
+  -- k `seq` if null eevs 
   if null eevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)

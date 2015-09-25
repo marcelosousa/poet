@@ -1,13 +1,10 @@
 module Test.Examples.ExOne where
 
-import Domain.Concrete
-import Model.GCS
-
-import Control.Monad.ST.Safe
-
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.HashTable.Class as H
 import qualified Data.Vector as V
+import Domain.Concrete.Type
+import Model.GCS
+import Model.Independence
 import Util.Generic hiding (safeLookup)
 
 -- Example 1 - Two writes of different variables
@@ -18,7 +15,7 @@ t1' s =
   in case v of
     IntVal 1 ->
       let ns = insert (BS.pack "pcp") (IntVal 2) s
-          ns' = insert s (BS.pack "x") (IntVal 1) ns
+          ns' = insert (BS.pack "x") (IntVal 1) ns
       in [ns']
     _ -> []
 
