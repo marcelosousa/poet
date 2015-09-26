@@ -113,7 +113,7 @@ fromCall flow pcVar pc "__poet_fail" [] =
            then error "poet found an assertion violation!"
            else []
   in [(fn, [Other], acts)]
-fromCall flow pcVar pc name [param] =
+fromCall flow pcVar pc name [param] = trace ("fromCall: " ++ name) $
   let Continue next = getFlow flow pc
   in case name of 
     "__poet_mutex_lock" ->
@@ -228,7 +228,7 @@ getVarArg e = error $ "getVarArg: " ++ show e
 
 -- encodes Assign
 fromAssign :: Flow -> Var -> PC -> Expression -> Expression -> [(TransitionFn Sigma, RWSet)]
-fromAssign flow pcVar pc _lhs _rhs =
+fromAssign flow pcVar pc _lhs _rhs = trace "fromAssign" $
   let Continue next = getFlow flow pc
       _lhsi = map Write $ getIdent _lhs
       _rhsi = map Read $ getIdent _rhs
@@ -256,7 +256,7 @@ fromAssign flow pcVar pc _lhs _rhs =
 
 -- encodes GOTO
 fromGoto :: Flow -> Var -> PC -> [(TransitionFn Sigma, RWSet)]
-fromGoto flow pcVar pc =
+fromGoto flow pcVar pc = trace "fromGoto" $
   let Continue next = getFlow flow pc
       fn = \s ->
         let IntVal curPC = safeLookup "goto" s pcVar
@@ -269,7 +269,7 @@ fromGoto flow pcVar pc =
 
 -- encodes fromIf
 fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn Sigma, RWSet)]
-fromIf flow pcVar pc _cond =
+fromIf flow pcVar pc _cond = trace "fromIf" $
   let Branch (t,e) = getFlow flow pc
       readVars = getIdent _cond
       annots = (Write $ V pcVar):(map Read readVars)
