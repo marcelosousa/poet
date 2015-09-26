@@ -6,4 +6,3 @@ module Domain.Concrete where
 
 import Domain.Concrete.Type
 import Domain.Concrete.Converter
-import Domain.Concrete.Interpreter

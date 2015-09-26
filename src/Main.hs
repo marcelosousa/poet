@@ -18,7 +18,7 @@ import Language.SimpleC
 import Frontend (frontEnd)
 import Domain.Concrete.Type
 import Domain.Concrete.Converter
-import Domain.Concrete.Interpreter
+import Model.Interpreter
 import qualified Exploration.UNF.Unfolder as Exp
 import Exploration.UNF.APIStateless hiding (execute)
 import Util.Printer

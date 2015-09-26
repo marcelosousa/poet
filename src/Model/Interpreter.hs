@@ -1,4 +1,4 @@
-module Domain.Concrete.Interpreter where
+module Model.Interpreter where
 
 import Control.Monad.ST
 import qualified Data.ByteString.Char8 as BS
@@ -6,19 +6,18 @@ import Data.Char
 import Data.List
 import qualified Data.Maybe as M
 import qualified Data.Vector as V
-import Domain.Concrete.Type
 import Model.GCS
 import Model.Independence
 import System.IO.Unsafe
 import System.Random
 
-exec :: StdGen -> Int -> (System Sigma, UIndep) -> String
+exec :: (Show st, Ord st) => StdGen -> Int -> (System st, UIndep) -> String
 exec gen thcount (sys,indep) = execIt gen thcount "" indep sys (initialState sys)
 
-execIt :: StdGen -> Int -> String -> UIndep -> System Sigma -> Sigma -> String
+execIt :: (Show st, Ord st) => StdGen -> Int -> String -> UIndep -> System st -> st -> String
 execIt gen thcount str indep sys st =
   let trs = enabledTransitions sys st
-      ststr = showSigma st
+      ststr = show st
   in if V.null trs
      then 
        if isDeadlock thcount st
@@ -39,14 +38,14 @@ execIt gen thcount str indep sys st =
                in execIt gen' thcount nstr indep sys nst
       else error "diamond check failed"
           
-checkDiamonds :: System Sigma -> [(TransitionInfo,TransitionInfo)] -> Sigma -> Bool
+checkDiamonds :: Ord st => System st -> [(TransitionInfo,TransitionInfo)] -> st -> Bool
 checkDiamonds sys [] s = True
 checkDiamonds sys (((_,t1,_),(_,t2,_)):rest) s =
   if checkDiamond sys t1 t2 s
   then checkDiamonds sys rest s
   else error $ "checkDiamonds: " ++ show (t1,t2)
 
-checkDiamond :: System Sigma -> TransitionID -> TransitionID -> Sigma -> Bool
+checkDiamond :: Ord st => System st -> TransitionID -> TransitionID -> st -> Bool
 checkDiamond sys t1 t2 s =
     let t1fn = getTransition sys t1
         t2fn = getTransition sys t2
@@ -54,7 +53,7 @@ checkDiamond sys t1 t2 s =
         s2s1 = sort $ map t2fn $ t1fn s
     in s1s2 == s2s1     
             
-isDeadlock :: Int -> Sigma -> Bool
+isDeadlock :: Int -> st -> Bool
 isDeadlock thcount st =  True 
 {-
 FIXME: Check that all pcs are in -1
@@ -66,13 +65,13 @@ do
         _ -> error $ "isDeadlock: " ++ show mlock
  -}       
 
-interpret :: (System Sigma, UIndep) -> Int
+interpret :: (Show st, Ord st) => (System st, UIndep) -> Int
 interpret (sys,indep) = interpretIt 0 indep sys (initialState sys)
 
-interpretIt :: Int -> UIndep -> System Sigma -> Sigma -> Int
+interpretIt :: Show st => Int -> UIndep -> System st -> st -> Int
 interpretIt step indep sys st =
   let trs = enabledTransitions sys st
-      ststr = showSigma st
+      ststr = show st
       indepTr = getIndepTr indep $ V.toList trs
       s1 = unsafePerformIO $ putStrLn "current state:"
       s2 = unsafePerformIO $ putStrLn ststr
