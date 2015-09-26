@@ -76,7 +76,7 @@ allM	./Util/Generic.hs	17;"	v
 allowedBinOp	./Frontend/PassTwo.hs	44;"	v	file:
 alt2	./Exploration/UNF/Unfolder.hs	509;"	v	file:
 alte	./Exploration/UNF/APIStateless.hs	58;"	v
-apply	./Domain/Concrete/Converter.hs	338;"	v
+apply	./Domain/Concrete/Converter.hs	335;"	v
 applyTrans	./Frontend/PassFourFive.hs	20;"	v	file:
 assertWellFormed_1Global	./Frontend/PassTwo.hs	18;"	v	file:
 assertWellFormed_1GlobalE	./Frontend/PassTwo.hs	48;"	v	file:
@@ -113,7 +113,7 @@ computeStateHistory	./Exploration/UNF/Unfolder.hs	399;"	v	file:
 computeStateLocalConfiguration	./Exploration/UNF/Unfolder.hs	392;"	v	file:
 computeUIndep	./Domain/Concrete/Independence.hs	18;"	v
 cons	./Exploration/UNF/APIStateless.hs	38;"	v
-convert	./Domain/Concrete/Converter.hs	28;"	v
+convert	./Domain/Concrete/Converter.hs	25;"	v
 copyEvents	./Exploration/UNF/APIStateless.hs	74;"	v
 cumsize	./Exploration/UNF/APIStateless.hs	93;"	v
 cutoff	./Exploration/UNF/Cutoff/McMillan.hs	13;"	v
@@ -130,8 +130,8 @@ disa	./Exploration/UNF/APIStateless.hs	57;"	v
 eevs	./Exploration/UNF/APIStateless.hs	40;"	v
 enabledTransitions	./Model/GCS.hs	53;"	v
 end	./Exploration/UNF/APIStateless.hs	99;"	v
-eval	./Domain/Concrete/Converter.hs	305;"	v
-evalCond	./Domain/Concrete/Converter.hs	364;"	v
+eval	./Domain/Concrete/Converter.hs	302;"	v
+evalCond	./Domain/Concrete/Converter.hs	361;"	v
 evtr	./Exploration/UNF/APIStateless.hs	53;"	v
 evts	./Exploration/UNF/APIStateless.hs	85;"	v
 exec	./Domain/Concrete/Interpreter.hs	16;"	v
@@ -159,11 +159,11 @@ flowStatement	./Frontend.hs	111;"	v
 for2while	./Frontend/PassFourFive.hs	25;"	v	file:
 freshCounter	./Exploration/UNF/APIStateless.hs	356;"	v
 freshLabel	./Frontend/PassFourFive.hs	46;"	v	file:
-fromAssign	./Domain/Concrete/Converter.hs	234;"	v
-fromBool	./Domain/Concrete/Converter.hs	360;"	v
-fromCall	./Domain/Concrete/Converter.hs	111;"	v
-fromGoto	./Domain/Concrete/Converter.hs	262;"	v
-fromIf	./Domain/Concrete/Converter.hs	275;"	v
+fromAssign	./Domain/Concrete/Converter.hs	231;"	v
+fromBool	./Domain/Concrete/Converter.hs	357;"	v
+fromCall	./Domain/Concrete/Converter.hs	108;"	v
+fromGoto	./Domain/Concrete/Converter.hs	259;"	v
+fromIf	./Domain/Concrete/Converter.hs	272;"	v
 frontEnd	./Frontend.hs	26;"	v
 frontend	Main.hs	116;"	v
 frontendMode	Main.hs	65;"	v
@@ -177,17 +177,17 @@ getFlow	./Frontend.hs	88;"	v
 getGlobalsDecls	./Frontend/Util.hs	8;"	v
 getIPred	./Exploration/UNF/APIStateless.hs	243;"	v
 getISucc	./Exploration/UNF/APIStateless.hs	248;"	v
-getIdent	./Domain/Concrete/Converter.hs	294;"	v
+getIdent	./Domain/Concrete/Converter.hs	291;"	v
 getImmediateConflicts	./Exploration/UNF/APIStateless.hs	238;"	v
 getIndepTr	./Model/Independence.hs	27;"	v
-getInitialDecls	./Domain/Concrete/Converter.hs	53;"	v
+getInitialDecls	./Domain/Concrete/Converter.hs	50;"	v
 getPC	./Frontend.hs	95;"	v
 getTIDValue	./Frontend/PassOne.hs	73;"	v	file:
 getTNameValue	./Frontend/PassOne.hs	80;"	v	file:
 getTransition	./Model/GCS.hs	69;"	v
 getTransitionWithID	./Model/GCS.hs	77;"	v
-getTransitions	./Domain/Concrete/Converter.hs	67;"	v
-getVarArg	./Domain/Concrete/Converter.hs	228;"	v
+getTransitions	./Domain/Concrete/Converter.hs	64;"	v
+getVarArg	./Domain/Concrete/Converter.hs	225;"	v
 iDB	./Frontend/PassFourFive.hs	10;"	v	file:
 iState	./Exploration/UNF/APIStateless.hs	119;"	v
 icnf	./Exploration/UNF/APIStateless.hs	56;"	v
@@ -238,7 +238,7 @@ maxConf	./Exploration/UNF/APIStateless.hs	90;"	v
 menu	./Domain/Concrete/Interpreter.hs	103;"	v
 mevs	./Exploration/UNF/APIStateless.hs	39;"	v
 middleendMode	Main.hs	68;"	v
-modifyList	./Domain/Concrete/Converter.hs	105;"	v
+modifyList	./Domain/Concrete/Converter.hs	102;"	v
 mtrace	./Exploration/UNF/APIStateless.hs	26;"	v
 mytrace	./Exploration/UNF/APIStateless.hs	23;"	v
 passFourFive	./Frontend/PassFourFive.hs	14;"	v
@@ -264,14 +264,14 @@ prune	./Exploration/UNF/Unfolder.hs	553;"	v	file:
 pruneConfiguration	./Exploration/UNF/Unfolder.hs	209;"	v	file:
 push	./Exploration/UNF/APIStateless.hs	400;"	v
 rec	./Frontend/PassSix.hs	54;"	v	file:
-recGetTrans	./Domain/Concrete/Converter.hs	70;"	v
+recGetTrans	./Domain/Concrete/Converter.hs	67;"	v
 removeLabel	./Frontend.hs	66;"	v
 replaceMain	./Frontend/PassOne.hs	38;"	v	file:
 replacePthreadExit	./Frontend/PassOne.hs	100;"	v	file:
 replacePthreadExitAux	./Frontend/PassOne.hs	107;"	v	file:
 resetAlternatives	./Exploration/UNF/APIStateless.hs	323;"	v
-resetTID	./Domain/Concrete/Converter.hs	47;"	v
-resetTID'	./Domain/Concrete/Converter.hs	50;"	v
+resetTID	./Domain/Concrete/Converter.hs	44;"	v
+resetTID'	./Domain/Concrete/Converter.hs	47;"	v
 runOption	Main.hs	101;"	v
 runTest1	./Test/Examples.hs	20;"	v
 runTest10	./Test/Examples.hs	56;"	v
@@ -296,7 +296,7 @@ s7	./Test/Examples/ExSeven.hs	70;"	v	file:
 s8	./Test/Examples/ExEight.hs	61;"	v	file:
 s9	./Test/Examples/ExNine.hs	17;"	v	file:
 safeLookup	./Domain/Concrete/Type.hs	48;"	v
-safeLookup	./Util/Generic.hs	42;"	v
+safeLookup	./Util/Generic.hs	55;"	v
 seed	Main.hs	57;"	v
 separator	./Exploration/UNF/Unfolder.hs	58;"	v	file:
 setConflict	./Exploration/UNF/APIStateless.hs	300;"	v
@@ -443,10 +443,10 @@ test9	./Test/Tests.hs	51;"	v
 testMode	Main.hs	87;"	v
 tests	./Test/Tests.hs	101;"	v
 third3	./Util/Generic.hs	31;"	v
-toBool	./Domain/Concrete/Converter.hs	355;"	v
+toBool	./Domain/Concrete/Converter.hs	352;"	v
 toDot	./Util/Printer.hs	19;"	v
 toSigma	./Domain/Concrete/Type.hs	39;"	v
-toTransition	./Domain/Concrete/Converter.hs	75;"	v
+toTransition	./Domain/Concrete/Converter.hs	72;"	v
 trace	./Exploration/UNF/APIStateless.hs	28;"	v
 transitions	./Model/GCS.hs	22;"	v
 unfToDot	./Util/Printer.hs	14;"	v

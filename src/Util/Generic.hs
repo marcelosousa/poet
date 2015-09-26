@@ -36,7 +36,20 @@ list z f xs = f xs
 
 catMaybes :: Eq a => [Maybe a] -> Maybe [a]
 catMaybes [] = Nothing
-catMaybes xs = Just $ nub $ M.catMaybes xs
+catMaybes [ma] =
+  case ma of
+      Nothing -> Nothing
+      Just x  -> Just [x]
+catMaybes (ma:rest) =
+    case ma of
+        Nothing -> catMaybes rest
+        Just x -> case catMaybes rest of
+            Nothing -> Just [x]
+            Just r -> Just $ nub $ x:r
+
+--catMaybes :: Eq a => [Maybe a] -> Maybe [a]
+--catMaybes [] = Nothing
+--catMaybes xs = Just $ nub $ M.catMaybes xs
 
 safeLookup :: (Eq k, H.HashTable h, Hashable k) => String -> h s k b -> k -> ST s b
 safeLookup err ht k = do

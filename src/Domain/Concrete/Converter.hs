@@ -29,7 +29,7 @@ convert (Program (decls, defs)) pcs flow thCount =
       pmtiv = Array $ map IntVal $ replicate thCount 1
       ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
       iils = ils++ipcs
-      fils = (pmdVar, pmdVal):(pmtVar, pmtiv):(pmjVar, pmtiv):iils
+      fils = (pmtVar, pmtiv):(pmjVar, pmtiv):iils
       is = toSigma fils
       atrs = resetTID $ concatMap (getTransitions flow) defs
       (trs,annot) = unzip atrs
@@ -102,7 +102,7 @@ modifyList :: [a] -> a -> Integer -> [a]
 modifyList xs a idx = 
   let (left,_:right) = splitAt (fromInteger idx) xs
   in left ++ (a:right)
- 
+      
 -- encodes Call
 fromCall :: Flow -> Var -> PC -> String -> [Expression] -> [(TransitionFn Sigma, Acts, RWSet)]
 fromCall flow pcVar pc "__poet_fail" [] =

@@ -15,7 +15,7 @@ passOne p@(Program (decl,defs)) =
         (threadCount, threads, main') = findAndInstrThreads main
         pmt = GlobalDecl 0 (Index (Ident "__poet_mutex_threads") (Const $ IntValue $ toInteger threadCount)) Nothing
         pmj = GlobalDecl 0 (Index (Ident "__poet_mutex_threads_join") (Const $ IntValue $ toInteger threadCount)) Nothing
-        pmd = GlobalDecl 0 (Ident "__poet_mutex_death") (Just (IntValue 0))
+        pmd = GlobalDecl 0 (Ident "__poet_mutex_death") (Just (IntValue 1))
         threadNames = fst3 $ unzip3 threads
         defs' = replaceMain main' defs
         -- introduce a call to pthread_exit
