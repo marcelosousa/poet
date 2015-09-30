@@ -57,6 +57,7 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
       GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, Top)]
+      GlobalDecl _ (Ident i@"__poet_mutex_death") (Just (IntValue v)) -> [(BS.pack i, (IntVal $ fromInteger v))]
       GlobalDecl _ (Ident i) (Just (IntValue v)) -> [(BS.pack i, Interval (I (fromInteger v), I (fromInteger v)))]
       GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
@@ -93,7 +94,7 @@ toTransition procName tID flow s =
             _thentr = recGetTrans flow procName _then
             _elsetr = recGetTrans flow procName _else
             _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,rw))) trrws 
-        in _condtr ++ _thentr ++ _elsetr
+        in trace ("Size of IF: " ++ show (length trrws)) $ _condtr ++ _thentr ++ _elsetr
       IfThen pc _cond _then ->
         let trrws = fromIf flow pcVar pc _cond 
             _thentr = recGetTrans flow procName _then
@@ -362,7 +363,7 @@ applyArith _ _ _ = error "apply: not all sides are intervals"
   
 -- eval logical expressions
 evalCond :: Expression -> Sigma -> Maybe Sigma
-evalCond expr s = case expr of
+evalCond expr s = trace ("evaluating condition: " ++ show expr) $ case expr of
   BinOp op lhs rhs -> applyLogic s op lhs rhs
   UnaryOp CNegOp rhs ->
     let rhs' = negExp rhs
@@ -371,7 +372,7 @@ evalCond expr s = case expr of
 
 -- negates logical expression using De Morgan Laws
 negExp :: Expression -> Expression
-negExp expr = case expr of
+negExp expr = trace ("negating expression: " ++ show expr) $ case expr of
   BinOp CLndOp l r -> BinOp CLorOp (negExp l) (negExp r)
   BinOp CLorOp l r -> BinOp CLndOp (negExp l) (negExp r)
   BinOp op l r -> BinOp (negOp op) l r
@@ -432,7 +433,7 @@ interval_le s (Ident x_i) rhs =
 interval_le s lhs (Ident x_i) =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
-      lhs_val = eval lhs s
+      lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
   in if strictly_subsumes lhs_val x_val
      then let x_res = interval_diff x_val lhs_val
           in Just $ insert x x_res s
@@ -462,9 +463,10 @@ interval_leq s (Ident x_i) (Ident y_i) =
 interval_leq s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
-      rhs_val = eval rhs s
-  in if subsumes x_val rhs_val
-     then Just s
+      rhs_val = Interval (lowerBound $ eval rhs s, PlusInf)
+      x_res = interval_diff_eq x_val rhs_val
+  in if x_res /= Bot --subsumes x_val rhs_val
+     then Just $ insert x x_res s
      else Nothing
 interval_leq s lhs (Ident x_i) =
   let x = BS.pack x_i

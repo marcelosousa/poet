@@ -76,10 +76,10 @@ interval_diff_eq a b = interval_diff' 0 a b
 interval_diff' :: Int -> Value -> Value -> Value
 interval_diff' i Top Top = Bot
 interval_diff' i Top Bot = Top
-interval_diff' i Top (Interval (MinusInf,b)) = Interval (b, PlusInf)
-interval_diff' i Top (Interval (a, PlusInf)) = Interval (MinusInf, a)
-interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (MinusInf,b)) = Interval (b, PlusInf)
-interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (a, PlusInf)) = Interval (MinusInf, a)
+interval_diff' i Top (Interval (MinusInf,I b)) = Interval (I (b+i), PlusInf)
+interval_diff' i Top (Interval (I a, PlusInf)) = Interval (MinusInf, I (a-i))
+interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (MinusInf,I b)) = Interval (I (b+i), PlusInf)
+interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (I a, PlusInf)) = Interval (MinusInf,I (a-i))
 interval_diff' i Bot _ = Bot
 interval_diff' i (Interval (a,b)) Bot = Interval (a,b)
 interval_diff' i (Interval (I a,I b)) (Interval (I a', I b'))
@@ -89,7 +89,19 @@ interval_diff' i (Interval (I a,I b)) (Interval (I a', I b'))
   | a < a' && b > b' = Interval (I a,I b)
   | otherwise = error "interval_diff: fatal"
 interval_diff' _ _ _ = error "interval_diff: unsupported"
-  
+
+upperBound :: Value -> InterVal
+upperBound Top = PlusInf
+upperBound Bot = error "upperBound"
+upperBound (Interval (a,b)) = b
+upperBound _ = error "upperBound: unsupported"
+
+lowerBound :: Value -> InterVal
+lowerBound Top = PlusInf
+lowerBound Bot = error "lowerBound"
+lowerBound (Interval (a,b)) = a
+lowerBound _ = error "lowerBound: unsupported"
+
 interVal_min :: InterVal -> InterVal -> InterVal
 interVal_min PlusInf a = a
 interVal_min MinusInf _ = MinusInf

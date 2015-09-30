@@ -6,15 +6,20 @@ int k;
 //int z=0;
 
 void *p(){
-    x = 1;
+    if(k > 0) {
+    x = 1;  
+    }  else {
+      x = 5;
+    }
+    
 //    z = 1;
-    y = 1;
+//    y = 1;
 }
 
 void *q(){
     y = 2;
 //    z = 2;
-    x = 2;
+//    x = 2;
 }
 
 int main(){
