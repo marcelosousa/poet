@@ -25,7 +25,7 @@ import System.IO.Unsafe
 import Prelude hiding (pred)
 import Util.Generic
 
-unfolder :: (Hashable st, Eq st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
+unfolder :: (Hashable st, Eq st, Show st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
 unfolder statelessMode cutoffMode syst indr = do
   is <- iState statelessMode cutoffMode syst indr
   (a,s) <- runStateT botExplore is 
@@ -34,7 +34,7 @@ unfolder statelessMode cutoffMode syst indr = do
 -- This is the beginning of the exploration
 -- where we construct the initial unfolding prefix 
 -- with the bottom event
-botExplore :: (Hashable st, Eq st) => UnfolderOp st s () 
+botExplore :: (Hashable st, Eq st, Show st) => UnfolderOp st s () 
 botExplore = do 
   iConf <- initialExtensions 
   explore iConf botEID [] []
@@ -57,17 +57,17 @@ initialExtensions = do
 
 separator = "-----------------------------------------\n"
 -- @@ main function 
-explore :: (Hashable st, Eq st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
+explore :: (Hashable st, Eq st, Show st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
-  --str <- lift $ showEvents evts
-  --mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
-  --     ++ ", enevs = " ++ show eevs ++ ", alt = " 
-  --     ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
-  --let k = unsafePerformIO $ getChar
+  str <- lift $ showEvents evts
+  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+       ++ ", enevs = " ++ show eevs ++ ", alt = " 
+       ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
+  let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  --k `seq` if null eevs 
-  if null eevs 
+  k `seq` if null eevs 
+  --if null eevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
@@ -121,7 +121,7 @@ explore c@Conf{..} ê d alt = do
 --    and returns the new configuration with that event
 --    Build the configuration step by step
 -- @revised 08-04-15
-unfold :: (Hashable st, Eq st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
+unfold :: (Hashable st, Eq st, Show st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   tr <- lift $ getEvent "unfold" e evts >>= return . snd3 . evtr
@@ -132,7 +132,7 @@ unfold conf@Conf{..} e = do
   nstcs <- execute cons e -- @TODO: change this
   let nstc = head nstcs
   -- @ 2. compute the new set of maximal events
-  iprede <- lift $ getIPred e evts
+  iprede <- mtrace (separator ++ "state = " ++ show nstc) $ lift $ getIPred e evts
   let nmaxevs = e:(mevs \\ iprede)
   -- @ 3. compute the new set of enabled events
   let es = delete e eevs 

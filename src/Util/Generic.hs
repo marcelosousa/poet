@@ -58,3 +58,11 @@ safeLookup err ht k = do
     Nothing -> error $ "safeLookup: " ++ err
     Just v  -> return v
 
+toBool :: Int -> Bool
+toBool 0 = False
+toBool 1 = True
+toBool x = error $ "toBool: " ++ show x
+
+fromBool :: Bool -> Int
+fromBool False = 0
+fromBool True = 1

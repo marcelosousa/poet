@@ -2,6 +2,7 @@
     
 int x=0;
 int y=0;
+int k;
 //int z=0;
 
 void *p(){
