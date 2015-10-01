@@ -52,7 +52,7 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
       GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, IntVal 0)]
-      GlobalDecl _ (Ident i) (Just (IntValue v)) -> [(BS.pack i, (IntVal $ fromInteger v))]
+      GlobalDecl _ (Ident i) (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
       GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
 

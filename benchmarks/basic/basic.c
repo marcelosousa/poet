@@ -2,14 +2,14 @@
     
 int x=0;
 int y=0;
-int k;
+int k=nondet(0,3);
 //int z=0;
 
 void *p(){
-    if(k > 0) {
-    x = 1;  
+    if(k == 0) {
+      x = 1;  
     }  else {
-      x = 5;
+      y = 5;
     }
     
 //    z = 1;
@@ -17,7 +17,7 @@ void *p(){
 }
 
 void *q(){
-    y = 2;
+    k = 2;
 //    z = 2;
 //    x = 2;
 }

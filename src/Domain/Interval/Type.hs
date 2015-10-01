@@ -78,6 +78,7 @@ interval_diff' i Top Top = Bot
 interval_diff' i Top Bot = Top
 interval_diff' i Top (Interval (MinusInf,I b)) = Interval (I (b+i), PlusInf)
 interval_diff' i Top (Interval (I a, PlusInf)) = Interval (MinusInf, I (a-i))
+interval_diff' i Top a = interval_diff' i (Interval (MinusInf, PlusInf)) a
 interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (MinusInf,I b)) = Interval (I (b+i), PlusInf)
 interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (I a, PlusInf)) = Interval (MinusInf,I (a-i))
 interval_diff' i Bot _ = Bot
@@ -88,7 +89,7 @@ interval_diff' i (Interval (I a,I b)) (Interval (I a', I b'))
   | b == b' = Interval (I a, I (a'-i))
   | a < a' && b > b' = Interval (I a,I b)
   | otherwise = error "interval_diff: fatal"
-interval_diff' _ _ _ = error "interval_diff: unsupported"
+interval_diff' i a b = Top --error $ "interval_diff: unsupported " ++ show (i,a,b)
 
 upperBound :: Value -> InterVal
 upperBound Top = PlusInf
