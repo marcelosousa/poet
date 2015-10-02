@@ -42,7 +42,7 @@ botExplore = do
 -- The extensions from the bottom event
 -- After this function, the unfolding prefix denotes
 -- the execution of bottom, and contains all extensions from it.
-initialExtensions :: (Hashable st, Eq st) => UnfolderOp st s (Configuration st)
+initialExtensions :: (Hashable st, Eq st, Show st) => UnfolderOp st s (Configuration st)
 initialExtensions = do
   s@UnfolderState{..} <- get
   let e = botEID
@@ -160,7 +160,7 @@ unfold conf@Conf{..} e = do
 
 -- expandWith only adds events that have e in the history
 -- @CRITICAL
-expandWith :: (Hashable st, Eq st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
+expandWith :: (Hashable st, Eq st, Show st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
 expandWith e maxevs tr = do
   s@UnfolderState{..} <- get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
@@ -328,7 +328,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: (Hashable st, Eq st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
+addEvent :: (Hashable st, Eq st, Show st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
@@ -340,12 +340,12 @@ addEvent stack dup tr history = do
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
     if cutoffMode
-    then do
+    then mtrace "CHECKING CUTOFF" $ do
       let copyst = GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       isCutoff <- cutoff (head gstlc) sizeLocalHistory
       if isCutoff
-      then do 
+      then mtrace "CUTOFF" $ do 
         incCutoffCounter
         return []
       else do

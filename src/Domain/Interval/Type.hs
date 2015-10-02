@@ -16,7 +16,7 @@ import Data.List
 import qualified Data.Map as M
 import Data.Map (Map)
 import Util.Generic hiding (safeLookup)
-
+import Debug.Trace
 type ISigma = Sigma
 type Sigma = Map Var Value
 
@@ -28,7 +28,29 @@ data Value =
     | Array [Value]
     | Interval (InterVal, InterVal)
     | Top | Bot
-  deriving (Show,Eq,Ord)
+  deriving (Show,Ord)
+
+equals :: Value -> Value -> Bool
+equals Top Top = True
+equals Top (Interval (MinusInf, PlusInf)) = True
+equals Top _ = False
+equals Bot Bot = True
+equals Bot _ = False
+equals (IntVal i) (IntVal j) = i == j
+equals (IntVal i) _ = False
+equals (Array vis) (Array vjs) = vis == vjs
+equals (Array vis) _ = False
+equals (Interval (a,b)) (Interval (c,d)) = (a,b) == (c,d)
+equals a b = equals b a
+
+instance Eq Value where
+  (==) (IntVal i) (IntVal j) = i == j
+  (==) (IntVal i) _ = False
+  (==) (Array vis) (Array vjs) = vis == vjs
+  (==) (Array vis) _ = False
+  (==) _ (IntVal j) = False
+  (==) _ (Array vjs) = False
+  (==) a b = a `subsumes` b
 
 data InterVal = I Int | PlusInf | MinusInf
   deriving (Show,Eq,Ord)
@@ -50,7 +72,7 @@ interval_join a b =
   error $ "interval_join unsupported: " ++ show (a,b)
   
 interval_join' :: (InterVal, InterVal) -> (InterVal, InterVal) -> (InterVal, InterVal)
-interval_join' (a,b) (c,d) = (interVal_min a b, interVal_max b d)
+interval_join' (a,b) (c,d) = (interVal_min a c, interVal_max b d)
 
 -- [a,b] `meet` [c,d] 
 interval_meet :: Value -> Value -> Value
@@ -107,7 +129,7 @@ interVal_min :: InterVal -> InterVal -> InterVal
 interVal_min PlusInf a = a
 interVal_min MinusInf _ = MinusInf
 interVal_min (I a) (I b) = I $ min a b
-interVal_min a b = interVal_min b a
+interVal_min a b = trace "bla" $ interVal_min b a
 
 interVal_max :: InterVal -> InterVal -> InterVal
 interVal_max PlusInf a = PlusInf
@@ -117,11 +139,11 @@ interVal_max a b = interVal_max b a
 
 -- a <= b <=> a `join` b = b
 subsumes :: Value -> Value -> Bool
-subsumes a b = (interval_join a b) == b
+subsumes a b = (interval_join a b) `equals` b
 
 -- a < b <=> a <= b && a != b
 strictly_subsumes :: Value -> Value -> Bool
-strictly_subsumes a b = subsumes a b && a /= b
+strictly_subsumes a b = subsumes a b && (not $ equals a b)
 
 -- widening
 widening :: (InterVal, InterVal) -> (InterVal, InterVal) -> (InterVal, InterVal)

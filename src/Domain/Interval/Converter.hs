@@ -335,6 +335,8 @@ eval expr s = case expr of
     let ident = BS.pack i
     in safeLookup "eval" s ident
   Index (Ident i) rhs -> error "eval: arrays with intervals are not supported yet"
+  Call "nondet" [Const (IntValue l), Const (IntValue u)] ->
+    Interval (I (fromInteger l), I (fromInteger u))
 --  Call fname args ->
 {-    let ident = BS.pack i
         v = safeLookup "eval" s ident  
@@ -428,17 +430,17 @@ interval_le s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       rhs_val = eval rhs s
-  in if strictly_subsumes x_val rhs_val
-     then Just s
-     else Nothing
+  in Just $ insert x Top s --if strictly_subsumes x_val rhs_val
+    -- then Just s
+    -- else Nothing
 interval_le s lhs (Ident x_i) =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
-  in if strictly_subsumes lhs_val x_val
-     then let x_res = interval_diff x_val lhs_val
-          in Just $ insert x x_res s
-     else Nothing
+  in Just $ insert x Top s --if strictly_subsumes lhs_val x_val -- wrong
+--     then let x_res = interval_diff x_val lhs_val
+--          in Just $ insert x x_res s
+--     else Nothing
 interval_le s lhs rhs = 
   let lhs_val = eval lhs s
       rhs_val = eval rhs s
@@ -504,7 +506,7 @@ interval_eq s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       rhs_val = eval rhs s
-      res = interval_meet x_val rhs_val
+      res = Top --interval_meet x_val rhs_val
   in case res of
     Bot -> Nothing
     _ -> Just $ insert x res s
@@ -552,13 +554,13 @@ interval_neq s (Ident x_i) rhs =
     Bot -> case rhs_res of 
       Bot -> Nothing
       _ -> Just s
-    _ -> Just $ insert x x_res s
+    _ -> Just $ insert x Top s --x_res s
 interval_neq s lhs (Ident x_i) =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       lhs_val = eval lhs s
       res = interval_meet x_val lhs_val
-      x_res = interval_diff x_val res
+      x_res = Top --interval_diff x_val res
       lhs_res = interval_diff lhs_val res
   in case x_res of
     Bot -> case lhs_res of 

@@ -7,15 +7,16 @@ import Data.Hashable
 import qualified Data.HashTable.Class as H
 import Domain.Concrete
 import Exploration.UNF.APIStateless
+--import Debug.Trace
 
 -- @ Check if there is a cutoff
-cutoff :: (Hashable st, Eq st) => st -> Int -> UnfolderOp st s Bool
-cutoff st si = do
+cutoff :: (Show st, Hashable st, Eq st) => st -> Int -> UnfolderOp st s Bool
+cutoff st si = mtrace ("Checking cutoff with state: " ++ show st) $ do
   s@UnfolderState{..} <- get
   mv <- lift $ H.lookup stas st
   case mv of
     Nothing -> do
       lift $ H.insert stas st si
       return False
-    Just v -> return $ v < si
+    Just v -> return True -- return $ v < si
 
