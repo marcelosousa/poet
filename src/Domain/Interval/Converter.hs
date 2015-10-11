@@ -1,4 +1,9 @@
-module Domain.Concrete.Converter where
+-------------------------------------------------------------------------------
+-- Module    :  Domain.Interval.Converter
+-- Copyright :  (c) 2015 Marcelo Sousa
+-- Defines the abstract transformers
+-------------------------------------------------------------------------------
+module Domain.Interval.Converter where
 
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
@@ -6,7 +11,7 @@ import qualified Data.Vector as V
 import Debug.Trace
 
 import Domain.Concrete.Independence
-import Domain.Concrete.Type
+import Domain.Interval.Type
 
 import Frontend
 import Frontend.Util
@@ -51,8 +56,10 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
   where 
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
-      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, IntVal 0)]
-      GlobalDecl _ (Ident i) (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
+      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, Top)]
+      GlobalDecl _ (Ident i@"__poet_mutex_death") (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
+      GlobalDecl _ (Ident i) (Just (Const (IntValue v))) -> [(BS.pack i, Interval (I (fromInteger v), I (fromInteger v)))]
+      GlobalDecl _ (Ident i) (Just (Call "nondet" [Const (IntValue l), Const (IntValue u)])) -> [(BS.pack i, Interval (I (fromInteger l), I (fromInteger u)))]
       GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
 
@@ -68,8 +75,9 @@ recGetTrans flow name stat =
     foldl (\acc st -> let rest = toTransition name 0 flow st
                       in acc++rest) [] stat    
 
+-- @main encoding function
 toTransition :: ProcessID -> TransitionID -> Flow -> AnnStatement PC -> [(Transition Sigma, (TransitionID, RWSet))]
-toTransition procName tID flow s = 
+toTransition procName tID flow s =
   let pcVar = BS.pack $ "pc." ++ (BS.unpack procName)
       trInfo = \act -> (procName, tID, act)
       trInfoDefault = trInfo [Other]
@@ -87,7 +95,7 @@ toTransition procName tID flow s =
             _thentr = recGetTrans flow procName _then
             _elsetr = recGetTrans flow procName _else
             _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,rw))) trrws 
-        in _condtr ++ _thentr ++ _elsetr
+        in trace ("Size of IF: " ++ show (length trrws)) $ _condtr ++ _thentr ++ _elsetr
       IfThen pc _cond _then ->
         let trrws = fromIf flow pcVar pc _cond 
             _thentr = recGetTrans flow procName _then
@@ -103,7 +111,8 @@ modifyList xs a idx =
   let (left,_:right) = splitAt (fromInteger idx) xs
   in left ++ (a:right)
       
--- encodes Call
+-- Encodes Call Statement: Same as concrete transformer
+-- @Sep.'15: Support for __poet_fail, __poet_mutex_lock and __poet_mutex_unlock
 fromCall :: Flow -> Var -> PC -> String -> [Expression] -> [(TransitionFn Sigma, Acts, RWSet)]
 fromCall flow pcVar pc "__poet_fail" [] =
   let acts = [Write (V pcVar)]
@@ -226,7 +235,7 @@ getVarArg (Ident i) = BS.pack i
 getVarArg (Index (Ident i) _) = BS.pack i
 getVarArg e = error $ "getVarArg: " ++ show e
 
--- encodes Assign
+-- Encodes Assign Statement: same as concrete
 fromAssign :: Flow -> Var -> PC -> Expression -> Expression -> [(TransitionFn Sigma, RWSet)]
 fromAssign flow pcVar pc _lhs _rhs = 
   let Continue next = getFlow flow pc
@@ -247,14 +256,14 @@ fromAssign flow pcVar pc _lhs _rhs =
                  in [insert ident iVal ns]
                Index (Ident i) (Const (IntValue idx)) ->
                  let ident = BS.pack i
-                     Array vs = safeLookup "call" s ident
+                     Array vs = safeLookup "fromAssign" s ident
                      vs' = modifyList vs val idx
                      iVal = Array vs'
                  in [insert ident iVal s]
            else []
   in [(fn, act)]
 
--- encodes GOTO
+-- Encodes Goto Statement: same as concrete
 fromGoto :: Flow -> Var -> PC -> [(TransitionFn Sigma, RWSet)]
 fromGoto flow pcVar pc = 
   let Continue next = getFlow flow pc
@@ -267,25 +276,35 @@ fromGoto flow pcVar pc =
            else []
   in [(fn, [Write $ V pcVar])]
 
--- encodes fromIf
+-- Encodes If Statement
+-- @ if cond is transformed in two transitions
+--   conditionals now have side effects
 fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn Sigma, RWSet)]
 fromIf flow pcVar pc _cond = 
   let Branch (t,e) = getFlow flow pc
       readVars = getIdent _cond
       annots = (Write $ V pcVar):(map Read readVars)
-      fn = \s ->
+      fnThen = \s ->
         let IntVal curPC = safeLookup "if" s pcVar
             valCond = evalCond _cond s
         in if curPC == pc
-           then if valCond
-                then
-                  let pcVal = IntVal t
-                  in [insert pcVar pcVal s]
-                else
-                  let pcVal = IntVal e
-                  in [insert pcVar pcVal s]
+           then case valCond of
+               Nothing -> [] -- the conditional is not satisfied
+               Just s' ->
+                 let pcVal = IntVal t
+                 in [insert pcVar pcVal s']
            else []
-  in [(fn, annots)]
+      fnElse = \s ->
+        let IntVal curPC = safeLookup "if" s pcVar
+            valCond = evalCond (UnaryOp CNegOp _cond) s
+        in if curPC == pc
+           then case valCond of
+               Nothing -> [] -- the conditional is not satisfied
+               Just s' ->
+                 let pcVal = IntVal e
+                 in [insert pcVar pcVal s']
+           else []
+  in [(fnThen, annots),(fnElse, annots)]
 
 getIdent :: Expression -> [Variable]
 getIdent expr = case expr of
@@ -298,30 +317,28 @@ getIdent expr = case expr of
   Call _ args -> concatMap getIdent args
   _ -> error $ "eval: disallowed " ++ show expr
 
+-- eval arithmetic expressions
 eval :: Expression -> Sigma -> Value
 eval expr s = case expr of
   BinOp op lhs rhs ->
     let lhsv = eval lhs s
         rhsv = eval rhs s
-    in apply op lhsv rhsv
+    in applyArith op lhsv rhsv
   UnaryOp op rhs ->
     let v = eval rhs s
     in case op of
         CPlusOp -> v
-        CMinOp  -> case v of
-          IntVal iv -> IntVal (-iv)
-          _ -> error $ "eval: unaryop " ++ show expr
-        CNegOp  -> case v of
-          IntVal 0 -> IntVal 1
-          IntVal 1 -> IntVal 0
-          _ -> error $ "eval: unaryop " ++ show expr
-        _ -> error $ "eval: disallowed unary op: " ++ show expr    
-  Const (IntValue v) -> IntVal $ fromInteger v
+        CMinOp  -> eval (BinOp CAddOp (Const (IntValue 0)) rhs) s
+        _ -> error $ "eval: unsupported unary op: " ++ show expr    
+  Const (IntValue v) -> Interval (I (fromInteger v), I (fromInteger v))
   Ident i -> 
     let ident = BS.pack i
     in safeLookup "eval" s ident
-  Index (Ident i) rhs ->
-    let ident = BS.pack i
+  Index (Ident i) rhs -> error "eval: arrays with intervals are not supported yet"
+  Call "nondet" [Const (IntValue l), Const (IntValue u)] ->
+    Interval (I (fromInteger l), I (fromInteger u))
+--  Call fname args ->
+{-    let ident = BS.pack i
         v = safeLookup "eval" s ident  
         vhs = eval rhs s
     in case v of
@@ -329,28 +346,231 @@ eval expr s = case expr of
       Array vs -> case vhs of
         IntVal idx -> vs!!idx
         Array _ -> error $ "eval: disallowed " ++ show expr           
+-}
   _ -> error $ "eval: disallowed " ++ show expr
 
-apply :: OpCode -> Value -> Value -> Value
-apply op (IntVal lhs) (IntVal rhs) = case op of
-  CMulOp -> IntVal $ lhs * rhs
-  CDivOp -> IntVal $ lhs `div` rhs
-  CRmdOp -> IntVal $ lhs `mod` rhs
-  CAddOp -> IntVal $ lhs + rhs
-  CSubOp -> IntVal $ lhs - rhs
-  CLeOp  -> IntVal $ fromBool $ lhs < rhs
-  CGrOp  -> IntVal $ fromBool $ lhs > rhs
-  CLeqOp -> IntVal $ fromBool $ lhs <= rhs
-  CGeqOp -> IntVal $ fromBool $ lhs >= rhs
-  CEqOp  -> IntVal $ fromBool $ lhs == rhs
-  CNeqOp -> IntVal $ fromBool $ lhs /= rhs
-  CLndOp -> IntVal $ fromBool $ toBool lhs && toBool rhs
-  CLorOp -> IntVal $ fromBool $ toBool lhs || toBool rhs
+-- apply arithmetic expressions
+applyArith :: OpCode -> Value -> Value -> Value
+applyArith op Top _ = Top
+applyArith op _ Top = Top
+applyArith op Bot r = r
+applyArith op l Bot = l
+applyArith op (Interval lhs) (Interval rhs) =
+  case op of
+    CAddOp -> Interval $ interval_add lhs rhs
+    CSubOp -> Interval $ interval_sub lhs rhs
+    CMulOp -> Interval $ interval_mult lhs rhs
+    CDivOp -> Interval $ interval_div lhs rhs
+    CRmdOp -> error "mod is not supported"
+applyArith _ _ _ = error "apply: not all sides are intervals"
+  
+-- eval logical expressions
+evalCond :: Expression -> Sigma -> Maybe Sigma
+evalCond expr s = trace ("evaluating condition: " ++ show expr) $ case expr of
+  BinOp op lhs rhs -> applyLogic s op lhs rhs
+  UnaryOp CNegOp rhs ->
+    let rhs' = negExp rhs
+    in evalCond rhs' s
+  _ -> error $ "evalCond: unsupported " ++ show expr
+
+-- negates logical expression using De Morgan Laws
+negExp :: Expression -> Expression
+negExp expr = trace ("negating expression: " ++ show expr) $ case expr of
+  BinOp CLndOp l r -> BinOp CLorOp (negExp l) (negExp r)
+  BinOp CLorOp l r -> BinOp CLndOp (negExp l) (negExp r)
+  BinOp op l r -> BinOp (negOp op) l r
+  UnaryOp CNegOp e -> negExp e
+  _ -> error $ "negExp: unsupported " ++ show expr
+
+negOp :: OpCode -> OpCode
+negOp op = case op of
+  CLeOp -> CGeqOp
+  CGrOp -> CLeqOp
+  CLeqOp -> CGrOp
+  CGeqOp -> CLeOp
+  CEqOp -> CNeqOp
+  CNeqOp -> CEqOp
+  _ -> error $ "negOp: unsupported " ++ show op
+  
+-- apply logical operations
+-- if this function returns nothing is because the condition is false
+applyLogic :: Sigma -> OpCode -> Expression -> Expression -> Maybe Sigma
+applyLogic s op lhs rhs = 
+  let lhs_v = eval lhs s
+      rhs_v = eval rhs s
+  in case op of
+    CLeOp  -> interval_le s lhs rhs
+    CGrOp  -> interval_gr s lhs rhs
+    CLeqOp -> interval_leq s lhs rhs
+    CGeqOp -> interval_geq s lhs rhs
+    CEqOp  -> interval_eq s lhs rhs
+    CNeqOp -> interval_neq s lhs rhs
+    CLndOp -> do
+      r <- evalCond lhs s
+      evalCond rhs r
+    CLorOp -> 
+      case evalCond lhs s of
+        Nothing -> evalCond rhs s
+        Just s' -> Just s'
 apply _ _ _ = error "apply: not all sides are just integer values"
 
-evalCond :: Expression -> Sigma -> Bool
-evalCond expr s =
-  case eval expr s of
-    IntVal 0 -> False
-    IntVal 1 -> True
-    _ -> error $ "evalCond: " ++ show expr
+-- Logical Operations
+-- Less than (CLeOp)
+interval_le :: Sigma -> Expression -> Expression -> Maybe Sigma
+interval_le s (Ident x_i) (Ident y_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      y = BS.pack y_i
+      y_val = safeLookup "interval_eq" s y
+  in if strictly_subsumes x_val y_val
+     then let y_res = interval_diff y_val x_val
+          in Just $ insert y y_res s
+     else Nothing
+interval_le s (Ident x_i) rhs =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      rhs_val = eval rhs s
+  in Just $ insert x Top s --if strictly_subsumes x_val rhs_val
+    -- then Just s
+    -- else Nothing
+interval_le s lhs (Ident x_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
+  in Just $ insert x Top s --if strictly_subsumes lhs_val x_val -- wrong
+--     then let x_res = interval_diff x_val lhs_val
+--          in Just $ insert x x_res s
+--     else Nothing
+interval_le s lhs rhs = 
+  let lhs_val = eval lhs s
+      rhs_val = eval rhs s
+  in if strictly_subsumes lhs_val rhs_val
+     then Just s
+     else Nothing
+
+-- Greater than (CGrOp) 
+interval_gr :: Sigma -> Expression -> Expression -> Maybe Sigma
+interval_gr s lhs rhs = interval_le s rhs lhs
+
+-- Less or Equal than (CLeqOp)
+interval_leq :: Sigma -> Expression -> Expression -> Maybe Sigma
+interval_leq s (Ident x_i) (Ident y_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      y = BS.pack y_i
+      y_val = safeLookup "interval_eq" s y
+  in if subsumes x_val y_val
+     then let y_res = interval_diff_eq y_val x_val
+          in Just $ insert y y_res s
+     else Nothing
+interval_leq s (Ident x_i) rhs =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      rhs_val = Interval (lowerBound $ eval rhs s, PlusInf)
+      x_res = interval_diff_eq x_val rhs_val
+  in if x_res /= Bot --subsumes x_val rhs_val
+     then Just $ insert x x_res s
+     else Nothing
+interval_leq s lhs (Ident x_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      lhs_val = eval lhs s
+  in if subsumes lhs_val x_val
+     then let x_res = interval_diff_eq x_val lhs_val
+          in Just $ insert x x_res s
+     else Nothing
+interval_leq s lhs rhs = 
+  let lhs_val = eval lhs s
+      rhs_val = eval rhs s
+  in if subsumes lhs_val rhs_val
+     then Just s
+     else Nothing
+
+
+-- Greater or Equal than (CGeqOp)
+interval_geq :: Sigma -> Expression -> Expression -> Maybe Sigma
+interval_geq s lhs rhs = interval_leq s rhs lhs
+
+-- Equal than (CEqOp)
+interval_eq :: Sigma -> Expression -> Expression -> Maybe Sigma
+interval_eq s (Ident x_i) (Ident y_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      y = BS.pack y_i
+      y_val = safeLookup "interval_eq" s y
+      res = interval_meet x_val y_val
+  in case res of
+    Bot -> Nothing
+    _ -> Just $ insert x res $ insert y res s
+interval_eq s (Ident x_i) rhs =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      rhs_val = eval rhs s
+      res = Top --interval_meet x_val rhs_val
+  in case res of
+    Bot -> Nothing
+    _ -> Just $ insert x res s
+interval_eq s lhs (Ident x_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      lhs_val = eval lhs s
+      res = interval_meet x_val lhs_val
+  in case res of
+    Bot -> Nothing
+    _ -> Just $ insert x res s
+interval_eq s lhs rhs = 
+  let lhs_val = eval lhs s
+      rhs_val = eval rhs s
+      res = interval_meet lhs_val rhs_val
+  in case res of
+    Bot -> Nothing
+    _ -> Just s
+
+-- Not equal than (CNeqOp)
+interval_neq :: Sigma -> Expression -> Expression -> Maybe Sigma
+interval_neq s (Ident x_i) (Ident y_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      y = BS.pack y_i
+      y_val = safeLookup "interval_eq" s y
+      res = interval_meet x_val y_val
+      x_res = interval_diff x_val res
+      y_res = interval_diff y_val res
+  in case x_res of
+    Bot -> case y_res of
+      Bot -> Nothing -- @assert that x_val == y_val (this should be the case by construction)
+      _ -> Just $ insert y y_res s
+    _ -> case y_res of 
+      Bot -> Just $ insert x x_res s
+      _ -> Just $ insert x x_res $ insert y y_res s
+interval_neq s (Ident x_i) rhs =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      rhs_val = eval rhs s
+      res = interval_meet x_val rhs_val
+      x_res = interval_diff x_val res
+      rhs_res = interval_diff rhs_val res
+  in case x_res of
+    Bot -> case rhs_res of 
+      Bot -> Nothing
+      _ -> Just s
+    _ -> Just $ insert x Top s --x_res s
+interval_neq s lhs (Ident x_i) =
+  let x = BS.pack x_i
+      x_val = safeLookup "interval_eq" s x
+      lhs_val = eval lhs s
+      res = interval_meet x_val lhs_val
+      x_res = Top --interval_diff x_val res
+      lhs_res = interval_diff lhs_val res
+  in case x_res of
+    Bot -> case lhs_res of 
+      Bot -> Nothing
+      _ -> Just s
+    _ -> Just $ insert x x_res s
+interval_neq s lhs rhs = 
+  let lhs_val = eval lhs s
+      rhs_val = eval rhs s
+  in if lhs_val == rhs_val
+     then Nothing
+     else Just s
+  

@@ -5,7 +5,6 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Type where
 
-import Control.Monad.ST.Safe
 import qualified Data.ByteString as BS
 import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C

@@ -25,7 +25,7 @@ import System.IO.Unsafe
 import Prelude hiding (pred)
 import Util.Generic
 
-unfolder :: (Hashable st, Eq st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
+unfolder :: (Hashable st, Eq st, Show st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
 unfolder statelessMode cutoffMode syst indr = do
   is <- iState statelessMode cutoffMode syst indr
   (a,s) <- runStateT botExplore is 
@@ -34,7 +34,7 @@ unfolder statelessMode cutoffMode syst indr = do
 -- This is the beginning of the exploration
 -- where we construct the initial unfolding prefix 
 -- with the bottom event
-botExplore :: (Hashable st, Eq st) => UnfolderOp st s () 
+botExplore :: (Hashable st, Eq st, Show st) => UnfolderOp st s () 
 botExplore = do 
   iConf <- initialExtensions 
   explore iConf botEID [] []
@@ -42,7 +42,7 @@ botExplore = do
 -- The extensions from the bottom event
 -- After this function, the unfolding prefix denotes
 -- the execution of bottom, and contains all extensions from it.
-initialExtensions :: (Hashable st, Eq st) => UnfolderOp st s (Configuration st)
+initialExtensions :: (Hashable st, Eq st, Show st) => UnfolderOp st s (Configuration st)
 initialExtensions = do
   s@UnfolderState{..} <- get
   let e = botEID
@@ -57,17 +57,17 @@ initialExtensions = do
 
 separator = "-----------------------------------------\n"
 -- @@ main function 
-explore :: (Hashable st, Eq st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
+explore :: (Hashable st, Eq st, Show st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
-  --str <- lift $ showEvents evts
-  --mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
-  --     ++ ", enevs = " ++ show eevs ++ ", alt = " 
-  --     ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
-  --let k = unsafePerformIO $ getChar
+  str <- lift $ showEvents evts
+  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+       ++ ", enevs = " ++ show eevs ++ ", alt = " 
+       ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
+  let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  --k `seq` if null eevs 
-  if null eevs 
+  k `seq` if null eevs 
+  --if null eevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
@@ -121,7 +121,7 @@ explore c@Conf{..} ê d alt = do
 --    and returns the new configuration with that event
 --    Build the configuration step by step
 -- @revised 08-04-15
-unfold :: (Hashable st, Eq st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
+unfold :: (Hashable st, Eq st, Show st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   tr <- lift $ getEvent "unfold" e evts >>= return . snd3 . evtr
@@ -132,7 +132,7 @@ unfold conf@Conf{..} e = do
   nstcs <- execute cons e -- @TODO: change this
   let nstc = head nstcs
   -- @ 2. compute the new set of maximal events
-  iprede <- lift $ getIPred e evts
+  iprede <- mtrace (separator ++ "state = " ++ show nstc) $ lift $ getIPred e evts
   let nmaxevs = e:(mevs \\ iprede)
   -- @ 3. compute the new set of enabled events
   let es = delete e eevs 
@@ -160,7 +160,7 @@ unfold conf@Conf{..} e = do
 
 -- expandWith only adds events that have e in the history
 -- @CRITICAL
-expandWith :: (Hashable st, Eq st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
+expandWith :: (Hashable st, Eq st, Show st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
 expandWith e maxevs tr = do
   s@UnfolderState{..} <- get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
@@ -328,7 +328,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: (Hashable st, Eq st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
+addEvent :: (Hashable st, Eq st, Show st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
@@ -340,12 +340,12 @@ addEvent stack dup tr history = do
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
     if cutoffMode
-    then do
+    then mtrace "CHECKING CUTOFF" $ do
       let copyst = GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       isCutoff <- cutoff (head gstlc) sizeLocalHistory
       if isCutoff
-      then do 
+      then mtrace "CUTOFF" $ do 
         incCutoffCounter
         return []
       else do
