@@ -129,7 +129,7 @@ interpreter :: FilePath -> IO ()
 interpreter f = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
-      k = interpret $ CC.convert prog' fflow flow thcount
+      k = interpret $ IC.convert prog' fflow flow thcount
   print prog'
   print k
 
