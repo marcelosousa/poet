@@ -73,11 +73,11 @@ interpretIt step indep sys st =
   let trs = enabledTransitions sys st
       ststr = show st
       indepTr = getIndepTr indep $ V.toList trs
-      s1 = unsafePerformIO $ putStrLn "current state:"
+      s1 = unsafePerformIO $ putStrLn "\n========================================\nCurrent state:"
       s2 = unsafePerformIO $ putStrLn ststr
       s3 = unsafePerformIO $ putStrLn menu
       s4 = unsafePerformIO $ print trs
-      s5 = unsafePerformIO $ putStrLn $ "independent transitions=" ++ show indepTr
+      s5 = unsafePerformIO $ putStrLn $ "\nIndependent transitions: " ++ show indepTr
   in if s1 `seq` s2 `seq` s3 `seq` s4 `seq` s5 `seq` V.null trs
      then
        let f = unsafePerformIO $ print "Finished execution"
@@ -99,5 +99,5 @@ interpretIt step indep sys st =
           else step
 
 menu :: String
-menu = "Choose an enabled transition (by the position in the list, 'x' to quit):"
+menu = "\nChoose an enabled transition (by the position in the list, 'x' to quit):"
 --menu = unlines ["Choose a transition by position:", "(a): automatic mode", "(n): number of enabled transition", "(x): exit"]
