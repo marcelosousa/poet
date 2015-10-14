@@ -109,8 +109,6 @@ void* dec_a(void* arg)
     }
     a2 = a;
   }
-
-  //return 0;
 }
 
 void* dec_b(void* arg)
@@ -128,8 +126,6 @@ void* dec_b(void* arg)
     }
     b2 = b;
   }
-
-  //return 0;
 }
 
 #if 0

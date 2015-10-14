@@ -28,8 +28,7 @@ void * thr2 (void * param)
 int main(){
 	pthread_t t1;
 	pthread_t t2;
-	int i;
-	int x2;
+	int i, x2, k2;
 
 	pthread_create (t1, NULL, thr1, NULL);
 	pthread_create (t2, NULL, thr2, NULL);
@@ -45,7 +44,8 @@ int main(){
 		x2 = x;
 	}
 
-	if (i <= 0) __poet_fail (); // assertion holds, safe
-	if (i <= k) __poet_fail (); // assert(k < i); // safe
+	if (i < 0) __poet_fail (); // assert (i >= 0); // holds, safe
+	k2 = k;
+	if (i != k2 * k2) __poet_fail (); // assert(i == k*k); // safe
 }
 
