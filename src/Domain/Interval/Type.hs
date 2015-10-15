@@ -9,16 +9,33 @@
 module Domain.Interval.Type where
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
 import Data.List
 import qualified Data.Map as M
 import Data.Map (Map)
+import Model.GCS
 import Util.Generic hiding (safeLookup)
 import Debug.Trace
+
 type ISigma = Sigma
 type Sigma = Map Var Value
+
+instance Projection Sigma where
+  controlPart =
+    M.filterWithKey (\k _ -> isPC k)
+  dataPart = 
+    M.filterWithKey (\k _ -> not $ isPC k)
+  subsumes g l = 
+    M.isSubmapOfBy isSubsumed l g
+
+isPC :: Var -> Bool
+isPC v = 
+  let [_,x] = BSC.split '.' v
+      x' = BSC.unpack x
+  in x' == "pc"
 
 -- Local State
 type LSigma = [(Var,Value)]
@@ -50,7 +67,7 @@ instance Eq Value where
   (==) (Array vis) _ = False
   (==) _ (IntVal j) = False
   (==) _ (Array vjs) = False
-  (==) a b = a `subsumes` b
+  (==) a b = a `isSubsumed` b
 
 data InterVal = I Int | PlusInf | MinusInf
   deriving (Show,Eq,Ord)
@@ -138,12 +155,12 @@ interVal_max (I a) (I b) = I $ max a b
 interVal_max a b = interVal_max b a
 
 -- a <= b <=> a `join` b = b
-subsumes :: Value -> Value -> Bool
-subsumes a b = (interval_join a b) `equals` b
+isSubsumed :: Value -> Value -> Bool
+isSubsumed a b = (interval_join a b) `equals` b
 
 -- a < b <=> a <= b && a != b
 strictly_subsumes :: Value -> Value -> Bool
-strictly_subsumes a b = subsumes a b && (not $ equals a b)
+strictly_subsumes a b = isSubsumed a b && (not $ equals a b)
 
 -- widening
 widening :: (InterVal, InterVal) -> (InterVal, InterVal) -> (InterVal, InterVal)

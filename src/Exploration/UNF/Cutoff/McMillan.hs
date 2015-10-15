@@ -5,18 +5,42 @@ import Control.Monad.State.Strict
 import Control.Monad.ST.Safe
 import Data.Hashable
 import qualified Data.HashTable.Class as H
-import Domain.Concrete
+import qualified Data.Map as M
 import Exploration.UNF.APIStateless
+import qualified Model.GCS as GCS
+
 --import Debug.Trace
 
--- @ Check if there is a cutoff
-cutoff :: (Show st, Hashable st, Eq st) => st -> Int -> UnfolderOp st s Bool
+-- @ Check if st is a cutoff
+cutoff :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> UnfolderOp st s Bool
 cutoff st si = mtrace ("Checking cutoff with state: " ++ show st) $ do
   s@UnfolderState{..} <- get
+  let locs = GCS.controlPart st
+  case M.lookup locs stas of
+    Nothing -> do
+      let stas' = M.insert locs [(st,si)] stas
+      updateCutoffTable stas'
+      return False
+    Just l -> do 
+      c <- cutoffCheck st si l
+      if c
+      then return True
+      else do
+        let stas' = M.insert locs [(st,si)] stas
+        updateCutoffTable stas'
+        return False          
+
+cutoffCheck :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> [(st,Int)] -> UnfolderOp st s Bool
+cutoffCheck st si [] = return False
+cutoffCheck st si ((st',si'):r) = do
+  if GCS.subsumes st' st -- && si' < s1
+  then return True
+  else cutoffCheck st si r
+{-
   mv <- lift $ H.lookup stas st
   case mv of
     Nothing -> do
       lift $ H.insert stas st si
       return False
     Just v -> return True -- return $ v < si
-
+-}

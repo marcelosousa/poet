@@ -10,6 +10,7 @@ import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
 import qualified Data.Set as S
+import Data.Map (Map,fromList)
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
 import Data.List
@@ -76,8 +77,10 @@ copyEvents s = do
   H.fromList kv
 
 -- @ HashTable of States to EventID for Cutoffs
-type States s st = HashTable s st EventID
- 
+--type States s st = HashTable s st EventID
+-- Int is the size of the local configuration of that event
+type States st = Map st [(st,Int)]
+
 -- @ The state of the unfolder at any moment
 data UnfolderState st s = UnfolderState {
     syst :: GCS.System st    -- The system being analyzed
@@ -86,7 +89,7 @@ data UnfolderState st s = UnfolderState {
   , pcnf :: Configuration st -- Previous configuration
   , stak :: EventsID         -- Call stack
   , cntr :: Counter          -- Event counter
-  , stas :: States s st      -- Hash Table for cutoffs
+  , stas :: States st        -- Hash Table for cutoffs
   , maxConf :: Counter       -- Maximal config counter
   , cutoffCntr :: Counter    -- Cutoff counter
   , size :: Counter          -- Size of |U|
@@ -115,13 +118,15 @@ botEvent :: GCS.Acts -> Event
 botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
 
 -- @ Initial state of the unfolder
-iState :: (Hashable st, Eq st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s) 
+iState :: (Hashable st, Eq st, Ord st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s) 
 iState statelessMode cutoffMode syst indr = do
   evts <- H.new
   H.insert evts 0 $ botEvent $ GCS.initialActs syst
-  stas <- H.new
+--  stas <- H.new
   let initialState = GCS.initialState syst
-  H.insert stas initialState botEID
+      controlState = GCS.controlPart initialState
+      stas = fromList [(controlState,[(initialState, 0)])]
+--  H.insert stas initialState botEID
   let pcnf = Conf undefined [] [] [] -- this seems suspicious!
       stak = [botEID]
       cntr = 1
@@ -394,7 +399,13 @@ incAccSize = do
   s@UnfolderState{..} <- get
   let ncumsize = cumsize + (toInteger size)
   put s{ cumsize = ncumsize }
-  
+
+-- @ update the cutoff table
+updateCutoffTable :: States st -> UnfolderOp st s ()
+updateCutoffTable cutoffs = do
+  s@UnfolderState{..} <- get
+  put s{ stas = cutoffs}
+
 -- @ push 
 push :: EventID -> UnfolderOp st s ()
 push e = do 

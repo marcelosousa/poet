@@ -463,7 +463,7 @@ interval_leq s (Ident x_i) (Ident y_i) =
       x_val = safeLookup "interval_eq" s x
       y = BS.pack y_i
       y_val = safeLookup "interval_eq" s y
-  in if subsumes x_val y_val
+  in if isSubsumed x_val y_val
      then let y_res = interval_diff_eq y_val x_val
           in Just $ insert y y_res s
      else Nothing
@@ -473,7 +473,7 @@ interval_leq s (Ident x_i) rhs =
       rhs_val = Interval (MinusInf, upperBound $ eval rhs s)
       m = interval_meet x_val rhs_val
       x_res = interval_diff_eq x_val rhs_val
-  in if m /= Bot --subsumes x_val rhs_val
+  in if m /= Bot --isSubsumed x_val rhs_val
      then Just $ insert x x_res s
      else Nothing
 interval_leq s lhs (Ident x_i) =
@@ -481,14 +481,14 @@ interval_leq s lhs (Ident x_i) =
       x_val = safeLookup "interval_eq" s x
       lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
       m = interval_meet x_val lhs_val
-  in if m /= Bot --subsumes lhs_val x_val
+  in if m /= Bot --isSubsumed lhs_val x_val
      then let x_res = interval_diff_eq x_val lhs_val
           in Just $ insert x x_res s
      else Nothing
 interval_leq s lhs rhs = 
   let lhs_val = eval lhs s
       rhs_val = eval rhs s
-  in if subsumes lhs_val rhs_val
+  in if isSubsumed lhs_val rhs_val
      then Just s
      else Nothing
 

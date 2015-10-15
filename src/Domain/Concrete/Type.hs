@@ -6,17 +6,32 @@
 module Domain.Concrete.Type where
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
 import Data.List
 import qualified Data.Map as M
 import Data.Map (Map)
+import Model.GCS
 import Util.Generic hiding (safeLookup)
 
 type ISigma = Sigma
 type Sigma = Map Var Value
 
+instance Projection Sigma where
+  controlPart =
+    M.filterWithKey (\k _ -> isPC k)
+  dataPart = 
+    M.filterWithKey (\k _ -> not $ isPC k)
+  subsumes a b = a == b
+  
+isPC :: Var -> Bool
+isPC v = 
+  let [_,x] = BSC.split '.' v
+      x' = BSC.unpack x
+  in x' == "pc"
+  
 data Value = 
       IntVal Int 
     | Array [Value]

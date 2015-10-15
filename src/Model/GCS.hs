@@ -48,6 +48,11 @@ varOf Other = error "varOf Other"
 isBlocking :: Acts -> Bool
 isBlocking = any (\act -> act /= Other)
 
+class Projection st where
+  controlPart :: st -> st
+  dataPart :: st -> st
+  subsumes :: st -> st -> Bool
+  
 -- | enabledTransitions
 enabledTransitions :: System st -> st -> V.Vector TransitionInfo
 enabledTransitions sys@System{..} s =

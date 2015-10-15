@@ -25,7 +25,7 @@ import System.IO.Unsafe
 import Prelude hiding (pred)
 import Util.Generic
 
-unfolder :: (Hashable st, Eq st, Show st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
+unfolder :: (Hashable st, Ord st, Show st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
 unfolder statelessMode cutoffMode syst indr = do
   is <- iState statelessMode cutoffMode syst indr
   (a,s) <- runStateT botExplore is 
@@ -34,7 +34,7 @@ unfolder statelessMode cutoffMode syst indr = do
 -- This is the beginning of the exploration
 -- where we construct the initial unfolding prefix 
 -- with the bottom event
-botExplore :: (Hashable st, Eq st, Show st) => UnfolderOp st s () 
+botExplore :: (Hashable st, Ord st, Show st, GCS.Projection st) => UnfolderOp st s () 
 botExplore = do 
   iConf <- initialExtensions 
   explore iConf botEID [] []
@@ -42,7 +42,7 @@ botExplore = do
 -- The extensions from the bottom event
 -- After this function, the unfolding prefix denotes
 -- the execution of bottom, and contains all extensions from it.
-initialExtensions :: (Hashable st, Eq st, Show st) => UnfolderOp st s (Configuration st)
+initialExtensions :: (Hashable st, Ord st, Show st, GCS.Projection st) => UnfolderOp st s (Configuration st)
 initialExtensions = do
   s@UnfolderState{..} <- get
   let e = botEID
@@ -57,7 +57,7 @@ initialExtensions = do
 
 separator = "-----------------------------------------\n"
 -- @@ main function 
-explore :: (Hashable st, Eq st, Show st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
+explore :: (Hashable st, Ord st, Show st, GCS.Projection st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
@@ -122,7 +122,7 @@ explore c@Conf{..} ê d alt = do
 --    and returns the new configuration with that event
 --    Build the configuration step by step
 -- @revised 08-04-15
-unfold :: (Hashable st, Eq st, Show st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
+unfold :: (Hashable st, Ord st, Show st, GCS.Projection st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   tr <- lift $ getEvent "unfold" e evts >>= return . snd3 . evtr
@@ -161,7 +161,7 @@ unfold conf@Conf{..} e = do
 
 -- expandWith only adds events that have e in the history
 -- @CRITICAL
-expandWith :: (Hashable st, Eq st, Show st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
+expandWith :: (Hashable st, Ord st, Show st, GCS.Projection st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
 expandWith e maxevs tr = do
   s@UnfolderState{..} <- get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
@@ -190,7 +190,7 @@ expandWith e maxevs tr = do
 --     - Set of maximal events, 
 --     - Transition tr
 --   Output: History
-computeHistory :: (Hashable st, Eq st) => EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
+computeHistory :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
 computeHistory maxevs tr = do
   s@UnfolderState{..} <- get
   -- set of maximal events that are dependent with tr union 
@@ -226,7 +226,7 @@ pruneConfiguration inde events pre_his tr es = do
 
 -- @ computeHistories : worklist algorithm 
 --   e must always be a part of the histories
-computeHistories :: (Hashable st, Eq st) => GCS.TransitionInfo -> EventID -> [EventsID] -> UnfolderOp st s [EventsID]
+computeHistories :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> [EventsID] -> UnfolderOp st s [EventsID]
 computeHistories tr e [] = return []
 computeHistories tr e (h:hs) = do
   s@UnfolderState{..} <- get
@@ -240,7 +240,7 @@ computeHistories tr e (h:hs) = do
 
 -- @ computeNextHistory
 --   build a candidate history out of replacing a maximal event e with its immediate predecessors
-computeNextHistory :: (Hashable st, Eq st) => EventsID -> GCS.TransitionInfo -> EventID -> UnfolderOp st s EventsID
+computeNextHistory :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> GCS.TransitionInfo -> EventID -> UnfolderOp st s EventsID
 computeNextHistory h tr e' = do
   s@UnfolderState{..} <- get
   -- we want to replace e' by its predecessors
@@ -254,7 +254,7 @@ computeNextHistory h tr e' = do
   let candidate = h' ++ prede'
   computeHistory candidate tr  
 
-computeHistoriesBlocking ::(Hashable st, Eq st) => GCS.TransitionInfo -> EventID -> EventsID -> EventsID -> UnfolderOp st s [EventsID]
+computeHistoriesBlocking ::(Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> EventsID -> EventsID -> UnfolderOp st s [EventsID]
 computeHistoriesBlocking tr e _ [] = return []
 computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
   s@UnfolderState{..} <- get
@@ -284,7 +284,7 @@ computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
 computeHistoriesBlocking tr e es hs = error $ "computeHistoriesBlocking fatal :" ++ show (tr,e,es,hs)
 
 --
-findNextUnlock :: (Hashable st, Eq st) => GCS.TransitionInfo -> EventsID -> EventID -> UnfolderOp st s (Maybe EventsID)
+findNextUnlock :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventsID -> EventID -> UnfolderOp st s (Maybe EventsID)
 findNextUnlock tr@(_,_,act) prede e' = do
   s@UnfolderState{..} <- get
   iprede' <- lift $ getIPred e' evts
@@ -329,7 +329,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: (Hashable st, Eq st, Show st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
+addEvent :: (Hashable st, Ord st, Show st, GCS.Projection st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if null hasDup  
@@ -389,14 +389,14 @@ addEvent stack dup tr history = do
 --   by donig a topological sorting
 -- getISucc :: EventID -> Events s -> ST s EventsID
 -- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
-computeStateLocalConfiguration :: (Hashable st, Eq st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
+computeStateLocalConfiguration :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
 computeStateLocalConfiguration (_,trID,_) ist prede = do
   s@UnfolderState{..} <- get
   st' <- computeStateHistory ist [0] [] prede
   let fn = GCS.getTransitionWithID syst trID
   return $ fn st'
   
-computeStateHistory :: (Hashable st, Eq st) => st -> EventsID -> EventsID -> EventsID -> UnfolderOp st s st
+computeStateHistory :: (Hashable st, Ord st, GCS.Projection st) => st -> EventsID -> EventsID -> EventsID -> UnfolderOp st s st
 computeStateHistory cst [] _ _ = return cst
 computeStateHistory cst (ce:rest) l prede = do
   s@UnfolderState{..} <- get
@@ -447,7 +447,7 @@ computeConflicts uidep tr lh lhCnfls events = do
 -- Can ê intersect cext =!= ê? Yes. There may be immediate conflicts of 
 -- e whose roots are not in C.
 -- @@ compute potential alternatives @ revised: 08-04-15
-computePotentialAlternatives :: (Hashable st, Eq st) => EventsID -> EventsID -> UnfolderOp st s ()
+computePotentialAlternatives :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> EventsID -> UnfolderOp st s ()
 computePotentialAlternatives maxevs evs =  do
   s@UnfolderState{..} <- get
   -- @ compute the events of the configuration
@@ -506,7 +506,7 @@ computePotentialAlternatives maxevs evs =  do
         else return () 
 
 -- @@ filter alternatives
-alt2 :: (Hashable st, Eq st) => EventsID -> EventsID -> UnfolderOp st s (Maybe Alternative)
+alt2 :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> EventsID -> UnfolderOp st s (Maybe Alternative)
 alt2 [] _ = return Nothing
 alt2 (d:ds) ods = do
   s@UnfolderState{..} <- get
@@ -516,7 +516,7 @@ alt2 (d:ds) ods = do
     Nothing -> alt2 ds ods
     v -> return v
   
-filterAlternatives :: (Hashable st, Eq st) => Alternatives -> EventsID -> UnfolderOp st s (Maybe Alternative)
+filterAlternatives :: (Hashable st, Ord st, GCS.Projection st) => Alternatives -> EventsID -> UnfolderOp st s (Maybe Alternative)
 filterAlternatives [] _ = return Nothing
 filterAlternatives (v:vs) ods = do
   mv <- filterAlternative v ods
@@ -524,7 +524,7 @@ filterAlternatives (v:vs) ods = do
   then return $ Just v
   else filterAlternatives vs ods
  
-filterAlternative :: (Hashable st, Eq st) => Alternative -> EventsID -> UnfolderOp st s Bool
+filterAlternative :: (Hashable st, Ord st, GCS.Projection st) => Alternative -> EventsID -> UnfolderOp st s Bool
 filterAlternative v d = do
   s@UnfolderState{..} <- get
   cnfs <- lift $ mapM (\e -> getImmediateConflicts e evts) v >>= return . concat
@@ -533,7 +533,7 @@ filterAlternative v d = do
   return $ isConf && isJust
 
 -- stateless part
-updateConfiguration :: (Hashable st, Eq st) => Configuration st -> UnfolderOp st s (Configuration st)
+updateConfiguration :: (Hashable st, Ord st, GCS.Projection st) => Configuration st -> UnfolderOp st s (Configuration st)
 updateConfiguration c@Conf{..} = do
   s@UnfolderState{..} <- get
   nenevs <- lift $ filterEvents eevs evts
@@ -550,7 +550,7 @@ computeCore conf d events = do
       core = confAndD ++ altes
   return $ nub core 
 
-prune :: (Hashable st, Eq st) => EventID -> EventsID -> UnfolderOp st s ()
+prune :: (Hashable st, Ord st, GCS.Projection st) => EventID -> EventsID -> UnfolderOp st s ()
 prune e core = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "prune" e evts
@@ -559,7 +559,7 @@ prune e core = do
   else deleteEvent e
   mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e) v) alte
 
-deleteEvent :: (Hashable st, Eq st) => EventID -> UnfolderOp st s ()
+deleteEvent :: (Hashable st, Ord st, GCS.Projection st) => EventID -> UnfolderOp st s ()
 deleteEvent e = trace ("deleting event " ++ show e) $ do
   s@UnfolderState{..} <- get
   check <- lift $ filterEvent e evts
