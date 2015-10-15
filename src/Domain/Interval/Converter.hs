@@ -510,7 +510,7 @@ interval_eq s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       rhs_val = eval rhs s
-      res = interval_meet x_val rhs_val
+      res = interval_meet x_val rhs_val -- Top
   in case res of
     Bot -> Nothing
     _ -> Just $ insert x res s

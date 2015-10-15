@@ -66,7 +66,8 @@ explore c@Conf{..} ê d alt = do
        ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
   let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  k `seq` if null eevs 
+  -- k `seq` if null eevs 
+  if null eevs 
   --if null eevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
