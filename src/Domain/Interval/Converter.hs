@@ -328,15 +328,17 @@ eval expr s = case expr of
     let v = eval rhs s
     in case op of
         CPlusOp -> v
-        CMinOp  -> eval (BinOp CAddOp (Const (IntValue 0)) rhs) s
+        CMinOp  -> eval (BinOp CSubOp (Const (IntValue 0)) rhs) s
         _ -> error $ "eval: unsupported unary op: " ++ show expr    
   Const (IntValue v) -> Interval (I (fromInteger v), I (fromInteger v))
   Ident i -> 
     let ident = BS.pack i
     in safeLookup "eval" s ident
   Index (Ident i) rhs -> error "eval: arrays with intervals are not supported yet"
-  Call "nondet" [Const (IntValue l), Const (IntValue u)] ->
-    Interval (I (fromInteger l), I (fromInteger u))
+  Call "nondet" [a,b] ->
+    let (Interval (i,_)) = eval a s
+        (Interval (j,_)) = eval b s
+    in Interval (i,j)
 --  Call fname args ->
 {-    let ident = BS.pack i
         v = safeLookup "eval" s ident  
