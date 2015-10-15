@@ -80,11 +80,11 @@ interval_meet Top a = a
 interval_meet a Top = a
 interval_meet Bot a = Bot
 interval_meet a Bot = Bot
-interval_meet (Interval (a,b)) (Interval (c,d)) =
+interval_meet (Interval (a,b)) (Interval (c,d)) = trace ("Meet of " ++ show ((Interval (a,b),Interval (c,d)))) $
   let l = interVal_max a c
       u = interVal_min b d
   in if l `gt` u
-     then Bot
+     then trace ("Returning Bot") $ Bot
      else Interval (l,u)
 interval_meet a b = error $ "interval_meet unsupported: " ++ show (a,b)
 

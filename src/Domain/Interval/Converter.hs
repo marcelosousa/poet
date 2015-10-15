@@ -417,7 +417,7 @@ apply _ _ _ = error "apply: not all sides are just integer values"
 -- Logical Operations
 -- Less than (CLeOp)
 interval_le :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_le s (Ident x_i) (Ident y_i) =
+interval_le s (Ident x_i) (Ident y_i) = 
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       y = BS.pack y_i
@@ -430,17 +430,19 @@ interval_le s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       rhs_val = eval rhs s
-  in Just $ insert x Top s --if strictly_subsumes x_val rhs_val
-    -- then Just s
-    -- else Nothing
+      m = interval_meet x_val rhs_val
+  in if m /= Bot
+     then Just s
+     else Nothing
 interval_le s lhs (Ident x_i) =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
-      lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
-  in Just $ insert x Top s --if strictly_subsumes lhs_val x_val -- wrong
---     then let x_res = interval_diff x_val lhs_val
---          in Just $ insert x x_res s
---     else Nothing
+      lhs_val = eval lhs s --Interval (MinusInf, upperBound $ eval lhs s)
+      m = interval_meet x_val lhs_val
+  in if m /= Bot
+     then let x_res = interval_diff x_val lhs_val
+          in Just s -- $ insert x x_res s
+     else Nothing
 interval_le s lhs rhs = 
   let lhs_val = eval lhs s
       rhs_val = eval rhs s
@@ -466,16 +468,18 @@ interval_leq s (Ident x_i) (Ident y_i) =
 interval_leq s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
-      rhs_val = Interval (lowerBound $ eval rhs s, PlusInf)
+      rhs_val = Interval (MinusInf, upperBound $ eval rhs s)
+      m = interval_meet x_val rhs_val
       x_res = interval_diff_eq x_val rhs_val
-  in if x_res /= Bot --subsumes x_val rhs_val
+  in if m /= Bot --subsumes x_val rhs_val
      then Just $ insert x x_res s
      else Nothing
 interval_leq s lhs (Ident x_i) =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
-      lhs_val = eval lhs s
-  in if subsumes lhs_val x_val
+      lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
+      m = interval_meet x_val lhs_val
+  in if m /= Bot --subsumes lhs_val x_val
      then let x_res = interval_diff_eq x_val lhs_val
           in Just $ insert x x_res s
      else Nothing
@@ -506,7 +510,7 @@ interval_eq s (Ident x_i) rhs =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       rhs_val = eval rhs s
-      res = Top --interval_meet x_val rhs_val
+      res = interval_meet x_val rhs_val
   in case res of
     Bot -> Nothing
     _ -> Just $ insert x res s
@@ -554,13 +558,13 @@ interval_neq s (Ident x_i) rhs =
     Bot -> case rhs_res of 
       Bot -> Nothing
       _ -> Just s
-    _ -> Just $ insert x Top s --x_res s
+    _ -> Just $ insert x x_res s
 interval_neq s lhs (Ident x_i) =
   let x = BS.pack x_i
       x_val = safeLookup "interval_eq" s x
       lhs_val = eval lhs s
       res = interval_meet x_val lhs_val
-      x_res = Top --interval_diff x_val res
+      x_res = interval_diff x_val res
       lhs_res = interval_diff lhs_val res
   in case x_res of
     Bot -> case lhs_res of 
