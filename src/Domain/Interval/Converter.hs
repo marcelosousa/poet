@@ -56,7 +56,7 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
   where 
     convertDecl decl = case decl of
       FunctionDecl _ _ _ -> [] 
-      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, Top)]
+      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, top)]
       GlobalDecl _ (Ident i@"__poet_mutex_death") (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
       GlobalDecl _ (Ident i) (Just (Const (IntValue v))) -> [(BS.pack i, Interval (I (fromInteger v), I (fromInteger v)))]
       GlobalDecl _ (Ident i) (Just (Call "nondet" [Const (IntValue l), Const (IntValue u)])) -> [(BS.pack i, Interval (I (fromInteger l), I (fromInteger u)))]
@@ -328,7 +328,7 @@ eval expr s = case expr of
     let v = eval rhs s
     in case op of
         CPlusOp -> v
-        CMinOp  -> eval (BinOp CSubOp (Const (IntValue 0)) rhs) s
+        CMinOp  -> negate v
         _ -> error $ "eval: unsupported unary op: " ++ show expr    
   Const (IntValue v) -> Interval (I (fromInteger v), I (fromInteger v))
   Ident i -> 
@@ -338,7 +338,9 @@ eval expr s = case expr of
   Call "nondet" [a,b] ->
     let (Interval (i,_)) = eval a s
         (Interval (j,_)) = eval b s
-    in Interval (i,j)
+    in if j < i
+       then Bot
+       else Interval (i,j)
 --  Call fname args ->
 {-    let ident = BS.pack i
         v = safeLookup "eval" s ident  
@@ -353,18 +355,13 @@ eval expr s = case expr of
 
 -- apply arithmetic expressions
 applyArith :: OpCode -> Value -> Value -> Value
-applyArith op Top _ = Top
-applyArith op _ Top = Top
-applyArith op Bot r = r
-applyArith op l Bot = l
-applyArith op (Interval lhs) (Interval rhs) =
+applyArith op lhs rhs = 
   case op of
-    CAddOp -> Interval $ interval_add lhs rhs
-    CSubOp -> Interval $ interval_sub lhs rhs
-    CMulOp -> Interval $ interval_mult lhs rhs
-    CDivOp -> Interval $ interval_div lhs rhs
+    CAddOp -> lhs + rhs
+    CSubOp -> lhs - rhs
+    CMulOp -> lhs * rhs
+    CDivOp -> lhs `iDivide` rhs
     CRmdOp -> error "mod is not supported"
-applyArith _ _ _ = error "apply: not all sides are intervals"
   
 -- eval logical expressions
 evalCond :: Expression -> Sigma -> Maybe Sigma
@@ -398,185 +395,61 @@ negOp op = case op of
 -- if this function returns nothing is because the condition is false
 applyLogic :: Sigma -> OpCode -> Expression -> Expression -> Maybe Sigma
 applyLogic s op lhs rhs = 
-  let lhs_v = eval lhs s
-      rhs_v = eval rhs s
+  let one = Const (IntValue 1)
   in case op of
-    CLeOp  -> interval_le s lhs rhs
-    CGrOp  -> interval_gr s lhs rhs
+    -- e1 < e2 ~> e1 <= (e2 - 1)
+    CLeOp  -> interval_leq s lhs (BinOp CSubOp rhs one)
+    -- e1 > e2 ~> e2 <= (e1 - 1)
+    CGrOp  -> interval_leq s (BinOp CAddOp rhs one) lhs
+    -- e1 <= e2 
     CLeqOp -> interval_leq s lhs rhs
-    CGeqOp -> interval_geq s lhs rhs
-    CEqOp  -> interval_eq s lhs rhs
-    CNeqOp -> interval_neq s lhs rhs
+    -- e1 >= e2 ~> e2 <= e1
+    CGeqOp -> interval_leq s rhs lhs
+    -- e1 == e2 ~> (e1 <= e2) and (e2 <= e1)
+    CEqOp  -> 
+      let lhs' = BinOp CLeqOp lhs rhs
+          rhs' = BinOp CLeqOp rhs lhs
+      in applyLogic s CLndOp lhs' rhs'
+    -- e1 != e2 ~> (e1 <= (e2 - 1)) or (e2 <= (e1 - 1))
+    CNeqOp -> 
+      let lhs' = BinOp CLeqOp lhs (BinOp CSubOp rhs one)
+          rhs' = BinOp CLeqOp rhs (BinOp CSubOp lhs one)
+      in applyLogic s CLorOp lhs' rhs'
     CLndOp -> do
-      r <- evalCond lhs s
-      evalCond rhs r
+      lhs_res <- evalCond lhs s
+      evalCond rhs lhs_res
     CLorOp -> 
       case evalCond lhs s of
         Nothing -> evalCond rhs s
-        Just s' -> Just s'
+        Just lhs_res -> return lhs_res
 apply _ _ _ = error "apply: not all sides are just integer values"
 
 -- Logical Operations
 -- Less than (CLeOp)
-interval_le :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_le s (Ident x_i) (Ident y_i) = 
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      y = BS.pack y_i
-      y_val = safeLookup "interval_eq" s y
-  in if strictly_subsumes x_val y_val
-     then let y_res = interval_diff y_val x_val
-          in Just $ insert y y_res s
-     else Nothing
-interval_le s (Ident x_i) rhs =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      rhs_val = eval rhs s
-      m = interval_meet x_val rhs_val
-  in if m /= Bot
-     then Just s
-     else Nothing
-interval_le s lhs (Ident x_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      lhs_val = eval lhs s --Interval (MinusInf, upperBound $ eval lhs s)
-      m = interval_meet x_val lhs_val
-  in if m /= Bot
-     then let x_res = interval_diff x_val lhs_val
-          in Just s -- $ insert x x_res s
-     else Nothing
-interval_le s lhs rhs = 
-  let lhs_val = eval lhs s
-      rhs_val = eval rhs s
-  in if strictly_subsumes lhs_val rhs_val
-     then Just s
-     else Nothing
-
--- Greater than (CGrOp) 
-interval_gr :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_gr s lhs rhs = interval_le s rhs lhs
-
--- Less or Equal than (CLeqOp)
 interval_leq :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_leq s (Ident x_i) (Ident y_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      y = BS.pack y_i
-      y_val = safeLookup "interval_eq" s y
-  in if isSubsumed x_val y_val
-     then let y_res = interval_diff_eq y_val x_val
-          in Just $ insert y y_res s
-     else Nothing
 interval_leq s (Ident x_i) rhs =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      rhs_val = Interval (MinusInf, upperBound $ eval rhs s)
-      m = interval_meet x_val rhs_val
-      x_res = interval_diff_eq x_val rhs_val
-  in if m /= Bot --isSubsumed x_val rhs_val
-     then Just $ insert x x_res s
-     else Nothing
+  let v' = lowerBound $ eval rhs s
+      x = BS.pack x_i
+      x_val = safeLookup "interval_leq" s x
+  in case x_val of
+    Bot -> Nothing
+    Interval (a,b) ->
+      if a <= v'
+      then Just $ insert x (i a (min b v')) s
+      else Nothing
+    _ -> error "interval_leq"
 interval_leq s lhs (Ident x_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      lhs_val = Interval (MinusInf, upperBound $ eval lhs s)
-      m = interval_meet x_val lhs_val
-  in if m /= Bot --isSubsumed lhs_val x_val
-     then let x_res = interval_diff_eq x_val lhs_val
-          in Just $ insert x x_res s
-     else Nothing
-interval_leq s lhs rhs = 
   let lhs_val = eval lhs s
-      rhs_val = eval rhs s
-  in if isSubsumed lhs_val rhs_val
-     then Just s
-     else Nothing
-
-
--- Greater or Equal than (CGeqOp)
-interval_geq :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_geq s lhs rhs = interval_leq s rhs lhs
-
--- Equal than (CEqOp)
-interval_eq :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_eq s (Ident x_i) (Ident y_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      y = BS.pack y_i
-      y_val = safeLookup "interval_eq" s y
-      res = interval_meet x_val y_val
-  in case res of
-    Bot -> Nothing
-    _ -> Just $ insert x res $ insert y res s
-interval_eq s (Ident x_i) rhs =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      rhs_val = eval rhs s
-      res = interval_meet x_val rhs_val -- Top
+      x = BS.pack x_i
+      x_val = safeLookup "interval_leq" s x
+      aux = i (upperBound lhs_val) PlusInf
+      res = aux `iMeet` x_val
   in case res of
     Bot -> Nothing
     _ -> Just $ insert x res s
-interval_eq s lhs (Ident x_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      lhs_val = eval lhs s
-      res = interval_meet x_val lhs_val
-  in case res of
-    Bot -> Nothing
-    _ -> Just $ insert x res s
-interval_eq s lhs rhs = 
+interval_leq s lhs rhs =
   let lhs_val = eval lhs s
       rhs_val = eval rhs s
-      res = interval_meet lhs_val rhs_val
-  in case res of
+  in case lhs_val `iMeet` rhs_val of
     Bot -> Nothing
     _ -> Just s
-
--- Not equal than (CNeqOp)
-interval_neq :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_neq s (Ident x_i) (Ident y_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      y = BS.pack y_i
-      y_val = safeLookup "interval_eq" s y
-      res = interval_meet x_val y_val
-      x_res = interval_diff x_val res
-      y_res = interval_diff y_val res
-  in case x_res of
-    Bot -> case y_res of
-      Bot -> Nothing -- @assert that x_val == y_val (this should be the case by construction)
-      _ -> Just $ insert y y_res s
-    _ -> case y_res of 
-      Bot -> Just $ insert x x_res s
-      _ -> Just $ insert x x_res $ insert y y_res s
-interval_neq s (Ident x_i) rhs =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      rhs_val = eval rhs s
-      res = interval_meet x_val rhs_val
-      x_res = interval_diff x_val res
-      rhs_res = interval_diff rhs_val res
-  in case x_res of
-    Bot -> case rhs_res of 
-      Bot -> Nothing
-      _ -> Just s
-    _ -> Just $ insert x x_res s
-interval_neq s lhs (Ident x_i) =
-  let x = BS.pack x_i
-      x_val = safeLookup "interval_eq" s x
-      lhs_val = eval lhs s
-      res = interval_meet x_val lhs_val
-      x_res = interval_diff x_val res
-      lhs_res = interval_diff lhs_val res
-  in case x_res of
-    Bot -> case lhs_res of 
-      Bot -> Nothing
-      _ -> Just s
-    _ -> Just $ insert x x_res s
-interval_neq s lhs rhs = 
-  let lhs_val = eval lhs s
-      rhs_val = eval rhs s
-  in if lhs_val == rhs_val
-     then Nothing
-     else Just s
-  

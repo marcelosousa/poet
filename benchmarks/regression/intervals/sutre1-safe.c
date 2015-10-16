@@ -1,6 +1,3 @@
-
-#include <assert.h>
-
 int main (void)
 {
 	int x, y;
@@ -22,5 +19,8 @@ int main (void)
 	}
 
 	x = y + 1;
-	assert (x > 0); // it holds
+	if (x <= 0) {
+    __poet_fail ();
+	}
+//	assert (x > 0); // it holds
 }

@@ -34,9 +34,12 @@ void main(int argc, char* argv[]) {
     pthread_t t1, t2, t3, t4;
 
     pthread_create(t1, NULL, thr1, NULL);
-
     pthread_create(t2, NULL, thr2_1, NULL);
     pthread_create(t3, NULL, thr2_2, NULL);
     pthread_create(t4, NULL, thr2_3, NULL);
+    pthread_join(t1,NULL);
+    pthread_join(t2,NULL);
+    pthread_join(t3,NULL);
+    pthread_join(t4,NULL);
 }
 

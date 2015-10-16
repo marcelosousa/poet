@@ -344,28 +344,31 @@ addEvent stack dup tr history = do
     then mtrace "CHECKING CUTOFF" $ do
       let copyst = GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
-      isCutoff <- cutoff (head gstlc) sizeLocalHistory
-      if isCutoff
-      then mtrace "CUTOFF" $ do 
-        incCutoffCounter
-        return []
+      if null gstlc
+      then error $ "FAIL! " ++ show (tr,localHistory)
       else do
-        incSize
-        -- @ 1. Fresh event id 
-        neID <- freshCounter
-        -- @ 2. Compute the immediate conflicts
-        -- @  b) Computes the immediate conflicts of all events in the local configuration
-        lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
-        -- @  c) Compute the immediate conflicts
-        cnfls <- lift $ computeConflicts indr tr localHistory lhCnfls evts >>= return . nub
-        -- @ 3. Insert the new event in the hash table
-        let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
-        lift $ setEvent neID e evts 
-        -- @ 4. Update all events in the history to include neID as their successor
-        lift $ mapM (\e -> setSuccessor neID e evts) history
-        -- @ 5. Update all events in the immediate conflicts to include neID as one 
-        lift $ mapM (\e -> setConflict neID e evts) cnfls 
-        return $! [neID]
+        isCutoff <- cutoff (head gstlc) sizeLocalHistory
+        if isCutoff
+        then mtrace "CUTOFF" $ do 
+          incCutoffCounter
+          return []
+        else do
+          incSize
+          -- @ 1. Fresh event id 
+          neID <- freshCounter
+          -- @ 2. Compute the immediate conflicts
+          -- @  b) Computes the immediate conflicts of all events in the local configuration
+          lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
+          -- @  c) Compute the immediate conflicts
+          cnfls <- lift $ computeConflicts indr tr localHistory lhCnfls evts >>= return . nub
+          -- @ 3. Insert the new event in the hash table
+          let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
+          lift $ setEvent neID e evts 
+          -- @ 4. Update all events in the history to include neID as their successor
+          lift $ mapM (\e -> setSuccessor neID e evts) history
+          -- @ 5. Update all events in the immediate conflicts to include neID as one 
+          lift $ mapM (\e -> setConflict neID e evts) cnfls 
+          return $! [neID]
     else do
         incSize
         -- @ 1. Fresh event id 
@@ -386,7 +389,7 @@ addEvent stack dup tr history = do
   else return $! map fst hasDup 
 
 -- @ Compute the global state of the local configuration
---   by donig a topological sorting
+--   by doing a topological sorting
 -- getISucc :: EventID -> Events s -> ST s EventsID
 -- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
 computeStateLocalConfiguration :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
@@ -398,7 +401,7 @@ computeStateLocalConfiguration (_,trID,_) ist prede = do
   
 computeStateHistory :: (Hashable st, Ord st, GCS.Projection st) => st -> EventsID -> EventsID -> EventsID -> UnfolderOp st s st
 computeStateHistory cst [] _ _ = return cst
-computeStateHistory cst (ce:rest) l prede = do
+computeStateHistory cst (ce:rest) l prede = mtrace ("executing " ++ show ce) $ do
   s@UnfolderState{..} <- get
   cesucc <- lift $ getISucc ce evts
   let l' = ce:l -- events already processed

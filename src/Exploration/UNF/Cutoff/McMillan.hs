@@ -33,8 +33,8 @@ cutoff st si = mtrace ("Checking cutoff with state: " ++ show st) $ do
 cutoffCheck :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> [(st,Int)] -> UnfolderOp st s Bool
 cutoffCheck st si [] = return False
 cutoffCheck st si ((st',si'):r) = do
-  if GCS.subsumes st' st -- && si' < s1
-  then return True
+  if GCS.subsumes st' st && si' < si
+  then mtrace ("Cutoff is: " ++ show st') $  return True
   else cutoffCheck st si r
 {-
   mv <- lift $ H.lookup stas st
