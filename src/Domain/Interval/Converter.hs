@@ -8,7 +8,7 @@ module Domain.Interval.Converter where
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import qualified Data.Vector as V
-import Debug.Trace
+import qualified Debug.Trace as T
 
 import Domain.Concrete.Independence
 import Domain.Interval.Type
@@ -20,7 +20,7 @@ import Language.C.Syntax.AST (CBinaryOp(..),CUnaryOp(..))
 import Model.GCS
 import Model.Independence
 import Util.Generic hiding (safeLookup)
-
+trace a b = b
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1
 pmtVar = BS.pack "__poet_mutex_threads"
@@ -132,7 +132,7 @@ fromCall flow pcVar pc name [param] =
           let ident = BS.pack i
               acts = [Write (V pcVar), Write (V ident)]
               act = [Lock $ V ident]
-              fn = \s ->
+              fn = \s -> -- trace ("__poet_mutex_lock@" ++ show (pcVar,pc) ++ show ident) $
                 let IntVal curPC = safeLookup "call" s pcVar
                     IntVal v = safeLookup "call" s ident
                 in if curPC == pc && v == 0
@@ -147,7 +147,7 @@ fromCall flow pcVar pc name [param] =
           let ident = BS.pack i
               acts = [Write (V pcVar), Write (A ident idx)]
               act = [Lock $ A ident idx]              
-              fn = \s ->
+              fn = \s -> -- trace ("__poet_mutex_lock@" ++ show (pcVar,pc) ++ show (ident,idx)) $
                 let IntVal curPC = safeLookup "call" s pcVar
                     Array vs = safeLookup "call" s ident
                     IntVal v = vs!!(fromInteger idx)
@@ -164,7 +164,7 @@ fromCall flow pcVar pc name [param] =
               idxi = BS.pack idxident
               acts = [Write (V pcVar), Write (V ident), Read (V idxi)]
               act = [Lock $ V ident]              
-              fn = \s -> 
+              fn = \s -> -- trace ("__poet_mutex_lock@" ++ show (pcVar,pc) ++ show (ident,idxi)) $
                 let IntVal curPC = safeLookup "call lock array pc" s pcVar
                     Array vs = safeLookup ("call lock array: " ++ show ident) s ident
                     IntVal idx = safeLookup "call lock array ident" s idxi
@@ -180,11 +180,11 @@ fromCall flow pcVar pc name [param] =
     "__poet_mutex_unlock" ->
       case param of
         -- @ Lock Variable
-        Ident i ->
+        Ident i -> 
           let ident = BS.pack i
               acts = [Write (V pcVar), Write (V ident)]
               act = [Unlock $ V ident]
-              fn = \s ->
+              fn = \s -> -- trace ("__poet_mutex_unlock@" ++ show (pcVar,pc) ++ show ident) $
                 let IntVal curPC = safeLookup "call" s pcVar
                 in if curPC == pc
                    then
@@ -198,7 +198,7 @@ fromCall flow pcVar pc name [param] =
           let ident = BS.pack i
               acts = [Write (V pcVar), Write (A ident idx)]
               act = [Unlock $ A ident idx]
-              fn = \s ->
+              fn = \s -> -- trace ("__poet_mutex_unlock@" ++ show (pcVar,pc) ++ show (ident,idx)) $
                 let IntVal curPC = safeLookup "call" s pcVar
                 in if curPC == pc
                    then
@@ -215,7 +215,7 @@ fromCall flow pcVar pc name [param] =
               idxi = BS.pack idxident
               acts = [Write (V pcVar), Write (V ident), Read (V idxi)]
               act = [Unlock $ V ident]
-              fn = \s ->
+              fn = \s -> -- trace ("__poet_mutex_unlock@" ++ show (pcVar,pc) ++ show (ident,idxi)) $
                 let IntVal curPC = safeLookup "call" s pcVar
                 in if curPC == pc
                     then
@@ -242,7 +242,7 @@ fromAssign flow pcVar pc _lhs _rhs =
       _lhsi = map Write $ getIdent _lhs
       _rhsi = map Read $ getIdent _rhs
       act = (Write $ V pcVar):(_lhsi ++ _rhsi)
-      fn = \s ->
+      fn = \s -> trace ("Assign@" ++ show (pcVar,pc) ++ " " ++ show _lhs ++ ":=" ++ show _rhs) $
         let IntVal curPC = safeLookup "goto" s pcVar
         in if curPC == pc
            then
@@ -283,8 +283,8 @@ fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn Sigma, RWSet)]
 fromIf flow pcVar pc _cond = 
   let Branch (t,e) = getFlow flow pc
       readVars = getIdent _cond
-      annots = (Write $ V pcVar):(map Read readVars)
-      fnThen = \s ->
+      annots = (Write $ V pcVar):((map Read readVars) ++ (map Write readVars))
+      fnThen = \s -> trace ("Firing: " ++ show _cond) $ 
         let IntVal curPC = safeLookup "if" s pcVar
             valCond = evalCond _cond s
         in if curPC == pc
@@ -365,7 +365,7 @@ applyArith op lhs rhs =
   
 -- eval logical expressions
 evalCond :: Expression -> Sigma -> Maybe Sigma
-evalCond expr s = trace ("evaluating condition: " ++ show expr) $ case expr of
+evalCond expr s = case expr of
   BinOp op lhs rhs -> applyLogic s op lhs rhs
   UnaryOp CNegOp rhs ->
     let rhs' = negExp rhs
@@ -374,7 +374,7 @@ evalCond expr s = trace ("evaluating condition: " ++ show expr) $ case expr of
 
 -- negates logical expression using De Morgan Laws
 negExp :: Expression -> Expression
-negExp expr = trace ("negating expression: " ++ show expr) $ case expr of
+negExp expr = case expr of
   BinOp CLndOp l r -> BinOp CLorOp (negExp l) (negExp r)
   BinOp CLorOp l r -> BinOp CLndOp (negExp l) (negExp r)
   BinOp op l r -> BinOp (negOp op) l r

@@ -18,6 +18,7 @@ void* thr2_1(void* arg) {
     x = t + 1;
 }
 
+
 void* thr2_2(void* arg) {
     int t;
     t = x;

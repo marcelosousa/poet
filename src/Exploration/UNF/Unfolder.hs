@@ -345,11 +345,11 @@ addEvent stack dup tr history = do
       let copyst = GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       if null gstlc
-      then error $ "FAIL! " ++ show (tr,localHistory)
+      then return []
       else do
         isCutoff <- cutoff (head gstlc) sizeLocalHistory
         if isCutoff
-        then mtrace "CUTOFF" $ do 
+        then do 
           incCutoffCounter
           return []
         else do
@@ -392,16 +392,16 @@ addEvent stack dup tr history = do
 --   by doing a topological sorting
 -- getISucc :: EventID -> Events s -> ST s EventsID
 -- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
-computeStateLocalConfiguration :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
-computeStateLocalConfiguration (_,trID,_) ist prede = do
+computeStateLocalConfiguration :: (Hashable st, Show st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
+computeStateLocalConfiguration (_,trID,i) ist prede = do
   s@UnfolderState{..} <- get
   st' <- computeStateHistory ist [0] [] prede
   let fn = GCS.getTransitionWithID syst trID
-  return $ fn st'
+  return $! fn st'
   
 computeStateHistory :: (Hashable st, Ord st, GCS.Projection st) => st -> EventsID -> EventsID -> EventsID -> UnfolderOp st s st
 computeStateHistory cst [] _ _ = return cst
-computeStateHistory cst (ce:rest) l prede = mtrace ("executing " ++ show ce) $ do
+computeStateHistory cst (ce:rest) l prede = do
   s@UnfolderState{..} <- get
   cesucc <- lift $ getISucc ce evts
   let l' = ce:l -- events already processed
