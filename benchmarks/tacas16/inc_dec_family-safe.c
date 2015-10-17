@@ -3,16 +3,20 @@
 
 #include "pthread.h"
 
-int x = 0;
-int y = 0;
+int x = nondet(0,50);
+int y = nondet(0,20);
 
 void *thr1()
 {
 	int x2, y2;
 
-	while (y >= 0)
+	while (y >= 5)
 	{
-		if (x <= 50)
+    y2 = y;
+    y=y2;
+  }
+  /*
+		if (x <= 1)
 		{
 			y2 = y;
 			y = y2 + 1;
@@ -24,8 +28,9 @@ void *thr1()
 		}
 		x2 = x;
 		x = x2 + 1;
-	}
+	}*/
 }
+/*
 void *thr2()
 {
 	int x2, y2;
@@ -106,10 +111,10 @@ void *thr5()
 		x = x2 + 1;
 	}
 }
-
+*/
 int main (void)
 {
-	pthread_t t1, t2, t3, t4, t5;
+//	pthread_t t1, t2, t3, t4, t5;
 	int k = 1;
 
 	pthread_create(t1, NULL, thr1, NULL);

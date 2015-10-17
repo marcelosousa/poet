@@ -13,12 +13,12 @@ import qualified Model.GCS as GCS
 
 -- @ Check if st is a cutoff
 cutoff :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> UnfolderOp st s Bool
-cutoff st si = mtrace ("Checking cutoff with state: " ++ show st) $ do
+cutoff st si = trace ("Checking cutoff with state: " ++ show st) $ do
   s@UnfolderState{..} <- get
   let locs = GCS.controlPart st
   case M.lookup locs stas of
     Nothing -> do
-      let stas' = M.insert locs [(st,si)] stas
+      let stas' = M.insertWith (++) locs [(st,si)] stas
       updateCutoffTable stas'
       return False
     Just l -> do 
@@ -26,15 +26,15 @@ cutoff st si = mtrace ("Checking cutoff with state: " ++ show st) $ do
       if c
       then return True
       else do
-        let stas' = M.insert locs [(st,si)] stas
+        let stas' = M.insertWith (++) locs [(st,si)] stas
         updateCutoffTable stas'
         return False          
 
 cutoffCheck :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> [(st,Int)] -> UnfolderOp st s Bool
 cutoffCheck st si [] = return False
-cutoffCheck st si ((st',si'):r) = do
-  if GCS.subsumes st' st && si' < si
-  then mtrace ("Cutoff is: " ++ show st') $  return True
+cutoffCheck st si ((st',si'):r) = trace ("checking against: " ++ show st') $ do
+  if st' `GCS.subsumes` st -- && si' < si
+  then mtrace ("Cutoff is: " ++ show st') $ return True
   else cutoffCheck st si r
 {-
   mv <- lift $ H.lookup stas st

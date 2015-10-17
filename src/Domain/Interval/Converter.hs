@@ -58,8 +58,10 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
       FunctionDecl _ _ _ -> [] 
       GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, top)]
       GlobalDecl _ (Ident i@"__poet_mutex_death") (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
+      GlobalDecl _ (Ident i@"__poet_mutex_lock") (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
       GlobalDecl _ (Ident i) (Just (Const (IntValue v))) -> [(BS.pack i, Interval (I (fromInteger v), I (fromInteger v)))]
-      GlobalDecl _ (Ident i) (Just (Call "nondet" [Const (IntValue l), Const (IntValue u)])) -> [(BS.pack i, Interval (I (fromInteger l), I (fromInteger u)))]
+      GlobalDecl _ (Ident i) (Just (Call "nondet" [a, b])) -> [(BS.pack i, eval a empty `iJoin` eval b empty)]
+--      GlobalDecl _ (Ident i) (Just (Call "nondet" [Const (IntValue l), Const (IntValue u)])) -> [(BS.pack i, Interval (I (fromInteger l), I (fromInteger u)))]
       GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
       _ -> error "getInitialState: not supported yet"
 
@@ -283,7 +285,7 @@ fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn Sigma, RWSet)]
 fromIf flow pcVar pc _cond = 
   let Branch (t,e) = getFlow flow pc
       readVars = getIdent _cond
-      annots = (Write $ V pcVar):((map Read readVars) ++ (map Write readVars))
+      annots = (Write $ V pcVar):((map Read readVars)) -- ++ (map Write readVars))
       fnThen = \s -> trace ("Firing: " ++ show _cond) $ 
         let IntVal curPC = safeLookup "if" s pcVar
             valCond = evalCond _cond s

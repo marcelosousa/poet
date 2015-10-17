@@ -23,6 +23,8 @@ import Debug.Trace
 type ISigma = Sigma
 type Sigma = Map Var Value
 
+empty = M.empty
+
 instance Projection Sigma where
   controlPart =
     M.filterWithKey (\k _ -> isPC k)
@@ -34,7 +36,7 @@ instance Projection Sigma where
 isPC :: Var -> Bool
 isPC v = 
   case BSC.split '.' v of
-    [_,x] -> let x' = BSC.unpack x
+    [x,_] -> let x' = BSC.unpack x
              in x' == "pc"
     _ -> False
 
@@ -73,6 +75,7 @@ instance Ord InterVal where
   (<=) (I i) PlusInf = True
   (<=) (I i) MinusInf = False
   (<=) (I i) (I j) = i <= j
+  (<=) PlusInf PlusInf = True
   (<=) PlusInf _ = False
   (<=) MinusInf _ = True
 

@@ -61,7 +61,7 @@ explore :: (Hashable st, Ord st, Show st, GCS.Projection st) => Configuration st
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  mtrace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show eevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
   let k = unsafePerformIO $ getChar
@@ -133,7 +133,7 @@ unfold conf@Conf{..} e = do
   nstcs <- execute cons e -- @TODO: change this
   let nstc = head nstcs
   -- @ 2. compute the new set of maximal events
-  iprede <- mtrace (separator ++ "state = " ++ show nstc) $ lift $ getIPred e evts
+  iprede <- trace (separator ++ "state = " ++ show nstc) $ lift $ getIPred e evts
   let nmaxevs = e:(mevs \\ iprede)
   -- @ 3. compute the new set of enabled events
   let es = delete e eevs 
@@ -341,7 +341,7 @@ addEvent stack dup tr history = do
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
     if cutoffMode
-    then mtrace "CHECKING CUTOFF" $ do
+    then do
       let copyst = GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       if null gstlc

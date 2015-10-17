@@ -26,7 +26,7 @@ frontEnd :: Program -> (Program, FirstFlow, Flow, Int)
 frontEnd prog = 
   let globals = getGlobalsDecls prog
       (prog1, threadCount) = passOne prog
-      pass2res = passTwo globals prog1 -- :: Int
+      pass2res = 0 --passTwo globals prog1 -- :: Int
       prog3 = passThree globals prog1
       prog45 = passFourFive prog3
       prog6 = passSix prog45
