@@ -12,7 +12,7 @@ import Test.Examples.ExSix
 import Test.Examples.ExSeven
 import Test.Examples.ExEight
 
-import Control.Monad.ST.Safe
+import Control.Monad.ST
 import Test.HUnit
 
 test1 = 

@@ -21,6 +21,7 @@ import qualified Domain.Interval.Converter as IC
 import Model.Interpreter
 import qualified Exploration.UNF.Unfolder as Exp
 import Exploration.UNF.APIStateless hiding (execute)
+import Exploration.UNF.Prime
 
 import Test.HUnit (runTestTT)
 import Test.Tests
@@ -33,32 +34,41 @@ import Util.Generic
 --import Benchmark
 --import Model.GCS
 --import Frontend.PetriNet
---import qualified Data.Map as M
---import Control.Monad.ST.Safe
 
-
+-- Command Line Options Strings
 _program, _summary :: String
-_summary = unlines ["POET - v0.2","Partial Order Exploration Tools is a set of exploration methods for concurrent C programs."
-                   ,"Copyright 2015 @ Marcelo Sousa"]
+_summary =
+  unlines ["POET - v0.3","Partial Order Exploration Tools"
+          ++"is a set of exploration methods for concurrent C programs."
+          ,"Copyright 2015 @ Marcelo Sousa"]
 _program = "poet"
-_help    = "The input files of poet are C files written in a restricted subset of the C language. For more info, check the documentation!"
+_help    = "The input files of poet are C files written in a restricted subset of the C language."
+         ++"For more info, check the documentation!"
 _helpFE = unlines ["poet frontend receives a concurrent C program in a restricted subset of the language and performs a series of transformations to simplify the analysis"
                   ,"Example: poet frontend file.c"]
 _helpInter = unlines ["poet interpret receives a concurrent C program in a restricted subset of the language and runs the interpreter on the corresponding model of computation"
                   ,"Example: poet interpret -i=file.c"]
-_helpExec = unlines ["poet interpret receives a concurrent C program in a restricted subset of the language and executes one run of the corresponding model of computation"
+_helpExec = unlines ["poet execute receives a concurrent C program in a restricted subset of the language and executes one run of the corresponding model of computation"
                   ,"Example: poet execute -i=file.c -s=int (optional)"]                 
 _helpExplore = unlines ["poet explore receives a concurrent C program in a restricted subset of the language and explores the state space of the corresponding model of computation using a partial order representation"
                   ,"Example: poet explore -i=file.c"]
-_helpDebug = unlines ["poet debug receives a concurrent C program in a restricted subset of the language and explores the state space and explores the unfolding. At the end, it prints the LPES."]
-_helpTest = unlines ["poet test runs the explore mode over the set of examples in Test/Examples"]
-                   
+_helpDebug = "poet debug receives a concurrent C program in a restricted subset of the "
+          ++ "language and explores the state space and explores the unfolding."
+          ++ "At the end, it prints the LPES."
+_helpTest = "poet test runs the explore mode over the set of examples in Test/Examples"
+
+data Domain = Concrete | Interval
+  deriving (Show, Data, Typeable, Eq, Enum)
+                      
+instance Default Domain where
+  def = Concrete
+  
 data Option = Frontend {input :: FilePath}
             | Middleend {input :: FilePath}
-            | Execute {input :: FilePath, seed :: Int}
-            | Interpret {input :: FilePath}
-            | Explore {input :: FilePath, stateful :: Int, cutoff :: Int}
-            | Debug {input :: FilePath, cutoff :: Int}
+            | Execute {input :: FilePath, domain :: Domain, seed :: Int}
+            | Interpret {input :: FilePath, domain :: Domain}
+            | Explore {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
+            | Debug {input :: FilePath, domain :: Domain, cutoff :: Int}
             | Test 
   deriving (Show, Data, Typeable, Eq)
 
@@ -69,18 +79,21 @@ middleendMode :: Option
 middleendMode = Middleend {input = def &= args} &= help _helpFE
 
 executeMode :: Option
-executeMode = Execute {input = def &= args
+executeMode = Execute {input = def
+                      ,domain = def
                       ,seed = def &= help "seed for the scheduler"} &= help _helpExec
 
 interpretMode :: Option
-interpretMode = Interpret {input = def &= args} &= help _helpInter
+interpretMode = Interpret {input = def, domain = def &= args} &= help _helpInter
 
 debugMode :: Option
-debugMode = Debug {input = def &= args
+debugMode = Debug {input = def
+                  ,domain = def 
                   ,cutoff = def} &= help _helpDebug
 
 exploreMode :: Option
-exploreMode = Explore {input = def &= args
+exploreMode = Explore {input = def
+                      ,domain = def
                       ,stateful = def &= help "stateful mode (0=False [default], 1=True)"
                       ,cutoff = def &= help "cutoff mode (0=False [default], 1=True)"} &= help _helpExplore
 
@@ -88,7 +101,8 @@ testMode :: Option
 testMode = Test {} &= help _helpTest
 
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode, interpretMode, exploreMode, testMode, debugMode]
+progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode
+                                ,interpretMode, exploreMode, testMode, debugMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -106,10 +120,11 @@ runOption (Middleend f) = do
       ind = snd $ IC.convert prog' fflow flow thcount
   print ind
   print flow
-runOption (Execute f seed) = execute f seed
-runOption (Interpret f) = interpreter f
-runOption (Explore f stmode cutoffs) =  explore f (not $ toBool stmode) (toBool cutoffs)
-runOption (Debug f cutoffs) = debug f False (toBool cutoffs)
+runOption (Execute f dom seed) = execute f dom seed
+runOption (Interpret f dom) = interpreter f dom
+runOption (Explore f dom stmode cutoffs) =
+  explore f dom (not $ toBool stmode) (toBool cutoffs)
+runOption (Debug f dom cutoffs) = debug f dom False (toBool cutoffs)
 runOption Test = test
 
 
@@ -124,17 +139,18 @@ frontend f = do
   putStrLn "------------------------------"
   print prog'
     
-interpreter :: FilePath -> IO ()
-interpreter f = do
+interpreter :: FilePath -> Domain -> IO ()
+interpreter f dom = do
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
-      k = interpret $ IC.convert prog' fflow flow thcount
-      -- k = interpret $ CC.convert prog' fflow flow thcount
+      k = case dom of 
+            Concrete -> interpret $ CC.convert prog' fflow flow thcount
+            Interval -> interpret $ IC.convert prog' fflow flow thcount
   print prog'
   print k
 
-execute :: FilePath -> Int -> IO ()
-execute f dseed = do
+execute :: FilePath -> Domain -> Int -> IO ()
+execute f dom dseed = do
   prog <- extract f
   seed <- randomIO :: IO Int
   print $ "Using seed = " ++ show (seed,dseed)
@@ -143,19 +159,26 @@ execute f dseed = do
   let gen = if dseed == 0
             then mkStdGen seed
             else mkStdGen dseed
-      log = exec gen thcount $ CC.convert prog' fflow flow thcount
+      log = case dom of 
+              Concrete -> exec gen thcount $ CC.convert prog' fflow flow thcount
+              Interval -> exec gen thcount $ IC.convert prog' fflow flow thcount
   putStrLn log
 
-explore :: FilePath -> Bool -> Bool -> IO ()
-explore f mode cutoffs = do
+explore :: FilePath -> Domain -> Bool -> Bool -> IO ()
+explore f dom mode cutoffs = do
   -- mode: stateless (y) or stateful (n)
   -- cutoffs: use cutoffs or not
   --start <- getCurrentTime
   prog <- extract f
   let (prog', fflow, flow, thcount) = frontEnd prog
-      (sys, indr) = IC.convert prog' fflow flow thcount
-      -- (sys, indr) = CC.convert prog' fflow flow thcount
-      (size,nconf, ncutoff, sumsize) = runST (Exp.unfolder mode cutoffs sys indr >>= \s -> return (cntr s, maxConf s, cutoffCntr s, cumsize s)) --unfToDot)
+      (size,nconf, ncutoff, sumsize) =
+        case dom of
+          Concrete ->
+            let (sys, indr) = CC.convert prog' fflow flow thcount
+            in runST (Exp.unfolder mode cutoffs sys indr >>= \s -> return (cntr s, maxConf s, cutoffCntr s, cumsize s)) --unfToDot)
+          Interval ->
+            let (sys, indr) = IC.convert prog' fflow flow thcount
+            in runST (Exp.unfolder mode cutoffs sys indr >>= \s -> return (cntr s, maxConf s, cutoffCntr s, cumsize s)) --unfToDot)
   --putStrLn "Simple C generated by front-end:"
   --print prog'
   --stop <- getCurrentTime
@@ -166,18 +189,23 @@ explore f mode cutoffs = do
   --putStrLn $ "execution time(s): " ++ (show $ diffUTCTime stop start)
   --writeFile (replaceExtension f ".dot") unfst
 
-debug :: FilePath -> Bool -> Bool -> IO ()
-debug f mode cutoffs = do 
-    prog <- extract f
-    let (prog', fflow, flow, thcount) = frontEnd prog
-        (sys, indr) = CC.convert prog' fflow flow thcount
-        pes = runST (Exp.unfolder mode cutoffs sys indr >>=  \s -> showEvents $ evts s)
-    putStrLn pes
+debug :: FilePath -> Domain -> Bool -> Bool -> IO ()
+debug f dom mode cutoffs = do 
+  prog <- extract f
+  let (prog', fflow, flow, thcount) = frontEnd prog
+      pes = case dom of
+        Concrete ->
+          let (sys, indr) = CC.convert prog' fflow flow thcount
+          in runST (Exp.unfolder mode cutoffs sys indr >>= \s -> primefactor (evts s) >>= (\(p,a,b,c) -> showEvents p >>= \s -> return $ s ++ show (a,b,c)))
+        Interval ->
+          let (sys, indr) = IC.convert prog' fflow flow thcount
+          in runST (Exp.unfolder mode cutoffs sys indr >>=  \s -> showEvents $ evts s)
+  putStrLn pes
     
 test :: IO ()
 test = do
-    succCount <- runTestTT tests
-    print succCount
+  succCount <- runTestTT tests
+  print succCount
     
 {-
 runPT :: FilePath -> IO ()

@@ -4,7 +4,7 @@ module Exploration.UNF.APIStateless where
 import Prelude hiding (succ)
 
 import Control.Monad.State.Strict
-import Control.Monad.ST.Safe
+import Control.Monad.ST
 -- Data Structures
 import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
@@ -63,7 +63,7 @@ data Event = Event {
 --   with a HashTable : EventID -> Event 
 type Events s = HashTable s EventID Event
 
--- @ Show an 
+-- @ Show the set of events
 showEvents :: Events s -> ST s String
 showEvents evs = do
   m <- H.toList evs
@@ -434,4 +434,3 @@ causalClosed evts conf (e:es) = do
   if all (\e' -> e' `elem` conf) prede
   then causalClosed evts conf es
   else return False
-

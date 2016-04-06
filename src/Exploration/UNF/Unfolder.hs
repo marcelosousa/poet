@@ -2,7 +2,7 @@
 module Exploration.UNF.Unfolder (unfolder) where
 
 import Control.Monad.State.Strict
-import Control.Monad.ST.Safe
+import Control.Monad.ST
 import Data.Hashable
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C

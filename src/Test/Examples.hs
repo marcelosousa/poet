@@ -14,7 +14,7 @@ import Test.Examples.ExNine
 import Test.Examples.ExTen
 import qualified Test.Examples.ExEleven as Ex11
 
-import Control.Monad.ST.Safe
+import Control.Monad.ST
 import Test.HUnit
 
 runTest1 mode = do
