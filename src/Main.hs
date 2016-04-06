@@ -7,7 +7,6 @@
 module Main where
 
 import Control.Monad.ST
-import Control.Monad.ST.Safe
 
 import System.Console.CmdArgs
 import System.FilePath.Posix

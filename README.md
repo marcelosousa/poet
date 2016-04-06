@@ -1,7 +1,4 @@
-poet - v0.2@09'2015
-======
-
-poet - v0.1@03'2015
+POET (Partial Order Exploration Tools)
 ======
 
 Contact: Marcelo Sousa (msousa at cs dot ox dot ac dot uk). University of Oxford, UK.  
@@ -57,3 +54,17 @@ Note:
  it may be the case for some operating systems it is required to prefix
  the input file with -i=.
  
+Versions
+---------
+
+poet-v0.1@03'2015
+
+ CONCUR 2015: DFS-stateless exploration of deterministic programs
+
+poet-v0.2@09'2015
+ 
+ Abstract Unfolding: Support for API that connects to an abstract domain
+ 
+poet-v0.3@04-2016
+
+ Prime Unfolding Exploration
