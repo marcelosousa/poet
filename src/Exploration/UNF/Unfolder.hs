@@ -125,7 +125,7 @@ explore c@Conf{..} ê d alt = do
 unfold :: (Hashable st, Ord st, Show st, GCS.Projection st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
-  tr <- lift $ getEvent "unfold" e evts >>= return . snd3 . evtr
+  tr <- lift $ getEvent "unfold" e evts >>= return . snd4 . evtr
   -- @ 1. compute the new state after executing the event e
   -- copy the state otherwise it will go wrong 
   -- copyst <- lift $ copy stc
@@ -176,7 +176,7 @@ expandWith e maxevs tr = do
     -- e should be a valid maximal event
     if e `elem` h0
     then do
-      his <- if GCS.isBlocking (third3 tr) 
+      his <- if GCS.isBlocking (frd4 tr) 
              then do
                prede <- lift $ predecessors e evts 
                computeHistoriesBlocking tr e prede (e `delete` h0)
@@ -231,7 +231,7 @@ computeHistories tr e [] = return []
 computeHistories tr e (h:hs) = do
   s@UnfolderState{..} <- get
   let h' = e `delete` h
-  hc <- lift $ filterM (\e' -> getEvent "computeNextHistory" e' evts >>= \ev -> return $ fst3 (evtr ev) /= fst3 tr) h' 
+  hc <- lift $ filterM (\e' -> getEvent "computeNextHistory" e' evts >>= \ev -> return $ fst4 (evtr ev) /= fst4 tr) h' 
   -- replace one of the maximal events with the predecessors
   -- and prune the configuration
   hs' <- mapM (computeNextHistory h tr) hc
@@ -256,13 +256,13 @@ computeNextHistory h tr e' = do
 
 computeHistoriesBlocking ::(Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> EventsID -> EventsID -> UnfolderOp st s [EventsID]
 computeHistoriesBlocking tr e _ [] = return []
-computeHistoriesBlocking tr@(procID, trID, act) e prede [e'] = do
+computeHistoriesBlocking tr@(procID, trID, _, act) e prede [e'] = do
   s@UnfolderState{..} <- get
   ev <- lift $ getEvent "computeHistoriesBlocking" e evts
-  if fst3 (evtr ev) == procID
+  if fst4 (evtr ev) == procID
   then do -- @ proc(e) == tr. Hence e' must be a blocking event, namely an unlock
     ev' <- lift $ getEvent "computeHistoriesBlocking" e' evts
-    let acte' = third3 $ evtr ev'
+    let acte' = frd4 $ evtr ev'
     if any (\a -> (GCS.Unlock (GCS.varOf a)) `elem` acte') act
     then do
       me'' <- findNextUnlock tr prede e'
@@ -285,7 +285,7 @@ computeHistoriesBlocking tr e es hs = error $ "computeHistoriesBlocking fatal :"
 
 --
 findNextUnlock :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventsID -> EventID -> UnfolderOp st s (Maybe EventsID)
-findNextUnlock tr@(_,_,act) prede e' = do
+findNextUnlock tr@(_,_,_,act) prede e' = do
   s@UnfolderState{..} <- get
   iprede' <- lift $ getIPred e' evts
   (es_done,es) <- lift $ foldM (\(l,r) e ->
@@ -302,7 +302,7 @@ findNextUnlock tr@(_,_,act) prede e' = do
         _ -> error "findNextUnlock: not sure what happens here!"
     [e] -> do
       ev <- lift $ getEvent "computeHistoriesBlocking" e evts
-      let acte = third3 $ evtr ev
+      let acte = frd4 $ evtr ev
       if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` acte) act
       then if e `elem` prede
            then return Nothing
@@ -367,7 +367,8 @@ addEvent stack dup tr history = do
           -- @ 4. Update all events in the history to include neID as their successor
           lift $ mapM (\e -> setSuccessor neID e evts) history
           -- @ 5. Update all events in the immediate conflicts to include neID as one 
-          lift $ mapM (\e -> setConflict neID e evts) cnfls 
+          lift $ mapM (\e -> setConflict neID e evts) cnfls
+          incSizeTr tr
           return $! [neID]
     else do
         incSize
@@ -385,6 +386,7 @@ addEvent stack dup tr history = do
         lift $ mapM (\e -> setSuccessor neID e evts) history
         -- @ 5. Update all events in the immediate conflicts to include neID as one 
         lift $ mapM (\e -> setConflict neID e evts) cnfls 
+        incSizeTr tr
         return $! [neID]
   else return $! map fst hasDup 
 
@@ -393,7 +395,7 @@ addEvent stack dup tr history = do
 -- getISucc :: EventID -> Events s -> ST s EventsID
 -- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
 computeStateLocalConfiguration :: (Hashable st, Show st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
-computeStateLocalConfiguration (_,trID,i) ist prede = do
+computeStateLocalConfiguration (_,trID,_,i) ist prede = do
   s@UnfolderState{..} <- get
   st' <- computeStateHistory ist [0] [] prede
   let fn = GCS.getTransitionWithID syst trID

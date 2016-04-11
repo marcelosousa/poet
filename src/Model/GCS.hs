@@ -12,7 +12,7 @@ import qualified Data.Vector as V
 import qualified Data.Word as W
 import Debug.Trace
 --import Domain.Concrete
-import Language.SimpleC.AST (PC)
+import Language.SimpleC.AST (PC, Statement)
 import Util.Generic
 
 -- System is a vector of transitions and an initial state
@@ -28,7 +28,7 @@ type ProcessID = BS.ByteString
 type TransitionID = Int 
 type TransitionsID = V.Vector TransitionID
 type Transitions st = V.Vector (Transition st)
-type TransitionInfo = (ProcessID, TransitionID, Acts)
+type TransitionInfo = (ProcessID, TransitionID, Statement, Acts)
 type Transition st = (TransitionInfo, TransitionFn st)
 type TransitionFn st = st -> [st]
 
@@ -82,7 +82,7 @@ getTransitionWithID :: System st -> TransitionID -> TransitionFn st
 getTransitionWithID sys@System{..} trID = 
   case transitions V.!? trID of
     Nothing -> error $ "getTransition fail: " ++ show trID
-    Just ((_,trIDx,_),tr) -> 
+    Just ((_,trIDx,_,_),tr) -> 
       if trID /= trIDx
       then error $ "getTransitionWithID something went wrong before: " ++ show (trID, trIDx)
       else tr

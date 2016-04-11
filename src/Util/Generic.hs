@@ -21,14 +21,17 @@ allM f (x:xs) = do
   then allM f xs
   else return False 
 
-fst3 :: (a,b,c) -> a
-fst3 (a,b,c) = a
+fst4 :: (a,b,c,d) -> a
+fst4 (a,b,c,d) = a
 
-snd3 :: (a,b,c) -> b
-snd3 (a,b,c) = b
+snd4 :: (a,b,c,d) -> b
+snd4 (a,b,c,d) = b
 
-third3 :: (a,b,c) -> c
-third3 (a,b,c) = c
+trd4 :: (a,b,c,d) -> c
+trd4 (a,b,c,d) = c
+
+frd4 :: (a,b,c,d) -> d
+frd4 (a,b,c,d) = d
 
 list :: b -> ([a] -> b) -> [a] -> b
 list z f [] = z

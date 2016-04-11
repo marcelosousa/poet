@@ -86,11 +86,11 @@ s5 =
   in toSigma pairs 
 
 t1_5, t21_5,t22_5,t31_5,t32_5 :: Transition Sigma
-t1_5  = ((BS.pack "p", 0, [Other]), t1_5')
-t21_5 = ((BS.pack "q", 1, [Other]), t21_5')
-t22_5 = ((BS.pack "q", 2, [Other]), t22_5')
-t31_5 = ((BS.pack "r", 3, [Other]), t31_5')
-t32_5 = ((BS.pack "r", 4, [Other]), t32_5')
+t1_5  = ((BS.pack "p", 0, [], [Other]), t1_5')
+t21_5 = ((BS.pack "q", 1, [], [Other]), t21_5')
+t22_5 = ((BS.pack "q", 2, [], [Other]), t22_5')
+t31_5 = ((BS.pack "r", 3, [], [Other]), t31_5')
+t32_5 = ((BS.pack "r", 4, [], [Other]), t32_5')
 
 sys5 :: System Sigma
 sys5 = System (V.fromList [t1_5,t21_5,t22_5,t31_5,t32_5]) s5 [Other]

@@ -25,7 +25,7 @@ instance ToDot (EventID, Event) where
     toDot (eID, ev@Event{..}) stack = 
       let causality = foldr (printCausality eID) "" succ
           conflict = foldr (printConflict eID) "" icnf
-          (pID,tID,act) = evtr
+          (pID,tID,st,act) = evtr
           label = show eID ++ " [label=\"eID = " ++ show eID ++ " tr=(" ++ show tID ++ "," ++ BS.unpack pID ++ "," ++ showActs act++")\"]\n"
       in causality ++ conflict ++ label
 

@@ -66,11 +66,11 @@ s8 =
   in toSigma pairs 
 
 t11,t12,t21,t22,t23 :: Transition Sigma
-t11 = ((BS.pack "q", 0, [Unlock $ V $ BS.pack "lock"]), t11')
-t12 = ((BS.pack "q", 1, [Other]), t12')
-t21 = ((BS.pack "r", 2, [Lock $ V $ BS.pack "lock"]), t21')
-t22 = ((BS.pack "r", 3, [Other]), t22')
-t23 = ((BS.pack "r", 4, [Unlock $ V $ BS.pack "lock"]), t23')
+t11 = ((BS.pack "q", 0, [], [Unlock $ V $ BS.pack "lock"]), t11')
+t12 = ((BS.pack "q", 1, [], [Other]), t12')
+t21 = ((BS.pack "r", 2, [], [Lock $ V $ BS.pack "lock"]), t21')
+t22 = ((BS.pack "r", 3, [], [Other]), t22')
+t23 = ((BS.pack "r", 4, [], [Unlock $ V $ BS.pack "lock"]), t23')
 
 sys8 :: System Sigma
 sys8 = System (V.fromList [t11,t12,t21,t22,t23]) s8 [Lock $ V $ BS.pack "lock"]

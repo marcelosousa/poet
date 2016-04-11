@@ -20,12 +20,12 @@ s3 =
   in toSigma pairs 
   
 t1_3, t2_3, t31_3, t32_3, t41_3, t42_3 :: Transition Sigma
-t1_3  = ((BS.pack "p",0,[Other]),t1_3')
-t2_3  = ((BS.pack "q",1,[Other]),t2_3')
-t31_3 = ((BS.pack "r",2,[Other]),t31_3')
-t32_3 = ((BS.pack "r",3,[Other]),t32_3')
-t41_3 = ((BS.pack "s",4,[Other]),t41_3')
-t42_3 = ((BS.pack "s",5,[Other]),t42_3')
+t1_3  = ((BS.pack "p",0,[],[Other]),t1_3')
+t2_3  = ((BS.pack "q",1,[],[Other]),t2_3')
+t31_3 = ((BS.pack "r",2,[],[Other]),t31_3')
+t32_3 = ((BS.pack "r",3,[],[Other]),t32_3')
+t41_3 = ((BS.pack "s",4,[],[Other]),t41_3')
+t42_3 = ((BS.pack "s",5,[],[Other]),t42_3')
 
 t1_3', t2_3', t31_3', t32_3', t41_3', t42_3' :: TransitionFn Sigma 
 t1_3' s =

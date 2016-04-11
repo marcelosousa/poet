@@ -6,6 +6,7 @@ import Domain.Concrete.Type
 import Model.GCS
 import Model.Independence
 import Util.Generic hiding (safeLookup)
+import Language.SimpleC.AST
 
 -- Example 1 - Two writes of different variables
 -- Sigma s -> ST s (Maybe (Sigma s -> ST s (Sigma s)))
@@ -20,7 +21,7 @@ t1' s =
     _ -> []
 
 t1 :: Transition Sigma
-t1 = ((BS.pack "p", 0, [Other]), t1')
+t1 = ((BS.pack "p", 0, [], [Other]), t1')
 
 t2' :: TransitionFn Sigma
 t2' s =
@@ -33,7 +34,7 @@ t2' s =
     _ -> []
 
 t2 :: Transition Sigma
-t2 = ((BS.pack "q", 1, [Other]), t2')
+t2 = ((BS.pack "q", 1, [],[Other]), t2')
 
 s1 :: Sigma
 s1 = 

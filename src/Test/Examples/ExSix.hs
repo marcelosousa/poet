@@ -19,11 +19,11 @@ s6 =
   in toSigma pairs 
 
 t1_6, t21_6, t22_6, t31_6, t32_6 :: Transition Sigma
-t1_6  = ((BS.pack "p",0,[Other]),t1_6')
-t21_6 = ((BS.pack "q",1,[Other]),t21_6')
-t22_6 = ((BS.pack "q",2,[Other]),t22_6')
-t31_6 = ((BS.pack "r",3,[Other]),t31_6')
-t32_6 = ((BS.pack "r",4,[Other]),t32_6')
+t1_6  = ((BS.pack "p",0,[],[Other]),t1_6')
+t21_6 = ((BS.pack "q",1,[],[Other]),t21_6')
+t22_6 = ((BS.pack "q",2,[],[Other]),t22_6')
+t31_6 = ((BS.pack "r",3,[],[Other]),t31_6')
+t32_6 = ((BS.pack "r",4,[],[Other]),t32_6')
 
 t1_6', t21_6', t22_6', t31_6', t32_6' :: TransitionFn Sigma
 t1_6' s =

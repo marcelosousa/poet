@@ -63,7 +63,7 @@ process r@(eID,e,es) rest =
 
 prime :: EventID -> Event -> Map EventID (EventsID) -> Map GCS.TransitionID [(EventID, Event, EventsID)] -> Map GCS.TransitionID [(EventID, Event, EventsID)]
 prime eID ev eKPs res = 
-  let tr = snd3 $ evtr ev
+  let tr = snd4 $ evtr ev
   in case M.lookup eID eKPs of
     Nothing -> error "cant find predecessors of event"
     Just preds -> case M.lookup tr res of

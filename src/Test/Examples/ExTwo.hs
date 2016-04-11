@@ -19,9 +19,9 @@ s2 =
   in toSigma pairs
 
 t1_2, t2_2, t3_2 :: Transition Sigma
-t1_2 = ((BS.pack "p",0,[Other]),t1_2')
-t2_2 = ((BS.pack "q",1,[Other]),t2_2')
-t3_2 = ((BS.pack "r",2,[Other]),t3_2')
+t1_2 = ((BS.pack "p",0,[],[Other]),t1_2')
+t2_2 = ((BS.pack "q",1,[],[Other]),t2_2')
+t3_2 = ((BS.pack "r",2,[],[Other]),t3_2')
 
 t1_2', t2_2', t3_2' :: TransitionFn Sigma
 t1_2' s =

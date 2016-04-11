@@ -18,10 +18,10 @@ s4 =
   in toSigma pairs 
 
 t11_4, t12_4, t21_4, t22_4 :: Transition Sigma
-t11_4 = ((BS.pack "p",0,[Other]),t11_4')
-t12_4 = ((BS.pack "p",1,[Other]),t12_4')
-t21_4 = ((BS.pack "q",2,[Other]),t21_4')
-t22_4 = ((BS.pack "q",3,[Other]),t22_4')
+t11_4 = ((BS.pack "p",0,[],[Other]),t11_4')
+t12_4 = ((BS.pack "p",1,[],[Other]),t12_4')
+t21_4 = ((BS.pack "q",2,[],[Other]),t21_4')
+t22_4 = ((BS.pack "q",3,[],[Other]),t22_4')
 
 t11_4', t12_4', t21_4', t22_4' :: TransitionFn Sigma
 t11_4' s =

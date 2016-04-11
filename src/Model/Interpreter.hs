@@ -31,7 +31,7 @@ execIt gen thcount str indep sys st =
            let (n, gen') = randomR (0,V.length trs - 1) gen
            in case trs V.!? n of
              Nothing -> error $ "execIt getTransition fail!"
-             Just (procID,trID,_) ->
+             Just (procID,trID,_,_) ->
                let tr = getTransitionWithID sys trID
                    nstr = str ++ ststr ++ ltrs ++ "\nIndependent transitions=" ++ show indepTr ++ "\nRunning " ++ show (trID,procID) ++ "\n\n"
                    nst = head $ tr st
@@ -40,7 +40,7 @@ execIt gen thcount str indep sys st =
           
 checkDiamonds :: Ord st => System st -> [(TransitionInfo,TransitionInfo)] -> st -> Bool
 checkDiamonds sys [] s = True
-checkDiamonds sys (((_,t1,_),(_,t2,_)):rest) s =
+checkDiamonds sys (((_,t1,_,_),(_,t2,_,_)):rest) s =
   if checkDiamond sys t1 t2 s
   then checkDiamonds sys rest s
   else error $ "checkDiamonds: " ++ show (t1,t2)
@@ -92,7 +92,7 @@ interpretIt step indep sys st =
           then
             case trs V.!? n of
               Nothing -> error $ "interpret getTransition fail: " ++ show n
-              Just (_,trID,_) ->
+              Just (_,trID,_,_) ->
                 let tr = getTransitionWithID sys trID
                     nst = head $ tr st
                 in interpretIt (step+1) indep sys nst

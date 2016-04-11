@@ -10,7 +10,8 @@ import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
 import qualified Data.Set as S
-import Data.Map (Map,fromList)
+import Data.Map (Map,fromList,empty)
+import qualified Data.Map as MA
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
 import Data.List
@@ -96,6 +97,7 @@ data UnfolderState st s = UnfolderState {
   , cumsize :: Integer       -- Sum of the sizes
   , statelessMode :: Bool    -- Stateless or not
   , cutoffMode :: Bool       -- Cutoffs or not
+  , evtsPerTrans :: Map GCS.TransitionInfo Int -- Number of events per transition
 }
 
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
@@ -115,7 +117,7 @@ botEID :: EventID
 botEID = 0
 
 botEvent :: GCS.Acts -> Event
-botEvent acts = Event (BS.pack "", GCS.botID, acts) [] [] [] [] []
+botEvent acts = Event (BS.pack "", GCS.botID, [], acts) [] [] [] [] []
 
 -- @ Initial state of the unfolder
 iState :: (Hashable st, Eq st, Ord st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s) 
@@ -134,7 +136,7 @@ iState statelessMode cutoffMode syst indr = do
       cutoffCntr = 0
       size = 1
       cumsize = 0
-  return $ UnfolderState syst indr evts pcnf stak cntr stas maxConf cutoffCntr size cumsize statelessMode cutoffMode
+  return $ UnfolderState syst indr evts pcnf stak cntr stas maxConf cutoffCntr size cumsize statelessMode cutoffMode empty
 
 {-
 gc :: UnfolderState -> UnfolderState
@@ -153,7 +155,7 @@ execute :: st -> EventID -> UnfolderOp st s [st]
 execute cst e = do
   s@UnfolderState{..} <- get
   ev@Event{..} <- lift $ getEvent "execute" e evts 
-  let fn = GCS.getTransition syst $ snd3 evtr
+  let fn = GCS.getTransition syst $ snd4 evtr
   return $ fn cst
 
 isDependent_te :: I.UIndep -> GCS.TransitionInfo -> EventID -> Events s -> ST s Bool
@@ -194,7 +196,7 @@ predecessorWith :: EventID -> GCS.ProcessID -> Events s -> ST s EventID
 predecessorWith 0 p events = return GCS.botID
 predecessorWith e p events = do
   pred <- getIPred e events
-  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ fst3 evtr == p) pred
+  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ fst4 evtr == p) pred
   if null epred 
   then do 
     res <- mapM (\e -> predecessorWith e p events) pred
@@ -385,6 +387,14 @@ incSize = do
   s@UnfolderState{..} <- get
   let nsize = size + 1
   put s{ size = nsize }
+  
+incSizeTr :: GCS.TransitionInfo -> UnfolderOp st s ()
+incSizeTr tr = do
+  s@UnfolderState{..} <- get  
+  let nevtsPerTrans = case MA.lookup tr evtsPerTrans of
+                        Nothing -> MA.insert tr 1 evtsPerTrans
+                        Just n  -> MA.insert tr (n+1) evtsPerTrans
+  put s{ evtsPerTrans = nevtsPerTrans }
 
 -- @ decrement the size of U
 decSize :: UnfolderOp st s ()

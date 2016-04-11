@@ -40,11 +40,11 @@ convert (Program (decls, defs)) pcs flow thCount =
   in (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
-resetTID :: [(Transition Sigma, (TransitionID, RWSet))] -> [(Transition Sigma, (TransitionID, RWSet))] 
+resetTID :: [(Transition Sigma, (TransitionID, Statement, RWSet))] -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
 resetTID = reverse . snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
 
-resetTID' :: Int -> (Transition Sigma, (TransitionID, RWSet)) -> (Int, (Transition Sigma, (TransitionID, RWSet)))
-resetTID' c (((pid,_,act),fn),(_,annot)) = (c+1,(((pid,c,act),fn),(c,annot)))
+resetTID' :: Int -> (Transition Sigma, (TransitionID, Statement, RWSet)) -> (Int, (Transition Sigma, (TransitionID, Statement, RWSet)))
+resetTID' c (((pid,_,_st,act),fn),(_,st,annot)) = (c+1,(((pid,c,_st,act),fn),(c,st,annot)))
 
 getInitialDecls :: Decls -> LSigma
 getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) [] 
@@ -60,42 +60,42 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
 -- type Transition s = (ProcessID, TransitionID, TransitionFn s)
 -- process id is the name of the function
 -- transition id is the position in the vector of transitions 
-getTransitions :: Flow -> Definition -> [(Transition Sigma, (TransitionID, RWSet))] 
+getTransitions :: Flow -> Definition -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
 getTransitions flow (FunctionDef _ name _ stat) = recGetTrans flow (BS.pack name) stat
 
-recGetTrans :: Flow -> ProcessID -> Statement -> [(Transition Sigma, (TransitionID, RWSet))] 
+recGetTrans :: Flow -> ProcessID -> Statement -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
 recGetTrans flow name stat =
     foldl (\acc st -> let rest = toTransition name 0 flow st
                       in acc++rest) [] stat    
 
-toTransition :: ProcessID -> TransitionID -> Flow -> AnnStatement PC -> [(Transition Sigma, (TransitionID, RWSet))]
+toTransition :: ProcessID -> TransitionID -> Flow -> AnnStatement PC -> [(Transition Sigma, (TransitionID, Statement, RWSet))]
 toTransition procName tID flow s = 
   let pcVar = BS.pack $ "pc." ++ (BS.unpack procName)
-      trInfo = \act -> (procName, tID, act)
+      trInfo = \act -> (procName, tID, [s], act)
       trInfoDefault = trInfo [Other]
   in case s of
       ExprStat pc _expr ->
         case _expr of
           Call fname args ->
             let trrws = fromCall flow pcVar pc fname args
-            in map (\(tr, act, rw) -> ((trInfo act, tr), (tID,rw))) trrws
+            in map (\(tr, act, rw) -> ((trInfo act, tr), (tID,[s],rw))) trrws
           Assign _ _lhs _rhs ->
             let trrws = fromAssign flow pcVar pc _lhs _rhs
-            in map (\(tr, rw) -> ((trInfoDefault, tr), (tID,rw))) trrws
+            in map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws
       If pc _cond _then _else ->
         let trrws = fromIf flow pcVar pc _cond 
             _thentr = recGetTrans flow procName _then
             _elsetr = recGetTrans flow procName _else
-            _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,rw))) trrws 
+            _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws 
         in _condtr ++ _thentr ++ _elsetr
       IfThen pc _cond _then ->
         let trrws = fromIf flow pcVar pc _cond 
             _thentr = recGetTrans flow procName _then
-            _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,rw))) trrws 
+            _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws 
         in _condtr ++ _thentr
       Goto pc loc -> 
         let trrws = fromGoto flow pcVar pc
-        in map (\(tr, rw) -> ((trInfoDefault, tr), (tID,rw))) trrws 
+        in map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws 
       _ -> error $ "toTransition: " ++ show s
         
 modifyList :: [a] -> a -> Integer -> [a]

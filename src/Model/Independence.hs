@@ -13,7 +13,7 @@ type UIndep = V.Vector (V.Vector Bool)
 -- optimisize this code.
 -- | isIndependent -- check if two transitions are uncond. indep.
 isIndependent, isDependent :: UIndep -> TransitionInfo -> TransitionInfo -> Bool
-isIndependent uindep (p1,t1,_) (p2,t2,_)  
+isIndependent uindep (p1,t1,_,_) (p2,t2,_,_)  
   | (t1 == botID) || (t2 == botID) || (t1 == t2) || (p1 == p2)  = False
   | otherwise = 
       let t  = min t1 t2

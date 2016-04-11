@@ -75,12 +75,12 @@ s7 =
   in toSigma pairs 
 
 t11,t12,t13,t21,t22,t23 :: Transition Sigma
-t11 = ((BS.pack "q", 0, [Lock $ V $ BS.pack "lock"]), t11')
-t12 = ((BS.pack "q", 1, [Other]), t12')
-t13 = ((BS.pack "q", 2, [Unlock $ V $ BS.pack "lock"]), t13')
-t21 = ((BS.pack "r", 3, [Lock $ V $ BS.pack "lock"]), t21')
-t22 = ((BS.pack "r", 4, [Other]), t22')
-t23 = ((BS.pack "r", 5, [Unlock $ V $ BS.pack "lock"]), t23')
+t11 = ((BS.pack "q", 0, [], [Lock $ V $ BS.pack "lock"]), t11')
+t12 = ((BS.pack "q", 1, [], [Other]), t12')
+t13 = ((BS.pack "q", 2, [], [Unlock $ V $ BS.pack "lock"]), t13')
+t21 = ((BS.pack "r", 3, [], [Lock $ V $ BS.pack "lock"]), t21')
+t22 = ((BS.pack "r", 4, [], [Other]), t22')
+t23 = ((BS.pack "r", 5, [], [Unlock $ V $ BS.pack "lock"]), t23')
 
 sys7 :: System Sigma
 sys7 = System (V.fromList [t11,t12,t13,t21,t22,t23]) s7 [Unlock $ V $ BS.pack "lock"]

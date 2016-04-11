@@ -11,7 +11,7 @@ t11' :: TransitionFn Sigma
 t11' s = [insert (BS.pack "x") (IntVal 1) s]
 
 t11 :: Transition Sigma
-t11 = ((BS.pack "m", 0, [Other]), t11')
+t11 = ((BS.pack "m", 0,[], [Other]), t11')
 
 s9 :: Sigma
 s9 = toSigma [(BS.pack "x", IntVal 0)] 

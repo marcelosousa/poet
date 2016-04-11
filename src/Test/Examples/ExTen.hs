@@ -18,7 +18,7 @@ t11' s =
       _ -> []
 
 t11 :: Transition Sigma
-t11 = ((BS.pack "p", 0, [Other]), t11')
+t11 = ((BS.pack "p", 0, [], [Other]), t11')
 
 t21' :: TransitionFn Sigma
 t21' s =
@@ -31,7 +31,7 @@ t21' s =
     _ -> []
 
 t21 :: Transition Sigma
-t21 = ((BS.pack "q", 1, [Other]), t21')
+t21 = ((BS.pack "q", 1, [], [Other]), t21')
 
 t31' :: TransitionFn Sigma
 t31' s =
@@ -44,7 +44,7 @@ t31' s =
     _ -> []
 
 t31 :: Transition Sigma
-t31 = ((BS.pack "r", 2, [Other]), t31')
+t31 = ((BS.pack "r", 2, [],[Other]), t31')
 
 t41' :: TransitionFn Sigma
 t41' s =
@@ -57,7 +57,7 @@ t41' s =
     _ -> []
 
 t41 :: Transition Sigma
-t41 = ((BS.pack "s", 3, [Other]), t41')
+t41 = ((BS.pack "s", 3, [],[Other]), t41')
 
 s10 :: Sigma
 s10 =
