@@ -186,7 +186,7 @@ explore f dom mode cutoffs = do
   putStrLn $ "total number of maximal configurations: " ++ show nconf
   putStrLn $ "total number of cutoffs: " ++ show ncutoff
   putStrLn $ "average size of U at maximal configurations: " ++ show (div sumsize (toInteger nconf))
-  putStrLn $ "events per transition map:\n" ++ M.foldWithKey (\tr ev r -> show (tr, ev) ++ "\n" ++ r) "" evPerTr
+  putStrLn $ "events per transition map:\n" ++ M.foldWithKey (\tr ev r -> show (snd4 tr, ev) ++ "\n" ++ r) "" evPerTr
   --putStrLn $ "execution time(s): " ++ (show $ diffUTCTime stop start)
   --writeFile (replaceExtension f ".dot") unfst
 
