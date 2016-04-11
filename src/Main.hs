@@ -196,12 +196,25 @@ debug f dom mode cutoffs = do
       pes = case dom of
         Concrete ->
           let (sys, indr) = CC.convert prog' fflow flow thcount
-          in runST (Exp.unfolder mode cutoffs sys indr >>= \s -> primefactor (evts s) >>= (\(p,a,b,c) -> showEvents p >>= \s -> return $ s ++ show (a,b,c)))
+          in runST (Exp.unfolder mode cutoffs sys indr >>= \s -> showEvents $ evts s)
         Interval ->
           let (sys, indr) = IC.convert prog' fflow flow thcount
           in runST (Exp.unfolder mode cutoffs sys indr >>=  \s -> showEvents $ evts s)
   putStrLn pes
     
+prime :: FilePath -> Domain -> Bool -> Bool -> IO ()
+prime f dom mode cutoffs = do 
+  prog <- extract f
+  let (prog', fflow, flow, thcount) = frontEnd prog
+      pes = case dom of
+        Concrete ->
+          let (sys, indr) = CC.convert prog' fflow flow thcount
+          in runST (Exp.unfolder mode cutoffs sys indr >>= \s -> primefactor (evts s) >>= (\(p,a,b,c) -> showEvents p >>= \s -> return $ s ++ show (a,b,c)))
+        Interval ->
+          let (sys, indr) = IC.convert prog' fflow flow thcount
+          in runST (Exp.unfolder mode cutoffs sys indr >>=  \s -> showEvents $ evts s)
+  putStrLn pes
+  
 test :: IO ()
 test = do
   succCount <- runTestTT tests

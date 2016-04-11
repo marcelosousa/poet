@@ -34,12 +34,17 @@ primefactor evs = do
       eKVs = M.fromList m
   -- Map TransitionID [(EventID, Event, Predecessors)] 
       primes = M.foldWithKey (\eID ev res -> prime eID ev eKPs res) M.empty eKVs
-      pNum = length primes
+      pNum = M.size primes
       factors = M.fold (\l res -> concatMap (\x -> factorize x eKVs) l ++ res) [] primes
       result = nub factors
       fSize = length result
   prefix <- H.fromList result
-  T.trace (show primes) $ return (prefix, initEvs, fSize, pNum)
+  T.trace (printPrimes primes) $ return (prefix, initEvs, fSize, pNum)
+
+printPrimes :: Map GCS.TransitionID [(EventID, Event, EventsID)] -> String
+printPrimes = M.foldWithKey (\k v s -> printPrime k v ++ s) ""  
+printPrime :: GCS.TransitionID -> [(EventID, Event, EventsID)] -> String
+printPrime t p = show t ++ ": " ++ foldr (\(eID, ev, preds) s -> show (eID, evtr ev) ++ " preds = " ++ show preds ++ "\n" ++ s) "" p
 
 factorize :: (EventID, Event, EventsID) -> Map EventID Event -> [(EventID, Event)]
 factorize (eID, ev, preds) eIDev =
@@ -49,14 +54,12 @@ factorize (eID, ev, preds) eIDev =
   in (eID,ev):preds_
   
 process :: (EventID, Event, EventsID) -> [(EventID, Event, EventsID)] -> [(EventID, Event, EventsID)]
-process r@(eID,e,es) rest =
+process r@(eID,e,es) rest = 
   let s = length es
       rest' = filter (\(a,b,c) -> length c < s) rest
   in if rest' == []
      then r:filter (\(a,b,c) -> length c == s) rest
-     else if all (\(a,b,c) -> length c > s) rest
-          then rest 
-          else r:rest
+     else rest'
 
 prime :: EventID -> Event -> Map EventID (EventsID) -> Map GCS.TransitionID [(EventID, Event, EventsID)] -> Map GCS.TransitionID [(EventID, Event, EventsID)]
 prime eID ev eKPs res = 
