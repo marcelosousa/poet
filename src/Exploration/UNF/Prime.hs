@@ -35,17 +35,48 @@ primefactor evs = do
   -- Map TransitionID [(EventID, Event, Predecessors)] 
       primes = M.foldWithKey (\eID ev res -> prime eID ev eKPs res) M.empty eKVs
       pNum = M.size primes
-      factors = M.fold (\l res -> concatMap (\x -> factorize x eKVs) l ++ res) [] primes
-      result = nub factors
-      fSize = length result
-  prefix <- H.fromList result
-  T.trace (printPrimes primes) $ return (prefix, initEvs, fSize, pNum)
-
+      -- Initial Prefix is the prefix of the sure primes
+      (primesSure, primesUnsure) = M.partition (\l -> length l == 1) primes
+      pNumSure = M.size primesSure
+      -- Compute the complete prefix based on the initial prefix
+      -- Order the remaining events
+      pU = M.elems primesUnsure
+      finalPrimes = decideUnsure pU $ concat $ M.elems primesSure
+      -- 
+      _prefix = foldr (\l res -> factorize l eKVs ++ res) [] finalPrimes
+      prefix = nub _prefix      
+      fSize = length prefix
+  prefix <- H.fromList prefix
+  --T.trace (printPrimes primes) $ return (prefix, initEvs, fSize, pNum)
+  return (prefix, initEvs, fSize, pNumSure)
+  
 printPrimes :: Map GCS.TransitionID [(EventID, Event, EventsID)] -> String
 printPrimes = M.foldWithKey (\k v s -> printPrime k v ++ s) ""  
 printPrime :: GCS.TransitionID -> [(EventID, Event, EventsID)] -> String
 printPrime t p = show t ++ ": " ++ foldr (\(eID, ev, preds) s -> show (eID, evtr ev) ++ " preds = " ++ show preds ++ "\n" ++ s) "" p
 
+decideUnsure :: [[(EventID, Event, EventsID)]] -> [(EventID, Event, EventsID)] -> [(EventID, Event, EventsID)]
+decideUnsure [] primes = primes
+decideUnsure unsure primes =
+  let pU' = sort $ map sort unsure
+      p = decideU (head pU') primes
+  in decideUnsure (tail pU') (p:primes)
+
+isElem :: EventID -> [(EventID, Event, EventsID)] -> Bool
+isElem eID [] = False
+isElem eID ((k,_,_):r) 
+  | eID == k = True
+  | otherwise = isElem eID r
+
+decideU :: [(EventID, Event, EventsID)] -> [(EventID, Event, EventsID)] -> (EventID, Event, EventsID)
+decideU l primes =
+  let npr = sort $ map (\k@(eID,_,preds) -> (foldl (\acc x -> if isElem x primes then acc + 1 else acc) 0 preds, eID,k)) l 
+      (m,_,_) = maximum npr
+      mpr = filter (\(a,b,c) -> a == m) npr
+      mpr' = sortBy (\(a,b,c) (a',b',c') -> compare b b') mpr
+      (_,_,e) = head mpr'
+  in e
+  
 factorize :: (EventID, Event, EventsID) -> Map EventID Event -> [(EventID, Event)]
 factorize (eID, ev, preds) eIDev =
   let preds_ = map (\e -> case M.lookup e eIDev of 
