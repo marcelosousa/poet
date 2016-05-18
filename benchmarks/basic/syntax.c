@@ -1,4 +1,22 @@
 
+
+#include <stdio.h>
+
+struct test1 {
+	int i;
+	char str[10];
+};
+
+struct test2
+{
+	int i;
+	float f;
+	void *p;
+	struct test1 t;
+};
+
+typedef struct test2 test2_t;
+
 void f1 () {
 	printf ("hello world\n");
 }
@@ -15,9 +33,9 @@ int *f4 (int *ptr) {
 void test1 () {
 	// types and expressions
 	//
-	// variables: definition
-	// pointers: definition
-	// arrays: definitions
+	// variables: declaration
+	// pointers: declaration
+	// arrays: declaration
 	// casts
 	// pointer arithmetic
 	// array and pointer access
@@ -25,7 +43,7 @@ void test1 () {
 	// logic operators
 	// bitwise operators
 
-	// variables: definition
+	// variables: declaration
 	char          c1 = 123;
 	signed char   c2 = 123;
 	unsigned char c3 = 123;
@@ -45,24 +63,29 @@ void test1 () {
 	long double f3 = 123.123;
 
 	// modifiers
-	volatile int i7;
+	volatile int i10;
 
-	// pointers: definition
-	void   *ptr1 = (void*) &a;
-	char   *ptr2 = (char*) &a;
-	int    *ptr3 = (int*) &a;
+	// pointers: declaration
+	void   *ptr1 = (void*) &i1;
+	char   *ptr2 = (char*) &c1;
+	int    *ptr3 = (int*) &i2;
 	int   **ptr4;
 	char ***ptr5;
 	long double ***ptr6;
 
-	// arrays: definitions
-	char *tab1[];
-	char *tab2[];
-	int   tab3[];
+	// arrays: declaration
+	char *tab1[1];
+	char *tab2[2];
+	int   tab3[2];
 	int   tab4[4] = { 0, 1, 2, 3 };
 	int   tab5[4ull];
-	int  *tab6[4ull][];
+	int  *tab6[4ull][3u];
 	char  tab7[128] = "hello world, on the first 34 bytes";
+
+	// structs: declaration
+	struct test1 s1 = { 123, "hello" };
+	struct test2 s2 = { 1, 3.0, &f1, { i2, "hello" }};
+	test2_t      s3;
 	
 	// casts
 	c1 = 4;
@@ -80,12 +103,12 @@ void test1 () {
 	ptr2 = tab7 + 4;
 	ptr2 = tab7 + c1 * 2;
 	ptr2 = ((char *) &i1) + 2;
-	ptr3 = &tab3[5];
+	ptr3 = &tab3[3]; // beyond last element, but still legal to get address
 
 	// array and pointer access
 	i2 = tab4[3];
-	i2 = *(tab4 + 3)
-	i2 = *(tab4 + tab4[2] - 1)
+	i2 = *(tab4 + 3);
+	i2 = *(tab4 + tab4[2] - 1);
 
 	// arithmetic operators
 	i1 = 3 + 4;
@@ -150,18 +173,28 @@ void test2 () {
 
 	// while loop
 	i = 0; j = 0;
-	while (i < 10) j += i;
+	while (i < 10) j += i++;
 
 	// do while loop
 	i = 0; j = 0;
 	do
 	{
-		j += i;
+		j += ++i;
 	}
 	while (i < 10);
 }
 
 int main (int argc, char ** argv)
 {
+	int i;
+	test1 ();
+	test2 ();
+	f1 ();
+	f2 ();
+	i = f3 (1, 2, 3.0);
+	printf ("f3 %d\n", i);
+	i = * f4 (&argc);
+	printf ("f4 %d\n", i);
+
 	return 0;
 }
