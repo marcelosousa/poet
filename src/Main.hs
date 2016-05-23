@@ -14,7 +14,7 @@ import System.Random
 --import Data.Time
 
 import Language.SimpleC
-import Frontend (frontEnd)
+import Frontend (frontEnd, nfrontEnd)
 --import Domain.Concrete.Type
 import qualified Domain.Concrete.Converter as CC
 import qualified Domain.Interval.Converter as IC
@@ -68,6 +68,7 @@ data Option = Frontend {input :: FilePath}
             | Execute {input :: FilePath, domain :: Domain, seed :: Int}
             | Interpret {input :: FilePath, domain :: Domain}
             | Explore {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
+            | Prime {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
             | Debug {input :: FilePath, domain :: Domain, cutoff :: Int}
             | Test 
   deriving (Show, Data, Typeable, Eq)
@@ -97,12 +98,18 @@ exploreMode = Explore {input = def
                       ,stateful = def &= help "stateful mode (0=False [default], 1=True)"
                       ,cutoff = def &= help "cutoff mode (0=False [default], 1=True)"} &= help _helpExplore
 
+primeMode :: Option
+primeMode = Prime {input = def
+                      ,domain = def
+                      ,stateful = def &= help "stateful mode (0=False [default], 1=True)"
+                      ,cutoff = def &= help "cutoff mode (0=False [default], 1=True)"} &= help _helpExplore
+
 testMode :: Option
 testMode = Test {} &= help _helpTest
 
 progModes :: Mode (CmdArgs Option)
 progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode
-                                ,interpretMode, exploreMode, testMode, debugMode]
+                                ,interpretMode, exploreMode, testMode, debugMode, primeMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -124,17 +131,18 @@ runOption (Execute f dom seed) = execute f dom seed
 runOption (Interpret f dom) = interpreter f dom
 runOption (Explore f dom stmode cutoffs) =
   explore f dom (not $ toBool stmode) (toBool cutoffs)
+runOption (Prime f dom stmode cutoffs) =
+  prime f dom (not $ toBool stmode) (toBool cutoffs)
 runOption (Debug f dom cutoffs) = debug f dom False (toBool cutoffs)
 runOption Test = test
-
 
 frontend :: FilePath -> IO ()
 frontend f = do
   prog <- extract f
-  let prog' = frontEnd prog
-  putStrLn "ORIGINAL PROGRAM"
-  putStrLn "------------------------------"
-  print prog
+  let prog' = nfrontEnd prog
+--  putStrLn "ORIGINAL PROGRAM"
+--  putStrLn "------------------------------"
+--  print prog
   putStrLn "TRANSFORMED PROGRAM"
   putStrLn "------------------------------"
   print prog'

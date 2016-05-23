@@ -19,6 +19,9 @@ import Frontend.PassFourFive
 import Frontend.PassSix
 import Frontend.PassSeven
 
+nfrontEnd :: Program -> Program
+nfrontEnd = id
+
 -- frontEnd: 
 --  Transforms a C file into a restricted subset of C
 --  for easy manipulation and analysis.
