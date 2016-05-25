@@ -1,4 +1,18 @@
-int* i;
+//int* i;
+
+struct test2
+{
+  //  struct t { int i;};
+	//struct t i;
+  int i;
+};
+
+
+//int j;
+
+//int k;
+//typedef struct test2 test2_t;
+
 /*, j;
 static int x;
 static int *x;
