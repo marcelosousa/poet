@@ -1,3 +1,4 @@
+{- WARNING: This module is deprecated -}
 module Frontend where
 
 import Language.SimpleC.AST

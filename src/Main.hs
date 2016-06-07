@@ -14,7 +14,7 @@ import System.Random
 --import Data.Time
 
 import Language.SimpleC
-import Frontend (frontEnd, nfrontEnd)
+--import Frontend (frontEnd, nfrontEnd)
 --import Domain.Concrete.Type
 import qualified Domain.Concrete.Converter as CC
 import qualified Domain.Interval.Converter as IC
@@ -38,9 +38,9 @@ import Util.Generic
 -- Command Line Options Strings
 _program, _summary :: String
 _summary =
-  unlines ["POET - v0.3","Partial Order Exploration Tools"
+  unlines ["POET - v0.2.1","Partial Order Exploration Tools"
           ++"is a set of exploration methods for concurrent C programs."
-          ,"Copyright 2015 @ Marcelo Sousa"]
+          ,"Copyright 2015-16 @ Marcelo Sousa"]
 _program = "poet"
 _help    = "The input files of poet are C files written in a restricted subset of the C language."
          ++"For more info, check the documentation!"

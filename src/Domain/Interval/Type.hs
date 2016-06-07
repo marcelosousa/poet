@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Interval.Type
 -- Copyright :  (c) 2015 Marcelo Sousa
