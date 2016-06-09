@@ -7,6 +7,8 @@
 #include <klibc/sysconfig.h>
 //#include <klibc/havesyscall.h> // Cesar
 
+// Cesar: sigaction is a system call (glibc has it)
+#if 0
 #if _KLIBC_USE_RT_SIG
 
 __extern int __rt_sigsuspend(const sigset_t *, size_t);
@@ -34,4 +36,5 @@ sigsuspend(const sigset_t *maskp)
    return -1;
 }
 
+#endif
 #endif

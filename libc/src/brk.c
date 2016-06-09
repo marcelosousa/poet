@@ -8,6 +8,9 @@
 #include "malloc.h"
 #include "unimpl.h"
 
+// Cesar: brk and sbrk are usually libc functions, but quite standard so we
+// don't implement them
+#if 0
 #if !_KLIBC_NO_MMU		/* uClinux doesn't have brk() */
 
 char *__current_brk;
@@ -29,5 +32,7 @@ int brk(void *end_data_segment)
 	__current_brk = new_brk;
 	return 0;
 }
+
+#endif
 
 #endif

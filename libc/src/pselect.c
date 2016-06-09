@@ -5,6 +5,8 @@
 #include <sys/select.h>
 #include <sys/syscall.h>
 
+// Cesar: pselect is a system call (glibc has it)
+#if 0
 #if defined(__NR_pselect) && !_KLIBC_USE_RT_SIG
 
 /* Don't need to do anything here; use syscall stub directly */
@@ -39,4 +41,5 @@ int pselect(int n, fd_set * readfds, fd_set * writefds, fd_set * exceptfds,
 			  timeout, &extended_sigmask);
 }
 
+#endif
 #endif

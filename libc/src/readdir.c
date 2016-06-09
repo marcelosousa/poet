@@ -39,6 +39,10 @@ DIR *opendir(const char *name)
 	return dp;
 }
 
+// Cesar: this invokes getdents, a system call, which however glibc doesn't
+// expose, which means that four our purposes we decide to treat it as if it was
+// a system call :)
+#if 0
 struct dirent *readdir(DIR *dir)
 {
 	struct dirent *dent;
@@ -58,6 +62,7 @@ struct dirent *readdir(DIR *dir)
 
 	return dent;
 }
+#endif
 
 int closedir(DIR *dir)
 {

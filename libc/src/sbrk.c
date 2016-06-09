@@ -9,6 +9,9 @@
 #include <errno.h>
 #include "malloc.h"
 
+// Cesar: brk and sbrk are usually libc functions, but quite standard so we
+// don't implement them
+#if 0
 #if !_KLIBC_NO_MMU		/* uClinux doesn't have brk() */
 
 char *__current_brk;		/* Common with brk.c */
@@ -43,3 +46,5 @@ void *sbrk(ptrdiff_t increment)
 }
 
 #endif				/* !_KLIBC_NO_MMU */
+
+#endif

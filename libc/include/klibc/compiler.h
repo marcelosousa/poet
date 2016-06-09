@@ -118,6 +118,10 @@
 # define __mallocfunc
 #endif
 
+// Cesar: we don't want this :)
+# undef __mallocfunc
+# define __mallocfunc
+
 /* likely/unlikely */
 #if defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95))
 # define __likely(x)   __builtin_expect(!!(x), 1)
@@ -126,6 +130,12 @@
 # define __likely(x)   (!!(x))
 # define __unlikely(x) (!!(x))
 #endif
+
+// Cesar: similarly
+# undef __likely
+# undef __unlikely
+# define __likely(x)   (!!(x))
+# define __unlikely(x) (!!(x))
 
 /* Possibly unused function */
 #ifdef __GNUC__

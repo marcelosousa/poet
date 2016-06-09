@@ -30,19 +30,20 @@ libc.o : $(OBJS)
 	ld -i $^ -o $@ # incremental link
 
 libc.c : $(XOBJS)
-	-$(CILLY) $^ --out=$@ -o wont-compileeee
+	-$(CILLY) $^ --out=$@ -o wont-linkkkkkkkkk
 	-@echo
 	-@echo
 	-@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-	-@echo "The previous cilly execution is EXPECTED to have linking errors."
-	-@echo "That's OK, as long as it has generated the file 'libc.c',"
-	-@echo "which should have around 28K lines :)"
+	-@echo "The previous cilly execution is EXPECTED to finish with a link error"
+	-@echo "for the symbol 'main'. That's OK, as long as it has generated the"
+	-@echo "file 'libc.c',which should have around 27K lines :)"
 	-@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	-@echo
 	-@echo
 	ls -l libc.c
 	wc -l libc.c
 	-@echo
+	sed -i 's/^#pragma merger.*//' libc.c
 
 tags :
 	ctags -R include/ src/ Makefile inc.mk
@@ -51,7 +52,7 @@ clean :
 	rm -f $(OBJS)
 	rm -f $(XOBJS)
 	rm -f libc.[oa]
-	rm -f wont-compile* ___extra_files
+	rm -f wont-linkkk* ___extra_files
 	(test -f libc.c && mv libc.c libc.c.old) || true
 
 distclean : clean
@@ -63,7 +64,7 @@ vars :
 
 %.d : %.c
 	@echo "DEP $<"
-	@set -e; gcc -MM -MT $*.o $(CPPFLAGS) $< | sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
+	@set -e; gcc -MM -MT $*.o $(CPPFLAGS) $< | sed 's,\($*\)\.o[ :]*,\1.o \1.xo $@ : ,g' > $@;
 
 %.xo : %.c
 	$(CILLY) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<

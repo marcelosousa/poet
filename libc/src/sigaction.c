@@ -6,6 +6,8 @@
 #include <sys/syscall.h>
 #include <klibc/sysconfig.h>
 
+// Cesar: sigaction is a system call (glibc has it)
+#if 0
 __extern void __sigreturn(void);
 __extern int __sigaction(int, const struct sigaction *, struct sigaction *);
 #ifdef __sparc__
@@ -63,3 +65,4 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact)
 
 	return rv;
 }
+#endif
