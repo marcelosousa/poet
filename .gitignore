@@ -3,6 +3,7 @@ cabal-dev
 *.pdf
 *.dot
 *.o
+*.d
 *.hi
 *.chi
 *.chs.h
