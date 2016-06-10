@@ -11,6 +11,5 @@
 
 int fputs(const char *s, FILE *file)
 {
-   fprintf (file, "heeeeeeeeeeeeeeeeeeeeeelloooooooooooooo\n");
 	return _fwrite(s, strlen(s), file);
 }
