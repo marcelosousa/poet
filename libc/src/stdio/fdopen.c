@@ -15,7 +15,25 @@ struct _IO_file_pvt __stdio_headnode =
 	.next = &__stdio_headnode,
 };
 
-FILE *fdopen(int fd, const char *mode)
+FILE *fdopen_simple(int fd, const char *mode)
+{
+   FILE *f;
+
+	(void)mode;
+
+   f = malloc (sizeof (FILE));
+   if (! f)
+   {
+      errno = ENOMEM;
+      return 0;
+   }
+
+   /* the original implementation seem to initialize only this field! */
+   f->_IO_fileno = fd;
+   return f;
+}
+
+FILE *fdopen_orig(int fd, const char *mode)
 {
 	struct _IO_file_pvt *f;
 	const size_t bufoffs =
@@ -46,6 +64,15 @@ err:
 		free(f);
 	errno = ENOMEM;
 	return NULL;
+}
+
+FILE *fdopen(int fd, const char *mode)
+{
+#ifdef KLIBC_STREAMS_ORIG
+   return fdopen_orig (fd, mode);
+#else
+   return fdopen_simple (fd, mode);
+#endif
 }
 
 void __libc_init_stdio(void)

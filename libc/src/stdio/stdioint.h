@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <klibc/poet.h>
 
 /* Actual FILE structure */
 struct _IO_file_pvt {

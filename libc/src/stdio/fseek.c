@@ -4,7 +4,12 @@
 
 #include "stdioint.h"
 
-__extern int fseek(FILE *file, off_t where, int whence)
+__extern int fseek_simple(FILE *file, off_t where, int whence)
+{
+	return lseek(file->_IO_fileno, where, whence);
+}
+
+__extern int fseek_orig(FILE *file, off_t where, int whence)
 {
 	struct _IO_file_pvt *f = stdio_pvt(file);
 	off_t rv;
@@ -25,4 +30,13 @@ __extern int fseek(FILE *file, off_t where, int whence)
 		f->pub._IO_error = true;
 		return -1;
 	}
+}
+
+__extern int fseek(FILE *file, off_t where, int whence)
+{
+#ifdef KLIBC_STREAMS_ORIG
+   return fseek_orig (file, where, whence);
+#else
+   return fseek_simple (file, where, whence);
+#endif
 }

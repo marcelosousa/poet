@@ -12,6 +12,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <assert.h>
 
 #ifndef LONG_BIT
 #define LONG_BIT (CHAR_BIT*sizeof(long))
@@ -67,6 +68,12 @@ static inline int test_bit(unsigned long *bitmap, unsigned int bit)
 
 int vsscanf(const char *buffer, const char *format, va_list ap)
 {
+
+#ifndef KLIBC_STREAMS_ORIG
+   assert (0 && "vsscanf unimplemented in our simple libc stream library");
+   return EOF;
+#endif
+
 	const char *p = format;
 	char ch;
 	unsigned char uc;

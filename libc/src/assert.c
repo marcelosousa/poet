@@ -9,6 +9,12 @@
 
 __noreturn __assert_fail(const char *expr, const char *file, unsigned int line)
 {
-	printf("Assertion %s failed, file %s, line %u\n", expr, file, line);
+	//printf("Assertion %s failed, file %s, line %u\n", expr, file, line);
+	fputs(file, stdout);
+	fputs(":", stdout);
+	fputs("??: ", stdout);
+	fputs("Assertion failed: ", stdout);
+	fputs(expr, stdout);
+	fputs("\n", stdout);
 	abort();
 }

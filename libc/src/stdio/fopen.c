@@ -3,6 +3,7 @@
  */
 
 #include "stdioint.h"
+#include <klibc/poet.h>
 
 static int __parse_open_mode(const char *mode)
 {

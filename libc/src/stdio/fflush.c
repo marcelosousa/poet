@@ -4,17 +4,23 @@
 
 #include "stdioint.h"
 
+#include <klibc/poet.h>
+
 int __fflush(struct _IO_file_pvt *f)
 {
 	ssize_t rv;
 	char *p;
 
+// Cesar: this creates an infinite loop if you fflush(f) and f->ibytes != 0 and
+// f->obytes != 0 !!!
+#if 0
 	/*
 	 * Flush any unused input data.  If there is input data, there
 	 * won't be any output data.
 	 */
 	if (__unlikely(f->ibytes))
 		return fseek(&f->pub, 0, SEEK_CUR);
+#endif
 
 	p = f->buf;
 	while (f->obytes) {
@@ -39,6 +45,7 @@ int __fflush(struct _IO_file_pvt *f)
 
 int fflush(FILE *file)
 {
+#ifdef KLIBC_STREAMS_ORIG
 	struct _IO_file_pvt *f;
 
 	if (__likely(file)) {
@@ -55,6 +62,9 @@ int fflush(FILE *file)
 		}
 		return err;
 	}
+#else
+   return 0;
+#endif
 }
 
 

@@ -8,7 +8,10 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <assert.h>
+#include <stdio.h>
+#include <klibc/poet.h>
 #include "malloc.h"
+
 
 /* Both the arena list and the free memory list are double linked
    list with head node.  This the head node. Note that the arena list
@@ -137,7 +140,7 @@ static struct free_arena_header *__free_block(struct free_arena_header *ah)
 	return ah;
 }
 
-void *malloc(size_t size)
+void *malloc_impl_orig (size_t size)
 {
 	struct free_arena_header *fp;
 	struct free_arena_header *pah;
@@ -202,7 +205,44 @@ void *malloc(size_t size)
 	return __malloc_from_block(fp, size);
 }
 
-void free(void *ptr)
+void *malloc_impl_static (size_t size)
+{
+   static unsigned char heap[KLIBC_MALLOC_STATIC_SIZE];
+   static unsigned int  heapcnt = 0;
+   void *ptr;
+
+   if (size + heapcnt >= KLIBC_MALLOC_STATIC_SIZE) return 0;
+   ptr = (void *) heap + heapcnt;
+   heapcnt += size;
+   if (heapcnt % 16 != 0) heapcnt += 16 - (heapcnt % 16);
+#ifdef KLIBC_MALLOC_DEBUG
+   printf ("klibc: malloc : ptr %-16p size %-6zu count %u\n", ptr, size, heapcnt);
+#endif
+   return ptr;
+}
+
+void *malloc(size_t size)
+{
+
+#ifdef KLIBC_MALLOC_ORIG
+   static size_t count = 0;
+   void *ptr = malloc_impl_orig (size);
+#ifdef KLIBC_MALLOC_DEBUG
+   count += size;
+   printf ("klibc: malloc : ptr %-16p size %-6zu count %zu\n", ptr, size, count);
+#endif
+   return ptr;
+#else
+#ifdef KLIBC_MALLOC_STATIC
+   return malloc_impl_static (size);
+#else
+#error Please, select exactly one of KLIBC_MALLOC_{ORIG,STATIC}
+#endif // STATIC
+#endif // ORIG
+
+}
+
+void free_impl_orig(void *ptr)
 {
 	struct free_arena_header *ah;
 
@@ -282,3 +322,21 @@ void free(void *ptr)
 	}
 #endif
 }
+
+void free(void *ptr)
+{
+#ifdef KLIBC_MALLOC_DEBUG
+   printf ("klibc: free   : ptr %-16p\n", ptr);
+#endif
+
+#ifdef KLIBC_MALLOC_ORIG
+   free_impl_orig (ptr);
+#else
+#ifdef KLIBC_MALLOC_STATIC
+   return; // no implementation :)
+#else
+#error Please, select exactly one of KLIBC_MALLOC_{ORIG,STATIC}
+#endif // STATIC
+#endif // ORIG
+}
+

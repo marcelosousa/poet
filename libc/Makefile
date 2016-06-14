@@ -7,7 +7,7 @@ INC+=-I $R/include/bits64/
 INC+=-I $R/include/x86_64-linux-gnu/ 
 INC+=-I $R/include/arch/x86_64/
 CPPFLAGS:=-nostdinc -D__KLIBC__ $(INC)
-CFLAGS:=-Wall -g
+CFLAGS:=-Wall -g -fno-builtin
 CC:=gcc
 CILLY:=cilly --merge --verbose
 

@@ -10,11 +10,14 @@
 #include <sys/syscall.h>
 #include "atexit.h"
 
+#include <klibc/poet.h>
+
 /* Link chain for atexit/on_exit */
 struct atexit *__atexit_list;
 
 __noreturn exit(int rv)
 {
+#ifdef KLIBC_ATEXIT_CALLBACKS
 	struct atexit *ap;
 
 	for (ap = __atexit_list; ap; ap = ap->next) {
@@ -24,7 +27,7 @@ __noreturn exit(int rv)
 		   watching out for. */
 		ap->fctn(rv, ap->arg);
 	}
-
+#endif
 	/* Handle any library destructors if we ever start using them... */
 	fflush(NULL);
 

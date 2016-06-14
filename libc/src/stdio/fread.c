@@ -6,7 +6,24 @@
 #include <string.h>
 #include "stdioint.h"
 
-size_t _fread(void *buf, size_t count, FILE *file)
+size_t _fread_simple(void *buf, size_t count, FILE *file)
+{
+   size_t ret;
+   ret = read (file->_IO_fileno, buf, count);
+
+   /* errors */
+   if (ret == -1) {
+      file->_IO_error = true;
+      return 0;
+   }
+
+   /* EOF */
+   if (ret == 0) file->_IO_eof = true;
+
+   return ret;
+}
+
+size_t _fread_orig(void *buf, size_t count, FILE *file)
 {
 	struct _IO_file_pvt *f = stdio_pvt(file);
 	size_t bytes = 0;
@@ -76,4 +93,13 @@ size_t _fread(void *buf, size_t count, FILE *file)
 		}
 	}
 	return bytes;
+}
+
+size_t _fread(void *buf, size_t count, FILE *file)
+{
+#ifdef KLIBC_STREAMS_ORIG
+   return _fread_orig (buf, count, file);
+#else
+   return _fread_simple (buf, count, file);
+#endif
 }

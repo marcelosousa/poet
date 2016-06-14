@@ -51,8 +51,8 @@ char *poet_environ[2] = {"TEST=test", 0};
 
 void __libc_init_poet ()
 {
-   __page_size = 2 << 10; // 4k
-   __page_shift = 10;
+   __page_size = 4 << 10; // 4k
+   __page_shift = 12;
    if (environ) environ = poet_environ; // rewriting if we are the first to do so
 #if _KLIBC_HAS_ARCHINIT
 	__libc_archinit();

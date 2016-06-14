@@ -53,7 +53,12 @@ static size_t fwrite_noflush(const void *buf, size_t count,
 	return bytes;
 }
 
-size_t _fwrite(const void *buf, size_t count, FILE *file)
+size_t _fwrite_simple(const void *buf, size_t count, FILE *file)
+{
+   return write (file->_IO_fileno, buf, count);
+}
+
+size_t _fwrite_orig(const void *buf, size_t count, FILE *file)
 {
 	struct _IO_file_pvt *f = stdio_pvt(file);
 	size_t bytes = 0;
@@ -93,4 +98,13 @@ size_t _fwrite(const void *buf, size_t count, FILE *file)
 		bytes += fwrite_noflush(p, pu_len, f);
 
 	return bytes;
+}
+
+size_t _fwrite(const void *buf, size_t count, FILE *file)
+{
+#ifdef KLIBC_STREAMS_ORIG
+   return _fwrite_orig (buf, count, file);
+#else
+   return _fwrite_simple (buf, count, file);
+#endif
 }

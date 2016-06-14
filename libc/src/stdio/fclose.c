@@ -4,7 +4,12 @@
 
 #include "stdioint.h"
 
-int fclose(FILE *file)
+int fclose_simple(FILE *file)
+{
+   return close (file->_IO_fileno);
+}
+
+int fclose_orig(FILE *file)
 {
 	struct _IO_file_pvt *f = stdio_pvt(file);
 	int rv;
@@ -19,4 +24,13 @@ int fclose(FILE *file)
 
 	free(f);
 	return rv;
+}
+
+int fclose(FILE *file)
+{
+#ifdef KLIBC_STREAMS_ORIG
+   return fclose_orig (file);
+#else
+   return fclose_simple (file);
+#endif
 }
