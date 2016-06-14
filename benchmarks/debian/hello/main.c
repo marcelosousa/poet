@@ -48,6 +48,8 @@ void test3 (int argc, char **argv)
    printf2 ("test3: read: buff '%.*s'\n", (int) ret, buff);
    ret = close (fd);
    printf2 ("test3: close: ret %zd\n", ret);
+   putss ("test3: ret: ");
+   putlu (ret);
 }
 
 void test4 (int argc, char **argv)
@@ -96,7 +98,7 @@ void test5 (int argc, char **argv)
    c = getcwd (buff, 512);
    printf2 ("test1: getcwd: c %p buff %p '%s'\n", c, buff, buff);
 
-   ret = brk (&test5);
+   ret = brk (&ret);
    printf2 ("test1: brk: ret %d\n", ret);
 }
 

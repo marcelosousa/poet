@@ -62,13 +62,13 @@ char * gl_strdup (char * str)
 //void gl_err (const char * fmt, ...)
 void gl_err (const char * s)
 {
-	fputs (s, stderr);
+	puts (s);
    exit (EXIT_FAILURE);
 }
 
 //void gl_warn (const char * fmt, ...)
 void gl_warn (const char * s)
 {
-	fputs (s, stderr);
+	puts (s);
 }
 

@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#R=$(PWD)
-R=.
+R=$(PWD)
+#R=.
 
 include ../../../libc/inc.mk
 
 # traditional variables
-CFLAGS:=-Wall -g
+CFLAGS:=-Wall -g -fno-builtin
 LDFLAGS:=
 
 #CPPFLAGS:=-I $R/include/

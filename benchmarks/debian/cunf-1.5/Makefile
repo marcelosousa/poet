@@ -39,6 +39,8 @@ $(TARGETS) : % : %.o $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) 
 	cp src/main cunf
 
+$(TARGETS) : % : $(LDLIBS)
+
 prof : $(TARGETS)
 	rm gmon.out.*
 	src/main /tmp/ele4.ll_net
