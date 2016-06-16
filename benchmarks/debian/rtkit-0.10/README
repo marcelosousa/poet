@@ -1,0 +1,220 @@
+REALTIMEKIT Realtime Policy and Watchdog Daemon
+
+GIT:
+        git://git.0pointer.de/rtkit.git
+
+GITWEB:
+        http://git.0pointer.de/?p=rtkit.git
+
+NOTES:
+        RealtimeKit is a D-Bus system service that changes the
+        scheduling policy of user processes/threads to SCHED_RR
+        (i.e. realtime scheduling mode) on request. It is intended to
+        be used as a secure mechanism to allow real-time scheduling to
+        be used by normal user processes.
+
+        RealtimeKit enforces strict policies when handing out
+        real-time security to user threads:
+
+        * Only clients with RLIMIT_RTTIME set will get RT scheduling
+
+        * RT scheduling will only be handed out to processes with
+          SCHED_RESET_ON_FORK set to guarantee that the scheduling
+          settings cannot 'leak' to child processes, thus making sure
+          that 'RT fork bombs' cannot be used to bypass RLIMIT_RTTIME
+          and take the system down.
+
+        * Limits are enforced on all user controllable resources, only
+          a maximum number of users, processes, threads can request RT
+          scheduling at the same time.
+
+        * Only a limited number of threads may be made RT in a
+          specific time frame.
+
+        * Client authorization is verified with PolicyKit
+
+        RealtimeKit can also be used to hand outh high priority
+        scheduling (i.e. negative nice level) to user processes.
+
+        In addition to this a-priori policy enforcement, RealtimeKit
+        also provides a-posteriori policy enforcement, i.e. it
+        includes a canary-based watchdog that automatically demotes
+        all real-time threads to SCHED_OTHER should the system
+        overload despite the logic pointed out above. For more
+        information regarding canary-based RT watchdogs, see the
+        Acknowledgments section below.
+
+        In its duty to manage real-time scheduling *securely*
+        RealtimeKit runs as unpriviliged user, and uses capabalities,
+        resource limits and chroot() to minimize its security impact.
+
+        RealtimeKit probably has little use in embedded or server use
+        cases, use RLIMIT_RTPRIO tehre instead.
+
+WHY:
+        If processes that have real-time scheduling privileges enter a
+        busy loop they can freeze the entire the system. To make sure
+        such run-away processes cannot do this RLIMIT_RTTIME has been
+        introduced. Being a per-process limit it is however easily
+        cirumvented by combining a fork bomb with a busy loop.
+
+        RealtimeKit hands out RT scheduling to specific threads that
+        ask for it -- but only to those and due to SCHED_RESET_ON_FORK
+        it can be sure that this won't 'leak'.
+
+        In contrast to RLIMIT_RTPRIO the RealtimeKit logic makes sure
+        that only a certain number of threads can be made realtime,
+        per user, per process and per time interval.
+
+
+CLIENTS:
+        To be able to make use of realtime scheduling clients may
+        request so with a small D-Bus interface that is accessible on
+        the interface org.freedesktop.RealtimeKit1 as object
+        /org/freedesktop/RealtimeKit1 on the service
+        org.freedesktop.RealtimeKit1:
+
+                void MakeThreadRealtime(u64 thread_id, u32 priority);
+
+                void MakeThreadHighPriority(u64 thread_id, s32 priority);
+
+        The thread IDs need to be passed as kernel tids as returned by
+        gettid(), not a pthread_t! Only threads belonging to the
+        calling process can be made realtime/high priority. (Please
+        note that gettid() is not available in glibc, you need to
+        implement that manually using syscall(). Consult the reference
+        client implementation for details.)
+
+        A BSD-licensed reference implementation of the client is
+        available in rtkit.[ch] as part of the package. You may copy
+        this into your sources if you wish. However given how simple
+        the D-Bus interface is you might choose to implement your own
+        client implementation.
+
+        It is advisable to try acquiring realtime scheduling with
+        sched_setsheduler() first, so that systems where RLIMIT_RTPRIO
+        is set can be supported.
+
+        Here's an example using the reference implementation. Replace
+        this:
+
+        <snip>
+                struct sched_param p;
+                memset(&p, 0, sizeof(p));
+                p.sched_priority = 3;
+                sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &p);
+        </snip>
+
+        by this:
+
+        <snip>
+                struct sched_param p;
+                memset(&p, 0, sizeof(p));
+                p.sched_priority = 3;
+                if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &p) < 0
+                        && errno == EPERM)
+                        rtkit_make_realtime(system_bus, 0, p.sched_priority);
+        </snip>
+
+        But of course add more appropriate error checking! Also,
+        falling back to plain SCHED_RR when SCHED_RESET_ON_FORK causes
+        EINVAL migt be advisable).
+
+DAEMON:
+
+        The daemon is automatically started on first use via D-Bus
+        system bus activation.
+
+        Currently the daemon does not read on any configuration file,
+        however it can be configured with command line parameters. You
+        can edit
+
+        /usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service
+
+        to set those.
+
+        Run
+
+        /usr/libexec/rtkit-daemon --help
+
+        to get a quick overview on the supported parameters and their
+        defaults. Many of them should be obvious in their meaning. For
+        the remaining ones see below:
+
+        --max-realtime-priority= may be used to specify the maximum
+        realtime priority a client can acquire through
+        RealtimeKit. Please note that this value must be smaller than
+        the value passed to --our-realtime-priority=.
+
+        --our-realtime-priority= may be used to specify the realtime
+        priority of the daemon itself. Please note that this priority
+        is only used for a very short time while processing a client
+        request. Normally the daemon will not be running with a
+        realtime scheduling policy. The real-time priorities handed
+        out to the user must be lower than this value. (see above).
+
+        --min-nice-level= may be used to specify the minimum nice
+        level a client can acquire through RealtimeKit.
+
+        --our-nice-level= may be used to specify the nice level the
+        the daemon itself uses most of the time (except when
+        processing requests, see above). It is probably a good idea to
+        set this to a small positive value, to make sure that if the
+        system is overloaded already handing out further RT scheduling
+        will be delayed a bit.
+
+        --rttime-nsec-max= may be used to control which RLIMIT_RTTIME
+        value clients need to have chosen at minumum before they may
+        acquire RT scheduling through RealtimeKit.
+
+        --users-max= specifies how many users may acquire RT
+        scheduling at the same time for one or multiple of their
+        processes.
+
+        --processes-per-user-max= specifies how many processes per
+        user may acquire RT scheduling at the same time.
+
+        --threads-per-user-max= specifies how many threads per user
+        may acquire RT scheduling at the same time. Of course this
+        value should be set higher than --process-per-user-max=.
+
+        --actions-burst-sec= may be used to influence the rate
+        limiting logic in RealtimeKit. The daemon will only pass
+        realtime scheduling privileges to a maximum number of threads
+        within this timeframe (see below).
+
+        --actions-per-burst-max= may be used to influence the rate
+        limiting logic in RealtimeKit. The daemon will only pass
+        realtime scheduling privileges to this number of threads
+        within the time frame configured via
+        --actions-burst-sec=. When this limit is reached clients need
+        to wait until that time passes before requesting RT scheduling
+        again.
+
+        --canary-cheep-msec= may be used to control how often the
+        canary thread shall cheep.
+
+        --canary-watchdog-msec= may be used to control how quickly the
+        watchdog thread expects to receive a cheep from the canary
+        thread. This value must be chosen larger than
+        --canary-cheep-msec=. If the former is set 10s and the latter
+        to 7s, then the canary thread can trigger and deliver the
+        cheep with a maximum latency of 3s.
+
+ACKNOWLEDGMENTS:
+        The canary watchdog logic is inspired by previous work of
+        Vernon Mauery, Florian Schmidt, Kjetil Matheussen:
+
+        http://rt.wiki.kernel.org/index.php/RT_Watchdog
+
+LICENSE:
+        GPLv3+ for the daemon
+        BSD for the client reference implementation
+
+AUTHOR:
+        Lennart Poettering
+
+REQUIREMENTS:
+        Linux kernel >= 2.6.31
+        D-Bus
+        PolicyKit >= 0.92

@@ -1,0 +1,12 @@
+
+
+- Dowloaded with "apt-get source rtkit", on Ubuntu 14.04
+- Modified Makefile.am to run our compilation environment
+- Modified _gettid to avoid dependency on syscall(2)
+- Modified some datastructre having a dependency to sockaddr_in6
+
+Copmilation
+===========
+
+- Edit Makefile.am to set the desired compilation environment
+- Run ./configure
