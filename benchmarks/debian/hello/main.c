@@ -1,4 +1,5 @@
 
+#define __USE_XOPEN2K
 #include "printf2.h"
 
 #include <sys/types.h>
@@ -7,8 +8,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-
+#include <pthread.h>
 #include <signal.h>
+#include <errno.h>
 
 
 void test1 (int argc, char **argv)
@@ -41,7 +43,7 @@ void test3 (int argc, char **argv)
    size_t ret;
 
    puts ("test3: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-   fd = open2 ("./main.c", O_RDONLY);
+   fd = open ("./main.c", O_RDONLY, 0644);
    printf2 ("test3: open: fd %d\n", fd);
    ret = read (fd, buff, 64);
    printf2 ("test3: read: ret %zd\n", ret);
@@ -50,6 +52,7 @@ void test3 (int argc, char **argv)
    printf2 ("test3: close: ret %zd\n", ret);
    putss ("test3: ret: ");
    putlu (ret);
+   puts ("");
 }
 
 void test4 (int argc, char **argv)
@@ -98,8 +101,49 @@ void test5 (int argc, char **argv)
    c = getcwd (buff, 512);
    printf2 ("test1: getcwd: c %p buff %p '%s'\n", c, buff, buff);
 
-   ret = brk (&ret);
+   //ret = brk (&ret);
    printf2 ("test1: brk: ret %d\n", ret);
+}
+
+void *thread_test6 (void *arg)
+{
+   int id = * (int*) arg;
+
+   printf2 ("t%d: starting; errno %p\n", id, &errno);
+   sleep (id);
+   printf2 ("t%d: exiting\n", id);
+   return (void*) (intptr_t) id;
+}
+
+void test6 (int argc, char **argv)
+{
+   pthread_t tid1;
+   pthread_t tid2;
+   int i1 = 1;
+   int i2 = 2;
+   int ret;
+   void *ptr;
+
+   puts ("test6: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+   errno = ENOMEM;
+   printf2 ("test6: errno: %p\n", &errno);
+   printf2 ("test6: creating two threads...\n");
+   ret = pthread_create (&tid1, 0, thread_test6, (void*) &i1);
+   if (ret != 0) {
+      printf2 ("test6: pthread_create: error %d: %s\n", ret, strerror (ret));
+   }
+
+   ret = pthread_create (&tid2, 0, thread_test6, (void*) &i2);
+   if (ret != 0) {
+      printf2 ("test6: pthread_create: error %d: %s\n", ret, strerror (ret));
+   }
+
+   printf2 ("test6: done, waiting for termination...\n");
+   ret = pthread_join (tid1, &ptr);
+   printf2 ("test6: join: t1: %p\n", ptr);
+   ret = pthread_join (tid2, &ptr);
+   printf2 ("test6: join: t2: %p\n", ptr);
 }
 
 int main (int argc, char **argv)
@@ -111,6 +155,7 @@ int main (int argc, char **argv)
    test3 (argc, argv);
    test4 (argc, argv);
    test5 (argc, argv);
+   test6 (argc, argv);
 
    return 0;
 }

@@ -5,23 +5,23 @@ CFLAGS=-Wall -g
 LDFLAGS:=
 
 #CC=clang
-#CC=gcc
-CC=cilly --merge --out=out.c --dormunreach
-CPPFLAGS:=
-CPPFLAGS:=-I . $(PLC_CPPFLAGS)
-#LDLIBS:=
-LDLIBS:=$(PLC_LDLIBS_C)
-#LDLIBS:=$(PLC_LDLIBS_A)
+CC=gcc -std=gnu99
+#CC=cilly --merge --out=full.c --dormunreach --dopoet
+#CPPFLAGS:=
+#CPPFLAGS:=-I . $(PLC_CPPFLAGS)
+LDLIBS:=-pthread
+#LDLIBS:=$(PLC_LDLIBS_C) -pthread
+#LDLIBS:=$(PLC_LDLIBS_A) -pthread
 
 all : main
 	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	-./main
 	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-	gcc -Wall -c out.c
-	readelf -s out.o | grep --color UND
+	gcc -Wall -c full.c
+	readelf -s full.o | grep --color UND
 
-out :
-	gcc -o out out.c
+full :
+	gcc -o full full.c
 
 clean :
-	rm -f main *.o out.c
+	rm -f main *.o full.c
