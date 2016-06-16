@@ -27,11 +27,13 @@
 
 /* A time value that is accurate to the nearest
    microsecond but also has a range of years.  */
+#if 0 // Cesar: disabled, as already defined in <sys/time.h>
 struct timeval
   {
     __time_t tv_sec;		/* Seconds.  */
     __suseconds_t tv_usec;	/* Microseconds.  */
   };
+#endif
 # endif	/* struct timeval */
 #endif
 

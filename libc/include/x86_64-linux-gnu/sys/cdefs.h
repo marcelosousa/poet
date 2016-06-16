@@ -226,6 +226,7 @@
 /* At some point during the gcc 2.96 development the `pure' attribute
    for functions was introduced.  We don't want to use it unconditionally
    (although this would be possible) since it generates warnings.  */
+# undef  __attribute_pure__
 #if __GNUC_PREREQ (2,96)
 # define __attribute_pure__ __attribute__ ((__pure__))
 #else
@@ -233,6 +234,7 @@
 #endif
 
 /* This declaration tells the compiler that the value is constant.  */
+# undef  __attribute_const__
 #if __GNUC_PREREQ (2,5)
 # define __attribute_const__ __attribute__ ((__const__))
 #else
@@ -242,6 +244,8 @@
 /* At some point during the gcc 3.1 development the `used' attribute
    for functions was introduced.  We don't want to use it unconditionally
    (although this would be possible) since it generates warnings.  */
+# undef __attribute_used__
+# undef __attribute_noinline__
 #if __GNUC_PREREQ (3,1)
 # define __attribute_used__ __attribute__ ((__used__))
 # define __attribute_noinline__ __attribute__ ((__noinline__))
@@ -251,6 +255,7 @@
 #endif
 
 /* gcc allows marking deprecated functions.  */
+# undef __attribute_deprecated__
 #if __GNUC_PREREQ (3,2)
 # define __attribute_deprecated__ __attribute__ ((__deprecated__))
 #else
@@ -265,7 +270,7 @@
    all designated arguments are considered.  */
 #if __GNUC_PREREQ (2,8)
 # define __attribute_format_arg__(x) __attribute__ ((__format_arg__ (x)))
-#else
+# /* Ignore */else
 # define __attribute_format_arg__(x) /* Ignore */
 #endif
 
@@ -323,6 +328,7 @@
    available.  In C++, __GNUC_GNU_INLINE__ will be defined even though
    __inline does not use the GNU inlining rules.  If neither macro is
    defined, this version of GCC only supports GNU inline semantics. */
+#  undef __extern_inline
 # if defined __GNUC_STDC_INLINE__ || defined __GNUC_GNU_INLINE__
 #  define __extern_inline extern __inline __attribute__ ((__gnu_inline__))
 #  define __extern_always_inline \

@@ -27,18 +27,14 @@
 typedef uint64_t eventfd_t;
 
 
-__BEGIN_DECLS
-
 /* Return file descriptor for generic event channel.  Set initial
    value to COUNT.  */
-extern int eventfd (int __count, int __flags) __THROW;
+extern int eventfd (int __count, int __flags);
 
 /* Read event counter and possibly wait for events.  */
 extern int eventfd_read (int __fd, eventfd_t *__value);
 
 /* Increment event counter.  */
 extern int eventfd_write (int __fd, eventfd_t __value);
-
-__END_DECLS
 
 #endif /* sys/eventfd.h */

@@ -9,17 +9,18 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/syscall.h>
-#include "unimpl.h"
 
+// system call
+#if 0
 #if !defined(__alpha__) && !defined(__ia64__)
 
 extern int __getpriority(int, int);
 
 int getpriority(int which, int who)
 {
-   UNIMPL ();
 	int rv = 0; //__getpriority(which, who);
 	return (rv < 0) ? rv : 20-rv;
 }
+#endif
 
 #endif

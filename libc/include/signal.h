@@ -13,6 +13,11 @@
 
 #include <klibc/archsignal.h>	/* Includes <asm/signal.h> if appropriate */
 
+// Cesar
+#include <asm-generic/siginfo.h>
+#include <bits/pthreadtypes.h>
+#include <bits/sigthread.h>
+
 /* glibc seems to use sig_atomic_t as "int" pretty much on all architectures.
    Do the same, but allow the architecture to override. */
 #ifndef _KLIBC_HAS_ARCH_SIG_ATOMIC_T
@@ -99,5 +104,6 @@ __extern int sigpending(sigset_t *);
 __extern int sigsuspend(const sigset_t *);
 __extern int raise(int);
 __extern int kill(pid_t, int);
+
 
 #endif				/* _SIGNAL_H */

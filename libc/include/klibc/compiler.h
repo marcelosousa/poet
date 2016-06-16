@@ -37,6 +37,7 @@
  * How to declare a function which should be inlined or have a call to
  * an external module
  */
+#undef __extern_inline
 #ifdef __GNUC__
 # ifdef __GNUC_STDC_INLINE__
 #  define __extern_inline extern __inline__ __attribute__((__gnu_inline__))
@@ -155,6 +156,7 @@
 #endif
 
 /* Shut up unused warnings */
+# undef __attribute_used__
 #ifdef __GNUC__
 # define __attribute_used__ __attribute__((used))
 #else

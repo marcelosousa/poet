@@ -178,6 +178,9 @@ enum __rusage_who
 #define __need_timeval
 #include <bits/time.h>		/* For `struct timeval'.  */
 
+// Cesar:
+#include <linux/time.h>	/* for `struct timeval'.  */
+
 /* Structure which says how much of each resource has been used.  */
 
 /* The purpose of all the unions is to have the kernel-compatible layout

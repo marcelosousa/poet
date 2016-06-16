@@ -8,6 +8,10 @@
 #include <klibc/extern.h>
 #include <asm/errno.h>
 
-__extern int errno;
+__extern int *__errno_location ();
+
+#ifndef errno
+# define errno (*__errno_location ())
+#endif
 
 #endif /* _ERRNO_H */

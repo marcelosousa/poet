@@ -46,7 +46,7 @@ libc.c : $(XOBJS)
 	sed -i 's/^#pragma merger.*//' libc.c
 
 tags :
-	ctags -R include/ src/ Makefile inc.mk
+	ctags -R include/ src/ Makefile inc.mk /usr/include
 
 clean :
 	rm -f $(OBJS)

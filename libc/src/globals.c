@@ -6,5 +6,10 @@
 #include <errno.h>
 #include <unistd.h>
 
-int errno;
+int __errno;
 char **environ;
+
+__extern int *__errno_location ()
+{
+   return &__errno;
+}
