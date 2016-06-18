@@ -31,8 +31,7 @@ all : main
 	-gcc -Wall -c full.c
 	-readelf -s full.o | grep --color UND
 
-full :
-	gcc -o full full.c
+full : main
 
 clean :
 	rm -f main *.o full.c
