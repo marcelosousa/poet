@@ -1,0 +1,9 @@
+*.full.*c
+stamp-h1
+.deps
+.pc
+config.h
+config.log
+config.status
+Makefile
+autom4te.cache

@@ -392,23 +392,24 @@ finish:
 #endif
 }
 
-int sd_notifyf(int unset_environment, const char *format, ...) {
+int sd_notifyf(int unset_environment, const char *format) {
 #if defined(DISABLE_SYSTEMD) || !defined(__linux__)
         return 0;
 #else
-        va_list ap;
+        //va_list ap;
         char *p = NULL;
+        char buff[128];
         int r;
 
-        va_start(ap, format);
-        r = vasprintf(&p, format, ap);
-        va_end(ap);
-
-        if (r < 0 || !p)
-                return -ENOMEM;
+        //va_start(ap, format);
+        //r = vasprintf2(&p, format, ap);
+        //va_end(ap);
+        //if (r < 0 || !p) return -ENOMEM;
+        strncpy (buff, format, 128);
+        p = buff;
 
         r = sd_notify(unset_environment, p);
-        free(p);
+        //free(p);
 
         return r;
 #endif
