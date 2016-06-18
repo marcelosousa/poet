@@ -166,6 +166,14 @@ __extern long int pathconf (const char *__path, int __name);
 __extern long int fpathconf (int __fd, int __name);
 __extern long int sysconf (int __name);
 
+__extern int lockf(int fd, int cmd, off_t len);
+
+# define F_ULOCK 0	/* Unlock a previously locked region.  */
+# define F_LOCK  1	/* Lock a region for exclusive use.  */
+# define F_TLOCK 2	/* Test and lock a region for exclusive use.  */
+# define F_TEST  3	/* Test a region for other processes locks.  */
+
+
 
 __extern int daemon(int, int);
 

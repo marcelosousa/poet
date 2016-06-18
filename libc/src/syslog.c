@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+// Cesar: external, to avoid inlining
+#if 0
 /* Maximum size for a kernel message */
 #define BUFLEN 1024
 
@@ -87,3 +89,4 @@ void syslog(int prio, const char *format, ...)
 	vsyslog(prio, format, ap);
 	va_end(ap);
 }
+#endif

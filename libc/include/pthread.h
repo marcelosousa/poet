@@ -21,7 +21,9 @@
 
 // Cesar: otherwise some structures in bits/pthreadtypes.h do not get defined
 // ...
-#define __USE_XOPEN2K
+#ifndef __USE_XOPEN2K
+# define __USE_XOPEN2K
+#endif
 
 
 #include <features.h>
