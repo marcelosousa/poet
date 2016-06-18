@@ -84,15 +84,18 @@ void test5 (int argc, char **argv)
    puts ("test5: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
    int ret;
-   struct sigaction sa;
-   struct sigaction saold;
+   //struct sigaction sa;
+   //struct sigaction saold;
    char buff[512];
    char *c;
 
    ret = open ("./main", O_RDONLY, 0);
    printf2 ("test1: sigaction: ret %d\n", ret);
 
-   ret = sigaction (SIGUSR1, &sa, &saold);
+   // if we pass a "struct sigaction" in any of these two parameters, and we use
+   // the struct sigaction defined in our klibc but call the sigaction function
+   // of glibc, this is a source of buffer overflow ...
+   ret = sigaction (SIGUSR1, 0, 0);
    printf2 ("test1: sigaction: ret %d\n", ret);
 
    ret = sigprocmask (SIG_BLOCK, 0, 0);
@@ -121,7 +124,7 @@ void test6 (int argc, char **argv)
    pthread_t tid2;
    int i1 = 1;
    int i2 = 2;
-   int ret;
+   int ret = 0;
    void *ptr;
 
    puts ("test6: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
