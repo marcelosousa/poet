@@ -16,18 +16,18 @@ import System.Random
 import Language.SimpleC
 --import Frontend (frontEnd, nfrontEnd)
 --import Domain.Concrete.Type
-import qualified Domain.Concrete.Converter as CC
-import qualified Domain.Interval.Converter as IC
-import Model.Interpreter
-import qualified Exploration.UNF.Unfolder as Exp
-import Exploration.UNF.APIStateless hiding (execute)
-import Exploration.UNF.Prime
+--import qualified Domain.Concrete.Converter as CC
+--import qualified Domain.Interval.Converter as IC
+--import Model.Interpreter
+--import qualified Exploration.UNF.Unfolder as Exp
+--import Exploration.UNF.APIStateless hiding (execute)
+--import Exploration.UNF.Prime
 
-import Test.HUnit (runTestTT)
-import Test.Tests
-import Test.Examples
-import Util.Printer
-import Util.Generic
+-- import Test.HUnit (runTestTT)
+-- import Test.Tests
+-- import Test.Examples
+-- import Util.Printer
+-- import Util.Generic
 
 --import Unfolderful
 --import Printer
@@ -63,14 +63,15 @@ data Domain = Concrete | Interval
 instance Default Domain where
   def = Concrete
   
-data Option = Frontend {input :: FilePath}
-            | Middleend {input :: FilePath}
-            | Execute {input :: FilePath, domain :: Domain, seed :: Int}
-            | Interpret {input :: FilePath, domain :: Domain}
-            | Explore {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
-            | Prime {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
-            | Debug {input :: FilePath, domain :: Domain, cutoff :: Int}
-            | Test 
+data Option 
+  = Frontend {input :: FilePath}
+  | Middleend {input :: FilePath}
+  | Execute {input :: FilePath, domain :: Domain, seed :: Int}
+  | Interpret {input :: FilePath, domain :: Domain}
+  | Explore {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
+  | Prime {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
+  | Debug {input :: FilePath, domain :: Domain, cutoff :: Int}
+  | Test 
   deriving (Show, Data, Typeable, Eq)
 
 frontendMode :: Option
@@ -80,9 +81,12 @@ middleendMode :: Option
 middleendMode = Middleend {input = def &= args} &= help _helpFE
 
 executeMode :: Option
-executeMode = Execute {input = def
-                      ,domain = def
-                      ,seed = def &= help "seed for the scheduler"} &= help _helpExec
+executeMode =
+    Execute 
+  { input = def
+  , domain = def
+  , seed = def &= help "seed for the scheduler"
+  } &= help _helpExec
 
 interpretMode :: Option
 interpretMode = Interpret {input = def, domain = def &= args} &= help _helpInter
@@ -120,6 +124,8 @@ main = do options <- cmdArgsRun progModes
           runOption options
           
 runOption :: Option -> IO ()
+runOption = undefined
+{-
 runOption (Frontend f) = frontend f
 runOption (Middleend f) = do
   prog <- extract f
@@ -229,7 +235,6 @@ test = do
   succCount <- runTestTT tests
   print succCount
     
-{-
 runPT :: FilePath -> IO ()
 runPT file = do
   net <- parse file
