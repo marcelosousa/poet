@@ -18,17 +18,21 @@
 ACLOCAL_AMFLAGS = -I m4
 
 include ../../../libc/inc.mk
-#CC=clang
+AM_CFLAGS = -Wall -g -fno-builtin
+
+### (1) compilation with system headers + glibc
+#CC = clang
+
+### (2) compilation with our klibc + model extraction + full inlining
 CC = cilly --merge --verbose
-CCLD = $(CC) --out=$@.full.c --dormunreach $(PLC_LDLIBS_C)
+CCLD = $(CC) --out=$@.full.c --dopoet $(PLC_LDLIBS_C)
 AM_CPPFLAGS = $(PLC_CPPFLAGS)
-AM_CFLAGS = -fno-builtin
-#AM_LDFLAGS = $(PLC_LDLIBS_A)
-#V = 1
 
 policykitdir = $(datadir)/polkit-1/actions/
 dbussystemdir = $(sysconfdir)/dbus-1/system.d/
 dbusservicedir = $(datadir)/dbus-1/system-services/
+
+full : rtkit-daemon
 
 EXTRA_DIST = \
 	README \

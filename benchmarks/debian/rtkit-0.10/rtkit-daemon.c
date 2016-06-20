@@ -20,11 +20,13 @@
   along with RealtimeKit. If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include <pthread.h>
+#include "printf2.h"
 #include <stdbool.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -114,7 +116,7 @@
 #define assert_se(expr)                                                 \
         do {                                                            \
                 if (__builtin_expect(!(expr), 0)) {                     \
-                        fprintf(stderr, "Asssertion %s failed at %s:%u, function %s(). Aborting.\n", #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+                        fprintf2(stderr, "Asssertion %s failed at %s:%u, function %s(). Aborting.\n", #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
                         abort();                                        \
                 }                                                       \
         } while(0)
@@ -249,7 +251,7 @@ static char* get_user_name(uid_t uid, char *user, size_t len) {
                 return user;
         }
 
-        snprintf(user, len-1, "%llu", (unsigned long long) uid);
+        snprintf2(user, len-1, "%llu", (unsigned long long) uid);
         user[len-1] = 0;
         return user;
 }
@@ -260,9 +262,9 @@ static int read_starttime(pid_t pid, pid_t tid, unsigned long long *st) {
         FILE *f;
 
         if (tid != 0)
-                assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu/task/%llu/stat", get_proc_path(), (unsigned long long) pid, (unsigned long long) tid) < (int) (sizeof(fn)-1));
+                assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu/task/%llu/stat", get_proc_path(), (unsigned long long) pid, (unsigned long long) tid) < (int) (sizeof(fn)-1));
         else
-                assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu/stat", get_proc_path(), (unsigned long long) pid) < (int) (sizeof(fn)-1));
+                assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu/stat", get_proc_path(), (unsigned long long) pid) < (int) (sizeof(fn)-1));
         fn[sizeof(fn)-1] = 0;
 
         if (!(f = fopen(fn, "r")))
@@ -285,6 +287,7 @@ static int read_starttime(pid_t pid, pid_t tid, unsigned long long *st) {
 
         p++;
 
+#if 0  // cannot handle variadic argumtns
         if (sscanf(p, " "
                    "%*c "  /* state */
                    "%*d "  /* ppid */
@@ -308,6 +311,8 @@ static int read_starttime(pid_t pid, pid_t tid, unsigned long long *st) {
                    "%llu "  /* starttime */,
                    st) != 1)
                 return -EIO;
+#endif
+        *st = 123;        
 
         return 0;
 }
@@ -630,7 +635,7 @@ static int verify_process_rttime(struct process *p) {
         int r;
         bool good = false;
 
-        assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu/limits", get_proc_path(), (unsigned long long) p->pid) < (int) (sizeof(fn)-1));
+        assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu/limits", get_proc_path(), (unsigned long long) p->pid) < (int) (sizeof(fn)-1));
         fn[sizeof(fn)-1] = 0;
 
         if (!(f = fopen(fn, "r"))) {
@@ -651,11 +656,15 @@ static int verify_process_rttime(struct process *p) {
                 if (!startswith(line, "Max realtime timeout"))
                         continue;
 
+#if 0 // Cesar: cannot handle varargs
                 if (sscanf(line + 20, "%s %s", soft, hard) != 2) {
                         syslog(LOG_WARNING, "Warning: parse failure in %s.\n", fn);
                         break;
                 }
-
+#else
+                strcpy (soft, "hello");
+                strcpy (hard, "world");
+#endif
                 errno = 0;
                 rttime = strtoll(hard, &e, 10);
 
@@ -678,7 +687,7 @@ static int verify_process_user(struct rtkit_user *u, struct process *p) {
         int r;
         struct stat st;
 
-        assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu", get_proc_path(), (unsigned long long) p->pid) < (int) (sizeof(fn)-1));
+        assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu", get_proc_path(), (unsigned long long) p->pid) < (int) (sizeof(fn)-1));
         fn[sizeof(fn)-1] = 0;
 
         memset(&st, 0, sizeof(st));
@@ -750,11 +759,11 @@ static char* get_exe_name(pid_t pid, char *exe, size_t len) {
         char fn[128];
         ssize_t n;
 
-        assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu/exe", get_proc_path(), (unsigned long long) pid) < (int) (sizeof(fn)-1));
+        assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu/exe", get_proc_path(), (unsigned long long) pid) < (int) (sizeof(fn)-1));
         fn[sizeof(fn)-1] = 0;
 
         if ((n = readlink(fn, exe, len-1)) < 0) {
-                snprintf(exe, len-1, "n/a");
+                snprintf2(exe, len-1, "n/a");
                 exe[len-1] = 0;
         } else
                 exe[n] = 0;
@@ -961,7 +970,7 @@ static int reset_all(void) {
                     pid == 1)
                         continue;
 
-                assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu", get_proc_path(), pid) < (int) (sizeof(fn)-1));
+                assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu", get_proc_path(), pid) < (int) (sizeof(fn)-1));
                 fn[sizeof(fn)-1] = 0;
 
                 if (stat(fn, &st) < 0) {
@@ -976,7 +985,7 @@ static int reset_all(void) {
                 if (!canary_demote_root && st.st_uid == 0)
                         continue;
 
-                assert_se(snprintf(fn, sizeof(fn)-1, "%s/%llu/task", get_proc_path(), pid) < (int) (sizeof(fn)-1));
+                assert_se(snprintf2(fn, sizeof(fn)-1, "%s/%llu/task", get_proc_path(), pid) < (int) (sizeof(fn)-1));
                 fn[sizeof(fn)-1] = 0;
 
                 if (!(td = opendir(fn)))
@@ -1491,10 +1500,8 @@ static DBusHandlerResult dbus_handler(DBusConnection *c, DBusMessage *m, void *u
                 n_users);
 
         sd_notifyf(0,
-                   "STATUS=Supervising %u threads of %u processes of %u users.",
-                   n_total_threads,
-                   n_total_processes,
-                   n_users);
+                   "STATUS=Supervising %u threads of %u processes of %u users.");
+                   //n_total_threads, n_total_processes, n_users);
 
 finish:
         if (r) {
@@ -1956,7 +1963,7 @@ static void show_help(const char *exe) {
                 [SCHED_RR] = "RR"
         };
 
-        printf("%s [options]\n\n"
+        printf2("%s [options]\n\n"
                "COMMANDS:\n"
                "  -h, --help                          Show this help\n"
                "      --version                       Show version\n\n"
@@ -2022,7 +2029,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 return 0;
 
                         case ARG_VERSION:
-                                printf("%s " PACKAGE_VERSION "\n", get_file_name(argv[0]));
+                                printf2("%s " PACKAGE_VERSION "\n", get_file_name(argv[0]));
                                 *ret = 0;
                                 return 0;
 
@@ -2036,7 +2043,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 else if (strcasecmp(optarg, "fifo") == 0)
                                         sched_policy = SCHED_FIFO;
                                 else {
-                                        fprintf(stderr, "--scheduling-policy parameter invalid.\n");
+                                        fprintf2(stderr, "--scheduling-policy parameter invalid.\n");
                                         return -1;
                                 }
 
@@ -2050,7 +2057,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u < (unsigned) sched_get_priority_min(sched_policy) || u > (unsigned) sched_get_priority_max(sched_policy)) {
-                                        fprintf(stderr, "--our-realtime-priority parameter invalid.\n");
+                                        fprintf2(stderr, "--our-realtime-priority parameter invalid.\n");
                                         return -1;
                                 }
                                 our_realtime_priority = u;
@@ -2064,7 +2071,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 i = strtol(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || i < PRIO_MIN || i > PRIO_MAX*2) {
-                                        fprintf(stderr, "--our-nice-level parameter invalid.\n");
+                                        fprintf2(stderr, "--our-nice-level parameter invalid.\n");
                                         return -1;
                                 }
                                 our_nice_level = i;
@@ -2078,7 +2085,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u < (unsigned) sched_get_priority_min(sched_policy) || u > (unsigned) sched_get_priority_max(sched_policy)) {
-                                        fprintf(stderr, "--max-realtime-priority parameter invalid.\n");
+                                        fprintf2(stderr, "--max-realtime-priority parameter invalid.\n");
                                         return -1;
                                 }
                                 max_realtime_priority = u;
@@ -2092,7 +2099,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 i = strtol(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || i < PRIO_MIN || i >= PRIO_MAX) {
-                                        fprintf(stderr, "--min-nice-level parameter invalid.\n");
+                                        fprintf2(stderr, "--min-nice-level parameter invalid.\n");
                                         return -1;
                                 }
                                 min_nice_level = i;
@@ -2105,7 +2112,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 rttime_nsec_max = strtoull(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || rttime_nsec_max <= 0) {
-                                        fprintf(stderr, "--rttime-nsec-max parameter invalid.\n");
+                                        fprintf2(stderr, "--rttime-nsec-max parameter invalid.\n");
                                         return -1;
                                 }
                                 break;
@@ -2118,7 +2125,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--users-max parameter invalid.\n");
+                                        fprintf2(stderr, "--users-max parameter invalid.\n");
                                         return -1;
                                 }
                                 users_max = u;
@@ -2132,7 +2139,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--processes-per-user-max parameter invalid.\n");
+                                        fprintf2(stderr, "--processes-per-user-max parameter invalid.\n");
                                         return -1;
                                 }
                                 processes_per_user_max = u;
@@ -2146,7 +2153,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--threads-per-user-max parameter invalid.\n");
+                                        fprintf2(stderr, "--threads-per-user-max parameter invalid.\n");
                                         return -1;
                                 }
                                 threads_per_user_max = u;
@@ -2160,7 +2167,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--actions-burst-sec parameter invalid.\n");
+                                        fprintf2(stderr, "--actions-burst-sec parameter invalid.\n");
                                         return -1;
                                 }
                                 actions_burst_sec = u;
@@ -2174,7 +2181,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--actions-per-burst-max parameter invalid.\n");
+                                        fprintf2(stderr, "--actions-per-burst-max parameter invalid.\n");
                                         return -1;
                                 }
                                 actions_per_burst_max = u;
@@ -2204,7 +2211,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--canary-watchdog-msec parameter invalid.\n");
+                                        fprintf2(stderr, "--canary-watchdog-msec parameter invalid.\n");
                                         return -1;
                                 }
                                 canary_watchdog_msec = u;
@@ -2218,7 +2225,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e || u <= 0) {
-                                        fprintf(stderr, "--canary-cheep-msec parameter invalid.\n");
+                                        fprintf2(stderr, "--canary-cheep-msec parameter invalid.\n");
                                         return -1;
                                 }
                                 canary_cheep_msec = u;
@@ -2240,7 +2247,7 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
                                 errno = 0;
                                 u = strtoul(optarg, &e, 0);
                                 if (errno != 0 || !e || *e) {
-                                        fprintf(stderr, "--canary-refuse-sec parameter invalid.\n");
+                                        fprintf2(stderr, "--canary-refuse-sec parameter invalid.\n");
                                         return -1;
                                 }
                                 canary_refusal_sec = (uint32_t) u;
@@ -2258,25 +2265,25 @@ static int parse_command_line(int argc, char *argv[], int *ret) {
 
                         case '?':
                         default:
-                                fprintf(stderr, "Unknown command.\n");
+                                fprintf2(stderr, "Unknown command.\n");
                                 return -1;
                 }
         }
 
         if (optind < argc) {
-                fprintf(stderr, "Too many arguments.\n");
+                fprintf2(stderr, "Too many arguments.\n");
                 return -1;
         }
 
         if (max_realtime_priority >= our_realtime_priority) {
-                fprintf(stderr, "The maximum realtime priority (%u) handed out to clients cannot be higher then our own (%u).\n",
+                fprintf2(stderr, "The maximum realtime priority (%u) handed out to clients cannot be higher then our own (%u).\n",
                         max_realtime_priority,
                         our_realtime_priority);
                 return -1;
         }
 
         if (canary_cheep_msec >= canary_watchdog_msec) {
-                fprintf(stderr, "The canary watchdog interval must be larger than the cheep interval.\n");
+                fprintf2(stderr, "The canary watchdog interval must be larger than the cheep interval.\n");
                 return -1;
         }
 
@@ -2304,11 +2311,13 @@ int main(int argc, char *argv[]) {
         struct rtkit_user *u;
         unsigned long slack_ns;
 
+        __libc_init_poet ();
+
         if (parse_command_line(argc, argv, &ret) <= 0)
                 goto finish;
 
         if (getuid() != 0) {
-                fprintf(stderr, "Need to be run as root.\n");
+                fprintf2(stderr, "Need to be run as root.\n");
                 goto finish;
         }
 

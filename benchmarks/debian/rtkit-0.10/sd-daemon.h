@@ -243,7 +243,7 @@ int sd_notify(int unset_environment, const char *state) _sd_hidden_;
 
   See sd_notifyf(3) for more information.
 */
-int sd_notifyf(int unset_environment, const char *format, ...) _sd_printf_attr_(2,3) _sd_hidden_;
+int sd_notifyf(int unset_environment, const char *format);
 
 /*
   Returns > 0 if the system was booted with systemd. Returns < 0 on
