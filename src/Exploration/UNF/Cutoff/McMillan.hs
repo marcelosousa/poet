@@ -2,40 +2,25 @@
 module Exploration.UNF.Cutoff.McMillan where
 
 import Control.Monad.State.Strict
-import Control.Monad.ST.Safe
-import Data.Hashable
-import qualified Data.HashTable.Class as H
 import qualified Data.Map as M
 import Exploration.UNF.APIStateless
 import qualified Model.GCS as GCS
 
---import Debug.Trace
-
 -- @ Check if st is a cutoff
-cutoff :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> UnfolderOp st s Bool
-cutoff st si = trace ("Checking cutoff with state: " ++ show st) $ do
+cutoff :: (Ord st, GCS.Projection st) => st -> Int -> UnfolderOp st act s Bool
+cutoff st si = do
   s@UnfolderState{..} <- get
   let locs = GCS.controlPart st
+      stas' = M.insertWith (++) locs [(st,si)] stas
+  set_cutoff_table stas'
   case M.lookup locs stas of
-    Nothing -> do
-      let stas' = M.insertWith (++) locs [(st,si)] stas
-      updateCutoffTable stas'
-      return False
-    Just l -> do 
-      c <- cutoffCheck st si l
-      if c
-      then return True
-      else do
-        let stas' = M.insertWith (++) locs [(st,si)] stas
-        updateCutoffTable stas'
-        return False          
+    Nothing -> return False
+    Just l -> return $ cutoffCheck st si l
 
-cutoffCheck :: (Show st, Hashable st, Ord st, GCS.Projection st) => st -> Int -> [(st,Int)] -> UnfolderOp st s Bool
-cutoffCheck st si [] = return False
-cutoffCheck st si ((st',si'):r) = trace ("checking against: " ++ show st') $ do
-  if st' `GCS.subsumes` st -- && si' < si
-  then mtrace ("Cutoff is: " ++ show st') $ return True
-  else cutoffCheck st si r
+cutoffCheck :: GCS.Projection st => st -> Int -> [(st,Int)] -> Bool
+cutoffCheck st si [] = False
+cutoffCheck st si ((st',si'):r) =
+  (st' `GCS.subsumes` st && si' < si) || (cutoffCheck st si r)
 {-
   mv <- lift $ H.lookup stas st
   case mv of

@@ -9,7 +9,6 @@ import Control.Monad.ST
 import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
-import qualified Data.Set as S
 import Data.Map (Map,fromList,empty)
 import qualified Data.Map as MA
 import qualified Data.Maybe as M

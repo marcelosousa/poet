@@ -18,7 +18,7 @@ import Exploration.UNF.APIStateless
 import Exploration.UNF.Cutoff.McMillan
 import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
-import qualified Model.Independence as I
+-- import qualified Model.Independence as I
 import qualified Debug.Trace as DT
 
 import System.IO.Unsafe
