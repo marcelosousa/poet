@@ -16,107 +16,139 @@ import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as BS
 import Data.List
 import Util.Generic
--- import PetriNet
 
 import qualified Model.GCS as GCS
-import qualified Model.Independence as I
 import qualified Debug.Trace as T
 
 mytrace True a b = T.trace a b
 mytrace False a b = b
 
-mtrace = T.trace
---trace a b = b
-trace a b = b 
---trace = T.trace 
-
 -- @ The most basic type is event_id :: Int
 --   Pointer to an event
 type EventID = Int
 type EventsID = [EventID]
-
--- @ Configuration  
-data Configuration st = Conf {
-    cons :: st        -- state at this configuration
-  , mevs :: EventsID  -- maximal events of the configuration
-  , eevs :: EventsID  -- enabled events of the configuration
-  , cevs :: EventsID  -- special events: the ones that have imm conflicts
-}
-
--- @ An alternative is a conflicting extension of the configuration
---   that is being/was explored. 
-type Alternative = EventsID
-type Alternatives = [Alternative]
-type Counter = Int
+type EventName = (GCS.TId,GCS.Pos)
 
 -- @ Value of the main HashTable
---   (transition_id, predecessors, successors, #^, D, V)
-data Event = Event {
-    evtr :: GCS.TransitionInfo  -- Transition id
-  , pred :: EventsID         -- Immediate predecessors
-  , succ :: EventsID         -- Immediate successors
-  , icnf :: EventsID         -- Immediate conflicts: #^
-  , disa :: EventsID         -- Disabled events: D
-  , alte :: Alternatives     -- Valid alternatives: V
-} deriving (Show,Eq,Ord)
-    
+--   (name, actions, predecessors, successors, #^, D, V)
+data Event act =
+  Event 
+  {
+    name :: EventName    -- ^ Event name 
+  , acts :: [act]        -- ^ Event actions 
+  , pred :: EventsID     -- ^ Immediate predecessors
+  , succ :: EventsID     -- ^ Immediate successors
+  , icnf :: EventsID     -- ^ Immediate conflicts: #^
+  , disa :: EventsID     -- ^ Disabled events: D
+  , alte :: Alternatives -- ^ Valid alternatives: V
+  } 
+  deriving (Show,Eq,Ord)
+
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
-type Events s = HashTable s EventID Event
+type Events act s = HashTable s EventID (Event act)
 
 -- @ Show the set of events
-showEvents :: Events s -> ST s String
+showEvents :: Show act => Events act s -> ST s String
 showEvents evs = do
   m <- H.toList evs
   let km = sortBy (\a b -> compare (fst a) (fst b)) m
       r = foldl (\a m -> show m ++ "\n" ++ a) "" km
   return r
 
-copyEvents :: Events s -> ST s (Events s)
-copyEvents s = do
-  kv <- H.toList s
-  H.fromList kv
+-- @ Counter for various purposes
+type Counter = Int
 
+-- @ Configuration  
+data Configuration st =
+  Conf 
+  {
+    state :: st        -- ^ state 
+  , maevs :: EventsID  -- ^ maximal events 
+  , enevs :: EventsID  -- ^ enabled events 
+  , cfevs :: EventsID  -- ^ special events: the ones that have imm conflicts
+  }
+
+-- @ An alternative is a conflicting extension of a configuration
+--   that is being/was explored. 
+type Alternative = EventsID
+type Alternatives = [Alternative]
+    
 -- @ HashTable of States to EventID for Cutoffs
 --type States s st = HashTable s st EventID
 -- Int is the size of the local configuration of that event
 type States st = Map st [(st,Int)]
 
+-- @ Options for the unfolder 
+data UnfolderOpts =
+  UnfOpts
+  {
+    stateless :: Bool 
+  , cutoffs   :: Bool
+  }
+  deriving (Show,Eq,Ord)
+
+default_unf_opts :: UnfolderOpts
+default_unf_opts = UnfOpts False False
+
+-- @ Statistics for the unfolder 
+data UnfolderStats =
+  UnfStats
+  {
+    nr_max_conf       :: Counter  -- Nr of maximal configurations 
+  , nr_cutoffs        :: Counter  -- Nr of cutoffs
+  , nr_evs_prefix     :: Counter  -- Size of prefix |U|
+  , sum_size_max_conf :: Integer  -- Sum of sizes of maximal configurations
+  , nr_evs_per_name   :: Map EventName Int -- Number of events per name 
+  }
+  deriving (Show,Eq,Ord)
+
+default_unf_stats :: UnfolderStats
+default_unf_stats =
+ let nr_max_conf = 0
+     nr_cutoffs = 0
+     nr_evs_prefix = 1
+     sum_size_max_conf = 0
+     nr_evs_per_name = MA.singleton botName 1
+ in UnfStats nr_max_conf nr_cutoffs nr_evs_prefix
+             sum_size_max_conf nr_evs_per_name
+
 -- @ The state of the unfolder at any moment
-data UnfolderState st s = UnfolderState {
-    syst :: GCS.System st    -- The system being analyzed
-  , indr :: I.UIndep         -- Independence relation
-  , evts :: Events s         -- Unfolding prefix 
-  , pcnf :: Configuration st -- Previous configuration
-  , stak :: EventsID         -- Call stack
-  , cntr :: Counter          -- Event counter
-  , stas :: States st        -- Hash Table for cutoffs
-  , maxConf :: Counter       -- Maximal config counter
-  , cutoffCntr :: Counter    -- Cutoff counter
-  , size :: Counter          -- Size of |U|
-  , cumsize :: Integer       -- Sum of the sizes
-  , statelessMode :: Bool    -- Stateless or not
-  , cutoffMode :: Bool       -- Cutoffs or not
-  , evtsPerTrans :: Map GCS.TransitionInfo Int -- Number of events per transition
+data UnfolderState st act s = 
+  UnfolderState
+  {
+    syst :: GCS.System st act -- ^ The system being analyzed
+  , evts :: Events act s      -- ^ Unfolding prefix 
+  , pcnf :: Configuration st  -- ^ Previous configuration
+  , stak :: EventsID          -- ^ Call stack
+  , cntr :: Counter           -- ^ Event counter
+  , stas :: States st         -- ^ Hash Table for cutoffs
+  , opts :: UnfolderOpts      -- ^ Options
+  , stats :: UnfolderStats    -- ^ Statistics 
 }
 
+-- | Print the state of the unfolder
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
-instance Show (UnfolderState st s) where
-    show (u@UnfolderState{..}) = show (cntr, maxConf, cutoffCntr)
+instance Show (UnfolderState st act s) where
+    show (u@UnfolderState{..}) = show stats 
 --        beg ++ "UIndep: " ++ show indep ++ "\nEvents: " ++ show events ++ "\nCausality: " ++ show causality 
 --     ++ "\n" ++ show (cevs configurations) ++ "\nEnabled: " ++ show enable 
 --     ++ "\nDisable: " ++ show disable ++ "\nAlternatives: " ++ show alternatives  ++ "\nImmConflicts: " ++ show immediateConflicts ++ "\nCounters: " 
 --     ++ show counters ++ end
 
 -- @ Abbreviation of the type of an operation of the unfolder
-type UnfolderOp st s a = StateT (UnfolderState st s) (ST s) a
+type UnfolderOp st act s a = StateT (UnfolderState st act s) (ST s) a
 
 -- @ Bottom event and event_id
 botEID :: EventID
 botEID = 0
 
-botEvent :: GCS.Acts -> Event
+botName :: EventName
+botName = undefined
+
+{-
+botEvent :: [act] -> Event act
 botEvent acts = Event (BS.pack "", GCS.botID, [], acts) [] [] [] [] []
 
 -- @ Initial state of the unfolder
@@ -444,3 +476,4 @@ causalClosed evts conf (e:es) = do
   if all (\e' -> e' `elem` conf) prede
   then causalClosed evts conf es
   else return False
+-}

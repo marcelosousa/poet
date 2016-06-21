@@ -2,7 +2,7 @@ module Util.Generic where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.ST.Safe
+import Control.Monad.ST
 import qualified Data.ByteString as BS
 import Data.Hashable
 import qualified Data.HashTable.Class as H
