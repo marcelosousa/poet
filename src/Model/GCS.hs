@@ -55,7 +55,7 @@ class Projection st where
   dataPart :: st -> st
   subsumes :: st -> st -> Bool
 
-class (Action act, Projection st) => Collapsible st act where
+class (Show act, Action act, Ord st, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
   collapse :: System st act -> st -> TId -> [(st,[act])]
   dcollapse :: System st act -> st -> TId -> Pos -> (st,[act])

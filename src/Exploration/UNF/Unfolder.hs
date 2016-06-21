@@ -13,7 +13,6 @@ import qualified Data.Set as S
 import Data.Set (isSubsetOf)
 import qualified Data.Vector as V
 
-
 import Exploration.UNF.APIStateless
 import Exploration.UNF.Cutoff.McMillan
 import Util.Printer (unfToDot)
@@ -25,7 +24,7 @@ import System.IO.Unsafe
 import Prelude hiding (pred)
 import Util.Generic
 
-unfolder :: (Hashable st, Ord st, Show st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st act s)
+unfolder :: (Hashable st, GCS.Collapsible st act) => Bool -> Bool -> GCS.System st act -> ST s (UnfolderState st act s)
 unfolder statelessMode cutoffMode syst = do
   is <- i_unf_state statelessMode cutoffMode syst 
   (a,s) <- runStateT botExplore is 
@@ -34,90 +33,82 @@ unfolder statelessMode cutoffMode syst = do
 -- This is the beginning of the exploration
 -- where we construct the initial unfolding prefix 
 -- with the bottom event
-botExplore :: (Hashable st, Ord st, Show st, GCS.Projection st) => UnfolderOp st s () 
+botExplore :: (Hashable st, GCS.Collapsible st act) => UnfolderOp st act s () 
 botExplore = do 
   iConf <- initialExtensions 
   explore iConf botEID [] []
 
-initialExtensions = undefined
-explore = undefined
-{-
 -- The extensions from the bottom event
 -- After this function, the unfolding prefix denotes
 -- the execution of bottom, and contains all extensions from it.
-initialExtensions :: (Hashable st, Ord st, Show st, GCS.Projection st) => UnfolderOp st s (Configuration st)
+initialExtensions :: (Hashable st, GCS.Collapsible st act) => UnfolderOp st act s (Configuration st)
 initialExtensions = do
   s@UnfolderState{..} <- get
   let e = botEID
       cevs = [e]
-      st = GCS.initialState syst
-      trs = GCS.enabledTransitions syst st
-  enevs <- V.foldM (\en tr -> expandWith e cevs tr >>= \es -> return $! (es++en)) [] trs
-  s@UnfolderState{..} <- get -- trace ("enabled after e=" ++ show e ++ " are " ++ show enevs) get
+      st = GCS.gbst syst
+      trs = GCS.enabled syst st
+  enevs <- foldM (\en tr -> expandWith e cevs tr >>= \es -> return $! (es++en)) [] trs
+  s@UnfolderState{..} <- get 
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
   return $! iConf
 
 separator = "-----------------------------------------\n"
--- @@ main function 
-explore :: (Hashable st, Ord st, Show st, GCS.Projection st) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st s ()
+-- | explore: the main exploration function
+--  Input: 
+--    1. c: Current configuration
+--    2. ê: The latest event added to c. Necessarily a maximal event of c.
+--    3. d: The set of disabled events
+--    4. alt: Alternative (a corresponding branch in the wake up tree of ODPOR)
+explore :: (Hashable st,GCS.Collapsible st act) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st act s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
-  str <- lift $ showEvents evts
-  trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
-       ++ ", enevs = " ++ show eevs ++ ", alt = " 
-       ++ show alt ++ ", stack = " ++ show stak++")\n"++str) $ return ()
-  let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  -- k `seq` if null eevs 
-  if null eevs 
-  --if null eevs 
+  if null enevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
-    computePotentialAlternatives mevs cevs
-    incAccSize
-    incMaxConfCounter
+    computePotentialAlternatives maevs cfevs
+    inc_sum_size_max_conf 
+    inc_max_conf 
   else do
-    isStr <- lift $ unfToDot is
-    -- @ choose event
+    -- @ choose event to add to the current configuration
     let e = if null alt
-            then head eevs
-            else let lp = eevs `intersect` alt
+            then head enevs
+            else let lp = enevs `intersect` alt
                  in if null lp 
                     then error $ separator ++ "A `intersect` en(C) = 0 at explore(ê = " 
-                                 ++ show ê ++ ", enevs = " ++ show eevs ++ ", alt = " 
+                                 ++ show ê ++ ", enevs = " ++ show enevs ++ ", alt = " 
                                  ++ show alt ++ ", stack = " ++ show stak ++ ")\n"
-                                 -- ++ snd isStr
                     else head lp   
     -- @ initialize disable of e
-    lift $ setDisabled e d evts 
+    lift $ set_disa e d evts 
+    -- @TODO [June'16] revise this! 
+    pruned_conf <- 
+      if stateless opts 
+      then prune_config c
+      else return c
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
-    c' <- if statelessMode
-          then updateConfiguration c
-          else return c
-    nc <- unfold c' e
+    nc <- unfold pruned_conf e
     -- @ recursive call
     push e
     explore nc e d (e `delete` alt)
     pop
---    ms@UnfolderState{..} <- get
---    str' <- lift $ showEvents evts
---    trace (separator ++ "after explore(ê = " ++ show ê 
---          ++ ", e = " ++ show e ++ ", enevs = " ++ show enevs 
---          ++ ", alt = " ++ show alt ++ ", stack = " ++ show stack++")\n"++str') $ return ()
     -- @ filter alternatives
-    malt <- alt2 (e:d) (e:d) -- maxevs e
+    malt <- alt2 (e:d) (e:d) -- maxevs e @TODO: Why is maxevs commented?
     case malt of
       Nothing -> return ()
       Just alt' -> explore c ê (e:d) (alt' \\ stak)
-    if statelessMode
+    -- @ remove irrelevant parts of the prefix 
+    if stateless opts 
     then do
-      core <- lift $ computeCore stak d evts
-      prune e core
+      core_prefix <- lift $ core stak d evts
+      prune e core_prefix
     else return ()
 
+{-
 -- We are going to add event e to configuration conf
 -- Need to update enable, and immediateConflicts
 -- computeExtensions
@@ -125,7 +116,7 @@ explore c@Conf{..} ê d alt = do
 --    and returns the new configuration with that event
 --    Build the configuration step by step
 -- @revised 08-04-15
-unfold :: (Hashable st, Ord st, Show st, GCS.Projection st) => Configuration st -> EventID -> UnfolderOp st s (Configuration st)
+unfold :: (Hashable st, GCS.Collapsible st act) => Configuration st -> EventID -> UnfolderOp st act s (Configuration st)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   tr <- lift $ getEvent "unfold" e evts >>= return . snd4 . evtr
@@ -161,10 +152,14 @@ unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   put s{ pcnf = nconf }
   return $! nconf
+-}
+unfold=undefined
+computePotentialAlternatives = undefined
+alt2 = undefined
 
 -- expandWith only adds events that have e in the history
 -- @CRITICAL
-expandWith :: (Hashable st, Ord st, Show st, GCS.Projection st) => EventID -> EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
+expandWith :: (Hashable st, GCS.Collapsible st act) => EventID -> EventsID -> GCS.TId-> UnfolderOp st s EventsID
 expandWith e maxevs tr = do
   s@UnfolderState{..} <- get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
@@ -539,45 +534,38 @@ filterAlternative v d = do
   let isConf = not $ any (\e -> e `elem` stak) cnfs
       isJust = all (\e -> e `elem` cnfs) d
   return $ isConf && isJust
+-}
 
--- stateless part
-updateConfiguration :: (Hashable st, Ord st, GCS.Projection st) => Configuration st -> UnfolderOp st s (Configuration st)
-updateConfiguration c@Conf{..} = do
+-- | STATELESS RELATED FUNCTIONS
+-- | Prunes the configuration based on the current prefix
+--   In the stateless mode, it is possible that previously
+--   enabled events of the configuration are no longer in the
+--   unfolding prefix.
+--  @NOTE: Add example of this. 
+prune_config :: Configuration st -> UnfolderOp st act s (Configuration st)
+prune_config c@Conf{..} = do
   s@UnfolderState{..} <- get
-  nenevs <- lift $ filterEvents eevs evts
-  return $ c {eevs = nenevs}
+  nenevs <- lift $ filterEvents enevs evts
+  return $ c {enevs = nenevs}
 
-computeCore :: EventsID -> EventsID -> Events s -> ST s EventsID
-computeCore conf d events = do
---  config <- mapM (\e -> predecessors e events >>= return . (e:)) conf
+-- | Computes the core of the prefix necessary to continue
+--   exploration
+-- @NOTE: Optimise this function using Sets.
+core :: Show act => EventsID -> EventsID -> Events act s -> ST s EventsID
+core conf d events = do
   let confAndD = conf ++ d
-  evs <- mapM (\e -> getEvent "computeCore" e events) confAndD
---  disas <- mapM (\ev -> mapM (\e -> predecessors e events >>= return . (e:)) $ disa ev) evs
---  altes <- mapM (\ev -> mapM alte ev) evs
+  evs <- mapM (\e -> get_event "compute_core" e events) confAndD
   let altes = concat $ concatMap alte evs 
-      core = confAndD ++ altes
-  return $ nub core 
+      core_prefix = confAndD ++ altes
+  return $ nub core_prefix 
 
-prune :: (Hashable st, Ord st, GCS.Projection st) => EventID -> EventsID -> UnfolderOp st s ()
+-- | Prunes the unfolding prefix by potentially the event e and its alternatives
+prune :: Show act => EventID -> EventsID -> UnfolderOp st act s ()
 prune e core = do
   s@UnfolderState{..} <- get
-  ev@Event{..} <- lift $ getEvent "prune" e evts
+  ev@Event{..} <- lift $ get_event "prune" e evts
   if e `elem` core
-  then lift $ resetAlternatives e evts
-  else deleteEvent e
-  mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else deleteEvent e) v) alte
+  then lift $ reset_alte e evts
+  else lift $ del_event e evts
+  lift $ mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else del_event e evts) v) alte
 
-deleteEvent :: (Hashable st, Ord st, GCS.Projection st) => EventID -> UnfolderOp st s ()
-deleteEvent e = trace ("deleting event " ++ show e) $ do
-  s@UnfolderState{..} <- get
-  check <- lift $ filterEvent e evts
-  if check
-  then do
-    ev@Event{..} <- lift $ getEvent "deleteEvent" e evts
-    lift $ mapM_ (\e' -> delSuccessor e e' evts) pred
-    lift $ mapM_ (\e' -> delImmCnfl e e' evts) icnf 
-    mapM_ (\e' -> deleteEvent e') succ
-    lift $ H.delete evts e
-  else return ()
-
--}

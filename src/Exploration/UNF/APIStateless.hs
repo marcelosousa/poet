@@ -233,6 +233,19 @@ get_alte e events = do
 set_event :: EventID -> Event act -> Events act s -> ST s ()
 set_event eID ev events = H.insert events eID ev
 
+-- | delete an event from the event hashtable
+del_event :: Show act => EventID -> Events act s -> ST s ()
+del_event e events = do
+  check <- filterEvent e events 
+  if check
+  then do
+    ev@Event{..} <- get_event "deleteEvent" e events
+    mapM_ (\e' -> del_succ e e' events) pred
+    mapM_ (\e' -> del_icnf e e' events) icnf
+    mapM_ (\e' -> del_event e' events) succ
+    H.delete events e
+  else return ()
+
 add_succ,del_succ,add_icnf,del_icnf,add_disa :: Show act => EventID -> EventID -> Events act s -> ST s ()
 -- | add e as a sucessor of e'
 add_succ e e' events = -- trace ("add_succ: " ++ show e ++ " of " ++ show e') $ 
@@ -426,7 +439,6 @@ get_evts_of_conf :: Show act => EventsID -> Events act s -> ST s EventsID
 get_evts_of_conf maxevs events = do
   preds <- mapM (\e -> predecessors e events) maxevs
   return $ maxevs ++ (nub $ concat preds) 
-
 
 -- @OBSOLETE (TO BE REMOVED IN THE NEXT VERSION)
 -- | restore previous disable set
