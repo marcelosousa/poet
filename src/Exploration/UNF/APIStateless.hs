@@ -13,7 +13,6 @@ import qualified Data.Set as S
 import Data.Map (Map,fromList,empty)
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
-import qualified Data.ByteString.Char8 as BS
 import Data.List
 import Util.Generic
 
@@ -31,6 +30,7 @@ type EventName = (GCS.TId,GCS.Pos)
 
 -- @ Value of the main HashTable
 --   (name, actions, predecessors, successors, #^, D, V)
+--  @NOTE: Should actions be part of the name?
 data Event act =
   Event 
   {
@@ -43,6 +43,16 @@ data Event act =
   , alte :: Alternatives -- ^ Valid alternatives: V
   } 
   deriving (Show,Eq,Ord)
+
+-- @ Bottom event: a very special event
+botEID :: EventID
+botEID = 0
+-- The name for bottom
+botName :: EventName
+botName = (GCS.botID,GCS.botID)
+-- The initial bottom event
+botEvent :: [act] -> Event act
+botEvent acts = Event botName acts [] [] [] [] []
 
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
@@ -127,6 +137,22 @@ data UnfolderState st act s =
   , stats :: UnfolderStats    -- ^ Statistics 
 }
 
+-- @ Initial state of the unfolder
+i_unf_state:: (Hashable st, Ord st, GCS.Collapsible st act) => Bool -> Bool -> GCS.System st act -> ST s (UnfolderState st act s) 
+i_unf_state stateless_mode cutoff_mode syst = do
+  evts <- H.new
+  H.insert evts botEID $ botEvent $ GCS.gbac syst
+  let initialState = GCS.gbst syst
+      controlState = GCS.controlPart initialState
+      stas = fromList [(controlState,[(initialState,0)])]
+--  stas <- H.new
+--  H.insert stas initialState botEID
+  let pcnf = Conf undefined [] [] [] -- @NOTE: Check! 
+      stak = [botEID]
+      cntr = 1
+      opts = UnfOpts stateless_mode cutoff_mode
+  return $ UnfolderState syst evts pcnf stak cntr stas opts default_unf_stats 
+
 -- | Print the state of the unfolder
 beg = "--------------------------------\n BEGIN Unfolder State          \n--------------------------------\n"
 end = "\n--------------------------------\n END   Unfolder State          \n--------------------------------\n"
@@ -140,36 +166,6 @@ instance Show (UnfolderState st act s) where
 -- @ Abbreviation of the type of an operation of the unfolder
 type UnfolderOp st act s a = StateT (UnfolderState st act s) (ST s) a
 
--- @ Bottom event and event_id
-botEID :: EventID
-botEID = 0
-
-botName :: EventName
-botName = undefined
-
-{-
-botEvent :: [act] -> Event act
-botEvent acts = Event (BS.pack "", GCS.botID, [], acts) [] [] [] [] []
-
--- @ Initial state of the unfolder
-iState :: (Hashable st, Eq st, Ord st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s) 
-iState statelessMode cutoffMode syst indr = do
-  evts <- H.new
-  H.insert evts 0 $ botEvent $ GCS.initialActs syst
---  stas <- H.new
-  let initialState = GCS.initialState syst
-      controlState = GCS.controlPart initialState
-      stas = fromList [(controlState,[(initialState, 0)])]
---  H.insert stas initialState botEID
-  let pcnf = Conf undefined [] [] [] -- this seems suspicious!
-      stak = [botEID]
-      cntr = 1
-      maxConf = 0
-      cutoffCntr = 0
-      size = 1
-      cumsize = 0
-  return $ UnfolderState syst indr evts pcnf stak cntr stas maxConf cutoffCntr size cumsize statelessMode cutoffMode empty
-
 {-
 gc :: UnfolderState -> UnfolderState
 gc s@UnfolderState{..} = 
@@ -178,145 +174,77 @@ gc s@UnfolderState{..} =
       causality' = filter (\(e1,e2) -> e1 `elem` nevents && e2 `elem` nevents) causality
       immediateCnfls = M.filterWithKey (\eID _ -> eID `elem` nevents) immediateConflicts
   in UnfolderState system indep events' configurations causality' enable disable alternatives immediateCnfls counters
--}
 
 -- @ Given the state s and an enabled event e, execute s e
 --   is going to apply h(e) to s to produce the new state s'
-execute :: st -> EventID -> UnfolderOp st s [st]
+execute :: st -> EventID -> UnfolderOp st act s [st]
 {-# INLINE execute #-}
 execute cst e = do
   s@UnfolderState{..} <- get
-  ev@Event{..} <- lift $ getEvent "execute" e evts 
+  ev@Event{..} <- lift $ get_event "execute" e evts 
   let fn = GCS.getTransition syst $ snd4 evtr
   return $ fn cst
 
-isDependent_te :: I.UIndep -> GCS.TransitionInfo -> EventID -> Events s -> ST s Bool
+isDependent_te :: I.UIndep -> GCS.TransitionInfo -> EventID -> Events act s -> ST s Bool
 {-# INLINE isDependent_te #-}
 isDependent_te indep tr e events = do --trace ("isDependent(tr="++show tr++", e=" ++show e++")")$ 
-  ev@Event{..} <- getEvent "isDependent" e events
+  ev@Event{..} <- get_event "isDependent" e events
   return $ I.isDependent indep tr evtr
 
-isIndependent :: I.UIndep -> EventID -> EventID -> Events s -> ST s Bool
+isIndependent :: I.UIndep -> EventID -> EventID -> Events act s -> ST s Bool
 {-# INLINE isIndependent #-}
 isIndependent indep e ê events = do
-  ev <- getEvent "isIndependent" e events 
-  êv <- getEvent "isIndependent" ê events
+  ev <- get_event "isIndependent" e events 
+  êv <- get_event "isIndependent" ê events
   return $ I.isIndependent indep (evtr ev) (evtr êv) 
+-}
 
--- Useful Functions
-predecessors, successors :: EventID -> Events s -> ST s EventsID
-{-# INLINABLE predecessors #-}
-predecessors e events =  do
-  preds <- predecessors' e events
-  return $ nub preds 
- where
-  predecessors' :: EventID -> Events s -> ST s EventsID
-  predecessors' e events = do
-     ev@Event{..} <- getEvent "predecessors" e events 
-     foldM (\a e -> predecessors' e events >>= \r -> return $ a ++ r) pred pred
-{-# INLINABLE successors #-}
-successors e events =  do 
-  succs <- successors' e events
-  return $ nub succs 
- where
-  successors' :: EventID -> Events s -> ST s EventsID
-  successors' e events = do
-     ev@Event{..} <- getEvent "successors" e events 
-     foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
-
-predecessorWith :: EventID -> GCS.ProcessID -> Events s -> ST s EventID
-predecessorWith 0 p events = return GCS.botID
-predecessorWith e p events = do
-  pred <- getIPred e events
-  epred <- filterM (\e -> getEvent "predecessorWith" e events >>= \ev@Event{..} -> return $ fst4 evtr == p) pred
-  if null epred 
-  then do 
-    res <- mapM (\e -> predecessorWith e p events) pred
-    return $ filterResult res
-  else return $ filterResult epred
-
-filterResult :: EventsID -> EventID 
-filterResult es = 
-  if null es 
-  then error "predecessorWith: shouldn't happen"
-  else let res = filter (/= 0) es
-       in if null res
-          then GCS.botID
-          else if all (== (head res)) (tail res)
-               then head res
-               else error "predecessorWith: multiple possibilities"    
--- GETTERS
--- retrieves the event associated with the event id 
-getEvent :: String -> EventID -> Events s -> ST s Event
-{-# INLINE getEvent #-}
-getEvent s e events = do
+-- API
+-- GETTERS 
+-- | Retrieves the event associated with the event id 
+get_event :: Show act => String -> EventID -> Events act s -> ST s (Event act)
+{-# INLINE get_event #-}
+get_event s e events = do
   mv <- H.lookup events e 
   case mv of
     Nothing -> do
       str <- showEvents events 
-      error $ s ++ "-getEvent: " ++ show e ++ "\n" ++ str 
+      error $ s ++ "-get_event: " ++ show e ++ "\n" ++ str 
     Just ev -> return ev 
 
-filterEvents :: EventsID -> Events s -> ST s EventsID
-filterEvents es events = filterM (\e -> filterEvent e events) es
-
-filterEvent :: EventID -> Events s -> ST s Bool
-filterEvent e events = do
-  mv <- H.lookup events e
-  case mv of
-    Nothing -> return False
-    Just ev -> return True
-
--- @ getConfEvs - retrieves all the events of a configuration
-getConfEvs :: EventsID -> Events s -> ST s EventsID
-getConfEvs maxevs events = do
-  preds <- mapM (\e -> predecessors e events) maxevs
-  return $ maxevs ++ (nub $ concat preds) 
-    
-getImmediateConflicts :: EventID -> Events s -> ST s EventsID
-getImmediateConflicts e events = do
-  ev@Event{..} <- getEvent "getImmediateConflicts" e events
-  return icnf 
-
-getIPred :: EventID -> Events s -> ST s EventsID
-getIPred e events = do
-  ev@Event{..} <- getEvent "getIPred" e events
+-- | Retrieves fields of an event: immediate sucessors, predecessors, etc.
+-- get_pred,get_succ,... :: EventID -> Events act s -> ST s EventsID
+get_pred e events = do
+  ev@Event{..} <- get_event "getIPred(ecessors)" e events
   return pred 
-
-getISucc :: EventID -> Events s -> ST s EventsID
-getISucc e events = do
-  ev@Event{..} <- getEvent "getISucc" e events
+get_succ e events = do
+  ev@Event{..} <- get_event "getISucc(essors)" e events
   return succ 
-
-getDisabled :: EventID -> Events s -> ST s EventsID
-getDisabled e events = do 
-  ev@Event{..} <- getEvent "getIPred" e events
+get_icnf e events = do
+  ev@Event{..} <- get_event "getICnfl(icts)" e events
+  return icnf 
+get_disa e events = do 
+  ev@Event{..} <- get_event "getDisa(bled)" e events
   return disa
-
-getAlternatives :: EventID -> Events s -> ST s Alternatives 
-getAlternatives e events = do 
-  ev@Event{..} <- getEvent "getAlternatives" e events
+get_alte e events = do 
+  ev@Event{..} <- get_event "getAltrs(natives)" e events
   return alte 
 
 -- SETTERS
+set_event :: EventID -> Event act -> Events act s -> ST s ()
+set_event eID ev events = H.insert events eID ev
 
-setEvent :: EventID -> Event -> Events s -> ST s ()
-setEvent eID e events = -- trace ("setEvent: " ++ show eID) $ 
-  H.insert events eID e
-
--- @ delImmCnfl 
-delImmCnfl :: EventID -> EventID -> Events s -> ST s ()
-delImmCnfl e e' events = -- trace ("delImmCnfl: " ++ show e ++ " of " ++ show e') $ 
+add_succ,del_succ,add_icnf,del_icnf,add_disa :: Show act => EventID -> EventID -> Events act s -> ST s ()
+-- | add e as a sucessor of e'
+add_succ e e' events = -- trace ("add_succ: " ++ show e ++ " of " ++ show e') $ 
  do
-  ev@Event{..} <- getEvent "setSuccessor" e' events
-  let icnfEv = delete e icnf 
-      altEv = filter (\v -> not $ elem e v) alte 
-      ev' = ev{ icnf = icnfEv, alte = altEv } 
-  setEvent e' ev' events 
+  ev@Event{..} <- get_event "add_succ" e' events
+  let succEv = e:succ
+      ev' = ev{ succ = succEv } 
+  set_event e' ev' events 
 
--- @ delSuccessor e -> e'
-delSuccessor :: EventID -> EventID -> Events s -> ST s ()
-delSuccessor e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e') $ 
+-- | delete e as a successor of e'
+del_succ e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e') $ 
  do
   mv <- H.lookup events e' 
   case mv of 
@@ -324,74 +252,82 @@ delSuccessor e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e')
    Just ev -> do 
      let succEv = delete e $ succ ev
          ev' = ev{ succ = succEv } 
-     setEvent e' ev' events 
+     set_event e' ev' events 
 
--- @ setSuccessor e -> e'
-setSuccessor :: EventID -> EventID -> Events s -> ST s ()
-setSuccessor e e' events = -- trace ("setSucc: " ++ show e ++ " of " ++ show e') $ 
+-- | add e as an immediate conflict of e'
+add_icnf e e' events = -- trace ("add_icnf: " ++ show e ++ " of " ++ show e') $ 
  do
-  ev@Event{..} <- getEvent "setSuccessor" e' events
-  let succEv = e:succ
-      ev' = ev{ succ = succEv } 
-  setEvent e' ev' events 
-
-setConflict :: EventID -> EventID -> Events s -> ST s ()
-setConflict e e' events = -- trace ("setCnfl: " ++ show e ++ " of " ++ show e') $ 
- do
-  ev@Event{..} <- getEvent "setConflict" e' events
+  ev@Event{..} <- get_event "add_icnf" e' events
   let icnfEv = e:icnf
       ev' = ev{ icnf = icnfEv }
-  setEvent e' ev' events 
+  set_event e' ev' events 
 
-setDisabled :: EventID -> EventsID -> Events s -> ST s ()
-setDisabled e de events = -- trace ("setDisa: " ++ show de ++ " of " ++ show e) $ 
+-- | delete e as an immediate conflict of e' 
+del_icnf e e' events = -- trace ("del_icnf: " ++ show e ++ " of " ++ show e') $ 
  do
-  ev@Event{..} <- getEvent "setDisabled" e events
-  let ev' = ev{ disa = de }
-  setEvent e ev' events 
+  ev@Event{..} <- get_event "del_icnf" e' events
+  let icnfEv = delete e icnf 
+      altEv = filter (\v -> not $ elem e v) alte 
+      ev' = ev{ icnf = icnfEv, alte = altEv } 
+  set_event e' ev' events 
 
-addAlternative :: EventID -> Alternative -> Events s -> ST s ()
-addAlternative e v events = -- trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
+-- | add e to the disabled set of ê
+add_disa e ê events = -- trace ("add_disa: " ++ show e ++ " of " ++ show ê) $ 
  do
-  ev@Event{..} <- getEvent "addAlternative" e events
-  let altEv = nub $ v:alte
-      ev' = ev{ alte = altEv }
-  setEvent e ev' events 
-
-resetAlternatives :: EventID -> Events s -> ST s ()
-resetAlternatives e events = do
-  ev@Event{..} <- getEvent "resetAlternative" e events
-  let altEv = []
-      ev' = ev{ alte = altEv }
-  setEvent e ev' events
-
-addDisabled :: EventID -> EventID -> Events s -> ST s ()
-addDisabled e ê events = -- trace ("addDisa: " ++ show e ++ " of " ++ show ê) $ 
- do
-  ev@Event{..} <- getEvent "addDisabled" ê events
+  ev@Event{..} <- get_event "add_disa" ê events
   let disaEv = e:disa
       ev' = ev{ disa = disaEv }
-  setEvent ê ev' events 
-   
--- @ set previous configuration
-setPreviousConfiguration :: Configuration st -> UnfolderOp st s ()
-setPreviousConfiguration conf = do
+  set_event ê ev' events 
+
+-- | set de as the disabled set of e
+set_disa :: Show act => EventID -> EventsID -> Events act s -> ST s ()
+set_disa e de events = -- trace ("setDisa: " ++ show de ++ " of " ++ show e) $ 
+ do
+  ev@Event{..} <- get_event "set_disa" e events
+  let ev' = ev{ disa = de }
+  set_event e ev' events 
+
+-- | add v to the alternatives of e
+add_alte :: Show act => EventID -> Alternative -> Events act s -> ST s ()
+add_alte e v events = -- trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
+ do
+  ev@Event{..} <- get_event "add_alte" e events
+  let altEv = nub $ v:alte
+      ev' = ev{ alte = altEv }
+  set_event e ev' events 
+
+-- | reset the alternatives of e
+reset_alte :: Show act => EventID -> Events act s -> ST s ()
+reset_alte e events = do
+  ev@Event{..} <- get_event "reset_alte" e events
+  let altEv = []
+      ev' = ev{ alte = altEv }
+  set_event e ev' events
+
+-- | set conf as the previous configuration
+set_pcnf :: Configuration st -> UnfolderOp st act s ()
+set_pcnf conf = do
   s@UnfolderState{..} <- get
   let ns = s{ pcnf = conf } 
   put ns
 
--- @ set previous disable set
-setPreviousDisabled :: Events s -> UnfolderOp st s ()
-setPreviousDisabled events = do
+-- Stack related operations
+-- @ push 
+push :: EventID -> UnfolderOp st act s ()
+push e = do 
   s@UnfolderState{..} <- get
-  kv <- lift $ H.toList events
-  lift $ mapM_ (\(e,ev) -> getEvent "setPDisa" e evts >>= \ev' -> 
-      let nev = ev' { disa = disa ev }
-      in setEvent e nev evts) kv
-  return () 
+  let nstack = e:stak
+  put s{ stak = nstack }
+
+-- @ pop
+pop :: UnfolderOp st act s ()
+pop = do
+  s@UnfolderState{..} <- get
+  let nstack = tail stak
+  put s{ stak = nstack }
 
 -- @ freshCounter - updates the counter of events
-freshCounter :: UnfolderOp st s Counter
+freshCounter :: UnfolderOp st act s Counter
 freshCounter = do
   s@UnfolderState{..} <- get
   let ec = cntr
@@ -399,81 +335,143 @@ freshCounter = do
   put s{ cntr = nec }
   return ec
 
--- @ update maximal config - updates the counter of maximal configurations
-incMaxConfCounter :: UnfolderOp st s ()
-incMaxConfCounter = do
-  s@UnfolderState{..} <- get
-  let nec = maxConf + 1
-  put s{ maxConf = nec }
-
--- @ updates the counter of cutoffs
-incCutoffCounter :: UnfolderOp st s ()
-incCutoffCounter = do
-  s@UnfolderState{..} <- get
-  let nec = cutoffCntr + 1
-  put s{ cutoffCntr = nec }
-
--- @ increment the size of U
-incSize :: UnfolderOp st s ()
-incSize = do
-  s@UnfolderState{..} <- get
-  let nsize = size + 1
-  put s{ size = nsize }
-  
-incSizeTr :: GCS.TransitionInfo -> UnfolderOp st s ()
-incSizeTr tr = do
-  s@UnfolderState{..} <- get  
-  let nevtsPerTrans = case MA.lookup tr evtsPerTrans of
-                        Nothing -> MA.insert tr 1 evtsPerTrans
-                        Just n  -> MA.insert tr (n+1) evtsPerTrans
-  put s{ evtsPerTrans = nevtsPerTrans }
-
--- @ decrement the size of U
-decSize :: UnfolderOp st s ()
-decSize = do
-  s@UnfolderState{..} <- get
-  let nsize = size - 1
-  put s{ size = nsize }
-
--- @ add the current size
-incAccSize :: UnfolderOp st s ()
-incAccSize = do
-  s@UnfolderState{..} <- get
-  let ncumsize = cumsize + (toInteger size)
-  put s{ cumsize = ncumsize }
-
--- @ update the cutoff table
-updateCutoffTable :: States st -> UnfolderOp st s ()
-updateCutoffTable cutoffs = do
+-- | set (update) the cutoff table
+set_cutoff_table :: States st -> UnfolderOp st act s ()
+set_cutoff_table cutoffs = do
   s@UnfolderState{..} <- get
   put s{ stas = cutoffs}
 
--- @ push 
-push :: EventID -> UnfolderOp st s ()
-push e = do 
+-- Update statistics of the unfolding exploration
+inc_max_conf,inc_cutoffs,inc_evs_prefix,dec_evs_prefix,inc_sum_size_max_conf :: UnfolderOp st act s ()
+-- | increment nr of maximal configurations
+inc_max_conf = do
   s@UnfolderState{..} <- get
-  let nstack = e:stak
-  put s{ stak = nstack }
-
--- @ pop
-pop :: UnfolderOp st s ()
-pop = do
+  let n_max_conf = nr_max_conf stats + 1
+      stats' = stats { nr_max_conf = n_max_conf }
+  put s{ stats = stats' }
+  
+-- | increment nr of cutoffs 
+inc_cutoffs = do
   s@UnfolderState{..} <- get
-  let nstack = tail stak
-  put s{ stak = nstack }
+  let n_cutoffs = nr_cutoffs stats + 1
+      stats' = stats { nr_cutoffs = n_cutoffs }
+  put s{ stats = stats' }
 
--- @ Util
-isConfiguration :: Events s -> EventsID -> ST s Bool
-isConfiguration evts conf = do
-  cnffree <- allM (\e -> getImmediateConflicts e evts >>= \es -> return $! null (es `intersect` conf)) conf
-  causaclosed <- causalClosed evts conf conf 
+op_evs_prefix :: (Counter -> Counter -> Counter) -> UnfolderOp st act s ()
+op_evs_prefix op = do
+  s@UnfolderState{..} <- get
+  let n_evs_prefix = op (nr_evs_prefix stats) 1
+      stats' = stats { nr_evs_prefix = n_evs_prefix }
+  put s{ stats = stats' }
+-- | increment the size of U
+inc_evs_prefix = op_evs_prefix (+)
+-- | decrement the size of U
+dec_evs_prefix = op_evs_prefix (-)
+
+-- | add to the current size
+inc_sum_size_max_conf = do
+  s@UnfolderState{..} <- get
+  let n_size_max_conf = sum_size_max_conf stats + (toInteger $ nr_evs_prefix stats)
+      stats' = stats { sum_size_max_conf = n_size_max_conf }
+  put s{ stats = stats' }
+
+-- | increment the table of event names 
+inc_evs_per_name :: EventName -> UnfolderOp st act s ()
+inc_evs_per_name name = do
+  s@UnfolderState{..} <- get  
+  let info = nr_evs_per_name stats 
+      n_evs_per_name = 
+        case MA.lookup name info of
+          Nothing -> MA.insert name 1 info 
+          Just n  -> MA.insert name (n+1) info 
+      stats' = stats { nr_evs_per_name = n_evs_per_name }
+  put s{ stats = stats' }
+
+-- | Utility functions
+-- | Filters a list of events ids that are still in the prefix 
+filterEvents :: EventsID -> Events act s -> ST s EventsID
+filterEvents es events = filterM (\e -> filterEvent e events) es
+
+-- | Checks if an event id *e* is still in the prefix
+filterEvent :: EventID -> Events act s -> ST s Bool
+filterEvent e events = do
+  mv <- H.lookup events e
+  case mv of
+    Nothing -> return False
+    Just ev -> return True
+
+-- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
+-- predecessors (local configuration) and sucessors of an event
+predecessors, successors :: Show act => EventID -> Events act s -> ST s EventsID
+{-# INLINABLE predecessors #-}
+predecessors e events =  do
+  preds <- predecessors' e events
+  return $ nub preds 
+ where
+  predecessors' :: Show act => EventID -> Events act s -> ST s EventsID
+  predecessors' e events = do
+     ev@Event{..} <- get_event "predecessors" e events 
+     foldM (\a e -> predecessors' e events >>= \r -> return $ a ++ r) pred pred
+{-# INLINABLE successors #-}
+successors e events =  do 
+  succs <- successors' e events
+  return $ nub succs 
+ where
+  successors' :: Show act => EventID -> Events act s -> ST s EventsID
+  successors' e events = do
+     ev@Event{..} <- get_event "successors" e events 
+     foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
+
+-- | Retrieves all events of a configuration
+get_evts_of_conf :: Show act => EventsID -> Events act s -> ST s EventsID
+get_evts_of_conf maxevs events = do
+  preds <- mapM (\e -> predecessors e events) maxevs
+  return $ maxevs ++ (nub $ concat preds) 
+
+
+-- @OBSOLETE (TO BE REMOVED IN THE NEXT VERSION)
+-- | restore previous disable set
+set_previous_disa :: Show act => Events act s -> UnfolderOp st act s ()
+set_previous_disa events = do
+  s@UnfolderState{..} <- get
+  kv <- lift $ H.toList events
+  lift $ mapM_ (\(e,ev) -> get_event "setPDisa" e evts >>= \ev' -> 
+      let nev = ev' { disa = disa ev }
+      in set_event e nev evts) kv
+  return () 
+
+is_configuration :: Show act => Events act s -> EventsID -> ST s Bool
+is_configuration evts conf = do
+  cnffree <- allM (\e -> get_icnf e evts >>= \es -> return $! null (es `intersect` conf)) conf
+  causaclosed <- is_causally_closed evts conf conf 
   return $! cnffree && causaclosed
 
-causalClosed :: Events s -> EventsID -> EventsID ->  ST s Bool
-causalClosed evts conf [] = return True
-causalClosed evts conf (e:es) = do 
+is_causally_closed :: Show act => Events act s -> EventsID -> EventsID ->  ST s Bool
+is_causally_closed evts conf [] = return True
+is_causally_closed evts conf (e:es) = do 
   prede <- predecessors e evts
   if all (\e' -> e' `elem` conf) prede
-  then causalClosed evts conf es
+  then is_causally_closed evts conf es
   else return False
--}
+
+predecessorWith :: Show act => EventID -> EventName -> Events act s -> ST s EventID
+predecessorWith 0 p events = return GCS.botID
+predecessorWith e p events = do
+  pred <- get_pred e events
+  epred <- filterM (\e -> get_event "predecessorWith" e events >>= \ev@Event{..} -> return $ name == p) pred
+  if null epred 
+  then do 
+    res <- mapM (\e -> predecessorWith e p events) pred
+    return $ filterResult res
+  else return $ filterResult epred
+ where 
+   filterResult :: EventsID -> EventID 
+   filterResult es = 
+     if null es 
+     then error "predecessorWith: shouldn't happen"
+     else let res = filter (/= 0) es
+          in if null res
+             then GCS.botID
+             else if all (== (head res)) (tail res)
+                  then head res
+                  else error "predecessorWith: multiple possibilities"
