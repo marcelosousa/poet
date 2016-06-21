@@ -25,9 +25,9 @@ import System.IO.Unsafe
 import Prelude hiding (pred)
 import Util.Generic
 
-unfolder :: (Hashable st, Ord st, Show st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st s)
-unfolder statelessMode cutoffMode syst indr = do
-  is <- iState statelessMode cutoffMode syst indr
+unfolder :: (Hashable st, Ord st, Show st, GCS.Projection st) => Bool -> Bool -> GCS.System st -> I.UIndep -> ST s (UnfolderState st act s)
+unfolder statelessMode cutoffMode syst = do
+  is <- i_unf_state statelessMode cutoffMode syst 
   (a,s) <- runStateT botExplore is 
   return $! s
 
@@ -39,6 +39,9 @@ botExplore = do
   iConf <- initialExtensions 
   explore iConf botEID [] []
 
+initialExtensions = undefined
+explore = undefined
+{-
 -- The extensions from the bottom event
 -- After this function, the unfolding prefix denotes
 -- the execution of bottom, and contains all extensions from it.
@@ -576,3 +579,5 @@ deleteEvent e = trace ("deleting event " ++ show e) $ do
     mapM_ (\e' -> deleteEvent e') succ
     lift $ H.delete evts e
   else return ()
+
+-}

@@ -1,7 +1,7 @@
 {-#LANGUAGE RecordWildCards, FlexibleInstances #-}
 module Util.Printer where
 
-import Control.Monad.ST.Safe
+import Control.Monad.ST
 import qualified Data.HashTable.Class as H
 import qualified Data.ByteString.Char8 as BS
 
@@ -10,37 +10,30 @@ import Model.GCS
 
 import qualified Data.Map as M
 
-unfToDot :: UnfolderState st s -> ST s (Int,Int,Int, String)
+unfToDot :: Show act => UnfolderState st act s -> ST s (Int,Int,Int,String)
 unfToDot sys@UnfolderState{..} = do
     events <- H.toList evts
+    let maxConf = nr_max_conf stats
+        cutoffCntr = nr_cutoffs stats
     return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stak ++ "}")
 
 class ToDot a where
     toDot :: a -> EventsID -> String
     
-instance ToDot [(EventID, Event)] where
+instance Show act => ToDot [(EventID, Event act)] where
     toDot events stack = foldr (\el res -> toDot el stack ++ res) "" events
 
-instance ToDot (EventID, Event) where
+instance Show act => ToDot (EventID, Event act) where
     toDot (eID, ev@Event{..}) stack = 
       let causality = foldr (printCausality eID) "" succ
           conflict = foldr (printConflict eID) "" icnf
-          (pID,tID,st,act) = evtr
-          label = show eID ++ " [label=\"eID = " ++ show eID ++ " tr=(" ++ show tID ++ "," ++ BS.unpack pID ++ "," ++ showActs act++")\"]\n"
+          (tID,pos) = name 
+          label = show eID ++ " [label=\"eID = " ++ show eID 
+               ++ " tr=(" ++ show tID ++ "," ++ show pos ++ "," ++ showActs acts++")\"]\n"
       in causality ++ conflict ++ label
 
-showActs :: Acts -> String
-showActs acts = foldr (\act res -> showAct act ++ "," ++ res) "" acts
-
-showAct :: Act -> String
-showAct Other = "Other"
-showAct (Lock (V var)) = "Lock " ++ BS.unpack var
-showAct (Lock (A var idx)) = "Lock " ++ BS.unpack var ++ " " ++ show idx
-showAct (Unlock (V var)) = "Unlock" ++ BS.unpack var
-showAct (Unlock (A var idx)) = "Unlock" ++ BS.unpack var ++ " " ++ show idx
-
-showTransition :: Transition st -> String
-showTransition = show . fst
+showActs :: Show act => [act] -> String
+showActs acts = foldr (\act res -> show act ++ "," ++ res) "" acts
 
 printCausality :: EventID -> EventID -> String -> String
 printCausality e1 e2 s = show e1 ++ " -> " ++ show e2 ++ ";\n" ++ s

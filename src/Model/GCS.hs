@@ -2,6 +2,7 @@
 {-#LANGUAGE MultiParamTypeClasses #-}
 module Model.GCS where
 
+import qualified Data.ByteString.Char8 as BS
 import Data.Map hiding (foldr, filter, map, (\\), null)
 import Language.SimpleC.AST 
 import Language.SimpleC.Flow
@@ -74,7 +75,16 @@ data Act =
   | Write Variable
   | Read Variable
   | Other
-  deriving (Show,Eq,Ord)
+  deriving (Eq,Ord)
+
+
+instance Show Act where
+  show act = case act of
+    Other              -> "Other"
+    Lock (V var)       -> "Lock " ++ BS.unpack var
+    Lock (A var idx)   -> "Lock " ++ BS.unpack var ++ " " ++ show idx
+    Unlock (V var)     -> "Unlock" ++ BS.unpack var
+    Unlock (A var idx) -> "Unlock" ++ BS.unpack var ++ " " ++ show idx
 
 instance Action Act where
   -- varOf :: Act -> Variable
