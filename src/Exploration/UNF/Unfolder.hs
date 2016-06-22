@@ -48,7 +48,7 @@ initialExtensions = do
       cevs = [e]
       st = GCS.gbst syst
       trs = GCS.enabled syst st
-  enevs <- foldM (\en tr -> expandWith e cevs tr >>= \es -> return $! (es++en)) [] trs
+  enevs <- foldM (\en tr -> expandWith e cevs st tr >>= \es -> return $! (es++en)) [] trs
   s@UnfolderState{..} <- get 
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
@@ -97,7 +97,7 @@ explore c@Conf{..} ê d alt = do
     explore nc e d (e `delete` alt)
     pop
     -- @ filter alternatives
-    malt <- alt2 (e:d) (e:d) -- maxevs e @TODO: Why is maxevs commented?
+    malt <- alt2 (e:d) (e:d) 
     case malt of
       Nothing -> return ()
       Just alt' -> explore c ê (e:d) (alt' \\ stak)
@@ -153,14 +153,15 @@ unfold conf@Conf{..} e = do
   put s{ pcnf = nconf }
   return $! nconf
 -}
-unfold=undefined
-computePotentialAlternatives = undefined
-alt2 = undefined
+unfold = undefined
 
--- expandWith only adds events that have e in the history
+-- | expandWith adds new events to the unfolding prefix where the event *e* is 
+--   an immediate predecessor.
 -- @CRITICAL
-expandWith :: (Hashable st, GCS.Collapsible st act) => EventID -> EventsID -> GCS.TId-> UnfolderOp st s EventsID
-expandWith e maxevs tr = do
+expandWith :: (Hashable st, GCS.Collapsible st act) => EventID -> EventsID -> st -> GCS.TId-> UnfolderOp st act s EventsID
+expandWith = undefined
+{-
+expandWith e maxevs st th = do
   s@UnfolderState{..} <- get 
   -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
   succe <- lift $ getISucc e evts 
@@ -182,7 +183,9 @@ expandWith e maxevs tr = do
       mapM (addEvent stak succe tr) his
       addEvent stak succe tr h0
     else error "e must always be in h0"  
+-}
 
+{-
 -- @ computeHistory 
 --   Input: 
 --     - Set of maximal events, 
@@ -316,7 +319,7 @@ findNextUnlock tr@(_,_,_,act) prede e' = do
              else return $ Just []
 --               trace ("returning nothing") $ return Nothing -- REVISE: error $ "findNextUnlock: cant happen! " ++ show e
     _ -> error "findNextUnlock: two events are dependent and that can't happen"
-
+-}
 
 -- @ addEvent: Given a transition id and the history
 --   adds the correspondent event.
@@ -330,20 +333,21 @@ findNextUnlock tr@(_,_,_,act) prede e' = do
 addEvent :: (Hashable st, Ord st, Show st, GCS.Projection st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
 addEvent stack dup tr history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
-  if null hasDup  
-  then do 
+  if not $ null hasDup  
+  then return $! map fst hasDup -- @ASSERT: The size of this list should be at most 1 
+  else do 
     s@UnfolderState{..} <- get
     -- @  a) Computes the local history of the new event
     prede <- lift $ mapM (\e -> predecessors e evts) history  
     let localHistory = prede `seq` nub $ concat prede ++ history 
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
-    if cutoffMode
+    if cutoffs opts 
     then do
       let copyst = GCS.initialState syst
       gstlc <- computeStateLocalConfiguration tr copyst localHistory
       if null gstlc
-      then return []
+      then return [] -- this should never happen
       else do
         isCutoff <- cutoff (head gstlc) sizeLocalHistory
         if isCutoff
@@ -369,25 +373,29 @@ addEvent stack dup tr history = do
           incSizeTr tr
           return $! [neID]
     else do
-        incSize
-        -- @ 1. Fresh event id 
-        neID <- freshCounter
-        -- @ 2. Compute the immediate conflicts
-        -- @  b) Computes the immediate conflicts of all events in the local configuration
-        lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
-        -- @  c) Compute the immediate conflicts
-        cnfls <- lift $ computeConflicts indr tr localHistory lhCnfls evts >>= return . nub
-        -- @ 3. Insert the new event in the hash table
-        let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
-        lift $ setEvent neID e evts 
-        -- @ 4. Update all events in the history to include neID as their successor
-        lift $ mapM (\e -> setSuccessor neID e evts) history
-        -- @ 5. Update all events in the immediate conflicts to include neID as one 
-        lift $ mapM (\e -> setConflict neID e evts) cnfls 
-        incSizeTr tr
-        return $! [neID]
-  else return $! map fst hasDup 
+ where
+   add_event = do
+     -- Increment the number of events in the prefix
+     inc_evs_prefix 
+     -- @ 1. Fresh event id 
+     neID <- freshCounter
+     -- @ 2. Compute the immediate conflicts
+     -- @  b) Computes the immediate conflicts of all events in the local configuration
+     lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
+     -- @  c) Compute the immediate conflicts
+     cnfls <- lift $ computeConflicts indr tr localHistory lhCnfls evts >>= return . nub
+     -- @ 3. Insert the new event in the hash table
+     let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
+     lift $ set_event neID e evts 
+     -- @ 4. Update all events in the history to include neID as their successor
+     lift $ mapM (\e -> setSuccessor neID e evts) history
+     -- @ 5. Update all events in the immediate conflicts to include neID as one 
+     lift $ mapM (\e -> setConflict neID e evts) cnfls 
+     incSizeTr tr
+     return $! [neID]
 
+computeStateLocalConfiguration  = undefined
+{-
 -- @ Compute the global state of the local configuration
 --   by doing a topological sorting
 -- getISucc :: EventID -> Events s -> ST s EventsID
@@ -441,6 +449,7 @@ computeConflicts uidep tr lh lhCnfls events = do
                else computeConflict (e:seen) rest >>= \es -> return $! e:es
              else computeConflict (e:seen) (nub $ rest ++ succ)
                   -- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
+-}
 
 -- Let e be an event of a configuration C.
 --   Let cext be the conflicting extensions of C, 
@@ -450,21 +459,20 @@ computeConflicts uidep tr lh lhCnfls events = do
 -- Can ê intersect cext =!= ê? Yes. There may be immediate conflicts of 
 -- e whose roots are not in C.
 -- @@ compute potential alternatives @ revised: 08-04-15
-computePotentialAlternatives :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> EventsID -> UnfolderOp st s ()
+computePotentialAlternatives :: Show act => EventsID -> EventsID -> UnfolderOp st act s ()
 computePotentialAlternatives maxevs evs =  do
   s@UnfolderState{..} <- get
   -- @ compute the events of the configuration
-  -- let confEvs = stack -- lift $ getConfEvs maxevs evts
   lift $ foldM_ (computePotentialAlternative stak evts) S.empty evs where
 
     -- @ I. V(e) where e is an event that has at least one imm conflict
     computePotentialAlternative stack events cext e =  do
       -- @ #^(e)
-      cfle <- getImmediateConflicts e events
+      cfle <- get_icnf e events
       -- @ #^(e) intersect cex(C)
       ext  <- filterM (isCExtension events stack cext) cfle
       -- @ checks if for all e' \in ext, the alternative *v* of e given by e' is valid
-      de <- getDisabled e events
+      de <- get_disa e events
       mapM_ (computeV stack events de e) ext
       -- @ memoises the already known set of conflicting extensions 
       return $! S.union cext $ S.fromList ext
@@ -477,7 +485,7 @@ computePotentialAlternatives maxevs evs =  do
       then return True
       else do
         -- @ checks if the immediate predecessors of e are events of the configuration
-        eipred <- getIPred e events
+        eipred <- get_pred e events
         return $! all (\p -> p `elem` confEvs) eipred
 
     -- @@ III. compute and verify validity of V = conf_events - e:succ e + pred e':e' 
@@ -486,7 +494,7 @@ computePotentialAlternatives maxevs evs =  do
     --    3. V justifies the set of disable of e 
     computeV stack events de e e' = do
       -- @ Compute the common parts of the configurations that contain e and e': confEvs - (e:succ e) 
-      clfe' <- getImmediateConflicts e' events
+      clfe' <- get_icnf e' events
       let clfec' = filter (\e -> e `elem` stack) clfe'
           stackE = tail $ dropWhile (/=e) stack -- C(e) is a subset of V 
       if any (\e -> e `elem` stackE) clfec'
@@ -501,40 +509,36 @@ computePotentialAlternatives maxevs evs =  do
         then do
           -- @ Compute v: *pre-condition* prede' are in common
           -- 3. All e \in de is an immediate conflict of some e' \in v
-          vcfs <- mapM (\e -> getImmediateConflicts e events) v
+          vcfs <- mapM (\e -> get_icnf e events) v
           let justifies = all (\e -> any (\vcf -> e `elem` vcf) vcfs) de
           if justifies
-          then addAlternative e v events 
+          then add_alte e v events 
           else return ()
         else return () 
 
 -- @@ filter alternatives
-alt2 :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> EventsID -> UnfolderOp st s (Maybe Alternative)
+alt2 :: Show act => EventsID -> EventsID -> UnfolderOp st act s (Maybe Alternative)
 alt2 [] _ = return Nothing
 alt2 (d:ds) ods = do
   s@UnfolderState{..} <- get
-  vs <- lift $ getAlternatives d evts
-  mv <- filterAlternatives vs ods
+  vs <- lift $ get_alte d evts
+  mv <- filterM (filter_alte ods) vs
   case mv of
-    Nothing -> alt2 ds ods
-    v -> return v
-  
-filterAlternatives :: (Hashable st, Ord st, GCS.Projection st) => Alternatives -> EventsID -> UnfolderOp st s (Maybe Alternative)
-filterAlternatives [] _ = return Nothing
-filterAlternatives (v:vs) ods = do
-  mv <- filterAlternative v ods
-  if mv
-  then return $ Just v
-  else filterAlternatives vs ods
- 
-filterAlternative :: (Hashable st, Ord st, GCS.Projection st) => Alternative -> EventsID -> UnfolderOp st s Bool
-filterAlternative v d = do
-  s@UnfolderState{..} <- get
-  cnfs <- lift $ mapM (\e -> getImmediateConflicts e evts) v >>= return . concat
-  let isConf = not $ any (\e -> e `elem` stak) cnfs
-      isJust = all (\e -> e `elem` cnfs) d
-  return $ isConf && isJust
--}
+    [] -> alt2 ds ods
+    (v:_) -> return $ Just v
+ where
+   -- Check if an alternative is a justification:
+   --  1. The alternative justifies the disable set (i.e. there exists an immediate
+   --     conflict between each event in the disable set and an event of the alternative
+   --  2. The alternative is valid (i.e. there is no immediate conflict between the
+   --     the stack and the alternative 
+   filter_alte :: Show act => EventsID -> Alternative -> UnfolderOp st act s Bool
+   filter_alte d v = do
+     s@UnfolderState{..} <- get
+     cnfs <- lift $ mapM (\e -> get_icnf e evts) v >>= return . nub . concat
+     let isConf = not $ any (\e -> e `elem` stak) cnfs
+         isJust = all (\e -> e `elem` cnfs) d
+     return $ isJust && isConf 
 
 -- | STATELESS RELATED FUNCTIONS
 -- | Prunes the configuration based on the current prefix
