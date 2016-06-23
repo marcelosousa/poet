@@ -4,14 +4,11 @@ module Exploration.UNF.Unfolder (unfolder) where
 import Control.Monad.State.Strict
 import Control.Monad.ST
 import Data.Hashable
-import qualified Data.HashTable.Class as H
-import qualified Data.HashTable.ST.Cuckoo as C
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe hiding (catMaybes)
 import qualified Data.Set as S
 import Data.Set (isSubsetOf)
-import qualified Data.Vector as V
 
 import Exploration.UNF.APIStateless
 import Exploration.UNF.Cutoff.McMillan

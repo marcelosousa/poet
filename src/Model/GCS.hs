@@ -65,21 +65,23 @@ class (Show act, Action act, Ord st, Show st, Projection st) => Collapsible st a
  
 class (Eq act) => Action act where
   varOf :: act -> Variable
+  isActBlocking :: act -> Bool
   isBlocking :: [act] -> Bool
+  isBlocking = any isActBlocking
   unlock :: Variable -> act 
   lock :: Variable -> act 
   -- Two sets of actions are independent
   interferes :: [act] -> [act] -> Bool
 
 -- Default implementation of an
--- Action.
+-- Action using read write sets
 type Acts = [Act]
 data Act =
     Lock Variable 
   | Unlock Variable 
   | Write Variable
   | Read Variable
-  | Other
+  | Other -- not currently used
   deriving (Eq,Ord)
 
 instance Show Act where
@@ -91,13 +93,23 @@ instance Show Act where
     Unlock (A var idx) -> "Unlock" ++ BS.unpack var ++ " " ++ show idx
 
 instance Action Act where
-  -- varOf :: Act -> Variable
   varOf (Lock v) = v
   varOf (Unlock v) = v
   varOf Other = error "varOf Other"
   unlock = Unlock
   lock = Lock
-  -- isBlocking :: Acts -> Bool
-  isBlocking = any (\act -> act /= Other)
-  interferes a b = True
-   
+  isActBlocking act =
+    case act of
+      Lock _ -> True
+      Unlock _ -> True
+      _ -> False 
+  interferes acts others = case acts of
+    [] -> False 
+    (a:as) ->
+      let ar = case a of
+            Lock v -> any (\b -> b == Lock v || b == Unlock v) others
+            Unlock v -> any (\b -> b == Lock v || b == Unlock v) others
+            Read v -> any (\b -> b == Write v) others
+            Write v -> any (\b -> b == Write v || b == Read v) others
+            _ -> error "Other not supported"
+      in ar || interferes as others

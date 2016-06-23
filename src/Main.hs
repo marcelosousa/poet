@@ -19,15 +19,15 @@ import Language.SimpleC
 --import qualified Domain.Concrete.Converter as CC
 --import qualified Domain.Interval.Converter as IC
 --import Model.Interpreter
---import qualified Exploration.UNF.Unfolder as Exp
+import qualified Exploration.UNF.Unfolder as Exp
 --import Exploration.UNF.APIStateless hiding (execute)
 --import Exploration.UNF.Prime
 
 -- import Test.HUnit (runTestTT)
 -- import Test.Tests
 -- import Test.Examples
--- import Util.Printer
--- import Util.Generic
+import Util.Printer
+import Util.Generic
 
 --import Unfolderful
 --import Printer
