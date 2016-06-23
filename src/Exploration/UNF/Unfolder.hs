@@ -151,20 +151,20 @@ unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   put s{ pcnf = nconf }
   return $! nconf
-
--- | execute receives a state and an event id and:
---   runs the execution engine on this state based on the event
---   gets the new state and the new set of actions
---   updates the event based on this set of actions
---   returns the new state
-execute :: (Hashable st, GCS.Collapsible st act) => st -> EventID -> UnfolderOp st act s st 
-execute st e = do
-  s@UnfolderState{..} <- get
-  ev@Event{..} <- lift $ get_event "execute" e evts
-  let (nst,nacts) = GCS.dcollapse syst st name
-      nev = ev {acts = nacts}
-  lift $ set_event e nev evts
-  return nst 
+ where 
+   -- | execute receives a state and an event id and:
+   --   runs the execution engine on this state based on the event
+   --   gets the new state and the new set of actions
+   --   updates the event based on this set of actions
+   --   returns the new state
+   execute :: (Hashable st, GCS.Collapsible st act) => st -> EventID -> UnfolderOp st act s st 
+   execute st e = do
+     s@UnfolderState{..} <- get
+     ev@Event{..} <- lift $ get_event "execute" e evts
+     let (nst,nacts) = GCS.dcollapse syst st name
+         nev = ev {acts = nacts}
+     lift $ set_event e nev evts
+     return nst 
 
 -- | expandWith adds new events to the unfolding prefix where the event *e* is 
 --   an immediate predecessor.
