@@ -142,6 +142,7 @@ unfold conf@Conf{..} e = do
   -- @ compute all the events of the configuration 
   let confEvs = e:stak
   -- @ filter from nnevs events that may have immediate conflicts with events in the configuration
+  -- @ASSERT The set nnevs should not contain any such event!
   nnevs' <- lift $ filterM (\e -> getEvent "unfold" e evts >>= \ev -> return $ null (icnf ev `intersect` confEvs)) nnevs 
   let nenevs = nnevs' ++ senevs 
   -- @ 4. compute the new set of special events
@@ -157,74 +158,89 @@ unfold = undefined
 
 -- | expandWith adds new events to the unfolding prefix where the event *e* is 
 --   an immediate predecessor.
+-- expandWith returns per thread/transition, the event with the largest history
+-- and necessarily an extension of the current configuration.
 -- @CRITICAL
-expandWith :: (Hashable st, GCS.Collapsible st act) => EventID -> EventsID -> st -> GCS.TId-> UnfolderOp st act s EventsID
-expandWith = undefined
-{-
+expandWith :: (Hashable st, Show act, GCS.Collapsible st act) => EventID -> EventsID -> st -> GCS.TId-> UnfolderOp st act s EventsID
 expandWith e maxevs st th = do
-  s@UnfolderState{..} <- get 
-  -- @ retrieve the immediate successors of e with the same transition id to avoid duplicates
-  succe <- lift $ getISucc e evts 
-           >>= mapM (\e -> getEvent "expandWith" e evts >>= \ev -> return (e,ev)) 
-           >>= return . filter (\(e,ev) -> evtr ev == tr)
+  s@UnfolderState{..} <- get
+  -- @ call the execution engine (e.g. collapse) to retrieve
+  --  i. the name of the new events
+  --  ii. the set of actions performed that enables us to construct
+  --      a global state (i.e. the state of the configuration) and 
+  --      perform sound independence/interference reasoning
+  let new_events = GCS.collapse syst st th -- :: [(st,pos,[act])]
+  -- @ For each triple (new_state,pos,acts) given by execution engine, 
+  --   generate events with that name and actions. 
+  nevs <- mapM (\(nst,pos,acts) -> extend e maxevs (th,pos) acts) new_events
+  return $ concat nevs
+
+-- | extends the unfolding prefix based on a configuration (denoted with the 
+-- set of maximal events with events) of a given name which contain
+-- *e* as an immediate predecessor and returns the event with history h0.
+extend :: (Hashable st, Show act, GCS.Collapsible st act) => EventID -> EventsID -> EventName -> [act] -> UnfolderOp st act s EventsID
+extend e maxevs êname êacts = do 
+  s@UnfolderState{..} <- get
+  -- @ retrieve the immediate successors of e with the same name to avoid duplicates
+  succe <- lift $ get_succ e evts 
+           >>= mapM (\e -> get_event "expandWith" e evts >>= \ev -> return (e,ev)) 
+           >>= return . filter (\(e,ev) -> name ev == êname)
   -- @ computes h0, the maximal history:
-  h0 <- computeHistory maxevs tr
+  h0 <- computeHistory (êname,êacts) maxevs 
   if null h0
-  then error $ "expandWith(e="++show e++",tr="++show tr++",h0="++show h0++",maxevs="++show maxevs++")"
+  then error $ "null h0 at expandWith(e="++show e++",name="++show êname++",maxevs="++show maxevs++")"
   else do
     -- e should be a valid maximal event
+    -- @NOTE: Remove this check for benchmarking
     if e `elem` h0
     then do
-      his <- if GCS.isBlocking (frd4 tr) 
+      -- @ Compute other histories
+      his <- if GCS.isBlocking êacts 
              then do
                prede <- lift $ predecessors e evts 
-               computeHistoriesBlocking tr e prede (e `delete` h0)
-             else computeHistories tr e [h0] >>= return . nub 
-      mapM (addEvent stak succe tr) his
-      addEvent stak succe tr h0
+               computeHistoriesBlocking êname e prede (e `delete` h0)
+             else computeHistories (êname,êacts) e [h0] >>= return . nub 
+      mapM (addEvent stak succe êname êacts) his
+      addEvent stak succe êname êacts h0
     else error "e must always be in h0"  
--}
 
-{-
--- @ computeHistory 
+-- | computeHistory computes the largest history of an event which we call h0 
 --   Input: 
 --     - Set of maximal events, 
 --     - Transition tr
 --   Output: History
-computeHistory :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> GCS.TransitionInfo -> UnfolderOp st s EventsID
-computeHistory maxevs tr = do
+-- An history is composed of events of maxevs that are dependent with (name,acts) 
+-- or dependent predecessors of the independent ones that are maximal
+computeHistory :: (Hashable st, GCS.Collapsible st act) => EventInfo act -> EventsID -> UnfolderOp st act s History
+computeHistory einfo maxevs = do
   s@UnfolderState{..} <- get
-  -- set of maximal events that are dependent with tr union 
-  -- they are events of maxevs that are dependent with tr 
-  -- or dependent predecessors of the independent ones that are maximal
-  (maxevs_h0,maxevs') <- lift $ foldM (\(l,r) e -> 
-         isDependent_te indr tr e evts >>= \b -> 
-            if b then return (e:l,r) else return (l,e:r)) ([],[]) maxevs
+  (maxevs_h0,maxevs') <- lift $ partition_dependent einfo evts ([],[]) maxevs 
   -- @ going up the causality of maxevs' until all maximal events are dependent with tr
-  pmaxevs_h0 <- lift $ pruneConfiguration indr evts maxevs_h0 tr maxevs'
-  let h0 = maxevs_h0 ++ pmaxevs_h0
+  h0 <- lift $ pruneConfiguration evts maxevs_h0 maxevs'
+  -- @ ASSERT: h0 does not contain repeated elements
   return h0
+ where
+    -- | pruneConfiguration
+    --   Given a set of maximal events which are independent with transition tr
+    --   go up in the causality to search for the rest of maximal events that are dependent
+    pruneConfiguration events pre_his es = do
+      -- immd predecessors of es
+      predes <- mapM (\e -> get_pred e events) es >>= return . nub . concat
+      -- filter the predecessors that are not maximal
+      -- @ FIXME: Optimise this!
+      -- @ NOTE: CRITICAL: THIS NEEDS TO BE CHANGED JUNE 06'16
+      mpredes <- filterM (\e -> successors e events >>= \succe -> return $ null $ succe `intersect` (pre_his ++ predes)) predes
+      -- split between dependent and independent 
+      (pre_his',es') <- partition_dependent einfo events (pre_his,[]) mpredes
+      if null es'
+      then return pre_his' 
+      else pruneConfiguration events pre_his' es'
 
--- @ pruneConfiguration
---   Given a set of maximal events which are independent with transition tr
---   go up in the causality to search for the rest of maximal events that are dependent
-pruneConfiguration inde events pre_his tr es = do
-  -- immd predecessors of es
-  predes <- mapM (\e -> getIPred e events) es >>= return . nub . concat
-  -- filter the predecessors that are not maximal
-  -- @ FIXME: Optimise this!
-  mpredes <- filterM (\e -> successors e events >>= \succe -> return $ null $ succe `intersect` (pre_his ++ predes)) predes
-  -- split between dependent and independent 
-  (es_done,es') <- foldM (\(l,r) e ->
-         isDependent_te inde tr e events >>= \b -> 
-            if b then return (e:l,r) else return (l,e:r)) ([],[]) mpredes
-  if null es'
-  then return es_done
-  else do
-    es_res <- pruneConfiguration inde events (pre_his ++ es_done) tr es'
-    let result = nub $ es_done ++ es_res 
-    return result
+computeHistoriesBlocking = undefined
+computeHistories :: (Hashable st, GCS.Collapsible st act) => EventInfo act -> EventID -> Histories -> UnfolderOp st act s Histories
+computeHistories = undefined
 
+{-
 -- @ computeHistories : worklist algorithm 
 --   e must always be a part of the histories
 computeHistories :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> [EventsID] -> UnfolderOp st s [EventsID]
@@ -330,11 +346,13 @@ findNextUnlock tr@(_,_,_,act) prede e' = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: (Hashable st, Ord st, Show st, GCS.Projection st) => EventsID -> [(EventID,Event)] -> GCS.TransitionInfo -> EventsID -> UnfolderOp st s EventsID 
-addEvent stack dup tr history = do
+addEvent :: (Hashable st, GCS.Collapsible st act) => EventsID -> [(EventID,Event act)] -> EventName -> [act] -> History -> UnfolderOp st act s EventsID 
+addEvent stack dup name acts history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if not $ null hasDup  
-  then return $! map fst hasDup -- @ASSERT: The size of this list should be at most 1 
+  then if length hasDup > 1
+       then error "the number of duplicates is higher than 1"
+       else return $ map fst hasDup 
   else do 
     s@UnfolderState{..} <- get
     -- @  a) Computes the local history of the new event
@@ -344,57 +362,41 @@ addEvent stack dup tr history = do
     --   If we don't need cutoffs, no need to compute the linearization and the new state
     if cutoffs opts 
     then do
-      let copyst = GCS.initialState syst
-      gstlc <- computeStateLocalConfiguration tr copyst localHistory
+      let copyst = GCS.gbst syst
+      gstlc <- computeStateLocalConfiguration name copyst localHistory
       if null gstlc
-      then return [] -- this should never happen
+      then error "addEvent: the state of the local configuration is bottom"
       else do
         isCutoff <- cutoff (head gstlc) sizeLocalHistory
         if isCutoff
         then do 
-          incCutoffCounter
+          inc_cutoffs
           return []
-        else do
-          incSize
-          -- @ 1. Fresh event id 
-          neID <- freshCounter
-          -- @ 2. Compute the immediate conflicts
-          -- @  b) Computes the immediate conflicts of all events in the local configuration
-          lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
-          -- @  c) Compute the immediate conflicts
-          cnfls <- lift $ computeConflicts indr tr localHistory lhCnfls evts >>= return . nub
-          -- @ 3. Insert the new event in the hash table
-          let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
-          lift $ setEvent neID e evts 
-          -- @ 4. Update all events in the history to include neID as their successor
-          lift $ mapM (\e -> setSuccessor neID e evts) history
-          -- @ 5. Update all events in the immediate conflicts to include neID as one 
-          lift $ mapM (\e -> setConflict neID e evts) cnfls
-          incSizeTr tr
-          return $! [neID]
-    else do
+        else add_event localHistory evts 
+    else add_event localHistory evts 
  where
-   add_event = do
+   add_event localHistory evts = do
      -- Increment the number of events in the prefix
      inc_evs_prefix 
      -- @ 1. Fresh event id 
      neID <- freshCounter
      -- @ 2. Compute the immediate conflicts
      -- @  b) Computes the immediate conflicts of all events in the local configuration
-     lhCnfls <- lift $ foldM (\a e -> getImmediateConflicts e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
+     lhCnfls <- lift $ foldM (\a e -> get_icnf e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
      -- @  c) Compute the immediate conflicts
-     cnfls <- lift $ computeConflicts indr tr localHistory lhCnfls evts >>= return . nub
+     cnfls <- lift $ computeConflicts name acts localHistory lhCnfls evts >>= return . nub
      -- @ 3. Insert the new event in the hash table
-     let e = Event tr history [] cnfls [] [] -- gstlc sizeLocalHistory
+     let e = Event name acts history [] cnfls [] [] -- gstlc sizeLocalHistory
      lift $ set_event neID e evts 
      -- @ 4. Update all events in the history to include neID as their successor
-     lift $ mapM (\e -> setSuccessor neID e evts) history
+     lift $ mapM (\e -> add_succ neID e evts) history
      -- @ 5. Update all events in the immediate conflicts to include neID as one 
-     lift $ mapM (\e -> setConflict neID e evts) cnfls 
-     incSizeTr tr
+     lift $ mapM (\e -> add_icnf neID e evts) cnfls 
+     inc_evs_per_name name 
      return $! [neID]
 
-computeStateLocalConfiguration  = undefined
+computeStateLocalConfiguration = undefined
+computeConflicts = undefined
 {-
 -- @ Compute the global state of the local configuration
 --   by doing a topological sorting

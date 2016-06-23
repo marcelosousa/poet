@@ -26,6 +26,7 @@ mytrace False a b = b
 type EventID = Int
 type EventsID = [EventID]
 type EventName = (GCS.TId,GCS.Pos)
+type EventInfo act = (EventName,[act]) 
 
 -- @ Value of the main HashTable
 --   (name, actions, predecessors, successors, #^, D, V)
@@ -77,6 +78,12 @@ data Configuration st =
   , enevs :: EventsID  -- ^ enabled events 
   , cfevs :: EventsID  -- ^ special events: the ones that have imm conflicts
   }
+
+-- @ An history is a set of maximal events of a configuration
+-- that enabled an event and each of these maximal events
+-- interferes with that event. 
+type History = EventsID
+type Histories = [History] 
 
 -- @ An alternative is a conflicting extension of a configuration
 --   that is being/was explored. 
@@ -411,6 +418,28 @@ filterEvent e events = do
   case mv of
     Nothing -> return False
     Just ev -> return True
+
+-- | Splits between events that are dependent and independent of
+-- the event name and actions
+partition_dependent :: (Show act, GCS.Action act) => (EventName,[act]) -> Events act s -> (EventsID,EventsID) -> EventsID -> ST s (EventsID,EventsID)
+partition_dependent êinfo events (dep,indep) es =
+  case es of
+    [] -> return (dep,indep)
+    (e:r) -> do
+      ev@Event{..} <- get_event "partition_dependent" e events
+      if is_dependent êinfo (name,acts)
+      then partition_dependent êinfo events (e:dep,indep) r
+      else partition_dependent êinfo events (dep,e:indep) r
+
+-- | Checks if two event names are dependent
+-- This occurs if they are events of the same process
+-- or their actions are interfering.
+-- Of course, one can emulate events of the same process
+-- in their actions (by for example considering Writes to 
+-- the PC variable) but this would be more expensive.
+is_dependent :: GCS.Action act => (EventName,[act]) -> (EventName,[act]) -> Bool
+is_dependent ((pid,_),acts) ((pid',_),acts') =
+  pid == pid' || GCS.interferes acts acts'
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event
