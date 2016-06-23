@@ -199,15 +199,15 @@ extend e maxevs êname êacts = do
              then do
                prede <- lift $ predecessors e evts 
                computeHistoriesBlocking êname e prede (e `delete` h0)
-             else computeHistories (êname,êacts) e [h0] >>= return . nub 
+             else computeHistories (êname,êacts) e [h0] [h0] 
       mapM (addEvent stak succe êname êacts) his
       addEvent stak succe êname êacts h0
     else error "e must always be in h0"  
 
 -- | computeHistory computes the largest history of an event which we call h0 
 --   Input: 
+--     - Metainformation about the event (name, actions) 
 --     - Set of maximal events, 
---     - Transition tr
 --   Output: History
 -- An history is composed of events of maxevs that are dependent with (name,acts) 
 -- or dependent predecessors of the independent ones that are maximal
@@ -237,40 +237,54 @@ computeHistory einfo maxevs = do
       else pruneConfiguration events pre_his' es'
 
 computeHistoriesBlocking = undefined
-computeHistories :: (Hashable st, GCS.Collapsible st act) => EventInfo act -> EventID -> Histories -> UnfolderOp st act s Histories
-computeHistories = undefined
 
-{-
--- @ computeHistories : worklist algorithm 
---   e must always be a part of the histories
-computeHistories :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> [EventsID] -> UnfolderOp st s [EventsID]
-computeHistories tr e [] = return []
-computeHistories tr e (h:hs) = do
-  s@UnfolderState{..} <- get
-  let h' = e `delete` h
-  hc <- lift $ filterM (\e' -> getEvent "computeNextHistory" e' evts >>= \ev -> return $ fst4 (evtr ev) /= fst4 tr) h' 
-  -- replace one of the maximal events with the predecessors
-  -- and prune the configuration
-  hs' <- mapM (computeNextHistory h tr) hc
-  res <- computeHistories tr e $ nub $ hs' ++ hs
-  return $! hs' ++ res
-
+-- | computeHistories : worklist algorithm 
+--   Input: 
+--     1. einfo: meta information regarding the event
+--     2. e: event that needs to be an immediate predecessor
+--     3. wlist: set of histories that we need to explore
+--     4. hists: set of histories to return
+--   Returns a list of histories for this meta-event where
+--   the event e belongs to all of them.
+--   @NOTE: Change this to be Sets
+computeHistories :: (Hashable st, GCS.Collapsible st act) => EventInfo act -> EventID -> Histories -> Histories -> UnfolderOp st act s Histories
+computeHistories einfo@(ename,_) e wlist hists =
+  case wlist of
+    [] -> return hists
+    (h:hs) -> do
+      s@UnfolderState{..} <- get
+      -- Removes *e* and all the events from the same thread
+      -- of the new event from set of events that will be 
+      -- considered for pruning 
+      let h' = e `delete` h
+      hc <- lift $ filterM (\e' -> get_event "computeHistories" e' evts 
+                        >>= \ev@Event{..} -> return $ name /= ename) h' 
+      -- replace one of the maximal events with the predecessors
+      -- and prune the configuration
+      hs' <- mapM (computeNextHistory h) hc
+      let chs = nub hs' -- remove the repeated in the new histories
+          wlist' = filter (\h -> not $ h `elem` hs) chs -- filter the ones in the worklist
+          nwlist = wlist' ++ hs
+          nhists = filter (\h -> not $ h `elem` hists) chs -- filter the ones in the other set 
+      computeHistories einfo e nwlist nhists 
+ where
 -- @ computeNextHistory
 --   build a candidate history out of replacing a maximal event e with its immediate predecessors
-computeNextHistory :: (Hashable st, Ord st, GCS.Projection st) => EventsID -> GCS.TransitionInfo -> EventID -> UnfolderOp st s EventsID
-computeNextHistory h tr e' = do
-  s@UnfolderState{..} <- get
-  -- we want to replace e' by its predecessors
-  let h' = e' `delete` h
-  -- predecessors of e'
-  prede <- lift $ getIPred e' evts
-  -- filter the predecessors of e' that are not maximal
-  -- @ FIXME: Optimise this!
-  prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
-  -- candidate
-  let candidate = h' ++ prede'
-  computeHistory candidate tr  
+   computeNextHistory h e' = do
+     s@UnfolderState{..} <- get
+     -- we want to replace e' by its predecessors
+     let h' = e' `delete` h
+     -- predecessors of e'
+     prede <- lift $ get_pred e' evts
+     -- filter the predecessors of e' that are not maximal
+     -- @ FIXME: Optimise this!
+     -- @ NOTE: CRITICAL: THIS NEEDS TO BE CHANGED JUNE 06'16
+     prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
+     -- candidate
+     let candidate = h' ++ prede'
+     computeHistory einfo candidate 
 
+{-
 computeHistoriesBlocking ::(Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> EventsID -> EventsID -> UnfolderOp st s [EventsID]
 computeHistoriesBlocking tr e _ [] = return []
 computeHistoriesBlocking tr@(procID, trID, _, act) e prede [e'] = do
