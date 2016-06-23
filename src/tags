@@ -1,10 +1,10 @@
 A	./Model/GCS.hs	50;"	d
-Act	./Model/GCS.hs	72;"	t
-Action	./Model/GCS.hs	63;"	t
-Acts	./Model/GCS.hs	71;"	t
+Act	./Model/GCS.hs	77;"	t
+Action	./Model/GCS.hs	66;"	t
+Acts	./Model/GCS.hs	76;"	t
 Alternative	./Exploration/UNF/APIStateless.hs	90;"	t
 Alternatives	./Exploration/UNF/APIStateless.hs	91;"	t
-Collapsible	./Model/GCS.hs	58;"	t
+Collapsible	./Model/GCS.hs	59;"	t
 Conf	./Exploration/UNF/APIStateless.hs	74;"	d
 Configuration	./Exploration/UNF/APIStateless.hs	73;"	t
 Counter	./Exploration/UNF/APIStateless.hs	70;"	t
@@ -19,11 +19,11 @@ Frontier	./Model/GCS.hs	38;"	t
 HashTable	./Util/Generic.hs	14;"	t
 Histories	./Exploration/UNF/APIStateless.hs	86;"	t
 History	./Exploration/UNF/APIStateless.hs	85;"	t
-Lock	./Model/GCS.hs	73;"	d
-Other	./Model/GCS.hs	77;"	d
+Lock	./Model/GCS.hs	78;"	d
+Other	./Model/GCS.hs	82;"	d
 Pos	./Model/GCS.hs	40;"	t
 Projection	./Model/GCS.hs	53;"	t
-Read	./Model/GCS.hs	76;"	d
+Read	./Model/GCS.hs	81;"	d
 States	./Exploration/UNF/APIStateless.hs	96;"	t
 System	./Model/GCS.hs	25;"	t
 System	./Model/GCS.hs	26;"	d
@@ -36,19 +36,19 @@ UnfolderOpts	./Exploration/UNF/APIStateless.hs	99;"	t
 UnfolderState	./Exploration/UNF/APIStateless.hs	133;"	t
 UnfolderState	./Exploration/UNF/APIStateless.hs	134;"	d
 UnfolderStats	./Exploration/UNF/APIStateless.hs	111;"	t
-Unlock	./Model/GCS.hs	74;"	d
+Unlock	./Model/GCS.hs	79;"	d
 V	./Model/GCS.hs	50;"	d
 Var	./Util/Generic.hs	13;"	t
 Variable	./Model/GCS.hs	50;"	t
-Write	./Model/GCS.hs	75;"	d
+Write	./Model/GCS.hs	80;"	d
 acts	./Exploration/UNF/APIStateless.hs	38;"	v
-addEvent	Exploration/UNF/Unfolder.hs	363;"	v	file:
-add_alte	./Exploration/UNF/APIStateless.hs	311;"	v
-add_disa	./Exploration/UNF/APIStateless.hs	294;"	v
-add_icnf	./Exploration/UNF/APIStateless.hs	277;"	v
-add_succ	./Exploration/UNF/APIStateless.hs	258;"	v
+addEvent	Exploration/UNF/Unfolder.hs	403;"	v	file:
+add_alte	./Exploration/UNF/APIStateless.hs	317;"	v
+add_disa	./Exploration/UNF/APIStateless.hs	300;"	v
+add_icnf	./Exploration/UNF/APIStateless.hs	283;"	v
+add_succ	./Exploration/UNF/APIStateless.hs	264;"	v
 allM	./Util/Generic.hs	17;"	v
-alt2	Exploration/UNF/Unfolder.hs	536;"	v	file:
+alt2	Exploration/UNF/Unfolder.hs	585;"	v	file:
 alte	./Exploration/UNF/APIStateless.hs	43;"	v
 beg	./Exploration/UNF/APIStateless.hs	163;"	v
 botEID	./Exploration/UNF/APIStateless.hs	49;"	v
@@ -60,38 +60,40 @@ catMaybes	./Util/Generic.hs	41;"	v
 cfevs	./Exploration/UNF/APIStateless.hs	79;"	v
 cfgs	./Model/GCS.hs	30;"	v
 cntr	./Exploration/UNF/APIStateless.hs	140;"	v
-collapse	./Model/GCS.hs	60;"	v
-computeConflicts	Exploration/UNF/Unfolder.hs	412;"	v	file:
-computeHistories	Exploration/UNF/Unfolder.hs	251;"	v	file:
-computeHistoriesBlocking	Exploration/UNF/Unfolder.hs	239;"	v	file:
-computeHistory	Exploration/UNF/Unfolder.hs	215;"	v	file:
-computePotentialAlternatives	Exploration/UNF/Unfolder.hs	478;"	v	file:
-computeStateLocalConfiguration	Exploration/UNF/Unfolder.hs	411;"	v	file:
+collapse	./Model/GCS.hs	61;"	v
+computeHistories	Exploration/UNF/Unfolder.hs	262;"	v	file:
+computeHistoriesBlocking	Exploration/UNF/Unfolder.hs	312;"	v	file:
+computeHistory	Exploration/UNF/Unfolder.hs	228;"	v	file:
+computePotentialAlternatives	Exploration/UNF/Unfolder.hs	527;"	v	file:
+computeStateHistory	Exploration/UNF/Unfolder.hs	461;"	v	file:
+computeStateLocalConfiguration	Exploration/UNF/Unfolder.hs	455;"	v	file:
+compute_conflicts	Exploration/UNF/Unfolder.hs	491;"	v	file:
 controlPart	./Model/GCS.hs	54;"	v
-core	Exploration/UNF/Unfolder.hs	574;"	v	file:
+core	Exploration/UNF/Unfolder.hs	623;"	v	file:
 cutoff	./Exploration/UNF/Cutoff/McMillan.hs	11;"	v
 cutoffCheck	./Exploration/UNF/Cutoff/McMillan.hs	21;"	v
 cutoffs	./Exploration/UNF/APIStateless.hs	103;"	v
 dataPart	./Model/GCS.hs	55;"	v
-dcollapse	./Model/GCS.hs	61;"	v
-dec_evs_prefix	./Exploration/UNF/APIStateless.hs	388;"	v
+dcollapse	./Model/GCS.hs	62;"	v
+dec_evs_prefix	./Exploration/UNF/APIStateless.hs	394;"	v
 default_unf_opts	./Exploration/UNF/APIStateless.hs	108;"	v
 default_unf_stats	./Exploration/UNF/APIStateless.hs	123;"	v
-del_event	./Exploration/UNF/APIStateless.hs	245;"	v
-del_icnf	./Exploration/UNF/APIStateless.hs	285;"	v
-del_succ	./Exploration/UNF/APIStateless.hs	266;"	v
+del_event	./Exploration/UNF/APIStateless.hs	251;"	v
+del_icnf	./Exploration/UNF/APIStateless.hs	291;"	v
+del_succ	./Exploration/UNF/APIStateless.hs	272;"	v
 disa	./Exploration/UNF/APIStateless.hs	42;"	v
-enabled	./Model/GCS.hs	59;"	v
+enabled	./Model/GCS.hs	60;"	v
 end	./Exploration/UNF/APIStateless.hs	164;"	v
 enevs	./Exploration/UNF/APIStateless.hs	78;"	v
 evts	./Exploration/UNF/APIStateless.hs	137;"	v
-expandWith	Exploration/UNF/Unfolder.hs	165;"	v	file:
+execute	Exploration/UNF/Unfolder.hs	163;"	v	file:
+expandWith	Exploration/UNF/Unfolder.hs	177;"	v	file:
 explore	Exploration/UNF/Unfolder.hs	65;"	v	file:
-extend	Exploration/UNF/Unfolder.hs	182;"	v	file:
-filterEvent	./Exploration/UNF/APIStateless.hs	416;"	v
-filterEvents	./Exploration/UNF/APIStateless.hs	412;"	v
+extend	Exploration/UNF/Unfolder.hs	194;"	v	file:
+filterEvent	./Exploration/UNF/APIStateless.hs	422;"	v
+filterEvents	./Exploration/UNF/APIStateless.hs	418;"	v
 frd4	./Util/Generic.hs	34;"	v
-freshCounter	./Exploration/UNF/APIStateless.hs	350;"	v
+freshCounter	./Exploration/UNF/APIStateless.hs	356;"	v
 frnt	./Model/GCS.hs	27;"	v
 fromBool	./Util/Generic.hs	70;"	v
 fst4	./Util/Generic.hs	25;"	v
@@ -100,24 +102,29 @@ gbst	./Model/GCS.hs	28;"	v
 get_alte	./Exploration/UNF/APIStateless.hs	235;"	v
 get_disa	./Exploration/UNF/APIStateless.hs	232;"	v
 get_event	./Exploration/UNF/APIStateless.hs	213;"	v
-get_evts_of_conf	./Exploration/UNF/APIStateless.hs	468;"	v
+get_evts_of_conf	./Exploration/UNF/APIStateless.hs	477;"	v
 get_icnf	./Exploration/UNF/APIStateless.hs	229;"	v
+get_name	./Exploration/UNF/APIStateless.hs	238;"	v
 get_pred	./Exploration/UNF/APIStateless.hs	223;"	v
 get_succ	./Exploration/UNF/APIStateless.hs	226;"	v
+get_tid	./Exploration/UNF/APIStateless.hs	241;"	v
 i_unf_state	./Exploration/UNF/APIStateless.hs	148;"	v
 icnf	./Exploration/UNF/APIStateless.hs	41;"	v
-inc_cutoffs	./Exploration/UNF/APIStateless.hs	373;"	v
-inc_evs_per_name	./Exploration/UNF/APIStateless.hs	399;"	v
-inc_evs_prefix	./Exploration/UNF/APIStateless.hs	386;"	v
-inc_max_conf	./Exploration/UNF/APIStateless.hs	366;"	v
-inc_sum_size_max_conf	./Exploration/UNF/APIStateless.hs	391;"	v
+inc_cutoffs	./Exploration/UNF/APIStateless.hs	379;"	v
+inc_evs_per_name	./Exploration/UNF/APIStateless.hs	405;"	v
+inc_evs_prefix	./Exploration/UNF/APIStateless.hs	392;"	v
+inc_max_conf	./Exploration/UNF/APIStateless.hs	372;"	v
+inc_sum_size_max_conf	./Exploration/UNF/APIStateless.hs	397;"	v
 initialExtensions	Exploration/UNF/Unfolder.hs	45;"	v	file:
-interferes	./Model/GCS.hs	67;"	v
-isBlocking	./Model/GCS.hs	65;"	v
-is_causally_closed	./Exploration/UNF/APIStateless.hs	490;"	v
-is_configuration	./Exploration/UNF/APIStateless.hs	484;"	v
-is_dependent	./Exploration/UNF/APIStateless.hs	441;"	v
+interferes	./Model/GCS.hs	72;"	v
+isBlocking	./Model/GCS.hs	68;"	v
+isBottom	./Model/GCS.hs	57;"	v
+is_causally_closed	./Exploration/UNF/APIStateless.hs	499;"	v
+is_configuration	./Exploration/UNF/APIStateless.hs	493;"	v
+is_dependent	./Exploration/UNF/APIStateless.hs	450;"	v
+is_independent	./Exploration/UNF/APIStateless.hs	441;"	v
 list	./Util/Generic.hs	37;"	v
+lock	./Model/GCS.hs	70;"	v
 maevs	./Exploration/UNF/APIStateless.hs	77;"	v
 mytrace	./Exploration/UNF/APIStateless.hs	21;"	v
 name	./Exploration/UNF/APIStateless.hs	37;"	v
@@ -125,29 +132,30 @@ nr_cutoffs	./Exploration/UNF/APIStateless.hs	115;"	v
 nr_evs_per_name	./Exploration/UNF/APIStateless.hs	118;"	v
 nr_evs_prefix	./Exploration/UNF/APIStateless.hs	116;"	v
 nr_max_conf	./Exploration/UNF/APIStateless.hs	114;"	v
-op_evs_prefix	./Exploration/UNF/APIStateless.hs	380;"	v
+op_evs_prefix	./Exploration/UNF/APIStateless.hs	386;"	v
 opts	./Exploration/UNF/APIStateless.hs	142;"	v
-partition_dependent	./Exploration/UNF/APIStateless.hs	425;"	v
+partition_dependent	./Exploration/UNF/APIStateless.hs	431;"	v
 pcnf	./Exploration/UNF/APIStateless.hs	138;"	v
-pop	./Exploration/UNF/APIStateless.hs	343;"	v
+pop	./Exploration/UNF/APIStateless.hs	349;"	v
 pred	./Exploration/UNF/APIStateless.hs	39;"	v
-predecessorWith	./Exploration/UNF/APIStateless.hs	498;"	v
-predecessors	./Exploration/UNF/APIStateless.hs	448;"	v
+predecessorWith	./Exploration/UNF/APIStateless.hs	507;"	v
+predecessors	./Exploration/UNF/APIStateless.hs	457;"	v
 printCausality	./Util/Printer.hs	39;"	v
 printConflict	./Util/Printer.hs	42;"	v
-prune	Exploration/UNF/Unfolder.hs	583;"	v	file:
-prune_config	Exploration/UNF/Unfolder.hs	565;"	v	file:
-push	./Exploration/UNF/APIStateless.hs	336;"	v
-reset_alte	./Exploration/UNF/APIStateless.hs	320;"	v
+prune	Exploration/UNF/Unfolder.hs	632;"	v	file:
+prune_config	Exploration/UNF/Unfolder.hs	614;"	v	file:
+push	./Exploration/UNF/APIStateless.hs	342;"	v
+reset_alte	./Exploration/UNF/APIStateless.hs	326;"	v
 safeLookup	./Util/Generic.hs	58;"	v
 separator	Exploration/UNF/Unfolder.hs	57;"	v	file:
-set_cutoff_table	./Exploration/UNF/APIStateless.hs	359;"	v
-set_disa	./Exploration/UNF/APIStateless.hs	303;"	v
-set_event	./Exploration/UNF/APIStateless.hs	241;"	v
-set_pcnf	./Exploration/UNF/APIStateless.hs	328;"	v
-set_previous_disa	./Exploration/UNF/APIStateless.hs	475;"	v
+set_cutoff_table	./Exploration/UNF/APIStateless.hs	365;"	v
+set_disa	./Exploration/UNF/APIStateless.hs	309;"	v
+set_event	./Exploration/UNF/APIStateless.hs	247;"	v
+set_pcnf	./Exploration/UNF/APIStateless.hs	334;"	v
+set_previous_disa	./Exploration/UNF/APIStateless.hs	484;"	v
 showActs	./Util/Printer.hs	36;"	v
 showEvents	./Exploration/UNF/APIStateless.hs	63;"	v
+simple_run	./Model/GCS.hs	63;"	v
 snd4	./Util/Generic.hs	28;"	v
 stak	./Exploration/UNF/APIStateless.hs	139;"	v
 stas	./Exploration/UNF/APIStateless.hs	141;"	v
@@ -156,7 +164,7 @@ stateless	./Exploration/UNF/APIStateless.hs	102;"	v
 stats	./Exploration/UNF/APIStateless.hs	143;"	v
 subsumes	./Model/GCS.hs	56;"	v
 succ	./Exploration/UNF/APIStateless.hs	40;"	v
-successors	./Exploration/UNF/APIStateless.hs	457;"	v
+successors	./Exploration/UNF/APIStateless.hs	466;"	v
 sum_size_max_conf	./Exploration/UNF/APIStateless.hs	117;"	v
 symt	./Model/GCS.hs	31;"	v
 syst	./Exploration/UNF/APIStateless.hs	136;"	v
@@ -166,6 +174,7 @@ toBool	./Util/Generic.hs	65;"	v
 toDot	./Util/Printer.hs	21;"	v
 trd4	./Util/Generic.hs	31;"	v
 unfToDot	./Util/Printer.hs	14;"	v
-unfold	Exploration/UNF/Unfolder.hs	157;"	v	file:
+unfold	Exploration/UNF/Unfolder.hs	119;"	v	file:
 unfolder	Exploration/UNF/Unfolder.hs	28;"	v
-varOf	./Model/GCS.hs	64;"	v
+unlock	./Model/GCS.hs	69;"	v
+varOf	./Model/GCS.hs	67;"	v

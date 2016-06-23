@@ -17,8 +17,6 @@ import Exploration.UNF.APIStateless
 import Exploration.UNF.Cutoff.McMillan
 import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
--- import qualified Model.Independence as I
-import qualified Debug.Trace as DT
 
 import System.IO.Unsafe
 import Prelude hiding (pred)
@@ -108,7 +106,6 @@ explore c@Conf{..} ê d alt = do
       prune e core_prefix
     else return ()
 
-{-
 -- We are going to add event e to configuration conf
 -- Need to update enable, and immediateConflicts
 -- computeExtensions
@@ -119,49 +116,62 @@ explore c@Conf{..} ê d alt = do
 unfold :: (Hashable st, GCS.Collapsible st act) => Configuration st -> EventID -> UnfolderOp st act s (Configuration st)
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
-  tr <- lift $ getEvent "unfold" e evts >>= return . snd4 . evtr
   -- @ 1. compute the new state after executing the event e
-  -- copy the state otherwise it will go wrong 
-  -- copyst <- lift $ copy stc
-  -- execute the event e
-  nstcs <- execute cons e -- @TODO: change this
-  let nstc = head nstcs
+  nstc <- execute state e 
   -- @ 2. compute the new set of maximal events
-  iprede <- trace (separator ++ "state = " ++ show nstc) $ lift $ getIPred e evts
-  let nmaxevs = e:(mevs \\ iprede)
+  iprede <- lift $ get_pred e evts 
+  let nmaxevs = e:(maevs \\ iprede)
   -- @ 3. compute the new set of enabled events
-  let es = delete e eevs 
+      es = delete e enevs 
   -- - compute the set of events independent with *e*, they will be enabled after *e*
-  senevs <- lift $ filterM (\ê -> isIndependent indr e ê evts) es 
-  -- - compute the set of enabled transitions at the new state
-  let entrs = GCS.enabledTransitions syst nstc 
-  -- - filter the enabled transitions that are dependent with h(e); those will be the new events
+  senevs <- lift $ filterM (\ê -> is_independent e ê evts) es
+  -- - get the name of these independent events
+  ievs <- lift $ mapM (\e -> get_event "unfold" e evts) senevs 
+  -- - compute the set of enabled threads at the new state
+  let entrs = GCS.enabled syst nstc 
+  -- - filter the enabled threads that are dependent with h(e); those will be the new events
   --   some of these new events will be conflicting extensions
-  netrs <- lift $ V.filterM (\tr -> isDependent_te indr tr e evts) entrs
-  nnevs <- V.mapM (expandWith e nmaxevs) netrs >>= return . concat . V.toList 
+  --   this is computed by checking that the enabled thread does not 
+  --   contain independent events with the new event. 
+  --   @TODO SOUDNESS PROOF!
+  evTId <- lift $ get_tid e evts
+  let netrs = filter (\t -> all (\e@Event{..} -> evTId /= t) ievs) entrs
+  nnevs <- mapM (expandWith e nmaxevs nstc) netrs >>= return . concat  
   -- @ compute all the events of the configuration 
   let confEvs = e:stak
   -- @ filter from nnevs events that may have immediate conflicts with events in the configuration
   -- @ASSERT The set nnevs should not contain any such event!
-  nnevs' <- lift $ filterM (\e -> getEvent "unfold" e evts >>= \ev -> return $ null (icnf ev `intersect` confEvs)) nnevs 
+  nnevs' <- lift $ filterM (\e -> get_event "unfold" e evts >>= \ev -> return $ null (icnf ev `intersect` confEvs)) nnevs 
   let nenevs = nnevs' ++ senevs 
   -- @ 4. compute the new set of special events
-  evs <- lift $ mapM (\e -> getEvent "unfold" e evts >>= \ev -> return (e,ev)) confEvs 
+  evs <- lift $ mapM (\e -> get_event "unfold" e evts >>= \ev -> return (e,ev)) confEvs 
   let ncevs = map fst $ filter (\(_,ev) -> not $ null $ icnf ev) evs 
   -- @ build the new configuration
   let nconf = Conf nstc nmaxevs nenevs ncevs
   s@UnfolderState{..} <- get
   put s{ pcnf = nconf }
   return $! nconf
--}
-unfold = undefined
+
+-- | execute receives a state and an event id and:
+--   runs the execution engine on this state based on the event
+--   gets the new state and the new set of actions
+--   updates the event based on this set of actions
+--   returns the new state
+execute :: (Hashable st, GCS.Collapsible st act) => st -> EventID -> UnfolderOp st act s st 
+execute st e = do
+  s@UnfolderState{..} <- get
+  ev@Event{..} <- lift $ get_event "execute" e evts
+  let (nst,nacts) = GCS.dcollapse syst st name
+      nev = ev {acts = nacts}
+  lift $ set_event e nev evts
+  return nst 
 
 -- | expandWith adds new events to the unfolding prefix where the event *e* is 
 --   an immediate predecessor.
 -- expandWith returns per thread/transition, the event with the largest history
 -- and necessarily an extension of the current configuration.
 -- @CRITICAL
-expandWith :: (Hashable st, Show act, GCS.Collapsible st act) => EventID -> EventsID -> st -> GCS.TId-> UnfolderOp st act s EventsID
+expandWith :: (Hashable st, GCS.Collapsible st act) => EventID -> EventsID -> st -> GCS.TId -> UnfolderOp st act s EventsID
 expandWith e maxevs st th = do
   s@UnfolderState{..} <- get
   -- @ call the execution engine (e.g. collapse) to retrieve
@@ -197,8 +207,9 @@ extend e maxevs êname êacts = do
       -- @ Compute other histories
       his <- if GCS.isBlocking êacts 
              then do
+               -- @ Compute histories related to locks
                prede <- lift $ predecessors e evts 
-               computeHistoriesBlocking êname e prede (e `delete` h0)
+               computeHistoriesBlocking (êname,êacts) e prede (e `delete` h0)
              else computeHistories (êname,êacts) e [h0] [h0] 
       mapM (addEvent stak succe êname êacts) his
       addEvent stak succe êname êacts h0
@@ -281,73 +292,101 @@ computeHistories einfo@(ename,_) e wlist hists =
      prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
      computeHistory einfo (h'++prede')
 
-computeHistoriesBlocking = undefined
-{-
-computeHistoriesBlocking ::(Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> EventsID -> EventsID -> UnfolderOp st s [EventsID]
-computeHistoriesBlocking tr e _ [] = return []
-computeHistoriesBlocking tr@(procID, trID, _, act) e prede [e'] = do
-  s@UnfolderState{..} <- get
-  ev <- lift $ getEvent "computeHistoriesBlocking" e evts
-  if fst4 (evtr ev) == procID
-  then do -- @ proc(e) == tr. Hence e' must be a blocking event, namely an unlock
-    ev' <- lift $ getEvent "computeHistoriesBlocking" e' evts
-    let acte' = frd4 $ evtr ev'
-    if any (\a -> (GCS.Unlock (GCS.varOf a)) `elem` acte') act
-    then do
-      me'' <- findNextUnlock tr prede e'
-      case me'' of
-        -- @ [e] is not a valid history 
-        Nothing -> return []
-        -- @ [e] is a valid history
-        Just [] -> return [[e]]
-        -- @ [e,e''] is a valid history
-        --   and by construction e'' is unlock
-        Just [e''] -> do
-          let hN = [e,e'']
-          rest <- computeHistoriesBlocking tr e prede [e'']
-          if rest == []
-          then return [hN]
-          else return $ hN:rest
-    else error $ "computeHistoriesBlocking: can't happen! " ++ show act ++ " " ++ show acte'
-  else return [] -- @ proc(e) != tr
-computeHistoriesBlocking tr e es hs = error $ "computeHistoriesBlocking fatal :" ++ show (tr,e,es,hs)
-
---
-findNextUnlock :: (Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventsID -> EventID -> UnfolderOp st s (Maybe EventsID)
-findNextUnlock tr@(_,_,_,act) prede e' = do
-  s@UnfolderState{..} <- get
-  iprede' <- lift $ getIPred e' evts
-  (es_done,es) <- lift $ foldM (\(l,r) e ->
-         isDependent_te indr tr e evts >>= \b -> 
-            if b then return (e:l,r) else return (l,e:r)) ([],[]) iprede'
-  -- @ es_done is either empty or has one event
-  case es_done of 
-    [] -> do
-      lres <- mapM (findNextUnlock tr prede) es >>= return . catMaybes
-      case lres of
-        Nothing -> return Nothing
-        Just [] -> return $ Just []
-        Just [x] -> return $ Just x
-        _ -> error "findNextUnlock: not sure what happens here!"
-    [e] -> do
-      ev <- lift $ getEvent "computeHistoriesBlocking" e evts
-      let acte = frd4 $ evtr ev
-      if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` acte) act
-      then if e `elem` prede
-           then return Nothing
-           else findNextUnlock tr prede e
-      else if any (\a -> (GCS.Unlock (GCS.varOf a)) `elem` acte) act
-           then if e `elem` prede
-                then return $ Just []
-                else return $ Just [e]
-           else do
-             let iacts = GCS.initialActs syst
-             if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` iacts) act
-             then return Nothing
-             else return $ Just []
---               trace ("returning nothing") $ return Nothing -- REVISE: error $ "findNextUnlock: cant happen! " ++ show e
-    _ -> error "findNextUnlock: two events are dependent and that can't happen"
--}
+-- | Going to compute the histories of a lock event.
+--   Even though we define a blocking event to be both
+--   a lock and a unlock event, since an unlock event
+--   always has one immediate predecessor, by removing it 
+--   computeHistoriesBlocking will always be called with
+--   hs = []. 
+--   This history can be composed of at most two events
+--   one to enable this transition in the thread and 
+--   an unlock from another thread.
+--   If the event e is in the thread, then we know
+--   that e' must be a blocking event. 
+--   If the event e is not in the thread, then we
+--   know that it is a blocking event and so there
+--   is no other history. 
+computeHistoriesBlocking :: (Hashable st, GCS.Collapsible st act) => EventInfo act -> EventID -> EventsID -> EventsID -> UnfolderOp st act s Histories
+computeHistoriesBlocking info@(ne_name,ne_acts) e preds_e hs = 
+  case hs of
+    [] -> return []
+    [e'] -> do 
+      -- @ Necessarily a lock event (see function header comment)
+      s@UnfolderState{..} <- get
+      ev <- lift $ get_event "computeHistoriesBlocking" e evts
+      if fst (name ev) == fst ne_name 
+      then do
+        -- @ proc(e) == proc(new_event)
+        --   Hence e' must be a blocking event, namely an unlock
+        ev' <- lift $ get_event "computeHistoriesBlocking" e' evts
+        let acte' = acts ev'
+        -- @ Check that indeed e' is an unlock.
+        -- @NOTE: Remove this check in production
+        if any (\a -> (GCS.unlock (GCS.varOf a)) `elem` acte') ne_acts 
+        then do
+          me'' <- findPrevUnlock info preds_e e'
+          case me'' of
+            -- @ [e] is not a valid history 
+            Nothing -> return []
+            -- @ [e] is a valid history
+            Just [] -> return [[e]]
+            -- @ [e,e''] is a valid history
+            --   and by construction e'' is unlock
+            Just [e''] -> do
+              let hN = [e,e'']
+              rest <- computeHistoriesBlocking info e preds_e [e'']
+              return $ hN:rest
+        else error $ "computeHistoriesBlocking: can't happen! " ++ show ne_acts ++ " " ++ show acte'
+      else return [] -- @ proc(e) != tr
+    _ -> error $ "computeHistoriesBlocking fatal :" ++ show (info,e,preds_e,hs)
+ where
+   -- | finds the previous unlock in the causality chain of
+   --   an event that was an unlock.
+   --   Input:
+   --   einfo: meta information about the new event
+   --   preds_e: set of predecessors of the *event e*
+   --   e': the unlock event that we are going to remove
+   --       and find the previous in the causality chain
+   --   Returns the previous unlock it exists
+   findPrevUnlock einfo@(ename,eacts) preds_e e' = do
+     s@UnfolderState{..} <- get
+     iprede' <- lift $ get_pred e' evts
+     (es_done,es) <- lift $ partition_dependent einfo evts ([],[]) iprede' 
+     -- @ es_done is either empty or has one event
+     case es_done of
+       -- @ none of the immediate predecessors 
+       --   is dependent with the actions of the new event 
+       [] -> do
+         lres <- mapM (findPrevUnlock einfo preds_e) es >>= return . catMaybes
+         case lres of
+           Nothing -> return Nothing
+           Just [] -> return $ Just []
+           Just [x] -> return $ Just x
+           _ -> error "findPrevUnlock: not sure what happens here!"
+       [e] -> do
+         -- @ one of the immediate predecessors 
+         --   is a lock or an unlock 
+         ev@Event{..} <- lift $ get_event "findPrevUnlock" e evts
+         -- @ NOTE: Optimise this check; no need to traverse twice
+         if any (\a -> (GCS.lock (GCS.varOf a)) `elem` acts) eacts
+         -- @ it is a lock, check if it maximal
+         then if e `elem` preds_e                 
+              then return Nothing                 
+              else findPrevUnlock einfo preds_e e
+         -- @ it not a lock, must be an unlock?
+         --   check if it is maximal (found it if maximal!) 
+         else if any (\a -> (GCS.unlock (GCS.varOf a)) `elem` acts) eacts
+              then if e `elem` preds_e 
+                   then return $ Just []
+                   else return $ Just [e]
+              else do
+                -- @ ASSERT: IS THIS CODE EVERY REACHABLE?
+                error "findPrevUnlock: an interferring event with a lock is neither a lock nor unlock"
+                -- let iacts = GCS.initialActs syst
+                -- if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` iacts) act
+                -- then return Nothing
+                -- else return $ Just []
+       _ -> error "findPrevUnlock: two events are dependent and that can't happen"
 
 -- @ addEvent: Given a transition id and the history
 --   adds the correspondent event.
@@ -368,18 +407,19 @@ addEvent stack dup name acts history = do
   else do 
     s@UnfolderState{..} <- get
     -- @  a) Computes the local history of the new event
+    -- @NOTE: @CRITICAL OPTIMISE THIS
     prede <- lift $ mapM (\e -> predecessors e evts) history  
-    let localHistory = prede `seq` nub $ concat prede ++ history 
+    let localHistory = nub $ concat prede ++ history 
         sizeLocalHistory = length localHistory + 1
     --   If we don't need cutoffs, no need to compute the linearization and the new state
     if cutoffs opts 
     then do
       let copyst = GCS.gbst syst
-      gstlc <- computeStateLocalConfiguration name copyst localHistory
-      if null gstlc
+      gstlc <- computeStateLocalConfiguration copyst name localHistory
+      if GCS.isBottom gstlc
       then error "addEvent: the state of the local configuration is bottom"
       else do
-        isCutoff <- cutoff (head gstlc) sizeLocalHistory
+        isCutoff <- cutoff gstlc sizeLocalHistory
         if isCutoff
         then do 
           inc_cutoffs
@@ -396,7 +436,7 @@ addEvent stack dup name acts history = do
      -- @  b) Computes the immediate conflicts of all events in the local configuration
      lhCnfls <- lift $ foldM (\a e -> get_icnf e evts >>= \es -> return $ es ++ a) [] localHistory >>= return . nub 
      -- @  c) Compute the immediate conflicts
-     cnfls <- lift $ computeConflicts name acts localHistory lhCnfls evts >>= return . nub
+     cnfls <- lift $ compute_conflicts (name,acts) localHistory lhCnfls evts >>= return . nub
      -- @ 3. Insert the new event in the hash table
      let e = Event name acts history [] cnfls [] [] -- gstlc sizeLocalHistory
      lift $ set_event neID e evts 
@@ -407,34 +447,38 @@ addEvent stack dup name acts history = do
      inc_evs_per_name name 
      return $! [neID]
 
-computeStateLocalConfiguration = undefined
-computeConflicts = undefined
-{-
--- @ Compute the global state of the local configuration
---   by doing a topological sorting
--- getISucc :: EventID -> Events s -> ST s EventsID
--- execute :: GCS.Sigma s -> EventID -> UnfolderOp s (GCS.Sigma s)
-computeStateLocalConfiguration :: (Hashable st, Show st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> st -> EventsID -> UnfolderOp st s [st]
-computeStateLocalConfiguration (_,trID,_,i) ist prede = do
-  s@UnfolderState{..} <- get
-  st' <- computeStateHistory ist [0] [] prede
-  let fn = GCS.getTransitionWithID syst trID
-  return $! fn st'
-  
-computeStateHistory :: (Hashable st, Ord st, GCS.Projection st) => st -> EventsID -> EventsID -> EventsID -> UnfolderOp st s st
-computeStateHistory cst [] _ _ = return cst
-computeStateHistory cst (ce:rest) l prede = do
-  s@UnfolderState{..} <- get
-  cesucc <- lift $ getISucc ce evts
-  let l' = ce:l -- events already processed
-      chosen = filter (\e -> e `elem` cesucc) prede
-  chosen' <- lift $ filterM (\e -> getIPred e evts >>= \prede -> return $ prede \\ l' == []) chosen
-  let rest' = rest ++ chosen'
-  nst <- if ce == 0 
-         then return $ [cst]
-         else execute cst ce
-  computeStateHistory (head nst) rest' l' prede     
--}
+   -- | Compute the global state of the local configuration
+   --   by doing a topological sorting
+   computeStateLocalConfiguration :: (Hashable st, GCS.Collapsible st act) => st -> EventName -> History -> UnfolderOp st act s st
+   computeStateLocalConfiguration st ename econf = do
+     s@UnfolderState{..} <- get
+     st' <- computeStateHistory st [0] [] econf 
+     return $ GCS.simple_run syst st' ename 
+
+   -- | Actually computes the state of a local configuration
+   computeStateHistory :: (Hashable st, GCS.Collapsible st act) => st -> EventsID -> EventsID -> History -> UnfolderOp st act s st
+   computeStateHistory st wlist seen hist = 
+     case wlist of
+       [] -> return st
+       (e:es) -> do
+         s@UnfolderState{..} <- get
+         esucc <- lift $ get_succ e evts
+         -- @ update the seen set 
+         let seen' = e:seen
+         -- @ select the successors which
+         -- are part of the history  
+             chosen = filter (\e -> e `elem` hist) esucc
+         -- @ for each sucessor that is in 
+         -- history, check if all immediate predecessors
+         -- have been seen, and only then add it to the worklist
+         chosen' <- lift $ filterM (\e -> get_pred e evts 
+                                >>= \prede -> return $ prede \\ seen' == []) chosen
+         let wlist' = es++chosen'
+         ename <- lift $ get_name e evts
+         let nst = if e == 0 
+                   then st
+                   else GCS.simple_run syst st ename
+         computeStateHistory nst wlist' seen' hist 
 
 -- | Compute conflicts 
 -- @NOTE: @CRITICAL: THIS NEEDS TO BE OPTIMISED! 
@@ -442,26 +486,33 @@ computeStateHistory cst (ce:rest) l prede = do
 --  . Is an immediate conflict (or successor) of an event in the local configuration
 --  . Is dependent with tr
 --  Changed for a worklist
-compute_conflicts :: Show act => EventName -> EventsID -> EventsID -> Events s act -> ST s EventsID
+compute_conflicts :: (Show act, GCS.Action act) => EventInfo act -> EventsID -> EventsID -> Events act s -> ST s EventsID
 compute_conflicts einfo lh lhCnfls events = do 
-  ev@Event{..} <- get_event "computeConflicts" botEID events
-  computeConflict [] succ 
-  where 
-    computeConflict seen [] = return []
-    computeConflict seen (e:rest) = do
+  ev@Event{..} <- get_event "compute_conflicts" botEID events
+  computeConflict [] succ []
+  where
+    -- computeConflict receives a list of seen events and the frontier 
+    computeConflict seen [] cfls = return cfls 
+    computeConflict seen (e:rest) cfls = do
+      -- check if we have seen this event
       if e `elem` seen
-      then computeConflict seen rest 
+      then computeConflict seen rest cfls
+           -- check if this event is in conflict with any in the local history
       else if e `elem` lhCnfls 
-           then computeConflict (e:seen) rest -- return []
+           then computeConflict (e:seen) rest cfls 
            else do
-             ev@Event{..} <- getEvent "computeConflict" e events
-             if not (e `elem` lh) && I.isDependent uidep tr evtr
-             then do 
+             ev@Event{..} <- get_event "computeConflict" e events
+             -- if e is not in the local history and his dependent with the event
+             if not (e `elem` lh) && is_dependent einfo (name,acts) 
+             then do
+               -- check if there is any immediate conflict in the local configuration
+               -- with a predecessor of e, i.e. check if there is a conflict between
+               -- e and the new event already  
                lhe <- predecessors e events
                if any (\e -> elem e lhe) lhCnfls 
-               then computeConflict (e:seen) rest
-               else computeConflict (e:seen) rest >>= \es -> return $! e:es
-             else computeConflict (e:seen) (nub $ rest ++ succ)
+               then computeConflict (e:seen) rest cfls
+               else computeConflict (e:seen) rest (e:cfls) 
+             else computeConflict (e:seen) (nub $ rest ++ succ) cfls
 
 -- Let e be an event of a configuration C.
 --   Let cext be the conflicting extensions of C, 

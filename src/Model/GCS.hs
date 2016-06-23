@@ -54,15 +54,20 @@ class Projection st where
   controlPart :: st -> st
   dataPart :: st -> st
   subsumes :: st -> st -> Bool
+  isBottom :: st -> Bool
 
 class (Show act, Action act, Ord st, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
   collapse :: System st act -> st -> TId -> [(st,Pos,[act])]
-  dcollapse :: System st act -> st -> TId -> Pos -> (st,[act])
-
-class Action act where
+  dcollapse :: System st act -> st -> (TId,Pos) -> (st,[act])
+  simple_run :: System st act -> st -> (TId,Pos) -> st
+  simple_run sys st name = fst $ dcollapse sys st name
+ 
+class (Eq act) => Action act where
   varOf :: act -> Variable
   isBlocking :: [act] -> Bool
+  unlock :: Variable -> act 
+  lock :: Variable -> act 
   -- Two sets of actions are independent
   interferes :: [act] -> [act] -> Bool
 
@@ -77,7 +82,6 @@ data Act =
   | Other
   deriving (Eq,Ord)
 
-
 instance Show Act where
   show act = case act of
     Other              -> "Other"
@@ -91,7 +95,9 @@ instance Action Act where
   varOf (Lock v) = v
   varOf (Unlock v) = v
   varOf Other = error "varOf Other"
+  unlock = Unlock
+  lock = Lock
   -- isBlocking :: Acts -> Bool
   isBlocking = any (\act -> act /= Other)
   interferes a b = True
-  
+   

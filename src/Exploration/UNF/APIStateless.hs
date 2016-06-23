@@ -235,7 +235,13 @@ get_disa e events = do
 get_alte e events = do 
   ev@Event{..} <- get_event "getAltrs(natives)" e events
   return alte 
-
+get_name e events = do
+  ev@Event{..} <- get_event "getAltrs(natives)" e events
+  return name
+get_tid e events = do
+  ev@Event{..} <- get_event "getAltrs(natives)" e events
+  return $ fst name
+  
 -- SETTERS
 set_event :: EventID -> Event act -> Events act s -> ST s ()
 set_event eID ev events = H.insert events eID ev
@@ -431,13 +437,16 @@ partition_dependent êinfo events (dep,indep) es =
       then partition_dependent êinfo events (e:dep,indep) r
       else partition_dependent êinfo events (dep,e:indep) r
 
+is_independent :: (Show act, GCS.Action act) => EventID -> EventID -> Events act s -> ST s Bool
+is_independent = undefined
+
 -- | Checks if two event names are dependent
 -- This occurs if they are events of the same process
 -- or their actions are interfering.
 -- Of course, one can emulate events of the same process
 -- in their actions (by for example considering Writes to 
 -- the PC variable) but this would be more expensive.
-is_dependent :: GCS.Action act => (EventName,[act]) -> (EventName,[act]) -> Bool
+is_dependent :: GCS.Action act => EventInfo act -> EventInfo act -> Bool
 is_dependent ((pid,_),acts) ((pid',_),acts') =
   pid == pid' || GCS.interferes acts acts'
 
