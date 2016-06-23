@@ -42,13 +42,13 @@ Var	./Util/Generic.hs	13;"	t
 Variable	./Model/GCS.hs	50;"	t
 Write	./Model/GCS.hs	75;"	d
 acts	./Exploration/UNF/APIStateless.hs	38;"	v
-addEvent	Exploration/UNF/Unfolder.hs	364;"	v	file:
+addEvent	Exploration/UNF/Unfolder.hs	363;"	v	file:
 add_alte	./Exploration/UNF/APIStateless.hs	311;"	v
 add_disa	./Exploration/UNF/APIStateless.hs	294;"	v
 add_icnf	./Exploration/UNF/APIStateless.hs	277;"	v
 add_succ	./Exploration/UNF/APIStateless.hs	258;"	v
 allM	./Util/Generic.hs	17;"	v
-alt2	Exploration/UNF/Unfolder.hs	537;"	v	file:
+alt2	Exploration/UNF/Unfolder.hs	536;"	v	file:
 alte	./Exploration/UNF/APIStateless.hs	43;"	v
 beg	./Exploration/UNF/APIStateless.hs	163;"	v
 botEID	./Exploration/UNF/APIStateless.hs	49;"	v
@@ -61,14 +61,14 @@ cfevs	./Exploration/UNF/APIStateless.hs	79;"	v
 cfgs	./Model/GCS.hs	30;"	v
 cntr	./Exploration/UNF/APIStateless.hs	140;"	v
 collapse	./Model/GCS.hs	60;"	v
-computeConflicts	Exploration/UNF/Unfolder.hs	413;"	v	file:
+computeConflicts	Exploration/UNF/Unfolder.hs	412;"	v	file:
 computeHistories	Exploration/UNF/Unfolder.hs	251;"	v	file:
 computeHistoriesBlocking	Exploration/UNF/Unfolder.hs	239;"	v	file:
 computeHistory	Exploration/UNF/Unfolder.hs	215;"	v	file:
-computePotentialAlternatives	Exploration/UNF/Unfolder.hs	479;"	v	file:
-computeStateLocalConfiguration	Exploration/UNF/Unfolder.hs	412;"	v	file:
+computePotentialAlternatives	Exploration/UNF/Unfolder.hs	478;"	v	file:
+computeStateLocalConfiguration	Exploration/UNF/Unfolder.hs	411;"	v	file:
 controlPart	./Model/GCS.hs	54;"	v
-core	Exploration/UNF/Unfolder.hs	575;"	v	file:
+core	Exploration/UNF/Unfolder.hs	574;"	v	file:
 cutoff	./Exploration/UNF/Cutoff/McMillan.hs	11;"	v
 cutoffCheck	./Exploration/UNF/Cutoff/McMillan.hs	21;"	v
 cutoffs	./Exploration/UNF/APIStateless.hs	103;"	v
@@ -135,8 +135,8 @@ predecessorWith	./Exploration/UNF/APIStateless.hs	498;"	v
 predecessors	./Exploration/UNF/APIStateless.hs	448;"	v
 printCausality	./Util/Printer.hs	39;"	v
 printConflict	./Util/Printer.hs	42;"	v
-prune	Exploration/UNF/Unfolder.hs	584;"	v	file:
-prune_config	Exploration/UNF/Unfolder.hs	566;"	v	file:
+prune	Exploration/UNF/Unfolder.hs	583;"	v	file:
+prune_config	Exploration/UNF/Unfolder.hs	565;"	v	file:
 push	./Exploration/UNF/APIStateless.hs	336;"	v
 reset_alte	./Exploration/UNF/APIStateless.hs	320;"	v
 safeLookup	./Util/Generic.hs	58;"	v

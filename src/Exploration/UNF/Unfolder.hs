@@ -236,8 +236,6 @@ computeHistory einfo maxevs = do
       then return pre_his' 
       else pruneConfiguration events pre_his' es'
 
-computeHistoriesBlocking = undefined
-
 -- | computeHistories : worklist algorithm 
 --   Input: 
 --     1. einfo: meta information regarding the event
@@ -268,8 +266,9 @@ computeHistories einfo@(ename,_) e wlist hists =
           nhists = filter (\h -> not $ h `elem` hists) chs -- filter the ones in the other set 
       computeHistories einfo e nwlist nhists 
  where
--- @ computeNextHistory
---   build a candidate history out of replacing a maximal event e with its immediate predecessors
+   -- @ computeNextHistory
+   --   build a candidate history out of replacing a maximal
+   --   event e' with its immediate predecessors
    computeNextHistory h e' = do
      s@UnfolderState{..} <- get
      -- we want to replace e' by its predecessors
@@ -280,10 +279,9 @@ computeHistories einfo@(ename,_) e wlist hists =
      -- @ FIXME: Optimise this!
      -- @ NOTE: CRITICAL: THIS NEEDS TO BE CHANGED JUNE 06'16
      prede' <- lift $ filterM (\e -> successors e evts >>= \succe -> return $ null $ succe `intersect` h') prede
-     -- candidate
-     let candidate = h' ++ prede'
-     computeHistory einfo candidate 
+     computeHistory einfo (h'++prede')
 
+computeHistoriesBlocking = undefined
 {-
 computeHistoriesBlocking ::(Hashable st, Ord st, GCS.Projection st) => GCS.TransitionInfo -> EventID -> EventsID -> EventsID -> UnfolderOp st s [EventsID]
 computeHistoriesBlocking tr e _ [] = return []
@@ -436,18 +434,18 @@ computeStateHistory cst (ce:rest) l prede = do
          then return $ [cst]
          else execute cst ce
   computeStateHistory (head nst) rest' l' prede     
+-}
 
-
--- @ Compute conflicts  
+-- | Compute conflicts 
+-- @NOTE: @CRITICAL: THIS NEEDS TO BE OPTIMISED! 
 --  DFS of the unf prefix from bottom stopping when the event:
 --  . Is an immediate conflict (or successor) of an event in the local configuration
 --  . Is dependent with tr
 --  Changed for a worklist
-computeConflicts :: I.UIndep -> GCS.TransitionInfo -> EventsID -> EventsID -> Events s -> ST s EventsID
-computeConflicts uidep tr lh lhCnfls events = do 
-  ev@Event{..} <- getEvent "computeConflicts" botEID events
+compute_conflicts :: Show act => EventName -> EventsID -> EventsID -> Events s act -> ST s EventsID
+compute_conflicts einfo lh lhCnfls events = do 
+  ev@Event{..} <- get_event "computeConflicts" botEID events
   computeConflict [] succ 
-  -- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
   where 
     computeConflict seen [] = return []
     computeConflict seen (e:rest) = do
@@ -464,8 +462,6 @@ computeConflicts uidep tr lh lhCnfls events = do
                then computeConflict (e:seen) rest
                else computeConflict (e:seen) rest >>= \es -> return $! e:es
              else computeConflict (e:seen) (nub $ rest ++ succ)
-                  -- foldM (\a e -> computeConflict e >>= \es -> return $ es ++ a) [] succ
--}
 
 -- Let e be an event of a configuration C.
 --   Let cext be the conflicting extensions of C, 
