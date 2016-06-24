@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
 -- Module    :  Main
 -- Copyright :  (c) 2015 Marcelo Sousa
@@ -14,7 +15,6 @@ import System.Random
 --import Data.Time
 
 import Language.SimpleC
---import Frontend (frontEnd, nfrontEnd)
 --import Domain.Concrete.Type
 --import qualified Domain.Concrete.Converter as CC
 --import qualified Domain.Interval.Converter as IC
@@ -65,7 +65,6 @@ instance Default Domain where
   
 data Option 
   = Frontend {input :: FilePath}
-  | Middleend {input :: FilePath}
   | Execute {input :: FilePath, domain :: Domain, seed :: Int}
   | Interpret {input :: FilePath, domain :: Domain}
   | Explore {input :: FilePath, domain :: Domain, stateful :: Int, cutoff :: Int}
@@ -76,9 +75,6 @@ data Option
 
 frontendMode :: Option
 frontendMode = Frontend {input = def &= args} &= help _helpFE
-
-middleendMode :: Option
-middleendMode = Middleend {input = def &= args} &= help _helpFE
 
 executeMode :: Option
 executeMode =
@@ -112,8 +108,8 @@ testMode :: Option
 testMode = Test {} &= help _helpTest
 
 progModes :: Mode (CmdArgs Option)
-progModes = cmdArgsMode $ modes [frontendMode, middleendMode, executeMode
-                                ,interpretMode, exploreMode, testMode, debugMode, primeMode]
+progModes = cmdArgsMode $ modes [frontendMode, executeMode, interpretMode
+                                ,exploreMode, testMode, debugMode, primeMode]
          &= help _help
          &= program _program
          &= summary _summary
@@ -124,15 +120,12 @@ main = do options <- cmdArgsRun progModes
           runOption options
           
 runOption :: Option -> IO ()
-runOption = undefined
+runOption opt =
+  case opt of
+    Frontend f -> frontend f
+    _ -> undefined
 {-
 runOption (Frontend f) = frontend f
-runOption (Middleend f) = do
-  prog <- extract f
-  let (prog', fflow, flow, thcount) = frontEnd prog
-      ind = snd $ IC.convert prog' fflow flow thcount
-  print ind
-  print flow
 runOption (Execute f dom seed) = execute f dom seed
 runOption (Interpret f dom) = interpreter f dom
 runOption (Explore f dom stmode cutoffs) =
@@ -141,18 +134,14 @@ runOption (Prime f dom stmode cutoffs) =
   prime f dom (not $ toBool stmode) (toBool cutoffs)
 runOption (Debug f dom cutoffs) = debug f dom False (toBool cutoffs)
 runOption Test = test
+-}
 
 frontend :: FilePath -> IO ()
 frontend f = do
-  prog <- extract f
-  let prog' = nfrontEnd prog
---  putStrLn "ORIGINAL PROGRAM"
---  putStrLn "------------------------------"
---  print prog
-  putStrLn "TRANSFORMED PROGRAM"
-  putStrLn "------------------------------"
-  print prog'
-    
+  prog@FrontEnd{..} <- extract "" f
+  print ast 
+
+{-    
 interpreter :: FilePath -> Domain -> IO ()
 interpreter f dom = do
   prog <- extract f
