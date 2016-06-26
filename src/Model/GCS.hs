@@ -24,7 +24,8 @@ import Util.Generic
 -- for the state and a represetation for the actions.
 data System st act = 
   System 
-  { frnt :: Frontier                 -- ^ Frontier in the CFGs
+  { 
+    frnt :: Frontier                 -- ^ Frontier in the CFGs
   , gbst :: st                       -- ^ Initial (Global) State 
   , gbac :: [act]                    -- ^ Initial (Global) Actions
   , cfgs :: Graphs SymId () (st,act) -- ^ Control Flow Graphs
@@ -50,13 +51,17 @@ botID = -1
 data Variable = V Var | A Var Integer
   deriving (Show,Eq,Ord)
 
+-- | The control part of a state 
+--   is a map from thread id to position 
+--   in the CFG.
+type Control = Map TId Pos
+
 class Projection st where
-  controlPart :: st -> st
-  dataPart :: st -> st
+  controlPart :: st -> Control 
   subsumes :: st -> st -> Bool
   isBottom :: st -> Bool
 
-class (Show act, Action act, Ord st, Show st, Projection st) => Collapsible st act where
+class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
   collapse :: System st act -> st -> TId -> [(st,Pos,[act])]
   dcollapse :: System st act -> st -> (TId,Pos) -> (st,[act])

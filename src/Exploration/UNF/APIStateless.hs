@@ -91,9 +91,9 @@ type Alternative = EventsID
 type Alternatives = [Alternative]
     
 -- @ HashTable of States to EventID for Cutoffs
---type States s st = HashTable s st EventID
 -- Int is the size of the local configuration of that event
-type States st = Map st [(st,Int)]
+-- type States st = HashTable s GCS.Control [(st,Int)]
+type States st = Map GCS.Control [(st,Int)]
 
 -- @ Options for the unfolder 
 data UnfolderOpts =
@@ -144,7 +144,7 @@ data UnfolderState st act s =
 }
 
 -- @ Initial state of the unfolder
-i_unf_state:: (Hashable st, Ord st, GCS.Collapsible st act) => Bool -> Bool -> GCS.System st act -> ST s (UnfolderState st act s) 
+i_unf_state:: (Hashable st, GCS.Collapsible st act) => Bool -> Bool -> GCS.System st act -> ST s (UnfolderState st act s) 
 i_unf_state stateless_mode cutoff_mode syst = do
   evts <- H.new
   H.insert evts botEID $ botEvent $ GCS.gbac syst

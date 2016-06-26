@@ -123,13 +123,12 @@ runOption :: Option -> IO ()
 runOption opt =
   case opt of
     Frontend f -> frontend f
+    Explore f dom stmode cutoffs ->
+      explore f dom (not $ toBool stmode) (toBool cutoffs)
     _ -> undefined
 {-
-runOption (Frontend f) = frontend f
 runOption (Execute f dom seed) = execute f dom seed
 runOption (Interpret f dom) = interpreter f dom
-runOption (Explore f dom stmode cutoffs) =
-  explore f dom (not $ toBool stmode) (toBool cutoffs)
 runOption (Prime f dom stmode cutoffs) =
   prime f dom (not $ toBool stmode) (toBool cutoffs)
 runOption (Debug f dom cutoffs) = debug f dom False (toBool cutoffs)
@@ -166,6 +165,7 @@ execute f dom dseed = do
               Concrete -> exec gen thcount $ CC.convert prog' fflow flow thcount
               Interval -> exec gen thcount $ IC.convert prog' fflow flow thcount
   putStrLn log
+-}
 
 explore :: FilePath -> Domain -> Bool -> Bool -> IO ()
 explore f dom mode cutoffs = do
@@ -192,7 +192,7 @@ explore f dom mode cutoffs = do
   putStrLn $ "events per transition map:\n" ++ M.foldWithKey (\tr ev r -> show (snd4 tr, ev) ++ "\n" ++ r) "" evPerTr
   --putStrLn $ "execution time(s): " ++ (show $ diffUTCTime stop start)
   --writeFile (replaceExtension f ".dot") unfst
-
+{-
 debug :: FilePath -> Domain -> Bool -> Bool -> IO ()
 debug f dom mode cutoffs = do 
   prog <- extract f
