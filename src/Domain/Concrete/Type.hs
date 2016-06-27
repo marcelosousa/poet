@@ -39,7 +39,11 @@ data Sigma =
   , is_bot  :: Bool 
   }
   deriving Show
- 
+
+-- | Initial state which is not bottom
+empty_state :: Sigma
+empty_state = Sigma IM.empty M.empty 0 False 
+
 -- | A thread state is a control and local data 
 data ThState =
   ThState
@@ -105,17 +109,6 @@ instance Collapsible Sigma Act where
    collapse = undefined
    dcollapse = undefined 
 {-
-isPC :: Var -> Bool
-isPC v = 
-  let [_,x] = BSC.split '.' v
-      x' = BSC.unpack x
-  in x' == "pc"
-  
-data Value = 
-      IntVal Int 
-    | Array [Value]
-  deriving (Show,Eq,Ord)
-
 instance Hashable Sigma where
   hash = hash . M.toList
   hashWithSalt s st = hashWithSalt s $ M.toList st
@@ -127,9 +120,6 @@ instance Hashable Value where
   hashWithSalt s v = case v of
     IntVal i -> hashWithSalt s i
     Array vals -> hashWithSalt s vals
-      
-toSigma :: LSigma -> Sigma
-toSigma = M.fromList
 
 insert :: Var -> Value -> Sigma -> Sigma
 insert = M.insert

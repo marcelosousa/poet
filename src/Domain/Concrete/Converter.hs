@@ -1,26 +1,68 @@
+{-# LANGUAGE RecordWildCards #-}
 module Domain.Concrete.Converter where
 
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import qualified Data.Vector as V
+import qualified Data.Map as M
+import Data.Map (Map)  
 import Debug.Trace
 
 import Domain.Concrete.Type
 
 import Language.SimpleC.AST hiding (Value)
-import Language.C.Syntax.AST (CBinaryOp(..),CUnaryOp(..))
+import Language.SimpleC.Converter
+import Language.SimpleC.Flow
+import Language.SimpleC.Util
 import Model.GCS
-import Model.Independence
 import Util.Generic hiding (safeLookup)
 
+-- | converts the front end into a system
+convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
+convert fe@FrontEnd{..} =
+  let pos_main = get_entry "main" cfgs symt 
+      (st,acts) = foldl convert_decl (empty_state,[]) $ decls ast 
+  in System st acts cfgs symt [0] 1
+
+-- | retrieves the entry node of the cfg of a function
+get_entry :: String -> Graphs SymId () (Sigma,Act) -> Map SymId Symbol -> Pos
+get_entry fnname graphs symt = 
+  case M.foldrWithKey aux_get_entry Nothing graphs of
+    Nothing -> error $ "get_entry: cant get entry for " ++ fnname
+    Just p -> p
+ where 
+   aux_get_entry sym cfg r =
+     case r of 
+       Just res -> Just res
+       Nothing -> 
+         case M.lookup sym symt of
+           Nothing -> Nothing
+           Just s  -> if get_name s == fnname
+                      then Just $ entry_node cfg
+                      else Nothing 
+
+convert_decl :: (Sigma,[Act]) -> Declaration SymId () -> (Sigma,[Act]) 
+convert_decl (st,acts) decl =
+  case decl of
+    TypeDecl ty -> error "convert_decl: not supported yet"
+    Decl ty el@DeclElem{..} ->
+      let vals = convert_init initializer 
+      in case declarator of
+           Nothing -> 
+             case initializer of 
+               Nothing -> (st,acts) 
+               _ -> error "initializer w/ declarator" 
+           Just d@Declr{..} ->
+            
+
+convert_init :: Maybe (Initializer SymId ()) -> [Value]
+convert_init = undefined
+{-
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1
 pmtVar = BS.pack "__poet_mutex_threads"
 pmjVar = BS.pack "__poet_mutex_threads_join"
 
-convert :: FrontEnd n Sigma -> System Sigma Action
-convert = undefined
-{-
 convert :: Program -> FirstFlow -> Flow -> Int -> (System Sigma, UIndep)
 convert (Program (decls, defs)) pcs flow thCount =
   -- @ get the initial local state: this will be the set of global variables 

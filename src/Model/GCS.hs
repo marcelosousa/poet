@@ -25,8 +25,8 @@ import Util.Generic
 data System st act = 
   System 
   { 
-    frnt :: Frontier                 -- ^ Frontier in the CFGs
-  , gbst :: st                       -- ^ Initial (Global) State 
+--    frnt :: Frontier                 -- ^ Frontier in the CFGs
+    gbst :: st                       -- ^ Initial (Global) State 
   , gbac :: [act]                    -- ^ Initial (Global) Actions
   , cfgs :: Graphs SymId () (st,act) -- ^ Control Flow Graphs
   , symt :: Map SymId Symbol         -- ^ Symbol Table
