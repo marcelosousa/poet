@@ -26,6 +26,9 @@ import Language.SimpleC.Util
 -- | Concrete Memory Cell
 type ConMCell = MemCell SymId () [Value]
 
+-- | Concrete Heap
+type ConHeap = IntMap ConMCell
+
 -- | The concrete domain 
 --   The concrete domain is a variation of 
 --   the Powerset(state) where state is a 
@@ -33,7 +36,7 @@ type ConMCell = MemCell SymId () [Value]
 data Sigma = 
   Sigma 
   { 
-    heap :: IntMap ConMCell
+    heap :: ConHeap 
   , th_states :: Map TId ThState
   , num_th  :: Int
   , is_bot  :: Bool 
@@ -104,6 +107,14 @@ instance Projection Sigma where
   subsumes a b = subsumes_concrete a b
   isBottom = is_bot 
 
+-- | API for modifying the state
+
+-- | insert_heap: inserts an element to the heap
+insert_heap :: Sigma -> SymId -> ConMCell -> Sigma
+insert_heap st@Sigma{..} id cell =
+  let heap' = IM.insert id cell heap
+  in st {heap = heap'}  
+
 instance Collapsible Sigma Act where
    enabled = undefined
    collapse = undefined
@@ -121,67 +132,10 @@ instance Hashable Value where
     IntVal i -> hashWithSalt s i
     Array vals -> hashWithSalt s vals
 
-insert :: Var -> Value -> Sigma -> Sigma
-insert = M.insert
-
-join :: Sigma -> Sigma -> Sigma
-join = M.union
-
-safeLookup :: String -> Sigma -> Var -> Value
-safeLookup err st k =
-  case M.lookup k st of 
-    Nothing -> error $ "safeLookup: " ++ err
-    Just v  -> v
-
--- Local State
-type LSigma = [(Var,Value)]
-
-showSigma :: Sigma -> String
-showSigma s =
-  let kv = M.toList s
-  in showSigma' kv 
-
-showSigma' :: [(Var, Value)] -> String
-showSigma' [] = ""
-showSigma' ((v,vs):rest) = show v ++ "=" ++ show vs ++ "\n" ++ showSigma' rest
--}
-{-      
-   
--- Add a state to a list of states if that state is not already in the list
-add :: Sigma s -> [Sigma s] -> ST s [Sigma s]
-add s sts = do
-    return $ s:sts
---  isEl <- isElem s sts
---  if isEl
---  then return sts
---  else return $ s:sts
-
--- This is the bottleneck
-isElem :: Sigma -> [Sigma s] -> ST s Bool
-isElem s [] = return False
-isElem s (x:xs) = do
-  isEq <- isEqual s x
-  if isEq 
-  then return True
-  else isElem s xs
-
 -- State equality: because I'm using a hashtable I need to stay within the ST monad
 isEqual :: Sigma s -> Sigma s -> ST s Bool
 isEqual s1 s2 = do
   l1 <- H.toList s1
   l2 <- H.toList s2
   return $ isEqual' l1 l2  
-
-isEqual' :: [(Var,Value)] -> [(Var,Value)] -> Bool
-isEqual' [] [] = True
-isEqual' ((x,v):xs) ((y,t):ys) = x == y && v == t && isEqual' xs ys
--}
-{-
-sortSigmas :: [Sigma s] -> [Sigma s]
-sortSigmas sts = 
-  let sts' = map filterSigma sts
-  in sort sts'
-
-filterSigma :: Sigma s -> Sigma s
-filterSigma st = M.filter (==1) st
 -}

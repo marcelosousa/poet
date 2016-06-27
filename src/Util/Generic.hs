@@ -9,8 +9,9 @@ import qualified Data.HashTable.Class as H
 import Data.List
 import qualified Data.Maybe as M
 import qualified Data.HashTable.ST.Cuckoo as C
+import Language.SimpleC.AST (SymId)
 
-type Var = BS.ByteString
+type Var = SymId -- BS.ByteString
 type HashTable s k v = C.HashTable s k v
 
 allM :: Monad m => (a -> m Bool) -> [a] -> m Bool

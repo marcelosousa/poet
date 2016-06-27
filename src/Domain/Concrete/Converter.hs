@@ -46,16 +46,22 @@ convert_decl (st,acts) decl =
   case decl of
     TypeDecl ty -> error "convert_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
-      let vals = convert_init initializer 
-      in case declarator of
-           Nothing -> 
-             case initializer of 
-               Nothing -> (st,acts) 
-               _ -> error "initializer w/ declarator" 
-           Just d@Declr{..} ->
-            
-
-convert_init :: Maybe (Initializer SymId ()) -> [Value]
+      case declarator of
+        Nothing -> 
+          case initializer of 
+            Nothing -> (st,acts) 
+            _ -> error "initializer w/ declarator" 
+        Just d@Declr{..} ->
+          case declr_ident of
+            Nothing -> error "no identifier" 
+            Just id ->   
+              let ty = Ty declr_type ty
+                  val = convert_init ty initializer
+                  st' = insert_heap st (symId id) $ MCell ty val
+                  acts' = (Write (V id)):acts  
+              in (st',acts')              
+ 
+convert_init :: Ty SymId () -> Maybe (Initializer SymId ()) -> [Value]
 convert_init = undefined
 {-
 pmdVar = BS.pack "__poet_mutex_death"

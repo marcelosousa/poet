@@ -92,10 +92,10 @@ data Act =
 instance Show Act where
   show act = case act of
     Other              -> "Other"
-    Lock (V var)       -> "Lock " ++ BS.unpack var
-    Lock (A var idx)   -> "Lock " ++ BS.unpack var ++ " " ++ show idx
-    Unlock (V var)     -> "Unlock" ++ BS.unpack var
-    Unlock (A var idx) -> "Unlock" ++ BS.unpack var ++ " " ++ show idx
+    Lock (V var)       -> "Lock " ++ show var
+    Lock (A var idx)   -> "Lock " ++ show var ++ " " ++ show idx
+    Unlock (V var)     -> "Unlock" ++ show var
+    Unlock (A var idx) -> "Unlock" ++ show var ++ " " ++ show idx
 
 instance Action Act where
   varOf (Lock v) = v
