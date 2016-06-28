@@ -110,7 +110,7 @@ instance Projection Sigma where
 -- | API for modifying the state
 
 -- | insert_heap: inserts an element to the heap
-insert_heap :: Sigma -> SymId -> ConMCell -> Sigma
+insert_heap :: Sigma -> Int -> ConMCell -> Sigma
 insert_heap st@Sigma{..} id cell =
   let heap' = IM.insert id cell heap
   in st {heap = heap'}  

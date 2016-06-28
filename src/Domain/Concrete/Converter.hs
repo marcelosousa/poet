@@ -55,14 +55,67 @@ convert_decl (st,acts) decl =
           case declr_ident of
             Nothing -> error "no identifier" 
             Just id ->   
-              let ty = Ty declr_type ty
-                  val = convert_init ty initializer
-                  st' = insert_heap st (symId id) $ MCell ty val
-                  acts' = (Write (V id)):acts  
-              in (st',acts')              
+              let typ = Ty declr_type ty
+                  (st',act) = convert_init st id typ initializer
+              in (st',act++acts)              
  
-convert_init :: Ty SymId () -> Maybe (Initializer SymId ()) -> [Value]
-convert_init = undefined
+convert_init :: Sigma -> SymId -> Ty SymId () -> Maybe (Initializer SymId ()) -> (Sigma,Acts)
+convert_init st id ty minit =
+  case minit of
+    Nothing ->
+      let val = default_value ty
+          st' = insert_heap st (symId id) $ MCell ty val
+          acts = [Write (V id)]
+      in (st',acts)
+    Just i  ->
+      case i of
+        InitExpr expr -> 
+          let (val,acts) = decl_transformer st expr
+              st' = insert_heap st (symId id) $ MCell ty val
+              acts' = (Write (V id)):acts
+          in (st',acts')
+        InitList list -> error "initializer list is not supported"
+
+-- | Default value of a type
+default_value :: Ty SymId () -> [Value]  
+default_value ty = undefined 
+
+-- | Transformers for global declaration in concrete semantics
+decl_transformer :: Sigma -> Expression SymId () -> ([Value],Acts)
+decl_transformer st expr = undefined
+
+-- | Transformers for concrete semantics 
+transformer :: Sigma -> SymId -> Ty SymId () -> Expression SymId () -> (Sigma,Acts)
+transformer st id = undefined
+
+{-
+
+  = AlignofExpr (Expression ident a)
+  | AlignofType (Declaration ident a)
+  | Assign AssignOp (Expression ident a) (Expression ident a)
+  | Binary BinaryOp (Expression ident a) (Expression ident a)
+  | BuiltinExpr (BuiltinThing ident a)
+  | Call (Expression ident a) [Expression ident a] a
+  | Cast (Declaration ident a) (Expression ident a)
+  | Comma [Expression ident a]
+  | CompoundLit (Declaration ident a) (InitializerList ident a)
+  | Cond (Expression ident a)
+         (Maybe (Expression ident a))
+         (Expression ident a)
+  | Const Constant
+  | Index (Expression ident a) (Expression ident a)
+  | LabAddrExpr ident
+  | Member (Expression ident a) ident Bool
+  | SizeofExpr (Expression ident a)
+  | SizeofType (Declaration ident a)
+  | Skip
+  | StatExpr (Statement ident a)
+  | Unary UnaryOp (Expression ident a)
+  | Var ident
+  | ComplexReal (Expression ident a)
+  | ComplexImag (Expression ident a)
+-}
+
 {-
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1
