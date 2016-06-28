@@ -46,8 +46,8 @@ type TId = Int
 botID :: TId 
 botID = -1
 
--- | Action of a (set) of transitions
--- @TODO: Variable seems too simple.
+-- | A memory address  
+
 data Variable = V Var | A Var Integer
   deriving (Show,Eq,Ord)
 

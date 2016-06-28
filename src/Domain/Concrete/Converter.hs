@@ -7,9 +7,11 @@ import qualified Data.Vector as V
 import qualified Data.Map as M
 import Data.Map (Map)  
 import Debug.Trace
+import Data.List 
 
 import Domain.Concrete.Type
 
+import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter
 import Language.SimpleC.Flow
@@ -91,12 +93,12 @@ default_value (Ty ddecls typ) = undefined
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
-transformer :: Sigma -> Expression SymId () -> (Sigma,[Value],Acts)
+transformer :: Sigma -> SExpression -> (Sigma,[Value],Acts)
 transformer st _expr =
   case _expr of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
-    Assign assignOp lhs rhs -> undefined 
+    Assign assignOp lhs rhs -> assign_transformer st assignOp lhs rhs 
     Binary binaryOp lhs rhs -> undefined
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
     Call fn args n -> undefined
@@ -117,6 +119,47 @@ transformer st _expr =
     ComplexReal expr -> error "transformer: complex op not supported" 
     ComplexImag expr -> error "transformer: complex op not supported" 
 
+-- | Transformer for an assignment expression.
+--   Not sure if we should have a specialized transformer for this 
+--   case or if the expansion to the full expression is enough.
+assign_transformer :: Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,[Value],Acts)
+assign_transformer st op lhs rhs =
+      -- process the lhs (get the new state, values and actions)
+  let (lhs_st,lhs_vals,lhs_acts) = transformer st lhs
+      -- process the rhs (get the new state, values and actions)
+      (rhs_st,rhs_vals,rhs_acts) = transformer lhs_st rhs
+      res_vals = case op of
+        CAssignOp -> rhs_vals
+        -- arithmetic operations 
+        CMulAssOp -> lhs_vals `mult` rhs_vals 
+        CDivAssOp -> lhs_vals `divs` rhs_vals 
+        CRmdAssOp -> lhs_vals `rmdr` rhs_vals 
+        CAddAssOp -> lhs_vals `add` rhs_vals 
+        CSubAssOp -> lhs_vals `sub` rhs_vals
+        -- bit-wise operations 
+        CShlAssOp -> lhs_vals `shl` rhs_vals 
+        CShrAssOp -> lhs_vals `shr` rhs_vals 
+        CAndAssOp -> lhs_vals `band` rhs_vals 
+        CXorAssOp -> lhs_vals `xor` rhs_vals 
+        COrAssOp  -> lhs_vals `bor` rhs_vals
+      lhs_id = get_addrs st 0 lhs 
+      res_acts = nub $ rhs_acts ++ lhs_acts 
+      res_st = undefined 
+  in (res_st,res_vals,res_acts) 
+
+-- | get_addrs retrieves the information from the 
+--   points to analysis.
+get_addrs :: 
+mult = undefined
+divs = undefined
+rmdr = undefined
+add = undefined
+sub = undefined
+shl = undefined
+shr = undefined
+band = undefined
+bor = undefined
+xor = undefined
 {-
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1
