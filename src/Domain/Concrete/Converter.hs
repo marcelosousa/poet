@@ -70,51 +70,52 @@ convert_init st id ty minit =
     Just i  ->
       case i of
         InitExpr expr -> 
-          let (val,acts) = decl_transformer st expr
-              st' = insert_heap st (symId id) $ MCell ty val
+          let (nst,val,acts) = transformer st expr
+              st' = insert_heap nst (symId id) $ MCell ty val
               acts' = (Write (V id)):acts
           in (st',acts')
         InitList list -> error "initializer list is not supported"
 
 -- | Default value of a type
+--   If we are given a base type, then we
+--   simply generate a default value.
+--   If it is a pointer type, then we
+--   generate a VPtr 0 (denoting NULL).
+--   If it is an array type ?
+--   If it is a struct type ? 
 default_value :: Ty SymId () -> [Value]  
-default_value ty = undefined 
-
--- | Transformers for global declaration in concrete semantics
-decl_transformer :: Sigma -> Expression SymId () -> ([Value],Acts)
-decl_transformer st expr = undefined
+default_value (Ty ddecls typ) = undefined
 
 -- | Transformers for concrete semantics 
-transformer :: Sigma -> SymId -> Ty SymId () -> Expression SymId () -> (Sigma,Acts)
-transformer st id = undefined
-
-{-
-
-  = AlignofExpr (Expression ident a)
-  | AlignofType (Declaration ident a)
-  | Assign AssignOp (Expression ident a) (Expression ident a)
-  | Binary BinaryOp (Expression ident a) (Expression ident a)
-  | BuiltinExpr (BuiltinThing ident a)
-  | Call (Expression ident a) [Expression ident a] a
-  | Cast (Declaration ident a) (Expression ident a)
-  | Comma [Expression ident a]
-  | CompoundLit (Declaration ident a) (InitializerList ident a)
-  | Cond (Expression ident a)
-         (Maybe (Expression ident a))
-         (Expression ident a)
-  | Const Constant
-  | Index (Expression ident a) (Expression ident a)
-  | LabAddrExpr ident
-  | Member (Expression ident a) ident Bool
-  | SizeofExpr (Expression ident a)
-  | SizeofType (Declaration ident a)
-  | Skip
-  | StatExpr (Statement ident a)
-  | Unary UnaryOp (Expression ident a)
-  | Var ident
-  | ComplexReal (Expression ident a)
-  | ComplexImag (Expression ident a)
--}
+-- Given an initial state and an expression
+-- return the updated state, the set of values
+-- of this expression and a set of actions
+-- performed by this expression.
+transformer :: Sigma -> Expression SymId () -> (Sigma,[Value],Acts)
+transformer st _expr =
+  case _expr of 
+    AlignofExpr expr -> error "transformer: align_of_expr not supported"  
+    AlignofType decl -> error "transformer: align_of_type not supported"
+    Assign assignOp lhs rhs -> undefined 
+    Binary binaryOp lhs rhs -> undefined
+    BuiltinExpr built -> error "transformer: built_in_expr not supported" 
+    Call fn args n -> undefined
+    Cast decl expr -> error "transformer: cast not supported"
+    Comma exprs -> undefined
+    CompoundLit decl initList -> undefined 
+    Cond cond mThenExpr elseExpr -> undefined
+    Const const -> undefined 
+    Index arr_expr index_expr -> undefined 
+    LabAddrExpr ident -> undefined
+    Member expr ident bool -> undefined
+    SizeofExpr expr -> undefined
+    SizeofType decl -> undefined
+    Skip -> (st,[],[])
+    StatExpr stmt -> error "transformer: stat_expr not supported"
+    Unary unaryOp expr -> undefined
+    Var ident -> undefined
+    ComplexReal expr -> error "transformer: complex op not supported" 
+    ComplexImag expr -> error "transformer: complex op not supported" 
 
 {-
 pmdVar = BS.pack "__poet_mutex_death"
