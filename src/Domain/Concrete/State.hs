@@ -28,13 +28,23 @@ data ConValue
   = ConTop              -- Top value 
   | ConBot              -- Bot value
   | ConVal [Value]      -- Concrete list of values
-  -- Memory address value
-  | ConMemAddr ConValue         -- Base 
-               (Maybe ConValue) -- Maybe Offset
+  -- Memory address value: set of addresses
+  | ConMemAddr MemAddrs 
   -- Array value
   -- Memory address for the positions and the size
   | ConArr [ConValue] Int Bool -- IsTop 
   deriving (Show,Eq,Ord)
+-- @TODO: Need to implement instance of ord
+
+-- | Concrete Memory address contains of a base + offset
+data MemAddr
+  = MemAddr 
+  { base :: ConValue
+  , offset :: ConValue
+  }
+  deriving (Show,Eq,Ord)
+
+type MemAddrs = [MemAddr]
 
 -- | Concrete Memory Cell
 type ConMCell = MemCell SymId () ConValue

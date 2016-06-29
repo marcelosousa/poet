@@ -1,4 +1,5 @@
 {-#LANGUAGE RecordWildCards #-}
+{-#LANGUAGE FlexibleContexts #-}
 module Exploration.UNF.Unfolder (unfolder) where
 
 import Control.Monad.State.Strict
@@ -185,7 +186,7 @@ expandWith e maxevs st th = do
 -- | extends the unfolding prefix based on a configuration (denoted with the 
 -- set of maximal events with events) of a given name which contain
 -- *e* as an immediate predecessor and returns the event with history h0.
-extend :: (Hashable st, Show act, GCS.Collapsible st act) => EventID -> EventsID -> EventName -> [act] -> UnfolderOp st act s EventsID
+extend :: (Hashable st, Show act, GCS.Collapsible st act) => EventID -> EventsID -> EventName -> act -> UnfolderOp st act s EventsID
 extend e maxevs êname êacts = do 
   s@UnfolderState{..} <- get
   -- @ retrieve the immediate successors of e with the same name to avoid duplicates
@@ -319,7 +320,7 @@ computeHistoriesBlocking info@(ne_name,ne_acts) e preds_e hs =
         let acte' = acts ev'
         -- @ Check that indeed e' is an unlock.
         -- @NOTE: Remove this check in production
-        if any (\a -> (GCS.unlock (GCS.varOf a)) `elem` acte') ne_acts 
+        if GCS.isUnlockOf ne_acts acte' 
         then do
           me'' <- findPrevUnlock info preds_e e'
           case me'' of
@@ -365,14 +366,14 @@ computeHistoriesBlocking info@(ne_name,ne_acts) e preds_e hs =
          --   is a lock or an unlock 
          ev@Event{..} <- lift $ get_event "findPrevUnlock" e evts
          -- @ NOTE: Optimise this check; no need to traverse twice
-         if any (\a -> (GCS.lock (GCS.varOf a)) `elem` acts) eacts
+         if GCS.isLockOf eacts acts
          -- @ it is a lock, check if it maximal
          then if e `elem` preds_e                 
               then return Nothing                 
               else findPrevUnlock einfo preds_e e
          -- @ it not a lock, must be an unlock?
          --   check if it is maximal (found it if maximal!) 
-         else if any (\a -> (GCS.unlock (GCS.varOf a)) `elem` acts) eacts
+         else if GCS.isUnlockOf eacts acts
               then if e `elem` preds_e 
                    then return $ Just []
                    else return $ Just [e]
@@ -394,7 +395,7 @@ computeHistoriesBlocking info@(ne_name,ne_acts) e preds_e hs =
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-addEvent :: (Hashable st, GCS.Collapsible st act) => EventsID -> [(EventID,Event act)] -> EventName -> [act] -> History -> UnfolderOp st act s EventsID 
+addEvent :: (Hashable st, GCS.Collapsible st act) => EventsID -> [(EventID,Event act)] -> EventName -> act -> History -> UnfolderOp st act s EventsID 
 addEvent stack dup name acts history = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if not $ null hasDup  

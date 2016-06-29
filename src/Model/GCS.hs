@@ -27,7 +27,7 @@ data System st act =
   { 
 --    frnt :: Frontier                 -- ^ Frontier in the CFGs
     gbst :: st                       -- ^ Initial (Global) State 
-  , gbac :: [act]                    -- ^ Initial (Global) Actions
+  , gbac :: act                      -- ^ Initial (Global) Actions
   , cfgs :: Graphs SymId () (st,act) -- ^ Control Flow Graphs
   , symt :: Map SymId Symbol         -- ^ Symbol Table
   , thds :: [TId]                    -- ^ Threads ids
@@ -46,11 +46,6 @@ type TId = Int
 botID :: TId 
 botID = -1
 
--- | A memory address  
-
-data Variable = V Var | A Var Integer
-  deriving (Show,Eq,Ord)
-
 -- | The control part of a state 
 --   is a map from thread id to position 
 --   in the CFG.
@@ -63,17 +58,18 @@ class Projection st where
 
 class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
-  collapse :: System st act -> st -> TId -> [(st,Pos,[act])]
-  dcollapse :: System st act -> st -> (TId,Pos) -> (st,[act])
+  collapse :: System st act -> st -> TId -> [(st,Pos,act)]
+  dcollapse :: System st act -> st -> (TId,Pos) -> (st,act)
   simple_run :: System st act -> st -> (TId,Pos) -> st
   simple_run sys st name = fst $ dcollapse sys st name
  
 class (Eq act) => Action act where
-  varOf :: act -> Variable
-  isActBlocking :: act -> Bool
-  isBlocking :: [act] -> Bool
-  isBlocking = any isActBlocking
-  unlock :: Variable -> act 
-  lock :: Variable -> act 
+  isBlocking :: act -> Bool
+  -- Given two sets of actions a1 and a2,
+  -- check if there exists in a2 an unlock 
+  -- or lock with an address that is touched
+  -- by a1.
+  isUnlockOf :: act -> act -> Bool 
+  isLockOf :: act -> act -> Bool 
   -- Two sets of actions are independent
-  interferes :: [act] -> [act] -> Bool
+  interferes :: act -> act -> Bool

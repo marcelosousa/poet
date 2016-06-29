@@ -29,7 +29,7 @@ instance Show act => ToDot (EventID, Event act) where
           conflict = foldr (printConflict eID) "" icnf
           (tID,pos) = name 
           label = show eID ++ " [label=\"eID = " ++ show eID 
-               ++ " tr=(" ++ show tID ++ "," ++ show pos ++ "," ++ showActs acts++")\"]\n"
+               ++ " tr=(" ++ show tID ++ "," ++ show pos ++ "," ++ show acts++")\"]\n"
       in causality ++ conflict ++ label
 
 showActs :: Show act => [act] -> String

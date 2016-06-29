@@ -12,23 +12,26 @@ import Model.GCS
 
 -- Default implementation of an
 -- Action using read write sets
-type Acts = [Act]
-data Act =
-    Lock Variable 
-  | Unlock Variable 
-  | Write Variable
-  | Read Variable
-  | Other -- not currently used
+-- over the memory addresses 
+-- accessed.
+data Act
+  = Act
+  { rds     :: MemAddrs -- read
+  , wrs     :: MemAddrs -- write
+  , locks   :: MemAddrs -- locks
+  , unlocks :: MemAddrs -- unlocks
+  }
   deriving (Eq,Ord)
 
 instance Show Act where
-  show act = case act of
-    Other              -> "Other"
-    Lock (V var)       -> "Lock " ++ show var
-    Lock (A var idx)   -> "Lock " ++ show var ++ " " ++ show idx
-    Unlock (V var)     -> "Unlock" ++ show var
-    Unlock (A var idx) -> "Unlock" ++ show var ++ " " ++ show idx
+  show act@Act{..} =
+    let rs = "reads: " ++ show rds
+        wrds = "writes: " ++ show wrs
+        lks = "locks: " ++ show locks
+        ulks = "unlocks: " ++ show unlocks
+    in rs++"\n"++wrs++"\n"++lks++"\n"++ulks
 
+{-
 instance Action Act where
   varOf (Lock v) = v
   varOf (Unlock v) = v
@@ -50,3 +53,4 @@ instance Action Act where
             Write v -> any (\b -> b == Write v || b == Read v) others
             _ -> error "Other not supported"
       in ar || interferes as others
+-}

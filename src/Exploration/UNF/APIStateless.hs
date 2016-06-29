@@ -26,7 +26,7 @@ mytrace False a b = b
 type EventID = Int
 type EventsID = [EventID]
 type EventName = (GCS.TId,GCS.Pos)
-type EventInfo act = (EventName,[act]) 
+type EventInfo act = (EventName,act) 
 
 -- @ Value of the main HashTable
 --   (name, actions, predecessors, successors, #^, D, V)
@@ -35,7 +35,7 @@ data Event act =
   Event 
   {
     name :: EventName    -- ^ Event name 
-  , acts :: [act]        -- ^ Event actions 
+  , acts :: act          -- ^ Event actions 
   , pred :: EventsID     -- ^ Immediate predecessors
   , succ :: EventsID     -- ^ Immediate successors
   , icnf :: EventsID     -- ^ Immediate conflicts: #^
@@ -51,7 +51,7 @@ botEID = 0
 botName :: EventName
 botName = (GCS.botID,GCS.botID)
 -- The initial bottom event
-botEvent :: [act] -> Event act
+botEvent :: act -> Event act
 botEvent acts = Event botName acts [] [] [] [] []
 
 -- @ Events represents the unfolding prefix as LPES
@@ -427,7 +427,7 @@ filterEvent e events = do
 
 -- | Splits between events that are dependent and independent of
 -- the event name and actions
-partition_dependent :: (Show act, GCS.Action act) => (EventName,[act]) -> Events act s -> (EventsID,EventsID) -> EventsID -> ST s (EventsID,EventsID)
+partition_dependent :: (Show act, GCS.Action act) => (EventName,act) -> Events act s -> (EventsID,EventsID) -> EventsID -> ST s (EventsID,EventsID)
 partition_dependent êinfo events (dep,indep) es =
   case es of
     [] -> return (dep,indep)
