@@ -3,13 +3,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
--- Module    :  Domain.Concrete.Type
+-- Module    :  Domain.Concrete.State
 -- Copyright :  (c) 2015-16 Marcelo Sousa
+--
+-- The domain for the concrete semantics.
 -------------------------------------------------------------------------------
-module Domain.Concrete.Type where
+module Domain.Concrete.State where
 
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
 import Data.Hashable
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.HashTable.Class as H
@@ -23,11 +23,24 @@ import Util.Generic hiding (safeLookup)
 import Language.SimpleC.AST
 import Language.SimpleC.Util
 
+-- | Concrete Value for the concrete semantics
+data ConValue
+  = ConTop              -- Top value 
+  | ConBot              -- Bot value
+  | ConVal [Value]      -- Concrete list of values
+  -- Memory address value
+  | ConMemAddr ConValue         -- Base 
+               (Maybe ConValue) -- Maybe Offset
+  -- Array value
+  -- Memory address for the positions and the size
+  | ConArr [ConValue] Int Bool -- IsTop 
+  deriving (Show,Eq,Ord)
+
 -- | Concrete Memory Cell
-type ConMCell = MemCell SymId () [Value]
+type ConMCell = MemCell SymId () ConValue
 
 -- | Concrete Heap
-type ConHeap = IntMap ConMCell
+type ConHeap = Map SymId ConMCell
 
 -- | The concrete domain 
 --   The concrete domain is a variation of 
@@ -45,14 +58,14 @@ data Sigma =
 
 -- | Initial state which is not bottom
 empty_state :: Sigma
-empty_state = Sigma IM.empty M.empty 0 False 
+empty_state = Sigma M.empty M.empty 0 False 
 
 -- | A thread state is a control and local data 
 data ThState =
   ThState
   { 
     pos :: Pos
-  , locals :: Map SymId [Value]
+  , locals :: Map SymId ConValue 
   } 
   deriving (Show,Eq,Ord)
 
@@ -73,7 +86,7 @@ subsumes_concrete st1 st2 =
         let sts1 = th_states st1
             hp1 = heap st1
         in if M.foldrWithKey' (\tid th b -> check_threads tid th sts1 && b) True (th_states st2)
-           then IM.foldrWithKey' (\mid mcell b -> check_heap mid mcell hp1 && b) True (heap st2)
+           then M.foldrWithKey' (\mid mcell b -> check_heap mid mcell hp1 && b) True (heap st2)
            else False 
  where
    check_bottoms b1 b2 =
@@ -90,17 +103,19 @@ subsumes_concrete st1 st2 =
          in if pos th1 == pos th2
             then M.foldrWithKey' (\sym vals b -> check_locals sym vals lcs1 && b) True (locals th2)  
             else False
+   check_locals :: SymId -> ConValue -> Map SymId ConValue -> Bool 
    check_locals sym val2 lcs1 =
      case M.lookup sym lcs1 of
        Nothing -> False
-       Just val1 -> all (\v -> v `elem` val1) val2
+       Just val1 -> val2 <= val1 
    check_heap mid cell2 hp1 =
-     case IM.lookup mid hp1 of
+     case M.lookup mid hp1 of
        Nothing -> False
        Just cell1 ->
          let r = ty cell1 == ty cell2
-             vals1 = val cell1
-         in r && all (\v -> v `elem` vals1) (val cell2)
+             val1 = val cell1
+             val2 = val cell2
+         in r && val2 <= val1
  
 instance Projection Sigma where
   controlPart st@Sigma{..} = M.map pos th_states
@@ -110,15 +125,11 @@ instance Projection Sigma where
 -- | API for modifying the state
 
 -- | insert_heap: inserts an element to the heap
-insert_heap :: Sigma -> Int -> ConMCell -> Sigma
+insert_heap :: Sigma -> SymId -> ConMCell -> Sigma
 insert_heap st@Sigma{..} id cell =
-  let heap' = IM.insert id cell heap
+  let heap' = M.insert id cell heap
   in st {heap = heap'}  
 
-instance Collapsible Sigma Act where
-   enabled = undefined
-   collapse = undefined
-   dcollapse = undefined 
 {-
 instance Hashable Sigma where
   hash = hash . M.toList

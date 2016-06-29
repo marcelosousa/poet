@@ -1,4 +1,11 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+-------------------------------------------------------------------------------
+-- Module    :  Domain.Concrete.Converter
+-- Copyright :  (c) 2015-16 Marcelo Sousa
+--
+-- Transformers for the concrete semantics.
+-------------------------------------------------------------------------------
 module Domain.Concrete.Converter where
 
 import qualified Data.ByteString.Char8 as BS
@@ -9,7 +16,8 @@ import Data.Map (Map)
 import Debug.Trace
 import Data.List 
 
-import Domain.Concrete.Type
+import Domain.Concrete.Action
+import Domain.Concrete.State
 
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
@@ -18,6 +26,12 @@ import Language.SimpleC.Flow
 import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
+
+-- | The interface
+instance Collapsible Sigma Act where
+  enabled = undefined
+  collapse = undefined
+  dcollapse = undefined 
 
 -- | converts the front end into a system
 convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
@@ -66,14 +80,14 @@ convert_init st id ty minit =
   case minit of
     Nothing ->
       let val = default_value ty
-          st' = insert_heap st (symId id) $ MCell ty val
+          st' = insert_heap st id $ MCell ty val
           acts = [Write (V id)]
       in (st',acts)
     Just i  ->
       case i of
         InitExpr expr -> 
           let (nst,val,acts) = transformer st expr
-              st' = insert_heap nst (symId id) $ MCell ty val
+              st' = insert_heap nst id $ MCell ty val
               acts' = (Write (V id)):acts
           in (st',acts')
         InitList list -> error "initializer list is not supported"
@@ -85,7 +99,7 @@ convert_init st id ty minit =
 --   generate a VPtr 0 (denoting NULL).
 --   If it is an array type ?
 --   If it is a struct type ? 
-default_value :: Ty SymId () -> [Value]  
+default_value :: Ty SymId () -> ConValue  
 default_value (Ty ddecls typ) = undefined
 
 -- | Transformers for concrete semantics 
@@ -93,7 +107,7 @@ default_value (Ty ddecls typ) = undefined
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
-transformer :: Sigma -> SExpression -> (Sigma,[Value],Acts)
+transformer :: Sigma -> SExpression -> (Sigma,ConValue,Acts)
 transformer st _expr =
   case _expr of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
@@ -112,7 +126,7 @@ transformer st _expr =
     Member expr ident bool -> undefined
     SizeofExpr expr -> undefined
     SizeofType decl -> undefined
-    Skip -> (st,[],[])
+    Skip -> (st,ConTop,[])
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> undefined
     Var ident -> undefined
@@ -122,7 +136,7 @@ transformer st _expr =
 -- | Transformer for an assignment expression.
 --   Not sure if we should have a specialized transformer for this 
 --   case or if the expansion to the full expression is enough.
-assign_transformer :: Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,[Value],Acts)
+assign_transformer :: Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,ConValue,Acts)
 assign_transformer st op lhs rhs =
       -- process the lhs (get the new state, values and actions)
   let (lhs_st,lhs_vals,lhs_acts) = transformer st lhs
@@ -149,7 +163,9 @@ assign_transformer st op lhs rhs =
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
-get_addrs :: 
+get_addrs :: Sigma -> TId -> SExpression -> a
+get_addrs = undefined
+ 
 mult = undefined
 divs = undefined
 rmdr = undefined
