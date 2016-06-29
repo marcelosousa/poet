@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Concrete.Action 
 -- Copyright :  (c) 2016 Marcelo Sousa
@@ -29,28 +30,33 @@ instance Show Act where
         wrds = "writes: " ++ show wrs
         lks = "locks: " ++ show locks
         ulks = "unlocks: " ++ show unlocks
-    in rs++"\n"++wrs++"\n"++lks++"\n"++ulks
+    in rs++"\n"++wrds++"\n"++lks++"\n"++ulks
 
-{-
 instance Action Act where
-  varOf (Lock v) = v
-  varOf (Unlock v) = v
-  varOf Other = error "varOf Other"
-  unlock = Unlock
-  lock = Lock
-  isActBlocking act =
-    case act of
-      Lock _ -> True
-      Unlock _ -> True
-      _ -> False 
-  interferes acts others = case acts of
-    [] -> False 
-    (a:as) ->
-      let ar = case a of
-            Lock v -> any (\b -> b == Lock v || b == Unlock v) others
-            Unlock v -> any (\b -> b == Lock v || b == Unlock v) others
-            Read v -> any (\b -> b == Write v) others
-            Write v -> any (\b -> b == Write v || b == Read v) others
-            _ -> error "Other not supported"
-      in ar || interferes as others
--}
+  isBlocking act@Act{..} = 
+    not (is_maddrs_bot locks && is_maddrs_bot unlocks)
+  isUnlockOf a1 a2 =
+    let ulks2 = unlocks a2
+        f addr = is_maddrs_bot $ meet_maddrs addr ulks2 
+        r = f $ rds a1
+        w = f $ wrs a1
+        l = f $ locks a1 
+        u = f $ unlocks a1
+    in l && w && r && u 
+  isLockOf a1 a2 = 
+    let lks2 = locks a2
+        f addr = is_maddrs_bot $ meet_maddrs addr lks2 
+        r = f $ rds a1
+        w = f $ wrs a1
+        l = f $ locks a1 
+        u = f $ unlocks a1
+    in u && w && r && l 
+  interferes a1 a2 =
+    let a1_addrs = act_addrs a1
+        a2_addrs = act_addrs a2
+    in not $ is_maddrs_bot $ meet_maddrs a1_addrs a2_addrs 
+
+act_addrs :: Act -> MemAddrs
+act_addrs a@Act{..} =
+  rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` unlocks 
+

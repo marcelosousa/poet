@@ -44,8 +44,39 @@ data MemAddr
   }
   deriving (Show,Eq,Ord)
 
-type MemAddrs = [MemAddr]
+data MemAddrs
+  = MemAddrTop
+  | MemAddrs [MemAddr]
+  deriving (Show,Eq)
 
+instance Ord MemAddrs where
+  m1 <= m2 = case (m1,m2) of 
+    (_,MemAddrTop) -> True
+    (MemAddrTop,MemAddrs l) -> False 
+    (MemAddrs l1,MemAddrs l2) ->
+      all (\a -> a `elem` l2) l1 
+
+is_maddrs_bot :: MemAddrs -> Bool
+is_maddrs_bot maddr =
+  case maddr of
+    MemAddrTop -> False
+    MemAddrs l -> null l
+  
+meet_maddrs :: MemAddrs -> MemAddrs -> MemAddrs
+meet_maddrs a1 a2 =
+  case (a1,a2) of
+    (MemAddrTop,_) -> a2
+    (_,MemAddrTop) -> a1
+    (MemAddrs l1, MemAddrs l2) -> 
+      MemAddrs (l1 `intersect` l2)
+
+join_maddrs :: MemAddrs -> MemAddrs -> MemAddrs
+join_maddrs a1 a2 =
+  case (a1,a2) of
+    (MemAddrTop,_) -> a1
+    (_,MemAddrTop) -> a2
+    (MemAddrs l1, MemAddrs l2) ->
+      MemAddrs (nub $ l1 ++ l2)
 -- | Concrete Memory Cell
 type ConMCell = MemCell SymId () ConValue
 
