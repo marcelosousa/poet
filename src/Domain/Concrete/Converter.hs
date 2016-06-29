@@ -37,7 +37,7 @@ instance Collapsible Sigma Act where
 convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt 
-      (st,acts) = foldl convert_decl (empty_state,[]) $ decls ast 
+      (st,acts) = foldl convert_decl (empty_state,bot_act) $ decls ast 
   in System st acts cfgs symt [0] 1
 
 -- | retrieves the entry node of the cfg of a function
@@ -57,7 +57,7 @@ get_entry fnname graphs symt =
                       then Just $ entry_node cfg
                       else Nothing 
 
-convert_decl :: (Sigma,[Act]) -> Declaration SymId () -> (Sigma,[Act]) 
+convert_decl :: (Sigma,Act) -> Declaration SymId () -> (Sigma,Act) 
 convert_decl (st,acts) decl =
   case decl of
     TypeDecl ty -> error "convert_decl: not supported yet"
@@ -73,22 +73,22 @@ convert_decl (st,acts) decl =
             Just id ->   
               let typ = Ty declr_type ty
                   (st',act) = convert_init st id typ initializer
-              in (st',act++acts)              
+              in (st',act `join_act` acts)              
  
-convert_init :: Sigma -> SymId -> Ty SymId () -> Maybe (Initializer SymId ()) -> (Sigma,Acts)
+convert_init :: Sigma -> SymId -> Ty SymId () -> Maybe (Initializer SymId ()) -> (Sigma,Act)
 convert_init st id ty minit =
   case minit of
     Nothing ->
       let val = default_value ty
           st' = insert_heap st id $ MCell ty val
-          acts = [Write (V id)]
+          acts = undefined -- [Write (V id)]
       in (st',acts)
     Just i  ->
       case i of
         InitExpr expr -> 
           let (nst,val,acts) = transformer st expr
               st' = insert_heap nst id $ MCell ty val
-              acts' = (Write (V id)):acts
+              acts' = undefined -- (Write (V id)):acts
           in (st',acts')
         InitList list -> error "initializer list is not supported"
 
@@ -107,7 +107,7 @@ default_value (Ty ddecls typ) = undefined
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
-transformer :: Sigma -> SExpression -> (Sigma,ConValue,Acts)
+transformer :: Sigma -> SExpression -> (Sigma,ConValue,Act)
 transformer st _expr =
   case _expr of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
@@ -126,7 +126,7 @@ transformer st _expr =
     Member expr ident bool -> undefined
     SizeofExpr expr -> undefined
     SizeofType decl -> undefined
-    Skip -> (st,ConTop,[])
+    Skip -> (st,ConTop,bot_act)
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> undefined
     Var ident -> undefined
@@ -136,7 +136,7 @@ transformer st _expr =
 -- | Transformer for an assignment expression.
 --   Not sure if we should have a specialized transformer for this 
 --   case or if the expansion to the full expression is enough.
-assign_transformer :: Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,ConValue,Acts)
+assign_transformer :: Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,ConValue,Act)
 assign_transformer st op lhs rhs =
       -- process the lhs (get the new state, values and actions)
   let (lhs_st,lhs_vals,lhs_acts) = transformer st lhs
@@ -157,7 +157,7 @@ assign_transformer st op lhs rhs =
         CXorAssOp -> lhs_vals `xor` rhs_vals 
         COrAssOp  -> lhs_vals `bor` rhs_vals
       lhs_id = get_addrs st 0 lhs 
-      res_acts = nub $ rhs_acts ++ lhs_acts 
+      res_acts = rhs_acts `join_act` lhs_acts 
       res_st = undefined 
   in (res_st,res_vals,res_acts) 
 

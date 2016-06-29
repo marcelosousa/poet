@@ -56,6 +56,9 @@ instance Ord MemAddrs where
     (MemAddrs l1,MemAddrs l2) ->
       all (\a -> a `elem` l2) l1 
 
+bot_maddrs :: MemAddrs
+bot_maddrs = MemAddrs []
+
 is_maddrs_bot :: MemAddrs -> Bool
 is_maddrs_bot maddr =
   case maddr of

@@ -24,6 +24,14 @@ data Act
   }
   deriving (Eq,Ord)
 
+bot_act :: Act
+bot_act =
+  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+
+-- @TODO
+join_act :: Act -> Act -> Act
+join_act a1 a2 = undefined
+  
 instance Show Act where
   show act@Act{..} =
     let rs = "reads: " ++ show rds
@@ -59,4 +67,3 @@ instance Action Act where
 act_addrs :: Act -> MemAddrs
 act_addrs a@Act{..} =
   rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` unlocks 
-
