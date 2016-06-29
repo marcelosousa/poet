@@ -21,11 +21,20 @@ import Domain.Concrete.State
 
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
-import Language.SimpleC.Converter
+import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
+
+
+-- | Scope of the transformer;
+--   It can either be global (if we processing 
+--   for example global declarations and so we need
+--   to change the state of the heap) or it can 
+--   be local to a thread and we might have to 
+--   change the local state and the heap
+data Scope = Global | Local TId
 
 -- | The interface
 instance Collapsible Sigma Act where
@@ -37,7 +46,7 @@ instance Collapsible Sigma Act where
 convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt 
-      (st,acts) = foldl convert_decl (empty_state,bot_act) $ decls ast 
+      (st,acts) = foldl (convert_decl Global) (empty_state,bot_act) $ decls ast 
   in System st acts cfgs symt [0] 1
 
 -- | retrieves the entry node of the cfg of a function
@@ -56,9 +65,10 @@ get_entry fnname graphs symt =
            Just s  -> if get_name s == fnname
                       then Just $ entry_node cfg
                       else Nothing 
-
-convert_decl :: (Sigma,Act) -> Declaration SymId () -> (Sigma,Act) 
-convert_decl (st,acts) decl =
+  
+-- | processes a declaration.
+convert_decl :: Scope -> (Sigma,Act) -> Declaration SymId () -> (Sigma,Act) 
+convert_decl scope (st,acts) decl =
   case decl of
     TypeDecl ty -> error "convert_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
@@ -72,16 +82,19 @@ convert_decl (st,acts) decl =
             Nothing -> error "no identifier" 
             Just id ->   
               let typ = Ty declr_type ty
-                  (st',act) = convert_init st id typ initializer
+                  (st',act) = convert_init scope st id typ initializer
               in (st',act `join_act` acts)              
- 
-convert_init :: Sigma -> SymId -> Ty SymId () -> Maybe (Initializer SymId ()) -> (Sigma,Act)
-convert_init st id ty minit =
+
+-- | processes a declaration initializer 
+--   for the symbol id with type ty. 
+convert_init :: Scope -> Sigma -> SymId -> Ty SymId () -> Maybe (Initializer SymId ()) -> (Sigma,Act)
+convert_init scope st id ty minit =
   case minit of
     Nothing ->
       let val = default_value ty
           st' = insert_heap st id $ MCell ty val
-          acts = undefined -- [Write (V id)]
+          id_addrs = get_addrs_id scope st id
+          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
       in (st',acts)
     Just i  ->
       case i of
@@ -160,6 +173,9 @@ assign_transformer st op lhs rhs =
       res_acts = rhs_acts `join_act` lhs_acts 
       res_st = undefined 
   in (res_st,res_vals,res_acts) 
+
+get_addrs_id :: Scope -> Sigma -> SymId -> MemAddrs
+get_addrs_id = undefined
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.

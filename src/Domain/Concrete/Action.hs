@@ -28,9 +28,13 @@ bot_act :: Act
 bot_act =
   Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
--- @TODO
 join_act :: Act -> Act -> Act
-join_act a1 a2 = undefined
+join_act a1 a2 =
+  let r = rds a1 `join_maddrs` rds a2 
+      w = wrs a1 `join_maddrs` wrs a2 
+      l = locks a1 `join_maddrs` locks a2 
+      u = unlocks a1 `join_maddrs` unlocks a2
+  in Act r w l u 
   
 instance Show Act where
   show act@Act{..} =
