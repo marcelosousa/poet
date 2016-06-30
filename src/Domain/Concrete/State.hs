@@ -16,6 +16,8 @@ import qualified Data.HashTable.Class as H
 import Data.List
 import qualified Data.Map as M
 import Data.Map (Map)
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Model.GCS
@@ -33,16 +35,13 @@ data Scope = Global | Local TId
 
 -- | Concrete Value for the concrete semantics
 data ConValue
-  = ConTop              -- Top value 
-  | ConBot              -- Bot value
-  | ConVal [Value]      -- Concrete list of values
-  -- Memory address value: set of addresses
-  | ConMemAddr MemAddrs 
+  =  ConVal Value      -- Concrete list of values
+  -- Memory address value: address
+  | ConMemAddr MemAddr
   -- Array value
   -- Memory address for the positions and the size
   | ConArr [ConValue] Int Bool -- IsTop 
   deriving (Show,Eq,Ord)
--- @TODO: Need to implement instance of ord
 
 -- | Concrete Memory address contains of a base + offset
 -- data MemAddr
@@ -104,6 +103,9 @@ type ConHeap = Map SymId ConMCell
 --   The concrete domain is a variation of 
 --   the Powerset(state) where state is a 
 --   pair (heap, threadstate).
+newtype CState = CState { sts :: Set Sigma }
+ deriving (Show,Eq)
+ 
 data Sigma = 
   Sigma 
   { 
@@ -112,7 +114,7 @@ data Sigma =
   , num_th  :: Int
   , is_bot  :: Bool 
   }
-  deriving Show
+  deriving (Show,Eq,Ord)
 
 -- | A thread state is a control and local data 
 data ThState =
@@ -192,6 +194,17 @@ instance Projection Sigma where
   subsumes a b = subsumes_concrete a b
   isBottom = is_bot 
 
+instance Projection CState where
+  controlPart (CState a) =
+    if S.null a
+    then error "control part of bottom state"
+    else let s = S.map controlPart a
+         in if S.size s > 1
+            then error "more than one control vector in the set"
+            else S.elemAt 0 s
+  subsumes (CState a) (CState b) = S.isSubsetOf b a
+  isBottom (CState a) = S.null a
+ 
 -- | API for modifying the state
 
 -- | insert_heap: inserts an element to the heap
