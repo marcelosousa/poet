@@ -132,8 +132,8 @@ transformer scope st _expr =
     Call fn args n -> call_transformer scope st fn args  
     Cast decl expr -> error "transformer: cast not supported"
     Comma exprs -> error "transformer: comma not supported" 
-    CompoundLit decl initList -> undefined 
-    Cond cond mThenExpr elseExpr -> undefined
+    CompoundLit decl initList -> compound_transformer scope st decl initList 
+    Cond cond mThenExpr elseExpr -> cond_transformer scope st cond mThenExpr elseExpr 
     Const const -> const_transformer scope st const 
     Index arr_expr index_expr -> error "transformer: index not supported"
     LabAddrExpr ident -> error "transformer: labaddr not supported"
@@ -179,11 +179,45 @@ assign_transformer scope st op lhs rhs =
   in (res_st,res_vals,res_acts) 
 
 -- | Transformer for binary operations.
-binop_transformer = undefined
+binop_transformer :: Scope -> Sigma -> BinaryOp -> SExpression -> SExpression -> (Sigma,ConValue,Act)
+binop_transformer scope st binOp lhs rhs =
+      -- process the lhs (get the new state, values and actions)
+  let (lhs_st,lhs_vals,lhs_acts) = transformer scope st lhs
+      -- process the rhs (get the new state, values and actions)
+      (rhs_st,rhs_vals,rhs_acts) = transformer scope lhs_st rhs
+      res_vals = case binOp of
+        CMulOp -> error "binop_transformer: not supported" 
+        CDivOp -> error "binop_transformer: not supported" 
+        CRmdOp -> error "binop_transformer: not supported" 
+        CAddOp -> error "binop_transformer: not supported" 
+        CSubOp -> error "binop_transformer: not supported" 
+        CLeOp  -> error "binop_transformer: not supported" 
+        CGrOp  -> error "binop_transformer: not supported" 
+        CLeqOp -> error "binop_transformer: not supported"  
+        CGeqOp -> error "binop_transformer: not supported" 
+        CEqOp  -> error "binop_transformer: not supported" 
+        CNeqOp -> error "binop_transformer: not supported" 
+        CAndOp -> error "binop_transformer: not supported" 
+        COrOp  -> error "binop_transformer: not supported" 
+        CShlOp -> error "binop_transformer: not supported"  
+        CShrOp -> error "binop_transformer: not supported" 
+        CXorOp -> error "binop_transformer: not supported" 
+        CLndOp -> error "binop_transformer: not supported" 
+        CLorOp -> error "binop_transformer: not supported"
+      res_acts = lhs_acts `join_act` rhs_acts
+   in (rhs_st,res_vals,res_acts)
 
 -- | Transformer for call expression.
+call_transformer :: Scope -> Sigma -> SExpression -> [SExpression] -> (Sigma,ConValue,Act)
 call_transformer = undefined
 
+-- | Transformer for a declaration expression.
+compound_transformer :: Scope -> Sigma -> SDeclaration -> InitializerList SymId () -> (Sigma,ConValue,Act)
+compound_transformer = undefined
+
+cond_transformer :: Scope -> Sigma -> SExpression -> Maybe SExpression -> SExpression -> (Sigma,ConValue,Act)
+cond_transformer = undefined
+ 
 -- | Transformer for constants.
 const_transformer :: Scope -> Sigma -> Constant -> (Sigma,ConValue,Act)
 const_transformer scope st const =
