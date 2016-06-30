@@ -45,11 +45,16 @@ data ConValue
 -- @TODO: Need to implement instance of ord
 
 -- | Concrete Memory address contains of a base + offset
+-- data MemAddr
+--   = MemAddr 
+--   { base :: ConValue
+--   , offset :: ConValue
+--   }
+--   deriving (Show,Eq,Ord)
+-- Simplification
 data MemAddr
   = MemAddr 
-  { base :: ConValue
-  , offset :: ConValue
-  }
+  { base :: SymId }
   deriving (Show,Eq,Ord)
 
 data MemAddrs
@@ -88,6 +93,7 @@ join_maddrs a1 a2 =
     (_,MemAddrTop) -> a2
     (MemAddrs l1, MemAddrs l2) ->
       MemAddrs (nub $ l1 ++ l2)
+
 -- | Concrete Memory Cell
 type ConMCell = MemCell SymId () ConValue
 
@@ -194,14 +200,36 @@ insert_heap st@Sigma{..} id cell =
   let heap' = M.insert id cell heap
   in st {heap = heap'}  
 
+modify_heap :: Sigma -> SymId -> ConValue -> Sigma
+modify_heap st@Sigma{..} id val = 
+  let heap' = M.update (update_conmcell val) id heap
+  in st {heap = heap'}
+
+update_conmcell :: ConValue -> ConMCell -> Maybe ConMCell
+update_conmcell nval c@MCell{..} = Just $ c { val = nval } 
+
 -- | insert_local: inserts an element to local state 
-insert_local :: Sigma -> TId -> SymId -> Ty SymId () -> ConValue -> Sigma
-insert_local = undefined
+insert_local :: Sigma -> TId -> SymId -> ConValue -> Sigma
+insert_local = error "insert_local" 
 
 -- | modify the state: receives a MemAddrs and a
 --   ConValue and assigns the ConValue to the MemAddrs
 modify_state :: Scope -> Sigma -> MemAddrs -> ConValue -> Sigma
-modify_state = undefined 
+modify_state scope st addrs vals =
+  case addrs of
+    MemAddrTop -> error "modify_state: top addrs, need to traverse everything"
+    MemAddrs l -> foldr (\a s -> modify_state' scope s a vals) st l
+ where
+   modify_state' :: Scope -> Sigma -> MemAddr -> ConValue -> Sigma
+   modify_state' scope st@Sigma{..} add@MemAddr{..} conval =
+     -- First search in the heap 
+     case M.lookup base heap of
+       Nothing ->
+         -- If not in the heap, search in the thread
+         case scope of
+           Global -> error "modify_state: id is not the heap and scope is global"
+           Local i -> insert_local st i base conval 
+       Just _ -> modify_heap st base conval   
 {-
 instance Hashable Sigma where
   hash = hash . M.toList

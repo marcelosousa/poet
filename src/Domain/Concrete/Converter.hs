@@ -87,7 +87,7 @@ convert_init scope st id ty minit =
       let val = default_value ty
           st' = case scope of 
                   Global -> insert_heap st id $ MCell ty val
-                  Local i -> insert_local st i id ty val 
+                  Local i -> insert_local st i id val 
           id_addrs = get_addrs_id scope st id
           acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
       in (st',acts)
@@ -97,7 +97,7 @@ convert_init scope st id ty minit =
           let (nst,val,acts) = transformer scope st expr
               st' = case scope of
                       Global -> insert_heap nst id $ MCell ty val
-                      Local i -> insert_local nst i id ty val 
+                      Local i -> insert_local nst i id val 
               id_addrs = get_addrs_id scope st id
               acts' = add_writes id_addrs acts
           in (st',acts')
@@ -134,16 +134,16 @@ transformer scope st _expr =
     Comma exprs -> error "transformer: comma not supported" 
     CompoundLit decl initList -> undefined 
     Cond cond mThenExpr elseExpr -> undefined
-    Const const -> undefined 
-    Index arr_expr index_expr -> undefined 
-    LabAddrExpr ident -> undefined
-    Member expr ident bool -> undefined
-    SizeofExpr expr -> undefined
-    SizeofType decl -> undefined
+    Const const -> const_transformer scope st const 
+    Index arr_expr index_expr -> error "transformer: index not supported"
+    LabAddrExpr ident -> error "transformer: labaddr not supported"
+    Member expr ident bool -> error "transformer: member not supported"
+    SizeofExpr expr -> error "transformer: sizeof expression not supported" 
+    SizeofType decl -> error "transformer: sizeof type not supported"
     Skip -> (st,ConTop,bot_act)
     StatExpr stmt -> error "transformer: stat_expr not supported"
-    Unary unaryOp expr -> undefined
-    Var ident -> undefined
+    Unary unaryOp expr -> unop_transformer scope st unaryOp expr 
+    Var ident -> var_transformer scope st ident 
     ComplexReal expr -> error "transformer: complex op not supported" 
     ComplexImag expr -> error "transformer: complex op not supported" 
 
@@ -172,7 +172,7 @@ assign_transformer scope st op lhs rhs =
         COrAssOp  -> lhs_vals `bor` rhs_vals
       -- get the addresses of the left hand side
       lhs_id = get_addrs scope st lhs 
-      res_acts = rhs_acts `join_act` lhs_acts
+      res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
       -- modify the state of the addresses with
       -- the result values 
       res_st = modify_state scope rhs_st lhs_id res_vals 
@@ -184,16 +184,47 @@ binop_transformer = undefined
 -- | Transformer for call expression.
 call_transformer = undefined
 
+-- | Transformer for constants.
+const_transformer :: Scope -> Sigma -> Constant -> (Sigma,ConValue,Act)
+const_transformer scope st const =
+  let v = toValue const
+  in (st, ConVal [v], bot_act)
+
+-- | Transformer for unary operations.
+unop_transformer :: Scope -> Sigma -> UnaryOp -> SExpression -> (Sigma,ConValue,Act)
+unop_transformer = undefined
+
+-- | Transformer for var expressions.
+var_transformer :: Scope -> Sigma -> SymId -> (Sigma,ConValue,Act)
+var_transformer scope st@Sigma{..} id =
+  -- First search in the heap
+  case M.lookup id heap of
+    Nothing -> 
+      -- If not in the heap, search in the thread
+      case scope of
+        Global -> error "var_transformer: id is not the heap and scope is global"
+        Local i -> case M.lookup i th_states of
+          Nothing -> error "var_transformer: scope does not match the state"
+          Just ths@ThState{..} -> case M.lookup id locals of
+            Nothing -> error "var_transformer: id is not in the local state of thread"
+            Just v  -> (st,v,bot_act)
+    Just cell@MCell{..} -> (st,val,bot_act)
+  
+-- | get the addresses of an identifier
+--   super simple now by assuming not having pointers
 get_addrs_id :: Scope -> Sigma -> SymId -> MemAddrs
-get_addrs_id = undefined
+get_addrs_id scope st id = MemAddrs [MemAddr id] 
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
 --   Simplify to onlu consider the case where the 
 --   the expression is a LHS (var or array index).
-get_addrs :: Scope -> Sigma -> SExpression -> a
-get_addrs = undefined
- 
+get_addrs :: Scope -> Sigma -> SExpression -> MemAddrs
+get_addrs scope st expr =
+  case expr of
+    Var id -> get_addrs_id scope st id 
+    _ -> error "get_addrs: not supported"
+
 mult = undefined
 divs = undefined
 rmdr = undefined
