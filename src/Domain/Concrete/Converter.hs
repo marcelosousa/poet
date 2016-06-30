@@ -9,6 +9,8 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Converter where
 
+import Control.Monad.State.Lazy 
+
 import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
 import qualified Data.Vector as V
@@ -28,6 +30,22 @@ import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
 
+-- | State of the concrete transformer
+data ConTState 
+ = ConTState {
+   scope :: Scope
+ , st :: Sigma
+ , sym :: Map SymId Symbol 
+ }
+
+-- | Transformer operation 
+type ConTOp val = State ConTState val
+
+set_state :: Sigma -> ConTOp ()
+set_state nst = do
+  s@ConTState{..} <- get
+  put s { st = nst }
+ 
 -- | The interface
 instance Collapsible Sigma Act where
   enabled = undefined
@@ -38,7 +56,7 @@ instance Collapsible Sigma Act where
 convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
-      con_decl = \(s,a) d -> let (s',a') = convert_decl Global s d in (s', a `join_act` a') 
+      con_decl = \(s,a) d -> let (s',a') = convert_decl' Global s d in (s', a `join_act` a') 
       (st,acts) = foldl con_decl (empty_state,bot_act) $ decls ast
       st' = set_pos st main_tid pos_main  
   in System st' acts cfgs symt [main_tid] 1
@@ -59,48 +77,59 @@ get_entry fnname graphs symt =
            Just s  -> if get_name s == fnname
                       then Just $ entry_node cfg
                       else Nothing 
-  
+
+convert_decl' = undefined
+
+-- | processes a list of declarations 
+convert_decls :: [SDeclaration] -> ConTOp Act
+convert_decls =
+  foldM (\a d -> convert_decl d >>= \a' -> return $ join_act a a') bot_act 
+
 -- | processes a declaration.
-convert_decl :: Scope -> Sigma -> Declaration SymId () -> (Sigma,Act) 
-convert_decl scope st decl =
+convert_decl :: SDeclaration -> ConTOp Act
+convert_decl decl = 
   case decl of
     TypeDecl ty -> error "convert_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
       case declarator of
         Nothing -> 
           case initializer of 
-            Nothing -> (st,bot_act) 
+            Nothing -> return bot_act
             _ -> error "initializer w/ declarator" 
         Just d@Declr{..} ->
           case declr_ident of
             Nothing -> error "no identifier" 
             Just id ->   
               let typ = Ty declr_type ty
-              in  convert_init scope st id typ initializer
+              in  convert_init id typ initializer
 
 -- | processes a declaration initializer 
 --   for the symbol id with type ty. 
-convert_init :: Scope -> Sigma -> SymId -> Ty SymId () -> Maybe (Initializer SymId ()) -> (Sigma,Act)
-convert_init scope st id ty minit =
+convert_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> ConTOp Act
+convert_init id ty minit = do
   case minit of
-    Nothing ->
+    Nothing -> do
+      s@ConTState{..} <- get
       let val = default_value ty
           st' = case scope of 
                   Global -> insert_heap st id $ MCell ty val
                   Local i -> insert_local st i id val 
           id_addrs = get_addrs_id scope st id
           acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
-      in (st',acts)
+      set_state st'
+      return acts
     Just i  ->
       case i of
-        InitExpr expr -> 
-          let (nst,val,acts) = transformer scope st expr
-              st' = case scope of
-                      Global -> insert_heap nst id $ MCell ty val
-                      Local i -> insert_local nst i id val 
+        InitExpr expr -> do 
+          (val,acts) <- transformer expr
+          s@ConTState{..} <- get
+          let st' = case scope of
+                      Global -> insert_heap st id $ MCell ty val
+                      Local i -> insert_local st i id val 
               id_addrs = get_addrs_id scope st id
               acts' = add_writes id_addrs acts
-          in (st',acts')
+          set_state st'
+          return acts'
         InitList list -> error "initializer list is not supported"
 
 -- | Default value of a type
@@ -121,42 +150,43 @@ default_value ty = ConVal [init_value ty]
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
-transformer :: Scope -> Sigma -> SExpression -> (Sigma,ConValue,Act)
-transformer scope st _expr =
+transformer :: SExpression -> ConTOp (ConValue,Act)
+transformer _expr =
   case _expr of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
-    Assign assignOp lhs rhs -> assign_transformer scope st assignOp lhs rhs 
-    Binary binaryOp lhs rhs -> binop_transformer scope st binaryOp lhs rhs 
+    Assign assignOp lhs rhs -> assign_transformer assignOp lhs rhs 
+    Binary binaryOp lhs rhs -> binop_transformer binaryOp lhs rhs 
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
-    Call fn args n -> call_transformer scope st fn args  
+    Call fn args n -> call_transformer fn args  
     Cast decl expr -> error "transformer: cast not supported"
     Comma exprs -> error "transformer: comma not supported" 
-    CompoundLit decl initList -> compound_transformer scope st decl initList 
-    Cond cond mThenExpr elseExpr -> cond_transformer scope st cond mThenExpr elseExpr 
-    Const const -> const_transformer scope st const 
+    CompoundLit decl initList -> compound_transformer decl initList 
+    Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
+    Const const -> const_transformer const 
     Index arr_expr index_expr -> error "transformer: index not supported"
     LabAddrExpr ident -> error "transformer: labaddr not supported"
     Member expr ident bool -> error "transformer: member not supported"
     SizeofExpr expr -> error "transformer: sizeof expression not supported" 
     SizeofType decl -> error "transformer: sizeof type not supported"
-    Skip -> (st,ConTop,bot_act)
+    Skip -> return (ConTop,bot_act)
     StatExpr stmt -> error "transformer: stat_expr not supported"
-    Unary unaryOp expr -> unop_transformer scope st unaryOp expr 
-    Var ident -> var_transformer scope st ident 
+    Unary unaryOp expr -> unop_transformer unaryOp expr 
+    Var ident -> var_transformer ident 
     ComplexReal expr -> error "transformer: complex op not supported" 
     ComplexImag expr -> error "transformer: complex op not supported" 
 
 -- | Transformer for an assignment expression.
 --   Not sure if we should have a specialized transformer for this 
 --   case or if the expansion to the full expression is enough.
-assign_transformer :: Scope -> Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,ConValue,Act)
-assign_transformer scope st op lhs rhs =
-      -- process the lhs (get the new state, values and actions)
-  let (lhs_st,lhs_vals,lhs_acts) = transformer scope st lhs
-      -- process the rhs (get the new state, values and actions)
-      (rhs_st,rhs_vals,rhs_acts) = transformer scope lhs_st rhs
-      res_vals = case op of
+assign_transformer :: AssignOp -> SExpression -> SExpression -> ConTOp (ConValue,Act)
+assign_transformer op lhs rhs = do
+  s@ConTState{..} <- get
+  -- process the lhs (get the new state, values and actions)
+  (lhs_vals,lhs_acts) <- transformer lhs
+  -- process the rhs (get the new state, values and actions)
+  (rhs_vals,rhs_acts) <- transformer rhs
+  let res_vals = case op of
         CAssignOp -> rhs_vals
         -- arithmetic operations 
         CMulAssOp -> lhs_vals `mult` rhs_vals 
@@ -171,21 +201,23 @@ assign_transformer scope st op lhs rhs =
         CXorAssOp -> lhs_vals `xor` rhs_vals 
         COrAssOp  -> lhs_vals `bor` rhs_vals
       -- get the addresses of the left hand side
-      lhs_id = get_addrs scope st lhs 
+      lhs_id = get_addrs scope st lhs
       res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
-      -- modify the state of the addresses with
-      -- the result values 
-      res_st = modify_state scope rhs_st lhs_id res_vals 
-  in (res_st,res_vals,res_acts) 
+  s@ConTState{..} <- get 
+  -- modify the state of the addresses with
+  -- the result values 
+  let res_st = modify_state scope st lhs_id res_vals
+  set_state res_st 
+  return (res_vals,res_acts) 
 
 -- | Transformer for binary operations.
-binop_transformer :: Scope -> Sigma -> BinaryOp -> SExpression -> SExpression -> (Sigma,ConValue,Act)
-binop_transformer scope st binOp lhs rhs =
-      -- process the lhs (get the new state, values and actions)
-  let (lhs_st,lhs_vals,lhs_acts) = transformer scope st lhs
-      -- process the rhs (get the new state, values and actions)
-      (rhs_st,rhs_vals,rhs_acts) = transformer scope lhs_st rhs
-      res_vals = case binOp of
+binop_transformer :: BinaryOp -> SExpression -> SExpression -> ConTOp (ConValue,Act)
+binop_transformer binOp lhs rhs = do
+  -- process the lhs (get the new state, values and actions)
+  (lhs_vals,lhs_acts) <- transformer lhs
+  -- process the rhs (get the new state, values and actions)
+  (rhs_vals,rhs_acts) <- transformer rhs
+  let res_vals = case binOp of
         CMulOp -> error "binop_transformer: not supported" 
         CDivOp -> error "binop_transformer: not supported" 
         CRmdOp -> error "binop_transformer: not supported" 
@@ -205,44 +237,45 @@ binop_transformer scope st binOp lhs rhs =
         CLndOp -> error "binop_transformer: not supported" 
         CLorOp -> error "binop_transformer: not supported"
       res_acts = lhs_acts `join_act` rhs_acts
-   in (rhs_st,res_vals,res_acts)
+  return (res_vals,res_acts)
 
 -- | Transformer for call expression.
-call_transformer :: Scope -> Sigma -> SExpression -> [SExpression] -> (Sigma,ConValue,Act)
-call_transformer = undefined
+call_transformer :: SExpression -> [SExpression] -> ConTOp (ConValue,Act)
+call_transformer fn args = undefined
 
 -- | Transformer for a declaration expression.
-compound_transformer :: Scope -> Sigma -> SDeclaration -> InitializerList SymId () -> (Sigma,ConValue,Act)
+compound_transformer :: SDeclaration -> InitializerList SymId () -> ConTOp (ConValue,Act)
 compound_transformer = undefined
 
-cond_transformer :: Scope -> Sigma -> SExpression -> Maybe SExpression -> SExpression -> (Sigma,ConValue,Act)
+cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValue,Act)
 cond_transformer = undefined
  
 -- | Transformer for constants.
-const_transformer :: Scope -> Sigma -> Constant -> (Sigma,ConValue,Act)
-const_transformer scope st const =
+const_transformer :: Constant -> ConTOp (ConValue,Act)
+const_transformer const =
   let v = toValue const
-  in (st, ConVal [v], bot_act)
+  in return (ConVal [v], bot_act)
 
 -- | Transformer for unary operations.
-unop_transformer :: Scope -> Sigma -> UnaryOp -> SExpression -> (Sigma,ConValue,Act)
+unop_transformer :: UnaryOp -> SExpression -> ConTOp (ConValue,Act)
 unop_transformer = undefined
 
 -- | Transformer for var expressions.
-var_transformer :: Scope -> Sigma -> SymId -> (Sigma,ConValue,Act)
-var_transformer scope st@Sigma{..} id =
+var_transformer :: SymId -> ConTOp (ConValue,Act)
+var_transformer id = do
+  s@ConTState{..} <- get
   -- First search in the heap
-  case M.lookup id heap of
+  case M.lookup id (heap st) of
     Nothing -> 
       -- If not in the heap, search in the thread
       case scope of
         Global -> error "var_transformer: id is not the heap and scope is global"
-        Local i -> case M.lookup i th_states of
+        Local i -> case M.lookup i (th_states st) of
           Nothing -> error "var_transformer: scope does not match the state"
           Just ths@ThState{..} -> case M.lookup id locals of
             Nothing -> error "var_transformer: id is not in the local state of thread"
-            Just v  -> (st,v,bot_act)
-    Just cell@MCell{..} -> (st,val,bot_act)
+            Just v  -> return (v,bot_act)
+    Just cell@MCell{..} -> return (val,bot_act)
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
