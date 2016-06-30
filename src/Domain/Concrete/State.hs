@@ -23,6 +23,14 @@ import Util.Generic hiding (safeLookup)
 import Language.SimpleC.AST
 import Language.SimpleC.Util
 
+-- | Scope (of a transformer)
+--   It can either be global (if we processing
+--   for example global declarations and so we need
+--   to change the state of the heap) or it can
+--   be local to a thread and we might have to
+--   change the local state and the heap
+data Scope = Global | Local TId
+
 -- | Concrete Value for the concrete semantics
 data ConValue
   = ConTop              -- Top value 
@@ -189,6 +197,11 @@ insert_heap st@Sigma{..} id cell =
 -- | insert_local: inserts an element to local state 
 insert_local :: Sigma -> TId -> SymId -> Ty SymId () -> ConValue -> Sigma
 insert_local = undefined
+
+-- | modify the state: receives a MemAddrs and a
+--   ConValue and assigns the ConValue to the MemAddrs
+modify_state :: Scope -> Sigma -> MemAddrs -> ConValue -> Sigma
+modify_state = undefined 
 {-
 instance Hashable Sigma where
   hash = hash . M.toList

@@ -28,15 +28,6 @@ import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
 
-
--- | Scope of the transformer;
---   It can either be global (if we processing 
---   for example global declarations and so we need
---   to change the state of the heap) or it can 
---   be local to a thread and we might have to 
---   change the local state and the heap
-data Scope = Global | Local TId
-
 -- | The interface
 instance Collapsible Sigma Act where
   enabled = undefined
@@ -136,11 +127,11 @@ transformer scope st _expr =
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
     Assign assignOp lhs rhs -> assign_transformer scope st assignOp lhs rhs 
-    Binary binaryOp lhs rhs -> undefined
+    Binary binaryOp lhs rhs -> binop_transformer scope st binaryOp lhs rhs 
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
-    Call fn args n -> undefined
+    Call fn args n -> call_transformer scope st fn args  
     Cast decl expr -> error "transformer: cast not supported"
-    Comma exprs -> undefined
+    Comma exprs -> error "transformer: comma not supported" 
     CompoundLit decl initList -> undefined 
     Cond cond mThenExpr elseExpr -> undefined
     Const const -> undefined 
@@ -179,17 +170,28 @@ assign_transformer scope st op lhs rhs =
         CAndAssOp -> lhs_vals `band` rhs_vals 
         CXorAssOp -> lhs_vals `xor` rhs_vals 
         COrAssOp  -> lhs_vals `bor` rhs_vals
-      lhs_id = get_addrs scope st 0 lhs 
-      res_acts = rhs_acts `join_act` lhs_acts 
-      res_st = undefined 
+      -- get the addresses of the left hand side
+      lhs_id = get_addrs scope st lhs 
+      res_acts = rhs_acts `join_act` lhs_acts
+      -- modify the state of the addresses with
+      -- the result values 
+      res_st = modify_state scope rhs_st lhs_id res_vals 
   in (res_st,res_vals,res_acts) 
+
+-- | Transformer for binary operations.
+binop_transformer = undefined
+
+-- | Transformer for call expression.
+call_transformer = undefined
 
 get_addrs_id :: Scope -> Sigma -> SymId -> MemAddrs
 get_addrs_id = undefined
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
-get_addrs :: Scope -> Sigma -> TId -> SExpression -> a
+--   Simplify to onlu consider the case where the 
+--   the expression is a LHS (var or array index).
+get_addrs :: Scope -> Sigma -> SExpression -> a
 get_addrs = undefined
  
 mult = undefined
