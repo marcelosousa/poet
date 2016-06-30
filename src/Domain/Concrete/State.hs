@@ -100,10 +100,6 @@ data Sigma =
   }
   deriving Show
 
--- | Initial state which is not bottom
-empty_state :: Sigma
-empty_state = Sigma M.empty M.empty 0 False 
-
 -- | A thread state is a control and local data 
 data ThState =
   ThState
@@ -112,6 +108,22 @@ data ThState =
   , locals :: Map SymId ConValue 
   } 
   deriving (Show,Eq,Ord)
+
+-- | Initial state which is not bottom
+empty_state :: Sigma
+empty_state = Sigma M.empty M.empty 0 False 
+
+-- | Set the position in the cfg of a thread
+set_pos :: Sigma -> TId -> Pos -> Sigma
+set_pos st@Sigma{..} tid npos = 
+  let th_st' =
+        case M.lookup tid th_states of
+          Nothing -> error "set_pos: tid not in th_states"
+          Just t@ThState{..} ->
+            let pos' = npos
+            in t { pos = pos' }
+      th_states' = M.insert tid th_st' th_states 
+  in st { th_states = th_states' }
 
 -- | Checks for state subsumption
 -- 1. Check bottoms 
@@ -174,6 +186,9 @@ insert_heap st@Sigma{..} id cell =
   let heap' = M.insert id cell heap
   in st {heap = heap'}  
 
+-- | insert_local: inserts an element to local state 
+insert_local :: Sigma -> TId -> SymId -> Ty SymId () -> ConValue -> Sigma
+insert_local = undefined
 {-
 instance Hashable Sigma where
   hash = hash . M.toList

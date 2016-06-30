@@ -46,9 +46,11 @@ instance Collapsible Sigma Act where
 -- | converts the front end into a system
 convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
 convert fe@FrontEnd{..} =
-  let pos_main = get_entry "main" cfgs symt 
-      (st,acts) = foldl (convert_decl Global) (empty_state,bot_act) $ decls ast 
-  in System st acts cfgs symt [0] 1
+  let pos_main = get_entry "main" cfgs symt
+      con_decl = \(s,a) d -> let (s',a') = convert_decl Global s d in (s', a `join_act` a') 
+      (st,acts) = foldl con_decl (empty_state,bot_act) $ decls ast
+      st' = set_pos st main_tid pos_main  
+  in System st' acts cfgs symt [main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
 get_entry :: String -> Graphs SymId () (Sigma,Act) -> Map SymId Symbol -> Pos
@@ -68,23 +70,22 @@ get_entry fnname graphs symt =
                       else Nothing 
   
 -- | processes a declaration.
-convert_decl :: Scope -> (Sigma,Act) -> Declaration SymId () -> (Sigma,Act) 
-convert_decl scope (st,acts) decl =
+convert_decl :: Scope -> Sigma -> Declaration SymId () -> (Sigma,Act) 
+convert_decl scope st decl =
   case decl of
     TypeDecl ty -> error "convert_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
       case declarator of
         Nothing -> 
           case initializer of 
-            Nothing -> (st,acts) 
+            Nothing -> (st,bot_act) 
             _ -> error "initializer w/ declarator" 
         Just d@Declr{..} ->
           case declr_ident of
             Nothing -> error "no identifier" 
             Just id ->   
               let typ = Ty declr_type ty
-                  (st',act) = convert_init scope st id typ initializer
-              in (st',act `join_act` acts)              
+              in  convert_init scope st id typ initializer
 
 -- | processes a declaration initializer 
 --   for the symbol id with type ty. 
@@ -93,40 +94,48 @@ convert_init scope st id ty minit =
   case minit of
     Nothing ->
       let val = default_value ty
-          st' = insert_heap st id $ MCell ty val
+          st' = case scope of 
+                  Global -> insert_heap st id $ MCell ty val
+                  Local i -> insert_local st i id ty val 
           id_addrs = get_addrs_id scope st id
           acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
       in (st',acts)
     Just i  ->
       case i of
         InitExpr expr -> 
-          let (nst,val,acts) = transformer st expr
-              st' = insert_heap nst id $ MCell ty val
-              acts' = undefined -- (Write (V id)):acts
+          let (nst,val,acts) = transformer scope st expr
+              st' = case scope of
+                      Global -> insert_heap nst id $ MCell ty val
+                      Local i -> insert_local nst i id ty val 
+              id_addrs = get_addrs_id scope st id
+              acts' = add_writes id_addrs acts
           in (st',acts')
         InitList list -> error "initializer list is not supported"
 
 -- | Default value of a type
 --   If we are given a base type, then we
 --   simply generate a default value.
+--   @NOTE V1: No support for pointer, arrays or structs.
+--    This means that it is simply calling the default
+--    initializer from the simplec package
 --   If it is a pointer type, then we
 --   generate a VPtr 0 (denoting NULL).
 --   If it is an array type ?
 --   If it is a struct type ? 
 default_value :: Ty SymId () -> ConValue  
-default_value (Ty ddecls typ) = undefined
+default_value ty = ConVal [init_value ty]
 
 -- | Transformers for concrete semantics 
 -- Given an initial state and an expression
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
-transformer :: Sigma -> SExpression -> (Sigma,ConValue,Act)
-transformer st _expr =
+transformer :: Scope -> Sigma -> SExpression -> (Sigma,ConValue,Act)
+transformer scope st _expr =
   case _expr of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
-    Assign assignOp lhs rhs -> assign_transformer st assignOp lhs rhs 
+    Assign assignOp lhs rhs -> assign_transformer scope st assignOp lhs rhs 
     Binary binaryOp lhs rhs -> undefined
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
     Call fn args n -> undefined
@@ -150,12 +159,12 @@ transformer st _expr =
 -- | Transformer for an assignment expression.
 --   Not sure if we should have a specialized transformer for this 
 --   case or if the expansion to the full expression is enough.
-assign_transformer :: Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,ConValue,Act)
-assign_transformer st op lhs rhs =
+assign_transformer :: Scope -> Sigma -> AssignOp -> SExpression -> SExpression -> (Sigma,ConValue,Act)
+assign_transformer scope st op lhs rhs =
       -- process the lhs (get the new state, values and actions)
-  let (lhs_st,lhs_vals,lhs_acts) = transformer st lhs
+  let (lhs_st,lhs_vals,lhs_acts) = transformer scope st lhs
       -- process the rhs (get the new state, values and actions)
-      (rhs_st,rhs_vals,rhs_acts) = transformer lhs_st rhs
+      (rhs_st,rhs_vals,rhs_acts) = transformer scope lhs_st rhs
       res_vals = case op of
         CAssignOp -> rhs_vals
         -- arithmetic operations 
@@ -170,7 +179,7 @@ assign_transformer st op lhs rhs =
         CAndAssOp -> lhs_vals `band` rhs_vals 
         CXorAssOp -> lhs_vals `xor` rhs_vals 
         COrAssOp  -> lhs_vals `bor` rhs_vals
-      lhs_id = get_addrs st 0 lhs 
+      lhs_id = get_addrs scope st 0 lhs 
       res_acts = rhs_acts `join_act` lhs_acts 
       res_st = undefined 
   in (res_st,res_vals,res_acts) 
@@ -180,7 +189,7 @@ get_addrs_id = undefined
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
-get_addrs :: Sigma -> TId -> SExpression -> a
+get_addrs :: Scope -> Sigma -> TId -> SExpression -> a
 get_addrs = undefined
  
 mult = undefined

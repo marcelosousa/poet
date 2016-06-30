@@ -42,6 +42,10 @@ type Pos = NodeId
 -- Thread/Transition ID
 type TId = Int
 
+-- | main_tid 0 is the tid for main
+main_tid :: TId
+main_tid = 0
+
 -- | botID -1 is the tid for bottom 
 botID :: TId 
 botID = -1

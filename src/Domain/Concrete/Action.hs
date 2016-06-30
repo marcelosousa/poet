@@ -35,6 +35,11 @@ join_act a1 a2 =
       l = locks a1 `join_maddrs` locks a2 
       u = unlocks a1 `join_maddrs` unlocks a2
   in Act r w l u 
+
+add_writes :: MemAddrs -> Act -> Act
+add_writes ws act@Act{..} =
+  let wrs' = ws `join_maddrs` wrs
+  in act { wrs = wrs' }
   
 instance Show Act where
   show act@Act{..} =
