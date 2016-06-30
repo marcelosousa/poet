@@ -33,6 +33,8 @@ import Language.SimpleC.Util
 --   change the local state and the heap
 data Scope = Global | Local TId
 
+type ConValues = [ConValue]
+
 -- | Concrete Value for the concrete semantics
 data ConValue
   =  ConVal Value      -- Concrete list of values
@@ -126,12 +128,15 @@ data ThState =
   deriving (Show,Eq,Ord)
 
 -- | Initial state which is not bottom
-empty_state :: Sigma
-empty_state = Sigma M.empty M.empty 0 False 
+empty_state :: CState
+empty_state = CState $ S.singleton $ Sigma M.empty M.empty 0 False
 
 -- | Set the position in the cfg of a thread
-set_pos :: Sigma -> TId -> Pos -> Sigma
-set_pos st@Sigma{..} tid npos = 
+set_pos :: CState -> TId -> Pos -> CState
+set_pos (CState st) tid npos = CState $ S.map (\s -> set_pos_s s tid npos) st
+
+set_pos_s :: Sigma -> TId -> Pos -> Sigma
+set_pos_s st@Sigma{..} tid npos = 
   let th_st' =
         case M.lookup tid th_states of
           Nothing -> error "set_pos: tid not in th_states"
@@ -208,41 +213,42 @@ instance Projection CState where
 -- | API for modifying the state
 
 -- | insert_heap: inserts an element to the heap
-insert_heap :: Sigma -> SymId -> ConMCell -> Sigma
-insert_heap st@Sigma{..} id cell =
-  let heap' = M.insert id cell heap
-  in st {heap = heap'}  
+insert_heap :: CState -> SymId -> STy -> ConValues -> CState 
+insert_heap = undefined
+-- insert_heap st@Sigma{..} id cell =
+--   let heap' = M.insert id cell heap
+--   in st {heap = heap'}  
 
-modify_heap :: Sigma -> SymId -> ConValue -> Sigma
-modify_heap st@Sigma{..} id val = 
-  let heap' = M.update (update_conmcell val) id heap
-  in st {heap = heap'}
+modify_heap :: CState -> SymId -> ConValue -> CState 
+modify_heap st@CState{..} id val = undefined 
+--  let heap' = M.update (update_conmcell val) id heap
+--  in st {heap = heap'}
 
 update_conmcell :: ConValue -> ConMCell -> Maybe ConMCell
 update_conmcell nval c@MCell{..} = Just $ c { val = nval } 
 
 -- | insert_local: inserts an element to local state 
-insert_local :: Sigma -> TId -> SymId -> ConValue -> Sigma
+insert_local :: CState -> TId -> SymId -> ConValues -> CState 
 insert_local = error "insert_local" 
 
 -- | modify the state: receives a MemAddrs and a
 --   ConValue and assigns the ConValue to the MemAddrs
-modify_state :: Scope -> Sigma -> MemAddrs -> ConValue -> Sigma
-modify_state scope st addrs vals =
-  case addrs of
-    MemAddrTop -> error "modify_state: top addrs, need to traverse everything"
-    MemAddrs l -> foldr (\a s -> modify_state' scope s a vals) st l
- where
-   modify_state' :: Scope -> Sigma -> MemAddr -> ConValue -> Sigma
-   modify_state' scope st@Sigma{..} add@MemAddr{..} conval =
-     -- First search in the heap 
-     case M.lookup base heap of
-       Nothing ->
-         -- If not in the heap, search in the thread
-         case scope of
-           Global -> error "modify_state: id is not the heap and scope is global"
-           Local i -> insert_local st i base conval 
-       Just _ -> modify_heap st base conval   
+modify_state :: Scope -> CState -> MemAddrs -> ConValues -> CState 
+modify_state scope st addrs vals = undefined
+--  case addrs of
+--    MemAddrTop -> error "modify_state: top addrs, need to traverse everything"
+--    MemAddrs l -> foldr (\a s -> modify_state' scope s a vals) st l
+-- where
+--   modify_state' :: Scope -> Sigma -> MemAddr -> ConValue -> Sigma
+--   modify_state' scope st@Sigma{..} add@MemAddr{..} conval =
+--     -- First search in the heap 
+--     case M.lookup base heap of
+--       Nothing ->
+--         -- If not in the heap, search in the thread
+--         case scope of
+--           Global -> error "modify_state: id is not the heap and scope is global"
+--           Local i -> insert_local st i base conval 
+--       Just _ -> modify_heap st base conval   
 {-
 instance Hashable Sigma where
   hash = hash . M.toList

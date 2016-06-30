@@ -34,26 +34,26 @@ import Util.Generic hiding (safeLookup)
 data ConTState 
  = ConTState {
    scope :: Scope
- , st :: Sigma
+ , st :: CState 
  , sym :: Map SymId Symbol 
  }
 
 -- | Transformer operation 
 type ConTOp val = State ConTState val
 
-set_state :: Sigma -> ConTOp ()
+set_state :: CState -> ConTOp ()
 set_state nst = do
   s@ConTState{..} <- get
   put s { st = nst }
  
 -- | The interface
-instance Collapsible Sigma Act where
+instance Collapsible CState Act where
   enabled = undefined
   collapse = undefined
   dcollapse = undefined 
 
 -- | converts the front end into a system
-convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
+convert :: FrontEnd () (CState,Act) -> System CState Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
       init_tstate = ConTState Global empty_state symt
@@ -62,7 +62,7 @@ convert fe@FrontEnd{..} =
   in System st' acts cfgs symt [main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
-get_entry :: String -> Graphs SymId () (Sigma,Act) -> Map SymId Symbol -> Pos
+get_entry :: String -> Graphs SymId () (CState,Act) -> Map SymId Symbol -> Pos
 get_entry fnname graphs symt = 
   case M.foldrWithKey aux_get_entry Nothing graphs of
     Nothing -> error $ "get_entry: cant get entry for " ++ fnname
@@ -110,7 +110,7 @@ convert_init id ty minit = do
       s@ConTState{..} <- get
       let val = default_value ty
           st' = case scope of 
-                  Global -> insert_heap st id $ MCell ty val
+                  Global -> insert_heap st id ty val
                   Local i -> insert_local st i id val 
           id_addrs = get_addrs_id scope st id
           acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
@@ -122,7 +122,7 @@ convert_init id ty minit = do
           (val,acts) <- transformer expr
           s@ConTState{..} <- get
           let st' = case scope of
-                      Global -> insert_heap st id $ MCell ty val
+                      Global -> insert_heap st id ty val
                       Local i -> insert_local st i id val 
               id_addrs = get_addrs_id scope st id
               acts' = add_writes id_addrs acts
@@ -140,15 +140,15 @@ convert_init id ty minit = do
 --   generate a VPtr 0 (denoting NULL).
 --   If it is an array type ?
 --   If it is a struct type ? 
-default_value :: Ty SymId () -> ConValue  
-default_value ty = ConVal [init_value ty]
+default_value :: Ty SymId () -> ConValues
+default_value ty = [ ConVal $ init_value ty ]
 
 -- | Transformers for concrete semantics 
 -- Given an initial state and an expression
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
-transformer :: SExpression -> ConTOp (ConValue,Act)
+transformer :: SExpression -> ConTOp (ConValues,Act)
 transformer _expr =
   case _expr of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
@@ -167,7 +167,7 @@ transformer _expr =
     Member expr ident bool -> error "transformer: member not supported"
     SizeofExpr expr -> error "transformer: sizeof expression not supported" 
     SizeofType decl -> error "transformer: sizeof type not supported"
-    Skip -> return (ConTop,bot_act)
+    Skip -> return ([],bot_act)
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> unop_transformer unaryOp expr 
     Var ident -> var_transformer ident 
@@ -177,7 +177,7 @@ transformer _expr =
 -- | Transformer for an assignment expression.
 --   Not sure if we should have a specialized transformer for this 
 --   case or if the expansion to the full expression is enough.
-assign_transformer :: AssignOp -> SExpression -> SExpression -> ConTOp (ConValue,Act)
+assign_transformer :: AssignOp -> SExpression -> SExpression -> ConTOp (ConValues,Act)
 assign_transformer op lhs rhs = do
   s@ConTState{..} <- get
   -- process the lhs (get the new state, values and actions)
@@ -209,7 +209,7 @@ assign_transformer op lhs rhs = do
   return (res_vals,res_acts) 
 
 -- | Transformer for binary operations.
-binop_transformer :: BinaryOp -> SExpression -> SExpression -> ConTOp (ConValue,Act)
+binop_transformer :: BinaryOp -> SExpression -> SExpression -> ConTOp (ConValues,Act)
 binop_transformer binOp lhs rhs = do
   -- process the lhs (get the new state, values and actions)
   (lhs_vals,lhs_acts) <- transformer lhs
@@ -238,30 +238,31 @@ binop_transformer binOp lhs rhs = do
   return (res_vals,res_acts)
 
 -- | Transformer for call expression.
-call_transformer :: SExpression -> [SExpression] -> ConTOp (ConValue,Act)
+call_transformer :: SExpression -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer fn args = undefined
 
 -- | Transformer for a declaration expression.
-compound_transformer :: SDeclaration -> InitializerList SymId () -> ConTOp (ConValue,Act)
+compound_transformer :: SDeclaration -> InitializerList SymId () -> ConTOp (ConValues,Act)
 compound_transformer = undefined
 
-cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValue,Act)
+cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValues,Act)
 cond_transformer = undefined
  
 -- | Transformer for constants.
-const_transformer :: Constant -> ConTOp (ConValue,Act)
+const_transformer :: Constant -> ConTOp (ConValues,Act)
 const_transformer const =
   let v = toValue const
-  in return (ConVal [v], bot_act)
+  in return ([ConVal v], bot_act)
 
 -- | Transformer for unary operations.
-unop_transformer :: UnaryOp -> SExpression -> ConTOp (ConValue,Act)
+unop_transformer :: UnaryOp -> SExpression -> ConTOp (ConValues,Act)
 unop_transformer = undefined
 
 -- | Transformer for var expressions.
-var_transformer :: SymId -> ConTOp (ConValue,Act)
+var_transformer :: SymId -> ConTOp (ConValues,Act)
 var_transformer id = do
   s@ConTState{..} <- get
+  mapM var_transformer_
   -- First search in the heap
   case M.lookup id (heap st) of
     Nothing -> 
@@ -277,14 +278,14 @@ var_transformer id = do
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
-get_addrs_id :: Scope -> Sigma -> SymId -> MemAddrs
+get_addrs_id :: Scope -> CState -> SymId -> MemAddrs
 get_addrs_id scope st id = MemAddrs [MemAddr id] 
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
 --   Simplify to onlu consider the case where the 
 --   the expression is a LHS (var or array index).
-get_addrs :: Scope -> Sigma -> SExpression -> MemAddrs
+get_addrs :: Scope -> CState -> SExpression -> MemAddrs
 get_addrs scope st expr =
   case expr of
     Var id -> get_addrs_id scope st id 
@@ -306,7 +307,7 @@ pmdVal = IntVal 1
 pmtVar = BS.pack "__poet_mutex_threads"
 pmjVar = BS.pack "__poet_mutex_threads_join"
 
-convert :: Program -> FirstFlow -> Flow -> Int -> (System Sigma, UIndep)
+convert :: Program -> FirstFlow -> Flow -> Int -> (System CState, UIndep)
 convert (Program (decls, defs)) pcs flow thCount =
   -- @ get the initial local state: this will be the set of global variables 
   --   minus the pcs
@@ -315,7 +316,7 @@ convert (Program (decls, defs)) pcs flow thCount =
       ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
       iils = ils++ipcs
       fils = (pmtVar, pmtiv):(pmjVar, pmtiv):iils
-      is = toSigma fils
+      is = toCState fils
       atrs = resetTID $ concatMap (getTransitions flow) defs
       (trs,annot) = unzip atrs
 --      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
@@ -325,13 +326,13 @@ convert (Program (decls, defs)) pcs flow thCount =
   in (sys, uind)       
   --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
 
-resetTID :: [(Transition Sigma, (TransitionID, Statement, RWSet))] -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
+resetTID :: [(Transition CState, (TransitionID, Statement, RWSet))] -> [(Transition CState, (TransitionID, Statement, RWSet))] 
 resetTID = reverse . snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
 
-resetTID' :: Int -> (Transition Sigma, (TransitionID, Statement, RWSet)) -> (Int, (Transition Sigma, (TransitionID, Statement, RWSet)))
+resetTID' :: Int -> (Transition CState, (TransitionID, Statement, RWSet)) -> (Int, (Transition CState, (TransitionID, Statement, RWSet)))
 resetTID' c (((pid,_,_st,act),fn),(_,st,annot)) = (c+1,(((pid,c,_st,act),fn),(c,st,annot)))
 
-getInitialDecls :: Decls -> LSigma
+getInitialDecls :: Decls -> LCState
 getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) [] 
   where 
     convertDecl decl = case decl of
@@ -345,15 +346,15 @@ getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) []
 -- type Transition s = (ProcessID, TransitionID, TransitionFn s)
 -- process id is the name of the function
 -- transition id is the position in the vector of transitions 
-getTransitions :: Flow -> Definition -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
+getTransitions :: Flow -> Definition -> [(Transition CState, (TransitionID, Statement, RWSet))] 
 getTransitions flow (FunctionDef _ name _ stat) = recGetTrans flow (BS.pack name) stat
 
-recGetTrans :: Flow -> ProcessID -> Statement -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
+recGetTrans :: Flow -> ProcessID -> Statement -> [(Transition CState, (TransitionID, Statement, RWSet))] 
 recGetTrans flow name stat =
     foldl (\acc st -> let rest = toTransition name 0 flow st
                       in acc++rest) [] stat    
 
-toTransition :: ProcessID -> TransitionID -> Flow -> AnnStatement PC -> [(Transition Sigma, (TransitionID, Statement, RWSet))]
+toTransition :: ProcessID -> TransitionID -> Flow -> AnnStatement PC -> [(Transition CState, (TransitionID, Statement, RWSet))]
 toTransition procName tID flow s = 
   let pcVar = BS.pack $ "pc." ++ (BS.unpack procName)
       trInfo = \act -> (procName, tID, [s], act)
@@ -389,7 +390,7 @@ modifyList xs a idx =
   in left ++ (a:right)
       
 -- encodes Call
-fromCall :: Flow -> Var -> PC -> String -> [Expression] -> [(TransitionFn Sigma, Acts, RWSet)]
+fromCall :: Flow -> Var -> PC -> String -> [Expression] -> [(TransitionFn CState, Acts, RWSet)]
 fromCall flow pcVar pc "__poet_fail" [] =
   let acts = [Write (V pcVar)]
       fn = \s ->
@@ -512,7 +513,7 @@ getVarArg (Index (Ident i) _) = BS.pack i
 getVarArg e = error $ "getVarArg: " ++ show e
 
 -- encodes Assign
-fromAssign :: Flow -> Var -> PC -> Expression -> Expression -> [(TransitionFn Sigma, RWSet)]
+fromAssign :: Flow -> Var -> PC -> Expression -> Expression -> [(TransitionFn CState, RWSet)]
 fromAssign flow pcVar pc _lhs _rhs = 
   let Continue next = getFlow flow pc
       _lhsi = map Write $ getIdent _lhs
@@ -540,7 +541,7 @@ fromAssign flow pcVar pc _lhs _rhs =
   in [(fn, act)]
 
 -- encodes GOTO
-fromGoto :: Flow -> Var -> PC -> [(TransitionFn Sigma, RWSet)]
+fromGoto :: Flow -> Var -> PC -> [(TransitionFn CState, RWSet)]
 fromGoto flow pcVar pc = 
   let Continue next = getFlow flow pc
       fn = \s ->
@@ -553,7 +554,7 @@ fromGoto flow pcVar pc =
   in [(fn, [Write $ V pcVar])]
 
 -- encodes fromIf
-fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn Sigma, RWSet)]
+fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn CState, RWSet)]
 fromIf flow pcVar pc _cond = 
   let Branch (t,e) = getFlow flow pc
       readVars = getIdent _cond
@@ -583,7 +584,7 @@ getIdent expr = case expr of
   Call _ args -> concatMap getIdent args
   _ -> error $ "eval: disallowed " ++ show expr
 
-eval :: Expression -> Sigma -> Value
+eval :: Expression -> CState -> Value
 eval expr s = case expr of
   BinOp op lhs rhs ->
     let lhsv = eval lhs s
@@ -633,7 +634,7 @@ apply op (IntVal lhs) (IntVal rhs) = case op of
   CLorOp -> IntVal $ fromBool $ toBool lhs || toBool rhs
 apply _ _ _ = error "apply: not all sides are just integer values"
 
-evalCond :: Expression -> Sigma -> Bool
+evalCond :: Expression -> CState -> Bool
 evalCond expr s =
   case eval expr s of
     IntVal 0 -> False
