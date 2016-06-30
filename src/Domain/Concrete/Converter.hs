@@ -56,8 +56,8 @@ instance Collapsible Sigma Act where
 convert :: FrontEnd () (Sigma,Act) -> System Sigma Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
-      con_decl = \(s,a) d -> let (s',a') = convert_decl' Global s d in (s', a `join_act` a') 
-      (st,acts) = foldl con_decl (empty_state,bot_act) $ decls ast
+      init_tstate = ConTState Global empty_state symt
+      (acts,s@ConTState{..}) = runState (convert_decls $ decls ast) init_tstate
       st' = set_pos st main_tid pos_main  
   in System st' acts cfgs symt [main_tid] 1
 
