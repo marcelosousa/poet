@@ -5,6 +5,7 @@
 -- Copyright :  (c) 2015-16 Marcelo Sousa
 --
 -- Transformers for the concrete semantics.
+-- 
 -------------------------------------------------------------------------------
 module Domain.Concrete.Converter where
 
