@@ -18,6 +18,7 @@ import qualified Data.Map as M
 import Data.Map (Map)  
 import Debug.Trace
 import Data.List 
+import qualified Data.Set as S
 
 import Domain.Concrete.Action
 import Domain.Concrete.State
@@ -262,19 +263,25 @@ unop_transformer = undefined
 var_transformer :: SymId -> ConTOp (ConValues,Act)
 var_transformer id = do
   s@ConTState{..} <- get
-  mapM var_transformer_
-  -- First search in the heap
-  case M.lookup id (heap st) of
-    Nothing -> 
-      -- If not in the heap, search in the thread
-      case scope of
-        Global -> error "var_transformer: id is not the heap and scope is global"
-        Local i -> case M.lookup i (th_states st) of
-          Nothing -> error "var_transformer: scope does not match the state"
-          Just ths@ThState{..} -> case M.lookup id locals of
-            Nothing -> error "var_transformer: id is not in the local state of thread"
-            Just v  -> return (v,bot_act)
-    Just cell@MCell{..} -> return (val,bot_act)
+  let valAct = map (var_transformer_ scope id) $ S.toList $ sts st
+      (vals,acts) = unzip valAct 
+      act = foldr join_act bot_act acts
+  return (vals,act)
+ where
+   var_transformer_ :: Scope -> SymId -> Sigma -> (ConValue,Act) 
+   var_transformer_ scope id st =  
+     -- First search in the heap
+     case M.lookup id (heap st) of
+       Nothing -> 
+         -- If not in the heap, search in the thread
+         case scope of
+           Global -> error "var_transformer: id is not the heap and scope is global"
+           Local i -> case M.lookup i (th_states st) of
+             Nothing -> error "var_transformer: scope does not match the state"
+             Just ths@ThState{..} -> case M.lookup id locals of
+               Nothing -> error "var_transformer: id is not in the local state of thread"
+               Just v  -> (v,bot_act)
+       Just cell@MCell{..} -> (val,bot_act)
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
