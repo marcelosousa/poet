@@ -126,9 +126,13 @@ data ThState =
   ThState
   { 
     pos :: Pos
+  , id :: SymId
   , locals :: Map SymId ConValue 
   } 
   deriving (Show,Eq,Ord)
+
+bot_th_state :: Pos -> SymId -> ThState
+bot_th_state pos id = ThState pos id M.empty
 
 bot_sigma :: Sigma
 bot_sigma = Sigma M.empty M.empty 0 False
@@ -154,6 +158,11 @@ set_pos_s st@Sigma{..} tid npos =
             in t { pos = pos' }
       th_states' = M.insert tid th_st' th_states 
   in st { th_states = th_states' }
+
+inc_num_th :: Sigma -> (Int,Sigma)
+inc_num_th s@Sigma{..} =
+  let n = num_th + 1
+  in (n,s { num_th = n })
 
 -- | Checks for state subsumption
 -- 1. Check bottoms 
@@ -287,6 +296,14 @@ modify_local_sigma scope st@Sigma{..} sym val =
         Local i -> insert_local_sigma st i sym val 
     Just _ -> modify_heap st sym val
 
+insert_thread :: Sigma -> SymId -> Pos -> CState
+insert_thread s sym pos =
+  let (tid,s'@Sigma{..}) = inc_num_th s
+      th = bot_th_state pos sym 
+      th_states' = M.insert tid th th_states
+      ns = s' { th_states = th_states' }
+  in CState $ S.singleton ns 
+   
 checkBoolVals :: ConValues -> (Bool,Bool)
 checkBoolVals vals = (any isTrue vals, any isFalse vals)
 

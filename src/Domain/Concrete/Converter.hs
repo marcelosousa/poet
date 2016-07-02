@@ -39,7 +39,8 @@ data ConTState
    scope :: Scope
  , st :: CState            -- the set of states
  , cst :: Sigma            -- current state in the state 
- , sym :: Map SymId Symbol 
+ , sym :: Map SymId Symbol
+ , cfgs :: Graphs SymId () (CState,Act) 
  }
 
 -- | Transformer operation 
@@ -74,7 +75,7 @@ instance Collapsible CState Act where
 convert :: FrontEnd () (CState,Act) -> System CState Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
-      init_tstate = ConTState Global empty_state bot_sigma symt
+      init_tstate = ConTState Global empty_state bot_sigma symt cfgs
       (acts,s@ConTState{..}) = runState (transformer_decls $ decls ast) init_tstate
       st' = set_pos st main_tid pos_main  
   in System st' acts cfgs symt [main_tid] 1
@@ -311,8 +312,24 @@ binop_transformer binOp lhs rhs = do
 call_transformer :: SExpression -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer fn args =
   case fn of
-    Var ident -> undefined 
+    Var ident -> do
+      s@ConTState{..} <- get
+      let n = get_symbol_name ident sym
+      call_transformer_name n args 
     _ -> error "call_transformer: not supported" 
+
+call_transformer_name :: String -> [SExpression] -> ConTOp (ConValues,Act)
+call_transformer_name name args = case name of
+  "pthread_create" -> do
+    s@ConTState{..} <- get
+    let th_id = get_expr_id $ args !! 1
+        th_sym = get_expr_id $ args !! 3
+        th_name = get_symbol_name th_sym sym
+        th_pos = get_entry th_name cfgs sym
+        st' = insert_thread cst th_id th_pos
+    join_state st' 
+    return ([],bot_act) 
+  _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
 
 cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValues,Act)
 cond_transformer cond mThen else_e = do
@@ -414,5 +431,8 @@ eq  = undefined
 neq = undefined
 land = undefined
 lor = undefined
+
+-- Unary operations
+minus, neg_tr :: ConValues -> ConValues
 minus = undefined
 neg_tr = undefined
