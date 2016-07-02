@@ -130,9 +130,15 @@ data ThState =
   } 
   deriving (Show,Eq,Ord)
 
+bot_sigma :: Sigma
+bot_sigma = Sigma M.empty M.empty 0 False
+
+bot_state :: CState
+bot_state = CState S.empty
+
 -- | Initial state which is not bottom
 empty_state :: CState
-empty_state = CState $ S.singleton $ Sigma M.empty M.empty 0 False
+empty_state = CState $ S.singleton bot_sigma 
 
 -- | Set the position in the cfg of a thread
 set_pos :: CState -> TId -> Pos -> CState
@@ -229,10 +235,10 @@ insert_heap_sigma st@Sigma{..} sym ty val =
       heap' = M.insert sym cell heap
   in st { heap = heap' }
 
-modify_heap :: CState -> SymId -> ConValue -> CState 
-modify_heap st@CState{..} id val = undefined 
---  let heap' = M.update (update_conmcell val) id heap
---  in st {heap = heap'}
+modify_heap :: Sigma -> SymId -> ConValue -> Sigma 
+modify_heap st@Sigma{..} id val = 
+  let heap' = M.update (update_conmcell val) id heap
+  in st {heap = heap'}
 
 update_conmcell :: ConValue -> ConMCell -> Maybe ConMCell
 update_conmcell nval c@MCell{..} = Just $ c { val = nval } 
@@ -257,22 +263,47 @@ insert_local_sigma st@Sigma{..} tid sym val =
 
 -- | modify the state: receives a MemAddrs and a
 --   ConValue and assigns the ConValue to the MemAddrs
-modify_state :: Scope -> CState -> MemAddrs -> ConValues -> CState 
-modify_state scope st addrs vals = undefined
---  case addrs of
---    MemAddrTop -> error "modify_state: top addrs, need to traverse everything"
---    MemAddrs l -> foldr (\a s -> modify_state' scope s a vals) st l
--- where
---   modify_state' :: Scope -> Sigma -> MemAddr -> ConValue -> Sigma
---   modify_state' scope st@Sigma{..} add@MemAddr{..} conval =
---     -- First search in the heap 
---     case M.lookup base heap of
---       Nothing ->
---         -- If not in the heap, search in the thread
---         case scope of
---           Global -> error "modify_state: id is not the heap and scope is global"
---           Local i -> insert_local st i base conval 
---       Just _ -> modify_heap st base conval   
+modify_state :: Scope -> Sigma -> MemAddrs -> ConValues -> CState 
+modify_state scope st addrs vals = 
+  case addrs of
+    MemAddrTop -> error "modify_state: top addrs, need to traverse everything"
+    MemAddrs l -> case l of
+      [] -> error "modify_state: list of addresses is empty"
+      [a@MemAddr{..}] ->
+        if null vals
+        then error "modify_state: null vals"
+        else let sts = map (modify_local_sigma scope st base) vals
+             in CState $ S.fromList sts 
+      _ -> error "modify_state: list of addresses contains more than one"
+
+modify_local_sigma :: Scope -> Sigma -> SymId -> ConValue -> Sigma
+modify_local_sigma scope st@Sigma{..} sym val =
+  -- First search in the heap 
+  case M.lookup sym heap of
+    Nothing ->
+      -- If not in the heap, search in the thread
+      case scope of
+        Global -> error "modify_state: id is not the heap and scope is global"
+        Local i -> insert_local_sigma st i sym val 
+    Just _ -> modify_heap st sym val
+
+checkBoolVals :: ConValues -> (Bool,Bool)
+checkBoolVals vals = (any isTrue vals, any isFalse vals)
+
+isTrue :: ConValue -> Bool
+isTrue val = case val of
+  ConVal v -> case v of
+    VBool b -> b
+    _ -> False 
+  _ -> False  
+
+isFalse :: ConValue -> Bool
+isFalse val = case val of
+  ConVal v -> case v of
+    VBool b -> not b
+    _ -> False 
+  _ -> False 
+ 
 {-
 instance Hashable Sigma where
   hash = hash . M.toList

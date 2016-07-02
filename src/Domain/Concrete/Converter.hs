@@ -74,7 +74,7 @@ instance Collapsible CState Act where
 convert :: FrontEnd () (CState,Act) -> System CState Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
-      init_tstate = ConTState Global empty_state undefined symt
+      init_tstate = ConTState Global empty_state bot_sigma symt
       (acts,s@ConTState{..}) = runState (transformer_decls $ decls ast) init_tstate
       st' = set_pos st main_tid pos_main  
   in System st' acts cfgs symt [main_tid] 1
@@ -186,14 +186,31 @@ default_value ty = [ ConVal $ init_value ty ]
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
--- transformer :: SExpression -> ConTOp (ConValues,Act)
--- transformer expr = do
---   s@ConTState{..} <- get
---   mapM  
+-- @NOTE @TODO: This function needs to be different
+-- for boolean operations; the fixpoint needs to inform
+-- the transformer that this is a condition to apply
+-- the filter appropriatedly.
+transformer_expr :: SExpression -> ConTOp Act
+transformer_expr expr = do
+  s@ConTState{..} <- get
+  let states = S.toList $ sts st
+  -- reset the states
+  set_state $ CState S.empty
+  -- for each previous state; run the transformer on that state
+  valsacts <- mapM (\st -> set_single_state st >> transformer expr) states
+  let (vals,acts) = unzip valsacts
+  -- join all the actions
+  -- @TODO: What about the vals?
+  return $ foldr join_act bot_act acts
 
+-- | Interprets the result values and potentially filters the state
+interpret_vals :: Sigma -> ConValues -> CState
+interpret_vals st vals = undefined 
+
+-- | Transformer for an expression with a single state
 transformer :: SExpression -> ConTOp (ConValues,Act)
-transformer _expr =
-  case _expr of 
+transformer e =
+  case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
     Assign assignOp lhs rhs -> assign_transformer assignOp lhs rhs 
@@ -219,75 +236,69 @@ transformer _expr =
 
 -- | Transformer for an assignment expression.
 --   For each state in the domain, 
+-- given one state, we are going to update it 
+-- by assigning to the lhs the set of possible values.
+-- Note that this can expand the set of states.
 assign_transformer :: AssignOp -> SExpression -> SExpression -> ConTOp (ConValues,Act)
-assign_transformer op lhs rhs = undefined -- do
-{-
+assign_transformer op lhs rhs = do
+  -- process the lhs (get the new state, values and actions)
+  (lhs_vals,lhs_acts) <- transformer lhs
+  -- process the rhs (get the new state, values and actions)
+  (rhs_vals,rhs_acts) <- transformer rhs
+  let res_vals = case op of
+        CAssignOp -> rhs_vals
+        -- arithmetic operations 
+        CMulAssOp -> lhs_vals `mult` rhs_vals 
+        CDivAssOp -> lhs_vals `divs` rhs_vals 
+        CRmdAssOp -> lhs_vals `rmdr` rhs_vals 
+        CAddAssOp -> lhs_vals `add` rhs_vals 
+        CSubAssOp -> lhs_vals `sub` rhs_vals
+        -- bit-wise operations 
+        CShlAssOp -> lhs_vals `shl` rhs_vals 
+        CShrAssOp -> lhs_vals `shr` rhs_vals 
+        CAndAssOp -> lhs_vals `band` rhs_vals 
+        CXorAssOp -> lhs_vals `xor` rhs_vals 
+        COrAssOp  -> lhs_vals `bor` rhs_vals
+  -- get the addresses of the left hand side
   s@ConTState{..} <- get
-  -- for each sigma in the state, process the assignment
-  mapM assign_transformer_ S.toList $ sts st
-
- where
-   -- given one state, we are going to update it 
-   -- by assigning to the lhs the set of possible values.
-   -- Note that this can expand the set of states.
-   assign_transformer_ s_st = do
-     -- process the lhs (get the new state, values and actions)
-     (lhs_vals,lhs_acts) <- transformer lhs
-     -- process the rhs (get the new state, values and actions)
-     (rhs_vals,rhs_acts) <- transformer rhs
-     let res_vals = case op of
-           CAssignOp -> rhs_vals
-           -- arithmetic operations 
-           CMulAssOp -> lhs_vals `mult` rhs_vals 
-           CDivAssOp -> lhs_vals `divs` rhs_vals 
-           CRmdAssOp -> lhs_vals `rmdr` rhs_vals 
-           CAddAssOp -> lhs_vals `add` rhs_vals 
-           CSubAssOp -> lhs_vals `sub` rhs_vals
-           -- bit-wise operations 
-           CShlAssOp -> lhs_vals `shl` rhs_vals 
-           CShrAssOp -> lhs_vals `shr` rhs_vals 
-           CAndAssOp -> lhs_vals `band` rhs_vals 
-           CXorAssOp -> lhs_vals `xor` rhs_vals 
-           COrAssOp  -> lhs_vals `bor` rhs_vals
-     -- get the addresses of the left hand side
-     s@ConTState{..} <- get
-     let lhs_id = get_addrs st scope lhs
-         res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
-     -- remove st from the set of states
-     remove_state s_st
-     -- modify the state of the addresses with
-     -- the result values 
-     let res_st = modify_state scope st lhs_id res_vals
-     set_state res_st 
-     return (res_vals,res_acts) 
--}
+  let lhs_id = get_addrs st scope lhs
+      res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
+  -- modify the state of the addresses with
+  -- the result values 
+  let res_st = modify_state scope cst lhs_id res_vals
+  join_state res_st 
+  return (res_vals,res_acts) 
 
 -- | Transformer for binary operations.
+--   These transformers do not change the state;
 binop_transformer :: BinaryOp -> SExpression -> SExpression -> ConTOp (ConValues,Act)
 binop_transformer binOp lhs rhs = do
+  s@ConTState{..} <- get
   -- process the lhs (get the new state, values and actions)
   (lhs_vals,lhs_acts) <- transformer lhs
   -- process the rhs (get the new state, values and actions)
   (rhs_vals,rhs_acts) <- transformer rhs
   let res_vals = case binOp of
-        CMulOp -> error "binop_transformer: not supported" 
-        CDivOp -> error "binop_transformer: not supported" 
-        CRmdOp -> error "binop_transformer: not supported" 
-        CAddOp -> error "binop_transformer: not supported" 
-        CSubOp -> error "binop_transformer: not supported" 
-        CLeOp  -> error "binop_transformer: not supported" 
-        CGrOp  -> error "binop_transformer: not supported" 
-        CLeqOp -> error "binop_transformer: not supported"  
-        CGeqOp -> error "binop_transformer: not supported" 
-        CEqOp  -> error "binop_transformer: not supported" 
-        CNeqOp -> error "binop_transformer: not supported" 
-        CAndOp -> error "binop_transformer: not supported" 
-        COrOp  -> error "binop_transformer: not supported" 
-        CShlOp -> error "binop_transformer: not supported"  
-        CShrOp -> error "binop_transformer: not supported" 
-        CXorOp -> error "binop_transformer: not supported" 
-        CLndOp -> error "binop_transformer: not supported" 
-        CLorOp -> error "binop_transformer: not supported"
+        CMulOp -> lhs_vals `mult` rhs_vals 
+        CDivOp -> lhs_vals `divs` rhs_vals 
+        CRmdOp -> lhs_vals `rmdr` rhs_vals 
+        CAddOp -> lhs_vals `add` rhs_vals 
+        CSubOp -> lhs_vals `sub` rhs_vals
+        -- boolean operations 
+        CLeOp  -> lhs_vals `le` rhs_vals 
+        CGrOp  -> lhs_vals `gr` rhs_vals 
+        CLeqOp -> lhs_vals `leq` rhs_vals  
+        CGeqOp -> lhs_vals `geq` rhs_vals 
+        CEqOp  -> lhs_vals `eq` rhs_vals 
+        CNeqOp -> lhs_vals `neq` rhs_vals 
+        CAndOp -> lhs_vals `land` rhs_vals 
+        COrOp  -> lhs_vals `lor` rhs_vals
+        -- bit-wise operations 
+        CShlOp -> error "binop_transformer: CShlOp not supported"  
+        CShrOp -> error "binop_transformer: CShrOp not supported" 
+        CXorOp -> error "binop_transformer: CXorOp not supported" 
+        CLndOp -> error "binop_transformer: CLndOp not supported" 
+        CLorOp -> error "binop_transformer: CLorOp not supported"
       res_acts = lhs_acts `join_act` rhs_acts
   return (res_vals,res_acts)
 
@@ -296,8 +307,24 @@ call_transformer :: SExpression -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer fn args = undefined
 
 cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValues,Act)
-cond_transformer = undefined
- 
+cond_transformer cond mThen else_e = do
+  (vals,acts) <- transformer cond
+  -- vals is both false and true 
+  let (isTrue,isFalse) = checkBoolVals vals
+  (tVal,tAct) <-
+    if isTrue
+    then case mThen of
+           Nothing -> error "cond_transformer: cond is true and there is not then"
+           Just e -> transformer e
+    else return ([],bot_act)
+  (eVal,eAct) <-
+    if isFalse
+    then transformer else_e
+    else return ([],bot_act)
+  let res_vals = tVal ++ eVal
+      res_acts = acts `join_act` tAct `join_act` eAct
+  return (res_vals,res_acts) 
+
 -- | Transformer for constants.
 const_transformer :: Constant -> ConTOp (ConValues,Act)
 const_transformer const =
@@ -306,31 +333,39 @@ const_transformer const =
 
 -- | Transformer for unary operations.
 unop_transformer :: UnaryOp -> SExpression -> ConTOp (ConValues,Act)
-unop_transformer = undefined
+unop_transformer unOp expr = do 
+  -- process the lhs (values and actions)
+  (expr_vals,res_acts) <- transformer expr 
+  let res_vals = case unOp of
+        CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
+        CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
+        CPostIncOp -> error "unop_transformer: CPostIncOp not supported"   
+        CPostDecOp -> error "unop_transformer: CPostDecOp not supported"   
+        CAdrOp     -> error "unop_transformer: CAdrOp     not supported"    
+        CIndOp     -> error "unop_transformer: CIndOp     not supported" 
+        CPlusOp    -> expr_vals 
+        CMinOp     -> minus expr_vals 
+        CCompOp    -> error "unop_transformer: CCompOp not supported" 
+        CNegOp     -> neg_tr expr_vals 
+  return (res_vals,res_acts)
 
 -- | Transformer for var expressions.
 var_transformer :: SymId -> ConTOp (ConValues,Act)
 var_transformer id = do
   s@ConTState{..} <- get
-  let valAct = map (var_transformer_ scope id) $ S.toList $ sts st
-      (vals,acts) = unzip valAct 
-      act = foldr join_act bot_act acts
-  return (vals,act)
- where
-   var_transformer_ :: Scope -> SymId -> Sigma -> (ConValue,Act) 
-   var_transformer_ scope id st =  
-     -- First search in the heap
-     case M.lookup id (heap st) of
-       Nothing -> 
-         -- If not in the heap, search in the thread
-         case scope of
-           Global -> error "var_transformer: id is not the heap and scope is global"
-           Local i -> case M.lookup i (th_states st) of
-             Nothing -> error "var_transformer: scope does not match the state"
-             Just ths@ThState{..} -> case M.lookup id locals of
-               Nothing -> error "var_transformer: id is not in the local state of thread"
-               Just v  -> (v,bot_act)
-       Just cell@MCell{..} -> (val,bot_act)
+  let reds = Act (MemAddrs [MemAddr id]) bot_maddrs bot_maddrs bot_maddrs 
+  -- First search in the heap
+  case M.lookup id (heap cst) of
+    Nothing -> 
+      -- If not in the heap, search in the thread
+      case scope of
+        Global -> error "var_transformer: id is not the heap and scope is global"
+        Local i -> case M.lookup i (th_states cst) of
+          Nothing -> error "var_transformer: scope does not match the state"
+          Just ths@ThState{..} -> case M.lookup id locals of
+            Nothing -> error "var_transformer: id is not in the local state of thread"
+            Just v  -> return ([v],reds)
+    Just cell@MCell{..} -> return ([val],reds)
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
@@ -363,6 +398,16 @@ shr = undefined
 band = undefined
 bor = undefined
 xor = undefined
+le = undefined
+gr  = undefined
+leq = undefined
+geq = undefined
+eq  = undefined
+neq = undefined
+land = undefined
+lor = undefined
+minus = undefined
+neg_tr = undefined
 {-
 pmdVar = BS.pack "__poet_mutex_death"
 pmdVal = IntVal 1
