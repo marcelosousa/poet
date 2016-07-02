@@ -5,7 +5,9 @@
 -- Copyright :  (c) 2015-16 Marcelo Sousa
 --
 -- Transformers for the concrete semantics.
--- 
+-- Two main transformers for the types of edges in the CFG:
+--   transformer_decl (for the declaration)
+--   transformer_expr (for the expression) 
 -------------------------------------------------------------------------------
 module Domain.Concrete.Converter where
 
@@ -35,7 +37,8 @@ import Util.Generic hiding (safeLookup)
 data ConTState 
  = ConTState {
    scope :: Scope
- , st :: CState 
+ , st :: CState            -- the set of states
+ , cst :: Sigma            -- current state in the state 
  , sym :: Map SymId Symbol 
  }
 
@@ -46,7 +49,20 @@ set_state :: CState -> ConTOp ()
 set_state nst = do
   s@ConTState{..} <- get
   put s { st = nst }
- 
+
+join_state :: CState -> ConTOp ()
+join_state nst = do
+  s@ConTState{..} <- get
+  let fst = nst `join_cstate` st
+  put s { st = fst }
+
+-- | Picks a state from the set and sets
+--   as the current one
+set_single_state :: Sigma -> ConTOp () 
+set_single_state state = do
+  s@ConTState{..} <- get
+  put s { cst = state }
+
 -- | The interface
 instance Collapsible CState Act where
   enabled = undefined
@@ -54,11 +70,12 @@ instance Collapsible CState Act where
   dcollapse = undefined 
 
 -- | converts the front end into a system
+-- @REVISED: July'16
 convert :: FrontEnd () (CState,Act) -> System CState Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
-      init_tstate = ConTState Global empty_state symt
-      (acts,s@ConTState{..}) = runState (convert_decls $ decls ast) init_tstate
+      init_tstate = ConTState Global empty_state undefined symt
+      (acts,s@ConTState{..}) = runState (transformer_decls $ decls ast) init_tstate
       st' = set_pos st main_tid pos_main  
   in System st' acts cfgs symt [main_tid] 1
 
@@ -80,54 +97,74 @@ get_entry fnname graphs symt =
                       else Nothing 
 
 -- | processes a list of declarations 
-convert_decls :: [SDeclaration] -> ConTOp Act
-convert_decls =
-  foldM (\a d -> convert_decl d >>= \a' -> return $ join_act a a') bot_act 
+transformer_decls :: [SDeclaration] -> ConTOp Act
+transformer_decls =
+  foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
 
--- | processes a declaration.
-convert_decl :: SDeclaration -> ConTOp Act
-convert_decl decl = 
-  case decl of
-    TypeDecl ty -> error "convert_decl: not supported yet"
-    Decl ty el@DeclElem{..} ->
-      case declarator of
-        Nothing -> 
-          case initializer of 
-            Nothing -> return bot_act
-            _ -> error "initializer w/ declarator" 
-        Just d@Declr{..} ->
-          case declr_ident of
-            Nothing -> error "no identifier" 
-            Just id ->   
-              let typ = Ty declr_type ty
-              in  convert_init id typ initializer
+-- | transformer for a declaration:
+transformer_decl :: SDeclaration -> ConTOp Act
+transformer_decl decl = do
+  s@ConTState{..} <- get
+  let states = S.toList $ sts st
+  -- reset the states
+  set_state $ CState S.empty
+  -- for each previous state; run the transformer on that state
+  acts <- mapM (\st -> set_single_state st >> transformer_decl_) states
+  -- join all the actions 
+  return $ foldr join_act bot_act acts
+ where
+   --   this transformer already has a particular state
+   --   to process within the set.
+   transformer_decl_ :: ConTOp Act
+   transformer_decl_ = 
+     case decl of
+       TypeDecl ty -> error "convert_decl: not supported yet"
+       Decl ty el@DeclElem{..} ->
+         case declarator of
+           Nothing -> 
+             case initializer of 
+               Nothing -> return bot_act
+               _ -> error "initializer w/ declarator" 
+           Just d@Declr{..} ->
+             case declr_ident of
+               Nothing -> error "no identifier" 
+               Just id ->   
+                 let typ = Ty declr_type ty
+                 in  transformer_init id typ initializer
 
 -- | processes a declaration initializer 
---   for the symbol id with type ty. 
-convert_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> ConTOp Act
-convert_init id ty minit = do
+--   for the symbol id with type ty.
+--   This is different than an assignment because
+--   the position for this id is empty in the state
+--   so any lookup would fail.
+--   This function needs to receive a state and can 
+--   potentially create several states. 
+transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> ConTOp Act
+transformer_init id ty minit = do
   case minit of
     Nothing -> do
       s@ConTState{..} <- get
       let val = default_value ty
           st' = case scope of 
-                  Global -> insert_heap st id ty val
-                  Local i -> insert_local st i id val 
-          id_addrs = get_addrs_id scope st id
+                  Global -> insert_heap cst id ty val
+                  Local i -> insert_local cst i id val 
+          id_addrs = get_addrs_id st scope id
           acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
-      set_state st'
+      join_state st'
       return acts
     Just i  ->
       case i of
-        InitExpr expr -> do 
-          (val,acts) <- transformer expr
+        InitExpr expr -> do
+          -- for each state, we need to apply the transformer
           s@ConTState{..} <- get
+          (val,acts) <- transformer expr
           let st' = case scope of
-                      Global -> insert_heap st id ty val
-                      Local i -> insert_local st i id val 
-              id_addrs = get_addrs_id scope st id
+                      Global -> insert_heap cst id ty val
+                      Local i -> insert_local cst i id val 
+              id_addrs = get_addrs_id st scope id
+              -- this is wrong because id_addrs can be shared among threads
               acts' = add_writes id_addrs acts
-          set_state st'
+          join_state st'
           return acts'
         InitList list -> error "initializer list is not supported"
 
@@ -149,6 +186,11 @@ default_value ty = [ ConVal $ init_value ty ]
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
+-- transformer :: SExpression -> ConTOp (ConValues,Act)
+-- transformer expr = do
+--   s@ConTState{..} <- get
+--   mapM  
+
 transformer :: SExpression -> ConTOp (ConValues,Act)
 transformer _expr =
   case _expr of 
@@ -160,7 +202,7 @@ transformer _expr =
     Call fn args n -> call_transformer fn args  
     Cast decl expr -> error "transformer: cast not supported"
     Comma exprs -> error "transformer: comma not supported" 
-    CompoundLit decl initList -> compound_transformer decl initList 
+    CompoundLit decl initList -> error "transforemr: compound literal not supported" 
     Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
     Const const -> const_transformer const 
     Index arr_expr index_expr -> error "transformer: index not supported"
@@ -176,38 +218,49 @@ transformer _expr =
     ComplexImag expr -> error "transformer: complex op not supported" 
 
 -- | Transformer for an assignment expression.
---   Not sure if we should have a specialized transformer for this 
---   case or if the expansion to the full expression is enough.
+--   For each state in the domain, 
 assign_transformer :: AssignOp -> SExpression -> SExpression -> ConTOp (ConValues,Act)
-assign_transformer op lhs rhs = do
+assign_transformer op lhs rhs = undefined -- do
+{-
   s@ConTState{..} <- get
-  -- process the lhs (get the new state, values and actions)
-  (lhs_vals,lhs_acts) <- transformer lhs
-  -- process the rhs (get the new state, values and actions)
-  (rhs_vals,rhs_acts) <- transformer rhs
-  let res_vals = case op of
-        CAssignOp -> rhs_vals
-        -- arithmetic operations 
-        CMulAssOp -> lhs_vals `mult` rhs_vals 
-        CDivAssOp -> lhs_vals `divs` rhs_vals 
-        CRmdAssOp -> lhs_vals `rmdr` rhs_vals 
-        CAddAssOp -> lhs_vals `add` rhs_vals 
-        CSubAssOp -> lhs_vals `sub` rhs_vals
-        -- bit-wise operations 
-        CShlAssOp -> lhs_vals `shl` rhs_vals 
-        CShrAssOp -> lhs_vals `shr` rhs_vals 
-        CAndAssOp -> lhs_vals `band` rhs_vals 
-        CXorAssOp -> lhs_vals `xor` rhs_vals 
-        COrAssOp  -> lhs_vals `bor` rhs_vals
-      -- get the addresses of the left hand side
-      lhs_id = get_addrs scope st lhs
-      res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
-  s@ConTState{..} <- get 
-  -- modify the state of the addresses with
-  -- the result values 
-  let res_st = modify_state scope st lhs_id res_vals
-  set_state res_st 
-  return (res_vals,res_acts) 
+  -- for each sigma in the state, process the assignment
+  mapM assign_transformer_ S.toList $ sts st
+
+ where
+   -- given one state, we are going to update it 
+   -- by assigning to the lhs the set of possible values.
+   -- Note that this can expand the set of states.
+   assign_transformer_ s_st = do
+     -- process the lhs (get the new state, values and actions)
+     (lhs_vals,lhs_acts) <- transformer lhs
+     -- process the rhs (get the new state, values and actions)
+     (rhs_vals,rhs_acts) <- transformer rhs
+     let res_vals = case op of
+           CAssignOp -> rhs_vals
+           -- arithmetic operations 
+           CMulAssOp -> lhs_vals `mult` rhs_vals 
+           CDivAssOp -> lhs_vals `divs` rhs_vals 
+           CRmdAssOp -> lhs_vals `rmdr` rhs_vals 
+           CAddAssOp -> lhs_vals `add` rhs_vals 
+           CSubAssOp -> lhs_vals `sub` rhs_vals
+           -- bit-wise operations 
+           CShlAssOp -> lhs_vals `shl` rhs_vals 
+           CShrAssOp -> lhs_vals `shr` rhs_vals 
+           CAndAssOp -> lhs_vals `band` rhs_vals 
+           CXorAssOp -> lhs_vals `xor` rhs_vals 
+           COrAssOp  -> lhs_vals `bor` rhs_vals
+     -- get the addresses of the left hand side
+     s@ConTState{..} <- get
+     let lhs_id = get_addrs st scope lhs
+         res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
+     -- remove st from the set of states
+     remove_state s_st
+     -- modify the state of the addresses with
+     -- the result values 
+     let res_st = modify_state scope st lhs_id res_vals
+     set_state res_st 
+     return (res_vals,res_acts) 
+-}
 
 -- | Transformer for binary operations.
 binop_transformer :: BinaryOp -> SExpression -> SExpression -> ConTOp (ConValues,Act)
@@ -241,10 +294,6 @@ binop_transformer binOp lhs rhs = do
 -- | Transformer for call expression.
 call_transformer :: SExpression -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer fn args = undefined
-
--- | Transformer for a declaration expression.
-compound_transformer :: SDeclaration -> InitializerList SymId () -> ConTOp (ConValues,Act)
-compound_transformer = undefined
 
 cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValues,Act)
 cond_transformer = undefined
@@ -285,17 +334,23 @@ var_transformer id = do
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
-get_addrs_id :: Scope -> CState -> SymId -> MemAddrs
-get_addrs_id scope st id = MemAddrs [MemAddr id] 
+-- TODO: This is incomplete because for locals we need
+--  to produce an MemAddr where the offset needs to be
+--  the TID, otherwise if we spawn two threads with the
+--  same code, the id of a local will be the same
+--  and by the actions, it will consider accesses
+--  to that local as potentially interfering.
+get_addrs_id :: CState -> Scope -> SymId -> MemAddrs
+get_addrs_id st scope id = MemAddrs [MemAddr id] 
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
 --   Simplify to onlu consider the case where the 
 --   the expression is a LHS (var or array index).
-get_addrs :: Scope -> CState -> SExpression -> MemAddrs
-get_addrs scope st expr =
+get_addrs :: CState -> Scope -> SExpression -> MemAddrs
+get_addrs st scope expr =
   case expr of
-    Var id -> get_addrs_id scope st id 
+    Var id -> get_addrs_id st scope id 
     _ -> error "get_addrs: not supported"
 
 mult = undefined

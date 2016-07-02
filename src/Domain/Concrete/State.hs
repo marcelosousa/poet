@@ -107,7 +107,10 @@ type ConHeap = Map SymId ConMCell
 --   pair (heap, threadstate).
 newtype CState = CState { sts :: Set Sigma }
  deriving (Show,Eq)
- 
+
+join_cstate :: CState -> CState -> CState
+join_cstate (CState s1) (CState s2) = CState (s1 `S.union` s2) 
+
 data Sigma = 
   Sigma 
   { 
@@ -213,11 +216,18 @@ instance Projection CState where
 -- | API for modifying the state
 
 -- | insert_heap: inserts an element to the heap
-insert_heap :: CState -> SymId -> STy -> ConValues -> CState 
-insert_heap = undefined
--- insert_heap st@Sigma{..} id cell =
---   let heap' = M.insert id cell heap
---   in st {heap = heap'}  
+insert_heap :: Sigma -> SymId -> STy -> ConValues -> CState 
+insert_heap st sym ty vals =
+  if null vals
+  then error "insert_heap: no values"
+  else let sts = map (insert_heap_sigma st sym ty) vals
+       in CState $ S.fromList sts
+
+insert_heap_sigma :: Sigma -> SymId -> STy -> ConValue -> Sigma 
+insert_heap_sigma st@Sigma{..} sym ty val =
+  let cell = MCell ty val
+      heap' = M.insert sym cell heap
+  in st { heap = heap' }
 
 modify_heap :: CState -> SymId -> ConValue -> CState 
 modify_heap st@CState{..} id val = undefined 
@@ -228,8 +238,22 @@ update_conmcell :: ConValue -> ConMCell -> Maybe ConMCell
 update_conmcell nval c@MCell{..} = Just $ c { val = nval } 
 
 -- | insert_local: inserts an element to local state 
-insert_local :: CState -> TId -> SymId -> ConValues -> CState 
-insert_local = error "insert_local" 
+insert_local :: Sigma -> TId -> SymId -> ConValues -> CState 
+insert_local st tid sym vals =
+  if null vals
+  then error "insert_local: no values"
+  else let sts = map (insert_local_sigma st tid sym) vals
+       in CState $ S.fromList sts
+
+insert_local_sigma :: Sigma -> TId -> SymId -> ConValue -> Sigma 
+insert_local_sigma st@Sigma{..} tid sym val =
+  case M.lookup tid th_states of
+    Nothing -> error "insert_local_sigma: tid not found in th_states"
+    Just s@ThState{..} ->
+      let locals' = M.insert sym val locals
+          s' = s { locals = locals' }
+          th_states' = M.insert tid s' th_states
+      in st { th_states = th_states' } 
 
 -- | modify the state: receives a MemAddrs and a
 --   ConValue and assigns the ConValue to the MemAddrs
