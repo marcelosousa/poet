@@ -10,6 +10,8 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Collapse where
 
+import Control.Monad.State.Lazy
+
 import qualified Data.Map as M
 
 import Domain.Concrete.Action
@@ -23,6 +25,7 @@ import Model.GCS
 type ConGraph = Graph SymId () (CState,Act) 
 type ConGraphs = Graphs SymId () (CState,Act) 
 type Worklist = [(NodeId,EdgeId,NodeId)]
+type ResultList = [(CState,Pos,Act)]
 
 instance Collapsible CState Act where
   -- collapse :: System CState Act -> CState -> TId -> [(CState,Pos,Act)]
@@ -38,20 +41,47 @@ instance Collapsible CState Act where
     in gen_collapse tid cfgs symt th_cfg pos st
 
 -- @TODO: Receive other options for widening and state splitting
-gen_collapse :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Pos -> CState -> [(CState,Pos,Act)]
+gen_collapse :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Pos -> CState -> ResultList 
 gen_collapse tid cfgs symt cfg@Graph{..} pos st =
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg pos
-  in worklist_fix tid cfgs symt cfg wlist st
+  in worklist_fix tid cfgs symt cfg wlist [] 
 
-worklist_fix :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> CState -> [(CState,Pos,Act)]
-worklist_fix tid cfgs symt cfg@Graph{..} wlist st =
+worklist_fix :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
+worklist_fix tid cfgs symt cfg@Graph{..} wlist res =
   case wlist of
-    [] -> undefined
+    [] -> res 
     ((pre,eId,post):wlst) ->
-      let e@EdgeInfo{..} = get_edge_info cfg eId
-      in undefined 
- 
-  -- construct the transformer state
-  -- let tr_st = ConTState (Local tid) st bot_sigma symt cfgs 
+          -- get the current state in the pre
+      let l_st = get_node_info cfg pre
+          node_st = case l_st of
+                 [] -> error "worklist_fix: bottom state not supposed to happen"
+                 [s] -> s
+                 _ -> error "worklist_fix: more than one abstract state in the node" 
+          -- construct the transformer state
+          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs
+          -- get the edge info
+          e@EdgeInfo{..} = get_edge_info cfg eId
+          -- decide based on the type of edge which transformer to call
+          (acts,ns@ConTState{..}) = case edge_code of
+              D decl -> runState (transformer_decl decl) tr_st 
+                -- execute the transformer
+              E expr -> runState (transformer_expr expr) tr_st
+      -- depending on whether the action is global or not;
+      -- either add the results to the result list or update
+      -- the cfg with them 
+      in if isGlobal acts
+         then worklist_fix tid cfgs symt cfg wlst ((st,post,acts):res)
+         else 
+           -- depending on the tags of the edge; the behaviour is different
+           let (is_fix,node_table') = case edge_tags of
+                 -- join point: join the info in the cfg 
+                 [IfJoin] -> undefined
+                 -- considering everything else the standard one: just replace 
+                 -- the information in the cfg and add the succs of post to the worklist
+                 _ -> undefined
+               cfg' = cfg { node_table = node_table' }
+               rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
+               nwlist = if is_fix then wlst else (wlst ++ rwlst)
+           in worklist_fix tid cfgs symt cfg' nwlist res
