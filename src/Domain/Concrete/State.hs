@@ -323,6 +323,57 @@ isFalse val = case val of
     VBool b -> not b
     _ -> False 
   _ -> False 
+
+-- Arithmetic operations in ConValue
+add_conval, sub_conval, mult_conval :: ConValue -> ConValue -> ConValue
+add_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ add_value v1 v2
+  _  -> error "add_conval: not ConVal"
+sub_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ sub_value v1 v2
+  _  -> error "sub_ConVal: not ConVal"
+mult_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ mult_value v1 v2
+  _  -> error "mult_ConVal: not ConVal"
+divs_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ div_value v1 v2
+  _  -> error "div_ConVal: not ConVal"
+rmdr_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ rmd_value v1 v2
+  _  -> error "rmdr_ConVal: not ConVal"
+minus_conval c1 = case c1 of
+  ConVal v1 -> ConVal $ minus_value v1
+  _ -> error "minus_conval: not ConVal"
+
+-- Boolean operations in ConValue
+neg_conval c1 = case c1 of
+  ConVal v -> ConVal $ neg_value v 
+
+le_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ le_value v1 v2
+  _ -> error "le_conval: not conVal" 
+gr_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ gr_value v1 v2
+  _ -> error "gr_conval: not conVal"
+leq_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ lor_value (gr_value v1 v2) (eq_value v1 v2) 
+  _ -> error "leq_conval: not conVal"
+geq_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ lor_value (gr_value v1 v2) (eq_value v1 v2) 
+  _ -> error "geq_conval: not conVal"
+eq_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ eq_value v1 v2 
+  _ -> error "eq_conval: not conVal"
+neq_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ neg_value $ eq_value v1 v2 
+  _ -> error "neq_conval: not conVal"
+land_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ land_value v1 v2 
+  _ -> error "neq_conval: not conVal"
+lor_conval c1 c2 = case (c1,c2) of
+  (ConVal v1,ConVal v2) -> ConVal $ lor_value v1 v2 
+  _ -> error "neq_conval: not conVal"
+
  
 {-
 instance Hashable Sigma where

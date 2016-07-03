@@ -251,12 +251,8 @@ assign_transformer op lhs rhs = do
         CRmdAssOp -> lhs_vals `rmdr` rhs_vals 
         CAddAssOp -> lhs_vals `add` rhs_vals 
         CSubAssOp -> lhs_vals `sub` rhs_vals
-        -- bit-wise operations 
-        CShlAssOp -> lhs_vals `shl` rhs_vals 
-        CShrAssOp -> lhs_vals `shr` rhs_vals 
-        CAndAssOp -> lhs_vals `band` rhs_vals 
-        CXorAssOp -> lhs_vals `xor` rhs_vals 
-        COrAssOp  -> lhs_vals `bor` rhs_vals
+        -- bit-wise operations
+        _ -> error "assign_transformer: not supported" 
   -- get the addresses of the left hand side
   s@ConTState{..} <- get
   let lhs_id = get_addrs cst scope lhs
@@ -410,26 +406,26 @@ get_addrs st scope expr =
     Var id -> get_addrs_id st scope id 
     _ -> error "get_addrs: not supported"
 
-mult = undefined
-divs = undefined
-rmdr = undefined
-add = undefined
-sub = undefined
-shl = undefined
-shr = undefined
-band = undefined
-bor = undefined
-xor = undefined
-le = undefined
-gr  = undefined
-leq = undefined
-geq = undefined
-eq  = undefined
-neq = undefined
-land = undefined
-lor = undefined
+-- Binary transformers
+-- Arithmetic transformers 
+-- mult,divs, :: ConValues -> ConValues -> ConValues
+gen_op op v1 v2 = [e1 `op` e2 | e1 <- v1, e2 <- v2]
+add  = gen_op add_conval 
+sub  = gen_op sub_conval  
+mult = gen_op mult_conval 
+divs = gen_op divs_conval
+rmdr = gen_op rmdr_conval 
+-- Boolean operations
+le   = gen_op le_conval 
+gr   = gen_op gr_conval 
+leq  = gen_op leq_conval 
+geq  = gen_op geq_conval 
+eq   = gen_op eq_conval 
+neq  = gen_op neq_conval 
+land = gen_op land_conval 
+lor  = gen_op lor_conval 
 
 -- Unary operations
 minus, neg_tr :: ConValues -> ConValues
-minus = undefined
-neg_tr = undefined
+minus v1 = [ minus_conval v | v <- v1 ] 
+neg_tr v1 = [ neg_conval v | v <- v1 ] 
