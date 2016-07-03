@@ -40,7 +40,8 @@ data ConTState
  , st :: CState            -- the set of states
  , cst :: Sigma            -- current state in the state 
  , sym :: Map SymId Symbol
- , cfgs :: Graphs SymId () (CState,Act) 
+ , cfgs :: Graphs SymId () (CState,Act)
+ , cond :: Bool            -- is a condition? 
  }
 
 -- | Transformer operation 
@@ -69,7 +70,7 @@ set_single_state state = do
 convert :: FrontEnd () (CState,Act) -> System CState Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt
-      init_tstate = ConTState Global empty_state bot_sigma symt cfgs
+      init_tstate = ConTState Global empty_state bot_sigma symt cfgs False
       (acts,s@ConTState{..}) = runState (transformer_decls $ decls ast) init_tstate
       st' = set_pos st main_tid pos_main  
   in System st' acts cfgs symt [main_tid] 1

@@ -13,6 +13,7 @@ module Domain.Concrete.Collapse where
 import Control.Monad.State.Lazy
 
 import qualified Data.Map as M
+import Data.Map (Map)
 
 import Domain.Concrete.Action
 import Domain.Concrete.Converter
@@ -59,10 +60,10 @@ worklist_fix tid cfgs symt cfg@Graph{..} wlist res =
                  [] -> error "worklist_fix: bottom state not supposed to happen"
                  [s] -> s
                  _ -> error "worklist_fix: more than one abstract state in the node" 
-          -- construct the transformer state
-          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs
           -- get the edge info
           e@EdgeInfo{..} = get_edge_info cfg eId
+          -- construct the transformer state
+          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs (is_cond edge_tags)
           -- decide based on the type of edge which transformer to call
           (acts,ns@ConTState{..}) = case edge_code of
               D decl -> runState (transformer_decl decl) tr_st 
@@ -75,13 +76,41 @@ worklist_fix tid cfgs symt cfg@Graph{..} wlist res =
          then worklist_fix tid cfgs symt cfg wlst ((st,post,acts):res)
          else 
            -- depending on the tags of the edge; the behaviour is different
-           let (is_fix,node_table') = case edge_tags of
-                 -- join point: join the info in the cfg 
-                 [IfJoin] -> undefined
-                 -- considering everything else the standard one: just replace 
-                 -- the information in the cfg and add the succs of post to the worklist
-                 _ -> undefined
+           let (is_fix,node_table') =
+                if is_join edge_tags
+                -- join point: join the info in the cfg 
+                then join_update node_table post (st,acts) 
+                -- considering everything else the standard one: just replace 
+                -- the information in the cfg and add the succs of post to the worklist
+                else strong_update node_table post (st,acts) 
                cfg' = cfg { node_table = node_table' }
                rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
                nwlist = if is_fix then wlst else (wlst ++ rwlst)
            in worklist_fix tid cfgs symt cfg' nwlist res
+
+
+join_update :: Map NodeId [(CState,Act)] -> NodeId -> (CState,Act) -> (Bool, Map NodeId [(CState,Act)])
+join_update node_table node (st,act) =
+  case M.lookup node node_table of
+    Nothing -> error "join_update: not suppose to happen"
+    Just lst -> case lst of
+      [] -> (False, M.insert node [(st,act)] node_table)
+      [(st',act')] ->
+        let nst = st `join_cstate` st'
+            nact = act `join_act` act'
+        in if nst == st'
+           then (True, node_table)
+           else (False, M.insert node [(nst,nact)] node_table)
+      _ -> error "join_update: more than one state in the list"
+ 
+strong_update :: Map NodeId [(CState,Act)] -> NodeId -> (CState,Act) -> (Bool, Map NodeId [(CState,Act)])
+strong_update node_table node (st,act) =
+  case M.lookup node node_table of
+    Nothing -> error "strong_update: not suppose to happen"
+    Just lst -> case lst of
+      [] -> (False, M.insert node [(st,act)] node_table)
+      [(st',act')] ->
+        if st == st'
+        then (True, node_table)
+        else (False, M.insert node [(st,act)] node_table)
+      _ -> error "strong_update: more than one state in the list" 
