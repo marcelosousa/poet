@@ -53,6 +53,7 @@ data ConValue
 --   }
 --   deriving (Show,Eq,Ord)
 -- Simplification
+-- @Add Scope to MemAddr!
 data MemAddr
   = MemAddr 
   { base :: SymId }

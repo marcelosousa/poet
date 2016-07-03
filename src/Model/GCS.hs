@@ -98,3 +98,5 @@ class (Eq act) => Action act where
   isLockOf :: act -> act -> Bool 
   -- Two sets of actions are independent
   interferes :: act -> act -> Bool
+  isGlobal :: act -> Bool
+  isGlobal act = True
