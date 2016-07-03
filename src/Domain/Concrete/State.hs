@@ -118,19 +118,21 @@ data Sigma =
   Sigma 
   { 
     heap :: ConHeap 
-  , th_states :: Map TId ThState
+  , th_states :: ThStates
   , num_th  :: Int
   , is_bot  :: Bool 
   }
   deriving (Show,Eq,Ord)
 
--- | A thread state is a control and local data 
+-- | A thread state is a control and local data
+type ThStates = Map TId ThState
+type Locals = Map SymId ConValue 
 data ThState =
   ThState
   { 
     pos :: Pos
   , id :: SymId
-  , locals :: Map SymId ConValue 
+  , locals :: Locals 
   } 
   deriving (Show,Eq,Ord)
 
@@ -374,20 +376,73 @@ lor_conval c1 c2 = case (c1,c2) of
   (ConVal v1,ConVal v2) -> ConVal $ lor_value v1 v2 
   _ -> error "neq_conval: not conVal"
 
- 
-{-
+instance Hashable CState where
+  hash (CState sts) = hash $ S.toList sts 
+  hashWithSalt s (CState sts) = hashWithSalt s $ S.toList sts
+
 instance Hashable Sigma where
+  hash s@Sigma{..} = hash (heap,th_states,num_th,is_bot) 
+  hashWithSalt s st@Sigma{..} = hashWithSalt s (heap,th_states,num_th,is_bot)
+
+instance Hashable ConHeap where
+  hash = hash . M.toList 
+  hashWithSalt s h = hashWithSalt s $ M.toList h
+
+instance Hashable ThStates where
+  hash = hash . M.toList 
+  hashWithSalt s th = hashWithSalt s $ M.toList th
+
+instance Hashable ThState where
+  hash th@ThState{..} = hash (pos,id,locals)
+  hashWithSalt s th@ThState{..} = hashWithSalt s (pos,id,locals)
+
+instance Hashable Locals where
   hash = hash . M.toList
-  hashWithSalt s st = hashWithSalt s $ M.toList st
-  
+  hashWithSalt s h = hashWithSalt s $ M.toList h
+ 
+instance Hashable SymId where
+  hash (SymId i) = hash i
+  hashWithSalt s (SymId i) = hashWithSalt s i
+
+instance Hashable ConMCell where
+  hash m@MCell{..} = hash val
+  hashWithSalt s m@MCell{..} = hashWithSalt s val
+
+instance Hashable ConValue where
+  hash v = case v of
+    ConVal val -> hash val
+    ConMemAddr mem -> hash mem
+    _ -> error "hash not supported" 
+  hashWithSalt s v = case v of
+    ConVal val -> hashWithSalt s val
+    ConMemAddr mem -> hashWithSalt s mem
+    _ -> error "hash not supported" 
+ 
 instance Hashable Value where
   hash v = case v of
-    IntVal i -> hash i
-    Array vals -> hash vals
+    VInt    i -> hash i 
+    VShort  i -> hash i 
+    VLong   i -> hash i 
+    VDouble i -> hash i 
+    VFloat  i -> hash i 
+    VBool   i -> hash i 
+    VChar   i -> hash i 
+    VString i -> hash i 
   hashWithSalt s v = case v of
-    IntVal i -> hashWithSalt s i
-    Array vals -> hashWithSalt s vals
+    VInt    i -> hashWithSalt s i 
+    VShort  i -> hashWithSalt s i 
+    VLong   i -> hashWithSalt s i 
+    VDouble i -> hashWithSalt s i 
+    VFloat  i -> hashWithSalt s i 
+    VBool   i -> hashWithSalt s i 
+    VChar   i -> hashWithSalt s i 
+    VString i -> hashWithSalt s i 
 
+instance Hashable MemAddr where
+  hash m@MemAddr{..} = hash base
+  hashWithSalt s m@MemAddr{..} = hashWithSalt s base
+
+{- 
 -- State equality: because I'm using a hashtable I need to stay within the ST monad
 isEqual :: Sigma s -> Sigma s -> ST s Bool
 isEqual s1 s2 = do
