@@ -71,7 +71,15 @@ instance Action Act where
   interferes a1 a2 =
     let a1_addrs = act_addrs a1
         a2_addrs = act_addrs a2
-    in not $ is_maddrs_bot $ meet_maddrs a1_addrs a2_addrs 
+    in not $ is_maddrs_bot $ meet_maddrs a1_addrs a2_addrs
+  isGlobal act =
+    let acts = act_addrs act
+    in is_global acts
+
+is_global :: MemAddrs -> Bool
+is_global maddr = case maddr of
+  MemAddrTop -> True
+  MemAddrs l -> any (\a@MemAddr{..} -> level == Global) l
 
 act_addrs :: Act -> MemAddrs
 act_addrs a@Act{..} =

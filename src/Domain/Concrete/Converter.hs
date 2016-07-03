@@ -394,12 +394,6 @@ var_transformer id = do
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
--- TODO: This is incomplete because for locals we need
---  to produce an MemAddr where the offset needs to be
---  the TID, otherwise if we spawn two threads with the
---  same code, the id of a local will be the same
---  and by the actions, it will consider accesses
---  to that local as potentially interfering.
 get_addrs_id :: Sigma -> Scope -> SymId -> MemAddrs
 get_addrs_id cst scope id = 
   case M.lookup id (heap cst) of
