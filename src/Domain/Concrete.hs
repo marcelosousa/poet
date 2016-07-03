@@ -7,5 +7,6 @@
 module Domain.Concrete where
 
 import Domain.Concrete.Action
+import Domain.Concrete.Collapse
 import Domain.Concrete.Converter
 import Domain.Concrete.State

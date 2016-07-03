@@ -64,12 +64,6 @@ set_single_state state = do
   s@ConTState{..} <- get
   put s { cst = state }
 
--- | The interface
-instance Collapsible CState Act where
-  enabled = undefined
-  collapse = undefined
-  dcollapse = undefined 
-
 -- | converts the front end into a system
 -- @REVISED: July'16
 convert :: FrontEnd () (CState,Act) -> System CState Act

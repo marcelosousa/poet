@@ -1,8 +1,18 @@
 {-#LANGUAGE RecordWildCards, TypeSynonymInstances, FlexibleInstances, DoAndIfThenElse #-}
 {-#LANGUAGE MultiParamTypeClasses #-}
+-------------------------------------------------------------------------------
+-- Module    :  Model.GCS 
+-- Copyright :  (c) 2016 Marcelo Sousa
+--
+-- General Computation System Model
+-- General collapse 
+--  For simplicity, a thread is enabled if the control
+--  state is non-negative.
+-------------------------------------------------------------------------------
 module Model.GCS where
 
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.Map as M 
 import Data.Map hiding (foldr, filter, map, (\\), null)
 import Language.SimpleC.AST 
 import Language.SimpleC.Flow
@@ -62,8 +72,19 @@ class Projection st where
 
 class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
+  enabled syst st =
+    let control = controlPart st
+        en = M.filter (>= 0) control
+    in M.keys en
   collapse :: System st act -> st -> TId -> [(st,Pos,act)]
   dcollapse :: System st act -> st -> (TId,Pos) -> (st,act)
+  dcollapse syst st (tid,pos) =
+    let results = collapse syst st tid
+        result = filter (\(s,p,a) -> p == pos) results
+    in case result of
+      [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"
+      [(st,_,act)] -> (st,act)
+      _ -> error "dcollapse: collapse produced several dataflow facts for desired location"
   simple_run :: System st act -> st -> (TId,Pos) -> st
   simple_run sys st name = fst $ dcollapse sys st name
  
