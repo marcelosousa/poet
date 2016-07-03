@@ -100,4 +100,3 @@ class (Eq act) => Action act where
   -- Two sets of actions are independent
   interferes :: act -> act -> Bool
   isGlobal :: act -> Bool
-  isGlobal act = True

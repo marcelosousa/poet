@@ -32,6 +32,7 @@ import Language.SimpleC.Util
 --   be local to a thread and we might have to
 --   change the local state and the heap
 data Scope = Global | Local TId
+  deriving (Show,Eq,Ord)
 
 type ConValues = [ConValue]
 
@@ -56,7 +57,8 @@ data ConValue
 -- @Add Scope to MemAddr!
 data MemAddr
   = MemAddr 
-  { base :: SymId }
+  { base :: SymId
+  , level :: Scope }
   deriving (Show,Eq,Ord)
 
 data MemAddrs

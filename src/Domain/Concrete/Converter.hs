@@ -144,7 +144,7 @@ transformer_init id ty minit = do
           st' = case scope of 
                   Global -> insert_heap cst id ty val
                   Local i -> insert_local cst i id val 
-          id_addrs = get_addrs_id st scope id
+          id_addrs = get_addrs_id cst scope id
           acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
       join_state st'
       return acts
@@ -157,7 +157,7 @@ transformer_init id ty minit = do
           let st' = case scope of
                       Global -> insert_heap cst id ty val
                       Local i -> insert_local cst i id val 
-              id_addrs = get_addrs_id st scope id
+              id_addrs = get_addrs_id cst scope id
               -- this is wrong because id_addrs can be shared among threads
               acts' = add_writes id_addrs acts
           join_state st'
@@ -257,7 +257,7 @@ assign_transformer op lhs rhs = do
         COrAssOp  -> lhs_vals `bor` rhs_vals
   -- get the addresses of the left hand side
   s@ConTState{..} <- get
-  let lhs_id = get_addrs st scope lhs
+  let lhs_id = get_addrs cst scope lhs
       res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
   -- modify the state of the addresses with
   -- the result values 
@@ -373,7 +373,6 @@ unop_transformer unOp expr = do
 var_transformer :: SymId -> ConTOp (ConValues,Act)
 var_transformer id = do
   s@ConTState{..} <- get
-  let reds = Act (MemAddrs [MemAddr id]) bot_maddrs bot_maddrs bot_maddrs 
   -- First search in the heap
   case M.lookup id (heap cst) of
     Nothing -> 
@@ -384,8 +383,12 @@ var_transformer id = do
           Nothing -> error "var_transformer: scope does not match the state"
           Just ths@ThState{..} -> case M.lookup id locals of
             Nothing -> error "var_transformer: id is not in the local state of thread"
-            Just v  -> return ([v],reds)
-    Just cell@MCell{..} -> return ([val],reds)
+            Just v  -> do
+              let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs 
+              return ([v],reds)
+    Just cell@MCell{..} -> do
+      let reds = Act (MemAddrs [MemAddr id Global]) bot_maddrs bot_maddrs bot_maddrs 
+      return ([val],reds)
   
 -- | get the addresses of an identifier
 --   super simple now by assuming not having pointers
@@ -395,14 +398,17 @@ var_transformer id = do
 --  same code, the id of a local will be the same
 --  and by the actions, it will consider accesses
 --  to that local as potentially interfering.
-get_addrs_id :: CState -> Scope -> SymId -> MemAddrs
-get_addrs_id st scope id = MemAddrs [MemAddr id] 
+get_addrs_id :: Sigma -> Scope -> SymId -> MemAddrs
+get_addrs_id cst scope id = 
+  case M.lookup id (heap cst) of
+    Nothing -> MemAddrs [MemAddr id scope] 
+    Just i  -> MemAddrs [MemAddr id Global] 
 
 -- | get_addrs retrieves the information from the 
 --   points to analysis.
 --   Simplify to onlu consider the case where the 
 --   the expression is a LHS (var or array index).
-get_addrs :: CState -> Scope -> SExpression -> MemAddrs
+get_addrs :: Sigma -> Scope -> SExpression -> MemAddrs
 get_addrs st scope expr =
   case expr of
     Var id -> get_addrs_id st scope id 
