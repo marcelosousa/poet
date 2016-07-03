@@ -18,6 +18,7 @@ import Data.Map (Map)
 import Domain.Concrete.Action
 import Domain.Concrete.Converter
 import Domain.Concrete.State
+import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Flow
 import Language.SimpleC.Util

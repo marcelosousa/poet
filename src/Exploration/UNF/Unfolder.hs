@@ -633,4 +633,3 @@ prune e core = do
   then lift $ reset_alte e evts
   else lift $ del_event e evts
   lift $ mapM_ (\v -> mapM_ (\e -> if e `elem` core then return () else del_event e evts) v) alte
-

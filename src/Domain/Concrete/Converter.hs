@@ -13,9 +13,7 @@ module Domain.Concrete.Converter where
 
 import Control.Monad.State.Lazy 
 
-import qualified Data.ByteString.Char8 as BS
 import Data.Maybe
-import qualified Data.Vector as V
 import qualified Data.Map as M
 import Data.Map (Map)  
 import Debug.Trace
@@ -24,6 +22,7 @@ import qualified Data.Set as S
 
 import Domain.Concrete.Action
 import Domain.Concrete.State
+import Domain.Util
 
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)

@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Action where
 
-import Domain.Concrete.State
+import Domain.Util
 import Model.GCS
 
 -- Default implementation of an
