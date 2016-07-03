@@ -17,6 +17,7 @@ import Data.Map hiding (foldr, filter, map, (\\), null)
 import Language.SimpleC.AST 
 import Language.SimpleC.Flow
 import Language.SimpleC.Converter
+import Language.SimpleC.Util
 import Util.Generic
 
 -- A System is a collection of CFGs together with
@@ -39,7 +40,7 @@ data System st act =
     gbst :: st                       -- ^ Initial (Global) State 
   , gbac :: act                      -- ^ Initial (Global) Actions
   , cfgs :: Graphs SymId () (st,act) -- ^ Control Flow Graphs
-  , symt :: Map SymId Symbol         -- ^ Symbol Table
+  , symt :: SymbolTable              -- ^ Symbol Table
   , thds :: [TId]                    -- ^ Threads ids
   , tcnt :: Int                      -- ^ Counter for th id
   }
