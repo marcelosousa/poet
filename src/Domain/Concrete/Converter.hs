@@ -193,16 +193,22 @@ transformer_expr expr = do
   -- reset the states
   set_state $ CState S.empty
   -- for each previous state; run the transformer on that state
-  valsacts <- mapM (\st -> set_single_state st >> transformer expr) states
-  let (vals,acts) = unzip valsacts
+  valsacts <- mapM (\st -> set_single_state st >> transformer expr >>= \(a,b) -> return (st,a,b)) states
+  if cond
+  then do
+    -- filter the states and compute the actions
+    let (nsts,nvals) = foldr cond_transformer_expr ([],bot_act) valsacts
+    -- add the states
+    join_state $ CState $ S.fromList nsts 
+    return nvals 
   -- join all the actions
-  -- @TODO: What about the vals?
-  return $ foldr join_act bot_act acts
-
--- | Interprets the result values and potentially filters the state
-interpret_vals :: Sigma -> ConValues -> CState
-interpret_vals st vals = undefined 
-
+  else return $ foldr (\(_,_,a) r -> a `join_act` r) bot_act valsacts
+ where
+   cond_transformer_expr (st,vals,acts) (sts,facts) =
+     if any isTrue vals
+     then (st:sts,acts `join_act` facts)
+     else (sts,acts `join_act` facts)
+     
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> ConTOp (ConValues,Act)
 transformer e =

@@ -88,7 +88,6 @@ worklist_fix tid cfgs symt cfg@Graph{..} wlist res =
                nwlist = if is_fix then wlst else (wlst ++ rwlst)
            in worklist_fix tid cfgs symt cfg' nwlist res
 
-
 join_update :: Map NodeId [(CState,Act)] -> NodeId -> (CState,Act) -> (Bool, Map NodeId [(CState,Act)])
 join_update node_table node (st,act) =
   case M.lookup node node_table of
