@@ -182,10 +182,6 @@ default_value ty = [ ConVal $ init_value ty ]
 -- return the updated state, the set of values
 -- of this expression and a set of actions
 -- performed by this expression.
--- @NOTE @TODO: This function needs to be different
--- for boolean operations; the fixpoint needs to inform
--- the transformer that this is a condition to apply
--- the filter appropriatedly.
 transformer_expr :: SExpression -> ConTOp Act
 transformer_expr expr = do
   s@ConTState{..} <- get
