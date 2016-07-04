@@ -10,6 +10,8 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.State where
 
+import Prelude hiding (id)
+
 import Data.Hashable
 import Data.List
 import qualified Data.Map as M
@@ -127,7 +129,35 @@ instance Projection IntState where
   isBottom = is_bot 
 
 join_intstate :: IntState -> IntState -> IntState
-join_intstate = undefined
+join_intstate s1 s2 = case (is_bot s1, is_bot s2) of
+  (True,_) -> s2
+  (_,True) -> s1
+  -- They are not bot
+  _ -> let _heap = (heap s1) `join_intheap` (heap s2)
+           _th_states = th_states s1 `join_intthsts` th_states s2
+           -- This is not correct in general
+           _num_th = max (num_th s1) (num_th s2) 
+           _is_bot = False
+       in IntState _heap _th_states _num_th _is_bot
+
+join_intheap :: IntHeap -> IntHeap -> IntHeap
+join_intheap m1 m2 = M.unionWith join_intmcell m1 m2 
+
+join_intthsts :: ThStates -> ThStates -> ThStates
+join_intthsts = M.unionWith join_intthst 
+
+join_intthst :: ThState -> ThState -> ThState
+join_intthst t1 t2 =
+  let _pos = if (pos t1) == (pos t2) then pos t1 else error "join_intthst: diff pos" 
+      _id =  if (id t1) == (id t2) then id t1 else error "join_intthst: diff id" 
+      _locals = M.unionWith iJoin (locals t1) (locals t2) 
+  in ThState _pos _id _locals
+
+join_intmcell :: IntMCell -> IntMCell -> IntMCell
+join_intmcell m1 m2 =
+  let _ty = ty m1
+      _val = (val m1) `iJoin` (val m2)
+  in MCell _ty _val
 
 -- | API for modifying the state
 -- | insert_heap: inserts an element to the heap
