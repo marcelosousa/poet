@@ -1,12 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
--- Module    :  Domain.Concrete.Action 
+-- Module    :  Domain.Action 
 -- Copyright :  (c) 2016 Marcelo Sousa
 -- Provides the implementation of the interface
 -- to compute on-the-fly independece based on
 -- read-write sets.
 -------------------------------------------------------------------------------
-module Domain.Concrete.Action where
+module Domain.Action where
 
 import Domain.Util
 import Model.GCS

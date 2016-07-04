@@ -20,8 +20,8 @@ import Debug.Trace
 import Data.List 
 import qualified Data.Set as S
 
-import Domain.Concrete.Action
 import Domain.Concrete.State
+import Domain.Action
 import Domain.Util
 
 import Language.C.Syntax.Ops 

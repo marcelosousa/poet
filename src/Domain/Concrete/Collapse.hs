@@ -15,9 +15,9 @@ import Control.Monad.State.Lazy
 import qualified Data.Map as M
 import Data.Map (Map)
 
-import Domain.Concrete.Action
 import Domain.Concrete.Converter
 import Domain.Concrete.State
+import Domain.Action
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Flow
