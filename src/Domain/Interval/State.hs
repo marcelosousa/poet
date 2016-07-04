@@ -42,7 +42,7 @@ data IntState =
   , num_th  :: Int
   , is_bot  :: Bool 
   }
-  deriving Show
+  deriving (Show,Eq)
 
 -- | A thread state is a control and local data
 type ThStates = Map TId ThState
