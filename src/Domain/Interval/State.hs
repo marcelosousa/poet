@@ -164,17 +164,29 @@ modify_state scope st addrs vals =
        Just _ -> modify_heap st base conval  
 
 instance Hashable IntState where
-  hash = hash . M.toList
-  hashWithSalt s st = hashWithSalt s $ M.toList st
-  
-instance Hashable Value where
-  hash v = case v of
-    IntVal i -> hash i
-    Array vals -> hash vals
-  hashWithSalt s v = case v of
-    IntVal i -> hashWithSalt s i
-    Array vals -> hashWithSalt s vals
+  hash s@IntState{..} = hash (heap,th_states,num_th,is_bot) 
+  hashWithSalt s st@IntState{..} = hashWithSalt s (heap,th_states,num_th,is_bot) 
 
+instance Hashable IntHeap where
+  hash = hash . M.toList
+  hashWithSalt s h = hashWithSalt s $ M.toList h
+ 
+instance Hashable ThStates where
+  hash = hash . M.toList
+  hashWithSalt s th = hashWithSalt s $ M.toList th
+
+instance Hashable ThState where
+  hash th@ThState{..} = hash (pos,id,locals)
+  hashWithSalt s th@ThState{..} = hashWithSalt s (pos,id,locals)
+
+instance Hashable Locals where
+  hash = hash . M.toList
+  hashWithSalt s h = hashWithSalt s $ M.toList h
+
+instance Hashable IntMCell where
+  hash m@MCell{..} = hash val
+  hashWithSalt s m@MCell{..} = hashWithSalt s val
+ 
 {-
 -- State equality: because I'm using a hashtable I need to stay within the ST monad
 isEqual :: IntState s -> IntState s -> ST s Bool
