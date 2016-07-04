@@ -101,6 +101,14 @@ instance Hashable Value where
     VChar   i -> hashWithSalt s i 
     VString i -> hashWithSalt s i 
 
+instance Hashable MemAddrs where
+  hash m = case m of
+    MemAddrTop -> hash (0::Int)
+    MemAddrs l -> hash l
+  hashWithSalt s m = case m of
+    MemAddrTop -> hashWithSalt s (0::Int)
+    MemAddrs l -> hashWithSalt s l
+
 instance Hashable MemAddr where
   hash m@MemAddr{..} = hash base
   hashWithSalt s m@MemAddr{..} = hashWithSalt s base

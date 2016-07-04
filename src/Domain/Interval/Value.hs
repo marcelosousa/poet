@@ -48,132 +48,149 @@ top_interval = InterVal (MinusInf, PlusInf)
 i :: InterVal -> InterVal -> IntValue
 i a b = InterVal (a, b)
 
-{-
-data Value = 
-      IntVal Int 
-    | Array [Value]
-    | Interval (InterVal, InterVal)
-    | Bot
-  deriving (Show)
- 
-
-
 -- [a,b] `join` [c,d] = [min(a,c), max(b,d)]
-iJoin :: Value -> Value -> Value
-iJoin Bot a = a
-iJoin a Bot = a
-iJoin (Interval (a,b)) (Interval (c,d)) =
-  Interval (min a c, max b d)
-iJoin a b = 
-  error $ "iJoin unsupported: " ++ show (a,b)
-  
--- [a,b] `meet` [c,d] 
-iMeet :: Value -> Value -> Value
-iMeet Bot a = Bot
-iMeet a Bot = Bot
-iMeet (Interval (a,b)) (Interval (c,d)) =
-  let l = max a c
-      u = min b d
-  in if l > u
-     then Bot
-     else Interval (l,u)
-iMeet a b =
-  error $ "iMeet unsupported: " ++ show (a,b)
+iJoin :: IntValue -> IntValue -> IntValue
+iJoin v1 v2 = case (v1,v2) of
+  (IntBot,a) -> a
+  (a,IntBot) -> a
+  (IntTop,a) -> IntTop
+  (a,IntTop) -> IntTop
+  (IntVal i,IntVal j) -> IntVal $ i ++ j 
+  (IntMemAddr m1,IntMemAddr m2) -> IntMemAddr $ m1 `join_maddrs` m2 
+  (InterVal (a,b),InterVal (c,d)) -> InterVal (min a c, max b d)
+  _ -> error $ "iJoin unsupported: " ++ show (v1,v2)
+ 
+iMeet :: IntValue -> IntValue -> IntValue
+iMeet v1 v2 = case (v1,v2) of
+  (IntBot,a) -> IntBot
+  (a,IntBot) -> IntBot
+  (IntTop,a) -> a 
+  (a,IntTop) -> a 
+  (IntVal i,IntVal j) -> IntVal $ i `intersect` j 
+  (IntMemAddr m1,IntMemAddr m2) -> IntMemAddr $ m1 `meet_maddrs` m2 
+  (InterVal (a,b),InterVal (c,d)) -> 
+    let l = max a c
+        u = min b d
+    in if l > u
+       then IntBot
+       else InterVal (l,u)
+  _ -> error $ "iMeet unsupported: " ++ show (v1,v2)
 
-instance Num Value where
+instance Num IntValue where
   (+) = plusValue
   (*) = multValue
   (-) = subValue
   negate = negateValue
-  abs = undefined
-  signum = undefined
-  fromInteger i = Interval (I (fromInteger i), I (fromInteger i))
+  abs = error "abs for intervals unsupported" 
+  signum = error "signum for intervals unsupported"
+  fromInteger i = InterVal (I (fromInteger i), I (fromInteger i))
 
-plusValue :: Value -> Value -> Value
-plusValue Bot Bot = Bot
-plusValue Bot (Interval i) = Bot
-plusValue (Interval i) Bot = Bot
-plusValue (Interval (a,b)) (Interval (c,d)) = Interval (a+c, b+d)
-plusValue _ _ = error "plusValue: non interval"
+plusValue :: IntValue -> IntValue -> IntValue
+plusValue v1 v2 = case (v1,v2) of
+  (IntBot,_) -> IntBot
+  (_,IntBot) -> IntBot
+  (IntTop,_) -> IntTop
+  (_,IntTop) -> IntTop
+  (InterVal (a,b), InterVal (c,d)) -> InterVal (a+c, b+d)
+  (IntVal i,IntVal j) -> IntVal [add_value a b | a <- i, b <- j]
+  _ -> error "plusValue: non interval"
 
 -- [a,b] * [c,d] = [minimum(ac,ad,bc,bd), maximum(ac,ad,bc,bd)]
-multValue :: Value -> Value -> Value
-multValue Bot Bot = Bot
-multValue Bot (Interval i) = Bot
-multValue (Interval i) Bot = Bot
-multValue (Interval (a,b)) (Interval (c,d)) =
-  let ac = a*c
-      ad = a*d
-      bc = b*c
-      bd = b*d
-      list = [ac,ad,bc,bd]
-  in Interval (minimum list, maximum list) -- need to instantiate Eq, Ord
-multValue _ _ = error "multValue: non interval"
+multValue :: IntValue -> IntValue -> IntValue
+multValue v1 v2 = case (v1,v2) of
+  (IntBot,_) -> IntBot
+  (_,IntBot) -> IntBot
+  (IntTop,_) -> IntTop
+  (_,IntTop) -> IntTop
+  (InterVal (a,b), InterVal (c,d)) ->
+    let ac = a*c
+        ad = a*d
+        bc = b*c
+        bd = b*d
+        list = [ac,ad,bc,bd]
+    in InterVal (minimum list, maximum list) -- need to instantiate Eq, Ord
+  (IntVal i,IntVal j) -> IntVal [mult_value a b | a <- i, b <- j]
+  _ -> error "multValue: non interval"
 
-subValue :: Value -> Value -> Value
-subValue Bot Bot = Bot
-subValue Bot (Interval i) = Bot
-subValue (Interval i) Bot = Bot
-subValue (Interval (a,b)) (Interval (c,d)) = Interval (a-d, b-c)
-subValue _ _ = error "plusValue: non interval"
+subValue :: IntValue -> IntValue -> IntValue
+subValue v1 v2 = case (v1,v2) of
+  (IntBot,_) -> IntBot
+  (_,IntBot) -> IntBot
+  (IntTop,_) -> IntTop
+  (_,IntTop) -> IntTop
+  (InterVal (a,b), InterVal (c,d)) -> InterVal (a-d, b-c)
+  (IntVal i,IntVal j) -> IntVal [sub_value a b | a <- i, b <- j]
+  _ -> error "subValue: non interval"
 
-negateValue :: Value -> Value
+negateValue :: IntValue -> IntValue
 negateValue v = case v of
-  Interval (a,b) -> Interval (negate a, negate b)
-  Bot -> Bot
+  IntBot -> IntBot
+  IntTop -> IntTop
+  InterVal (a,b) -> InterVal (negate a, negate b)
+  IntVal i -> IntVal [minus_value a | a <- i]
   _ -> error "negateValue: non interval"
 
-iDivide :: Value -> Value -> Value
-iDivide Bot _ = Bot
-iDivide _ Bot = Bot
-iDivide ab cd = 
-          (ab `interval_div` (cd `iMeet` (i (I 1) PlusInf))) 
+iDivide :: IntValue -> IntValue -> IntValue
+iDivide v1 v2 = case (v1,v2) of
+  (IntBot,_) -> IntBot
+  (_,IntBot) -> IntBot
+  (IntTop,_) -> IntTop
+  (_,IntTop) -> IntTop
+  (IntVal i,IntVal j) -> IntVal [div_value a b | a <- i, b <- j] 
+  (ab,cd) -> 
+          (v1 `interval_div` (v2 `iMeet` (i (I 1) PlusInf))) 
   `iJoin` 
-          (ab `interval_div` (cd `iMeet` (i MinusInf (I (-1)))))
+          (v1 `interval_div` (v2 `iMeet` (i MinusInf (I (-1)))))
 
 -- [a,b] / [c,d] = [a,b] * 1/[c,d]
-interval_div :: Value -> Value -> Value
-interval_div Bot _ = Bot
-interval_div _  Bot = Bot
-interval_div (Interval (a,b)) (Interval (c,d)) =
-  let ac = divide a c
-      ad = divide a d
-      bc = divide b c
-      bd = divide b d
-  in if c >= 1
-     then i (min ac ad) (max bc bd)
-  else if d <= (-1)
-       then i (min bc bd) (max ac ad)
-       else error "interval_div: ?"
+interval_div :: IntValue -> IntValue -> IntValue
+interval_div v1 v2 = case (v1,v2) of 
+  (IntBot,_) -> IntBot
+  (_,IntBot) -> IntBot
+  (IntTop,_) -> IntTop
+  (_,IntTop) -> IntTop
+  (InterVal (a,b),InterVal (c,d)) ->
+    let ac = divide a c
+        ad = divide a d
+        bc = divide b c
+        bd = divide b d
+    in if c >= 1
+       then i (min ac ad) (max bc bd)
+    else if d <= (-1)
+         then i (min bc bd) (max ac ad)
+         else error "interval_div: ?"
+  _ -> error "interval_div: not supported"
 
 -- [a,b] `difference` [c,d] assuming that [c,d] `join` [a,b] = [a,b]
-interval_diff :: Value -> Value -> Value
+interval_diff :: IntValue -> IntValue -> IntValue
 interval_diff a b = interval_diff' 1 a b
 
-interval_diff_eq :: Value -> Value -> Value
+interval_diff_eq :: IntValue -> IntValue -> IntValue
 interval_diff_eq a b = interval_diff' 0 a b
 
-interval_diff' :: Int -> Value -> Value -> Value
-interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (MinusInf,I b)) = Interval (I (b+i), PlusInf)
-interval_diff' i (Interval (MinusInf, PlusInf)) (Interval (I a, PlusInf)) = Interval (MinusInf,I (a-i))
-interval_diff' i Bot _ = Bot
-interval_diff' i (Interval (a,b)) Bot = Interval (a,b)
-interval_diff' i (Interval (I a,I b)) (Interval (I a', I b'))
-  | a == a' && b == b' = Bot
-  | a == a' = Interval (I (b'+i), I b)
-  | b == b' = Interval (I a, I (a'-i))
-  | a < a' && b > b' = Interval (I a,I b)
+interval_diff' :: Int -> IntValue -> IntValue -> IntValue
+interval_diff' i (InterVal (MinusInf, PlusInf)) (InterVal (MinusInf,I b)) = 
+  InterVal (I (b+i), PlusInf)
+interval_diff' i (InterVal (MinusInf, PlusInf)) (InterVal (I a, PlusInf)) =
+  InterVal (MinusInf,I (a-i))
+interval_diff' i IntBot _ = IntBot
+interval_diff' i (InterVal (a,b)) IntBot = InterVal (a,b)
+interval_diff' i (InterVal (I a,I b)) (InterVal (I a', I b'))
+  | a == a' && b == b' = IntBot
+  | a == a' = InterVal (I (b'+i), I b)
+  | b == b' = InterVal (I a, I (a'-i))
+  | a < a' && b > b' = InterVal (I a,I b)
   | otherwise = error "interval_diff: fatal"
 interval_diff' i a b = error $ "interval_diff: unsupported " ++ show (i,a,b)
 
-upperBound :: Value -> InterVal
-upperBound Bot = error "upperBound"
-upperBound (Interval (a,b)) = b
+upperBound :: IntValue -> InterVal
+upperBound IntBot = error "upperBound"
+upperBound (InterVal (a,b)) = b
 upperBound _ = error "upperBound: unsupported"
 
-lowerBound :: Value -> InterVal
-lowerBound Bot = error "lowerBound"
-lowerBound (Interval (a,b)) = a
+lowerBound :: IntValue -> InterVal
+lowerBound IntBot = error "lowerBound"
+lowerBound (InterVal (a,b)) = a
 lowerBound _ = error "lowerBound: unsupported"
 
 -- widening
@@ -183,16 +200,18 @@ widening (a,b) (c,d) =
       f = if d > b then PlusInf else b
   in (e,f)
 
-instance Hashable Value where
+instance Hashable IntValue where
   hash v = case v of
     IntVal i -> hash i
-    Array vals -> hash vals
-    Interval a -> hash a
-    Bot -> hash (0::Int)
+    InterVal a -> hash a
+    IntBot -> hash (0::Int)
+    IntTop -> hash (1::Int)
+    IntMemAddr mem -> hash mem 
+    IntArr vals _ _ -> hash vals
   hashWithSalt s v = case v of
     IntVal i -> hashWithSalt s i
-    Array vals -> hashWithSalt s vals
-    Interval a -> hashWithSalt s a
-    Bot -> hashWithSalt s (0::Int)
-
--}
+    InterVal a -> hashWithSalt s a
+    IntBot -> hashWithSalt s (0::Int)
+    IntTop -> hashWithSalt s (1::Int)
+    IntMemAddr mem -> hashWithSalt s mem 
+    IntArr vals _ _ -> hashWithSalt s vals
