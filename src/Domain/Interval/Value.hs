@@ -13,7 +13,9 @@ module Domain.Interval.Value where
 import Data.Hashable
 import Data.List
 import Util.Generic hiding (safeLookup)
+import qualified Data.Set as S
 
+import Language.SimpleC.Util
 import Domain.Util
 import Domain.Interval.Type
 
@@ -32,18 +34,18 @@ data IntValue
 
 instance Ord IntValue where
   (<=) (IntVal i) (IntVal j) = (S.fromList i) `S.isSubsetOf` (S.fromList j)
-  (<=) (InterVal i) (InterVal j) = i <= j
-  (<=) (Array i n _) (Array j m) = n <= m && i <= j  
+  (<=) (InterVal (a,b)) (InterVal (c,d)) = a >= c && b <= d
+  (<=) (IntArr i n _) (IntArr j m _) = n <= m && i <= j  
   (<=) IntBot (InterVal _) = True
   (<=) IntTop IntTop = True
-  (<=) IntTop (InterVal i) = i == top_interval
-  (<=) (InterVal i) IntTop = i == top_interval
+  (<=) IntTop (InterVal i) = i == (MinusInf, PlusInf) 
+  (<=) (InterVal i) IntTop = i == (MinusInf, PlusInf) 
   (<=) _ _ = False
 
-top_interval :: Value
-top_interval = Interval (MinusInf, PlusInf)
+top_interval :: IntValue
+top_interval = InterVal (MinusInf, PlusInf)
 
-i :: InterVal -> InterVal -> Value
+i :: InterVal -> InterVal -> IntValue
 i a b = InterVal (a, b)
 
 {-

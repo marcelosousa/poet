@@ -16,8 +16,8 @@ data InterVal = I Int | PlusInf | MinusInf
   deriving (Show,Eq)
 
 -- a <= b for intervals
-instance Ord (InterVal, InterVal) where
-  (<=) (a,b) (c,d) = a >= c && b <= d
+--instance Ord (InterVal, InterVal) where
+--  (<=) (a,b) (c,d) = a >= c && b <= d
 
 instance Ord InterVal where
   (<=) (I i) PlusInf = True
