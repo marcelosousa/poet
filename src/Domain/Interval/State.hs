@@ -51,7 +51,7 @@ data ThState =
   ThState
   { 
     pos :: Pos
-  , id :: TId
+  , id :: SymId 
   , locals :: Locals 
   } 
   deriving (Show,Eq,Ord)
@@ -116,6 +116,7 @@ subsumes_interval st1 st2 =
        Nothing -> False
        Just cell1 ->
          let r = ty cell1 == ty cell2
+             vcell al1 = val cell1
              val1 = val cell1
              val2 = val cell2
          in r && val2 <= val1
@@ -125,11 +126,15 @@ instance Projection IntState where
   subsumes a b = subsumes_interval a b
   isBottom = is_bot 
 
+join_intstate :: IntState -> IntState -> IntState
+join_intstate = undefined
+
 -- | API for modifying the state
 -- | insert_heap: inserts an element to the heap
-insert_heap :: IntState -> SymId -> IntMCell -> IntState
-insert_heap st@IntState{..} id cell =
-  let heap' = M.insert id cell heap
+insert_heap :: IntState -> SymId -> STy -> IntValue -> IntState
+insert_heap st@IntState{..} id ty val =
+  let cell = MCell ty val 
+      heap' = M.insert id cell heap
   in st {heap = heap'}  
 
 modify_heap :: IntState -> SymId -> IntValue -> IntState
@@ -142,7 +147,14 @@ update_conmcell nval c@MCell{..} = Just $ c { val = nval }
 
 -- | insert_local: inserts an element to local state 
 insert_local :: IntState -> TId -> SymId -> IntValue -> IntState
-insert_local = error "insert_local" 
+insert_local st@IntState{..} tid sym val = 
+ case M.lookup tid th_states of
+    Nothing -> error "insert_local: tid not found in th_states"
+    Just s@ThState{..} ->
+      let locals' = M.insert sym val locals
+          s' = s { locals = locals' }
+          th_states' = M.insert tid s' th_states
+      in st { th_states = th_states' }
 
 -- | modify the state: receives a MemAddrs and a
 --   IntValue and assigns the IntValue to the MemAddrs
@@ -162,6 +174,22 @@ modify_state scope st addrs vals =
            Global -> error "modify_state: id is not the heap and scope is global"
            Local i -> insert_local st i base conval 
        Just _ -> modify_heap st base conval  
+
+bot_th_state :: Pos -> SymId -> ThState
+bot_th_state pos id = ThState pos id M.empty
+
+inc_num_th :: IntState -> (Int,IntState)
+inc_num_th s@IntState{..} =
+  let n = num_th + 1
+  in (n,s { num_th = n })
+
+insert_thread :: IntState -> SymId -> Pos -> IntState 
+insert_thread s sym pos =
+  let (tid,s'@IntState{..}) = inc_num_th s
+      th = bot_th_state pos sym
+      th_states' = M.insert tid th th_states
+  in s' { th_states = th_states' }
+
 
 instance Hashable IntState where
   hash s@IntState{..} = hash (heap,th_states,num_th,is_bot) 

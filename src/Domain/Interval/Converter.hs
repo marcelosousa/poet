@@ -1,389 +1,398 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Interval.Converter
--- Copyright :  (c) 2015 Marcelo Sousa
--- Defines the abstract transformers
+-- Copyright :  (c) 2016 Marcelo Sousa
+--
+-- Transformers for the interval semantics.
+-- Two main transformers for the types of edges in the CFG:
+--   transformer_decl (for the declaration)
+--   transformer_expr (for the expression) 
 -------------------------------------------------------------------------------
 module Domain.Interval.Converter where
 
-import qualified Data.ByteString.Char8 as BS
+import Control.Monad.State.Lazy 
+
 import Data.Maybe
-import qualified Data.Vector as V
-import qualified Debug.Trace as T
+import qualified Data.Map as M
+import Data.Map (Map)  
+import Debug.Trace
+import Data.List 
+import qualified Data.Set as S
 
-import Domain.Concrete.Independence
+import Domain.Interval.State
+import Domain.Interval.Value
 import Domain.Interval.Type
+import Domain.Action
+import Domain.Util
 
-import Frontend
-import Frontend.Util
+import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
-import Language.C.Syntax.AST (CBinaryOp(..),CUnaryOp(..))
+import Language.SimpleC.Converter hiding (Scope(..))
+import Language.SimpleC.Flow
+import Language.SimpleC.Util
 import Model.GCS
-import Model.Independence
 import Util.Generic hiding (safeLookup)
-trace a b = b
-pmdVar = BS.pack "__poet_mutex_death"
-pmdVal = IntVal 1
-pmtVar = BS.pack "__poet_mutex_threads"
-pmjVar = BS.pack "__poet_mutex_threads_join"
 
-convert :: Program -> FirstFlow -> Flow -> Int -> (System Sigma, UIndep)
-convert (Program (decls, defs)) pcs flow thCount =
-  -- @ get the initial local state: this will be the set of global variables 
-  --   minus the pcs
-  let ils = getInitialDecls decls
-      pmtiv = Array $ map IntVal $ replicate thCount 1
-      ipcs = map (\(i,pc) -> (BS.pack ("pc."++i), IntVal pc)) pcs
-      iils = ils++ipcs
-      fils = (pmtVar, pmtiv):(pmjVar, pmtiv):iils
-      is = toSigma fils
-      atrs = resetTID $ concatMap (getTransitions flow) defs
-      (trs,annot) = unzip atrs
---      vtrs = trace ("transitions = " ++ concatMap showTransition trs ++ "\n" ++ show annot) $ V.fromList trs
-      vtrs = V.fromList trs
-      uind = computeUIndep annot
-      sys = System vtrs is $ (Lock (V pmdVar)):[Lock (A pmtVar (toInteger th)) | th <- [0 .. thCount-1]] ++ [Lock (A pmjVar (toInteger th)) | th <- [0 .. thCount-1]]
-  in (sys, uind)       
-  --trace ("fromConvert: transitions = " ++ concatMap showTransition trs) $ return (sys, uind) 
+-- | State of the concrete transformer
+data IntTState 
+ = IntTState {
+   scope :: Scope
+ , st :: IntState          -- the state
+ , sym :: Map SymId Symbol
+ , cfgs :: Graphs SymId () (IntState,Act)
+ , cond :: Bool            -- is a condition? 
+ }
 
-resetTID :: [(Transition Sigma, (TransitionID, Statement, RWSet))] -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
-resetTID = reverse . snd . foldl (\(cnt,rest) l -> let (ncnt,l') = resetTID' cnt l in (ncnt,l':rest)) (0,[])
+-- | Transformer operation 
+type IntTOp val = State IntTState val
 
-resetTID' :: Int -> (Transition Sigma, (TransitionID, Statement, RWSet)) -> (Int, (Transition Sigma, (TransitionID, Statement, RWSet)))
-resetTID' c (((pid,_,_st,act),fn),(_,st,annot)) = (c+1,(((pid,c,_st,act),fn),(c,st,annot)))
+set_state :: IntState -> IntTOp ()
+set_state nst = do
+  s@IntTState{..} <- get
+  put s { st = nst }
 
-getInitialDecls :: Decls -> LSigma
-getInitialDecls = foldl (\a decl -> convertDecl decl ++ a) [] 
-  where 
-    convertDecl decl = case decl of
-      FunctionDecl _ _ _ -> [] 
-      GlobalDecl _ (Ident i) Nothing -> [(BS.pack i, top)]
-      GlobalDecl _ (Ident i@"__poet_mutex_death") (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
-      GlobalDecl _ (Ident i@"__poet_mutex_lock") (Just (Const (IntValue v))) -> [(BS.pack i, (IntVal $ fromInteger v))]
-      GlobalDecl _ (Ident i) (Just (Const (IntValue v))) -> [(BS.pack i, Interval (I (fromInteger v), I (fromInteger v)))]
-      GlobalDecl _ (Ident i) (Just (Call "nondet" [a, b])) -> [(BS.pack i, eval a empty `iJoin` eval b empty)]
---      GlobalDecl _ (Ident i) (Just (Call "nondet" [Const (IntValue l), Const (IntValue u)])) -> [(BS.pack i, Interval (I (fromInteger l), I (fromInteger u)))]
-      GlobalDecl _ (Index (Ident i) _) _ -> [] --error "getInitialDecls: global array is not supported yet"
-      _ -> error "getInitialState: not supported yet"
+join_state :: IntState -> IntTOp ()
+join_state nst = do
+  s@IntTState{..} <- get
+  let fst = nst `join_intstate` st
+  put s { st = fst }
 
--- for each transition: 
--- type Transition s = (ProcessID, TransitionID, TransitionFn s)
--- process id is the name of the function
--- transition id is the position in the vector of transitions 
-getTransitions :: Flow -> Definition -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
-getTransitions flow (FunctionDef _ name _ stat) = recGetTrans flow (BS.pack name) stat
+-- | converts the front end into a system
+-- @REVISED: July'16
+convert :: FrontEnd () (IntState,Act) -> System IntState Act
+convert fe@FrontEnd{..} =
+  let pos_main = get_entry "main" cfgs symt
+      init_tstate = IntTState Global empty_state symt cfgs False
+      (acts,s@IntTState{..}) = runState (transformer_decls $ decls ast) init_tstate
+      st' = set_pos st main_tid pos_main  
+  in System st' acts cfgs symt [main_tid] 1
 
-recGetTrans :: Flow -> ProcessID -> Statement -> [(Transition Sigma, (TransitionID, Statement, RWSet))] 
-recGetTrans flow name stat =
-    foldl (\acc st -> let rest = toTransition name 0 flow st
-                      in acc++rest) [] stat    
+-- | retrieves the entry node of the cfg of a function
+get_entry :: String -> Graphs SymId () (IntState,Act) -> Map SymId Symbol -> Pos
+get_entry fnname graphs symt = 
+  case M.foldrWithKey aux_get_entry Nothing graphs of
+    Nothing -> error $ "get_entry: cant get entry for " ++ fnname
+    Just p -> p
+ where 
+   aux_get_entry sym cfg r =
+     case r of 
+       Just res -> Just res
+       Nothing -> 
+         case M.lookup sym symt of
+           Nothing -> Nothing
+           Just s  -> if get_name s == fnname
+                      then Just $ entry_node cfg
+                      else Nothing 
 
--- @main encoding function
-toTransition :: ProcessID -> TransitionID -> Flow -> AnnStatement PC -> [(Transition Sigma, (TransitionID, Statement, RWSet))]
-toTransition procName tID flow s =
-  let pcVar = BS.pack $ "pc." ++ (BS.unpack procName)
-      trInfo = \act -> (procName, tID, [s], act)
-      trInfoDefault = trInfo [Other]
-  in case s of
-      ExprStat pc _expr ->
-        case _expr of
-          Call fname args ->
-            let trrws = fromCall flow pcVar pc fname args
-            in map (\(tr, act, rw) -> ((trInfo act, tr), (tID,[s],rw))) trrws
-          Assign _ _lhs _rhs ->
-            let trrws = fromAssign flow pcVar pc _lhs _rhs
-            in map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws
-      If pc _cond _then _else ->
-        let trrws = fromIf flow pcVar pc _cond 
-            _thentr = recGetTrans flow procName _then
-            _elsetr = recGetTrans flow procName _else
-            _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws 
-        in trace ("Size of IF: " ++ show (length trrws)) $ _condtr ++ _thentr ++ _elsetr
-      IfThen pc _cond _then ->
-        let trrws = fromIf flow pcVar pc _cond 
-            _thentr = recGetTrans flow procName _then
-            _condtr = map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws 
-        in _condtr ++ _thentr
-      Goto pc loc -> 
-        let trrws = fromGoto flow pcVar pc
-        in map (\(tr, rw) -> ((trInfoDefault, tr), (tID,[s],rw))) trrws 
-      _ -> error $ "toTransition: " ++ show s
-        
-modifyList :: [a] -> a -> Integer -> [a]
-modifyList xs a idx = 
-  let (left,_:right) = splitAt (fromInteger idx) xs
-  in left ++ (a:right)
-      
--- Encodes Call Statement: Same as concrete transformer
--- @Sep.'15: Support for __poet_fail, __poet_mutex_lock and __poet_mutex_unlock
-fromCall :: Flow -> Var -> PC -> String -> [Expression] -> [(TransitionFn Sigma, Acts, RWSet)]
-fromCall flow pcVar pc "__poet_fail" [] =
-  let acts = [Write (V pcVar)]
-      fn = \s ->
-        let IntVal curPC = safeLookup "call" s pcVar
-        in if curPC == pc
-           then error "poet found an assertion violation!"
-           else []
-  in [(fn, [Other], acts)]
-fromCall flow pcVar pc name [param] = 
-  let Continue next = getFlow flow pc
-  in case name of 
-    "__poet_mutex_lock" ->
-      case param of
-        -- @ Lock Variable
-        Ident i -> 
-          let ident = BS.pack i
-              acts = [Write (V pcVar), Write (V ident)]
-              act = [Lock $ V ident]
-              fn = \s -> -- trace ("__poet_mutex_lock@" ++ show (pcVar,pc) ++ show ident) $
-                let IntVal curPC = safeLookup "call" s pcVar
-                    IntVal v = safeLookup "call" s ident
-                in if curPC == pc && v == 0
-                   then 
-                     let pcVal = IntVal next
-                         iVal = IntVal 1
-                     in [insert pcVar pcVal $ insert ident iVal s]
-                   else []
-          in [(fn, act, acts)]
-        -- @ Array of Locks              
-        Index (Ident i) (Const (IntValue idx)) ->
-          let ident = BS.pack i
-              acts = [Write (V pcVar), Write (A ident idx)]
-              act = [Lock $ A ident idx]              
-              fn = \s -> -- trace ("__poet_mutex_lock@" ++ show (pcVar,pc) ++ show (ident,idx)) $
-                let IntVal curPC = safeLookup "call" s pcVar
-                    Array vs = safeLookup "call" s ident
-                    IntVal v = vs!!(fromInteger idx)
-                in if curPC == pc && v == 0
-                   then
-                     let pcVal = IntVal next
-                         vs' = modifyList vs (IntVal 1) idx
-                         iVal = Array vs'
-                     in [insert pcVar pcVal $ insert ident iVal s]
-                else []
-          in [(fn, act, acts)]         
-        Index (Ident i) (Ident idxident) ->
-          let ident = BS.pack i
-              idxi = BS.pack idxident
-              acts = [Write (V pcVar), Write (V ident), Read (V idxi)]
-              act = [Lock $ V ident]              
-              fn = \s -> -- trace ("__poet_mutex_lock@" ++ show (pcVar,pc) ++ show (ident,idxi)) $
-                let IntVal curPC = safeLookup "call lock array pc" s pcVar
-                    Array vs = safeLookup ("call lock array: " ++ show ident) s ident
-                    IntVal idx = safeLookup "call lock array ident" s idxi
-                    IntVal v = vs!!idx
-                in if curPC == pc && v == 0
-                   then
-                     let pcVal = IntVal next
-                         vs' = modifyList vs (IntVal 1) (toInteger idx)
-                         iVal = Array vs'
-                     in [insert pcVar pcVal $ insert ident iVal s]
-                   else []
-          in [(fn, act, acts)]
-    "__poet_mutex_unlock" ->
-      case param of
-        -- @ Lock Variable
-        Ident i -> 
-          let ident = BS.pack i
-              acts = [Write (V pcVar), Write (V ident)]
-              act = [Unlock $ V ident]
-              fn = \s -> -- trace ("__poet_mutex_unlock@" ++ show (pcVar,pc) ++ show ident) $
-                let IntVal curPC = safeLookup "call" s pcVar
-                in if curPC == pc
-                   then
-                     let pcVal = IntVal next
-                         iVal = IntVal 0
-                     in [insert pcVar pcVal $ insert ident iVal s]
-                   else []
-          in [(fn, act, acts)]
-        -- @ Array of Locks
-        Index (Ident i) (Const (IntValue idx)) ->
-          let ident = BS.pack i
-              acts = [Write (V pcVar), Write (A ident idx)]
-              act = [Unlock $ A ident idx]
-              fn = \s -> -- trace ("__poet_mutex_unlock@" ++ show (pcVar,pc) ++ show (ident,idx)) $
-                let IntVal curPC = safeLookup "call" s pcVar
-                in if curPC == pc
-                   then
-                     let IntVal curPC = safeLookup "call" s pcVar
-                         Array vs = safeLookup "call" s ident
-                         pcVal = IntVal next
-                         vs' = modifyList vs (IntVal 0) idx
-                         iVal = Array vs'
-                     in [insert pcVar pcVal $ insert ident iVal s]
-                   else []
-          in [(fn, act, acts)]     
-        Index (Ident i) (Ident idxident) ->
-          let ident = BS.pack i
-              idxi = BS.pack idxident
-              acts = [Write (V pcVar), Write (V ident), Read (V idxi)]
-              act = [Unlock $ V ident]
-              fn = \s -> -- trace ("__poet_mutex_unlock@" ++ show (pcVar,pc) ++ show (ident,idxi)) $
-                let IntVal curPC = safeLookup "call" s pcVar
-                in if curPC == pc
-                    then
-                      let IntVal curPC = safeLookup "call unlock array" s pcVar
-                          Array vs = safeLookup "call unlock array " s ident
-                          IntVal idx = safeLookup "call unlock array ident" s idxi
-                          pcVal = IntVal next
-                          vs' = modifyList vs (IntVal 0) (toInteger idx)
-                          iVal = Array vs'
-                      in [insert pcVar pcVal $ insert ident iVal s]
-                    else []
-          in [(fn, act, acts)]                 
-    _ -> error "fromCall: call not supported"
+-- | processes a list of declarations 
+transformer_decls :: [SDeclaration] -> IntTOp Act
+transformer_decls =
+  foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
 
-getVarArg :: Expression -> Var
-getVarArg (Ident i) = BS.pack i
-getVarArg (Index (Ident i) _) = BS.pack i
-getVarArg e = error $ "getVarArg: " ++ show e
+-- | transformer for a declaration:
+transformer_decl :: SDeclaration -> IntTOp Act
+transformer_decl decl = do
+  case decl of
+    TypeDecl ty -> error "convert_decl: not supported yet"
+    Decl ty el@DeclElem{..} ->
+      case declarator of
+        Nothing -> 
+          case initializer of 
+            Nothing -> return bot_act
+            _ -> error "initializer w/ declarator" 
+        Just d@Declr{..} ->
+          case declr_ident of
+            Nothing -> error "no identifier" 
+            Just id ->   
+              let typ = Ty declr_type ty
+              in  transformer_init id typ initializer
 
--- Encodes Assign Statement: same as concrete
-fromAssign :: Flow -> Var -> PC -> Expression -> Expression -> [(TransitionFn Sigma, RWSet)]
-fromAssign flow pcVar pc _lhs _rhs = 
-  let Continue next = getFlow flow pc
-      _lhsi = map Write $ getIdent _lhs
-      _rhsi = map Read $ getIdent _rhs
-      act = (Write $ V pcVar):(_lhsi ++ _rhsi)
-      fn = \s -> trace ("Assign@" ++ show (pcVar,pc) ++ " " ++ show _lhs ++ ":=" ++ show _rhs) $
-        let IntVal curPC = safeLookup "goto" s pcVar
-        in if curPC == pc
-           then
-             let pcVal = IntVal next
-                 ns = insert pcVar pcVal s
-                 val = eval _rhs ns
-             in case _lhs of 
-               Ident i ->
-                 let ident = BS.pack i
-                     iVal = val
-                 in [insert ident iVal ns]
-               Index (Ident i) (Const (IntValue idx)) ->
-                 let ident = BS.pack i
-                     Array vs = safeLookup "fromAssign" s ident
-                     vs' = modifyList vs val idx
-                     iVal = Array vs'
-                 in [insert ident iVal s]
-           else []
-  in [(fn, act)]
+-- | processes a declaration initializer 
+--   for the symbol id with type ty.
+--   This is different than an assignment because
+--   the position for this id is empty in the state
+--   so any lookup would fail.
+--   This function needs to receive a state and can 
+--   potentially create several states. 
+transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> IntTOp Act
+transformer_init id ty minit = do
+  case minit of
+    Nothing -> do
+      s@IntTState{..} <- get
+      let val = default_value ty
+          st' = case scope of 
+                  Global -> insert_heap st id ty val
+                  Local i -> insert_local st i id val 
+          id_addrs = get_addrs_id st scope id
+          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
+      set_state st'
+      return acts
+    Just i  ->
+      case i of
+        InitExpr expr -> do
+          -- for each state, we need to apply the transformer
+          s@IntTState{..} <- get
+          (val,acts) <- transformer expr
+          let st' = case scope of
+                      Global -> insert_heap st id ty val
+                      Local i -> insert_local st i id val 
+              id_addrs = get_addrs_id st scope id
+              -- this is wrong because id_addrs can be shared among threads
+              acts' = add_writes id_addrs acts
+          set_state st'
+          return acts'
+        InitList list -> error "initializer list is not supported"
 
--- Encodes Goto Statement: same as concrete
-fromGoto :: Flow -> Var -> PC -> [(TransitionFn Sigma, RWSet)]
-fromGoto flow pcVar pc = 
-  let Continue next = getFlow flow pc
-      fn = \s ->
-        let IntVal curPC = safeLookup "goto" s pcVar
-        in if curPC == pc
-           then
-             let pcVal = IntVal next
-             in [insert pcVar pcVal s]
-           else []
-  in [(fn, [Write $ V pcVar])]
+-- | Default value of a type
+--   If we are given a base type, then we
+--   simply generate a default value.
+--   @NOTE V1: No support for pointer, arrays or structs.
+--    This means that it is simply calling the default
+--    initializer from the simplec package
+--   If it is a pointer type, then we
+--   generate a VPtr 0 (denoting NULL).
+--   If it is an array type ?
+--   If it is a struct type ? 
+default_value :: Ty SymId () -> IntValue 
+default_value ty = --  [ ConVal $ init_value ty ]
+  InterVal (I 0, I 0)
 
--- Encodes If Statement
--- @ if cond is transformed in two transitions
---   conditionals now have side effects
-fromIf :: Flow -> Var -> PC -> Expression -> [(TransitionFn Sigma, RWSet)]
-fromIf flow pcVar pc _cond = 
-  let Branch (t,e) = getFlow flow pc
-      readVars = getIdent _cond
-      annots = (Write $ V pcVar):((map Read readVars)) -- ++ (map Write readVars))
-      fnThen = \s -> trace ("Firing: " ++ show _cond) $ 
-        let IntVal curPC = safeLookup "if" s pcVar
-            valCond = evalCond _cond s
-        in if curPC == pc
-           then case valCond of
-               Nothing -> [] -- the conditional is not satisfied
-               Just s' ->
-                 let pcVal = IntVal t
-                 in [insert pcVar pcVal s']
-           else []
-      fnElse = \s ->
-        let IntVal curPC = safeLookup "if" s pcVar
-            valCond = evalCond (UnaryOp CNegOp _cond) s
-        in if curPC == pc
-           then case valCond of
-               Nothing -> [] -- the conditional is not satisfied
-               Just s' ->
-                 let pcVal = IntVal e
-                 in [insert pcVar pcVal s']
-           else []
-  in [(fnThen, annots),(fnElse, annots)]
-
-getIdent :: Expression -> [Variable]
-getIdent expr = case expr of
-  BinOp op lhs rhs -> getIdent lhs ++ getIdent rhs
-  UnaryOp op rhs -> getIdent rhs
-  Const v -> []
-  Ident i -> [V $ BS.pack i]
-  Index (Ident i) (Const (IntValue idx)) -> [A (BS.pack i) idx]
-  Index (Ident i) rhs -> (V $ BS.pack i):getIdent rhs
-  Call _ args -> concatMap getIdent args
-  _ -> error $ "eval: disallowed " ++ show expr
-
--- eval arithmetic expressions
-eval :: Expression -> Sigma -> Value
-eval expr s = case expr of
-  BinOp op lhs rhs ->
-    let lhsv = eval lhs s
-        rhsv = eval rhs s
-    in applyArith op lhsv rhsv
-  UnaryOp op rhs ->
-    let v = eval rhs s
-    in case op of
-        CPlusOp -> v
-        CMinOp  -> negate v
-        _ -> error $ "eval: unsupported unary op: " ++ show expr    
-  Const (IntValue v) -> Interval (I (fromInteger v), I (fromInteger v))
-  Ident i -> 
-    let ident = BS.pack i
-    in safeLookup "eval" s ident
-  Index (Ident i) rhs -> error "eval: arrays with intervals are not supported yet"
-  Call "nondet" [a,b] ->
-    let (Interval (i,_)) = eval a s
-        (Interval (j,_)) = eval b s
-    in if j < i
-       then Bot
-       else Interval (i,j)
---  Call fname args ->
-{-    let ident = BS.pack i
-        v = safeLookup "eval" s ident  
-        vhs = eval rhs s
-    in case v of
-      IntVal idx -> error $ "eval: fatal error " ++ show expr
-      Array vs -> case vhs of
-        IntVal idx -> vs!!idx
-        Array _ -> error $ "eval: disallowed " ++ show expr           
--}
-  _ -> error $ "eval: disallowed " ++ show expr
-
--- apply arithmetic expressions
-applyArith :: OpCode -> Value -> Value -> Value
-applyArith op lhs rhs = 
-  case op of
-    CAddOp -> lhs + rhs
-    CSubOp -> lhs - rhs
-    CMulOp -> lhs * rhs
-    CDivOp -> lhs `iDivide` rhs
-    CRmdOp -> error "mod is not supported"
-  
+-- | Transformers for interval semantics 
+-- Given an initial state and an expression
+-- return the updated state.
+transformer_expr :: SExpression -> IntTOp Act
+transformer_expr expr = do
+  s@IntTState{..} <- get
+  if cond
+  then bool_transformer_expr expr
+  else do
+    (vals,act) <- transformer expr
+    return act 
+    
 -- eval logical expressions
-evalCond :: Expression -> Sigma -> Maybe Sigma
-evalCond expr s = case expr of
-  BinOp op lhs rhs -> applyLogic s op lhs rhs
-  UnaryOp CNegOp rhs ->
+-- we are going to be conservative;
+-- all the variables in this expression
+-- are going to be considered written
+bool_transformer_expr :: SExpression -> IntTOp Act
+bool_transformer_expr expr = case expr of
+  Binary op lhs rhs -> apply_logic op lhs rhs
+  Unary CNegOp rhs ->
     let rhs' = negExp rhs
-    in evalCond rhs' s
-  _ -> error $ "evalCond: unsupported " ++ show expr
+    in bool_transformer_expr rhs' 
+  _ -> error $ "bool_transformer_expr: not supported " ++ show expr
 
+apply_logic = undefined
+
+-- | Transformer for an expression with a single state
+transformer :: SExpression -> IntTOp (IntValue,Act)
+transformer e =
+  case e of 
+    AlignofExpr expr -> error "transformer: align_of_expr not supported"  
+    AlignofType decl -> error "transformer: align_of_type not supported"
+    Assign assignOp lhs rhs -> assign_transformer assignOp lhs rhs 
+    Binary binaryOp lhs rhs -> binop_transformer binaryOp lhs rhs 
+    BuiltinExpr built -> error "transformer: built_in_expr not supported" 
+    Call fn args n -> call_transformer fn args  
+    Cast decl expr -> error "transformer: cast not supported"
+    Comma exprs -> error "transformer: comma not supported" 
+    CompoundLit decl initList -> error "transforemr: compound literal not supported" 
+    Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
+    Const const -> const_transformer const 
+    Index arr_expr index_expr -> error "transformer: index not supported"
+    LabAddrExpr ident -> error "transformer: labaddr not supported"
+    Member expr ident bool -> error "transformer: member not supported"
+    SizeofExpr expr -> error "transformer: sizeof expression not supported" 
+    SizeofType decl -> error "transformer: sizeof type not supported"
+    Skip -> return (IntVal [],bot_act)
+    StatExpr stmt -> error "transformer: stat_expr not supported"
+    Unary unaryOp expr -> unop_transformer unaryOp expr 
+    Var ident -> var_transformer ident 
+    ComplexReal expr -> error "transformer: complex op not supported" 
+    ComplexImag expr -> error "transformer: complex op not supported" 
+
+-- | Transformer for an assignment expression.
+assign_transformer :: AssignOp -> SExpression -> SExpression -> IntTOp (IntValue,Act)
+assign_transformer op lhs rhs = do
+  -- process the lhs (get the new state, values and actions)
+  (lhs_vals,lhs_acts) <- transformer lhs
+  -- process the rhs (get the new state, values and actions)
+  (rhs_vals,rhs_acts) <- transformer rhs
+  let res_vals = case op of
+        CAssignOp -> rhs_vals
+        -- arithmetic operations 
+        CMulAssOp -> lhs_vals * rhs_vals 
+        CDivAssOp -> lhs_vals `iDivide` rhs_vals 
+        CRmdAssOp -> error "mod not supported" 
+        CAddAssOp -> lhs_vals + rhs_vals 
+        CSubAssOp -> lhs_vals - rhs_vals
+        -- bit-wise operations
+        _ -> error "assign_transformer: not supported" 
+  -- get the addresses of the left hand side
+  s@IntTState{..} <- get
+  let lhs_id = get_addrs st scope lhs
+      res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
+  -- modify the state of the addresses with
+  -- the result values 
+  let res_st = modify_state scope st lhs_id res_vals
+  set_state res_st 
+  return (res_vals,res_acts) 
+
+-- | Transformer for binary operations.
+--   These transformers do not change the state;
+binop_transformer :: BinaryOp -> SExpression -> SExpression -> IntTOp (IntValue,Act)
+binop_transformer binOp lhs rhs = do
+  s@IntTState{..} <- get
+  -- process the lhs (get the new state, values and actions)
+  (lhs_vals,lhs_acts) <- transformer lhs
+  -- process the rhs (get the new state, values and actions)
+  (rhs_vals,rhs_acts) <- transformer rhs
+  let res_vals = case binOp of
+        CMulOp -> lhs_vals * rhs_vals 
+        CDivOp -> lhs_vals `iDivide` rhs_vals 
+        CRmdOp -> error "mod not supported for intervals" 
+        CAddOp -> lhs_vals + rhs_vals 
+        CSubOp -> lhs_vals - rhs_vals
+        -- boolean operations 
+        -- bit-wise operations 
+        CShlOp -> error "binop_transformer: CShlOp not supported"  
+        CShrOp -> error "binop_transformer: CShrOp not supported" 
+        CXorOp -> error "binop_transformer: CXorOp not supported" 
+        CLndOp -> error "binop_transformer: CLndOp not supported" 
+        CLorOp -> error "binop_transformer: CLorOp not supported"
+        _ -> error "binop_transtranformer: not completed for intervals" -- apply_logic binOp lhs rhs
+      res_acts = lhs_acts `join_act` rhs_acts
+  return (res_vals,res_acts)
+
+-- | Transformer for call expression:
+--   Support for pthread API functions
+--   pthread_create
+--   pthread_join
+--   lock
+--   unlock  
+call_transformer :: SExpression -> [SExpression] -> IntTOp (IntValue,Act)
+call_transformer fn args =
+  case fn of
+    Var ident -> do
+      s@IntTState{..} <- get
+      let n = get_symbol_name ident sym
+      call_transformer_name n args 
+    _ -> error "call_transformer: not supported" 
+
+call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,Act)
+call_transformer_name name args = case name of
+  "pthread_create" -> do
+    s@IntTState{..} <- get
+    let th_id = get_expr_id $ args !! 1
+        th_sym = get_expr_id $ args !! 3
+        th_name = get_symbol_name th_sym sym
+        th_pos = get_entry th_name cfgs sym
+        st' = insert_thread st th_id th_pos
+    set_state st' 
+    return (IntVal [],bot_act) 
+  _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
+
+-- Need to apply the cut over the state
+-- for the cond + then expression
+-- for the not cond + else expression
+-- and join both states
+cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> IntTOp (IntValue,Act)
+cond_transformer cond mThen else_e = error "cond_transformer not supported"
+{- do
+  s <- get
+  -- Then part
+  cond_acts <- bool_transformer_expr cond
+  sCond <- get
+  (tState,tVal,t_) <- if is_bot sCond
+            then sCond -- bottom 
+            else case mThen of
+              Nothing -> error "cond_transformer: cond is true and there is not then"
+              Just e  -> transformer e >>= \(vt,at) -> get >>= \s -> return (s,vt,at)
+  -- Else part
+  put s
+  ncond_acts <- bool_transformer_expr $ Unary CNegOp cond
+  sElse <- get
+  eState <- if is_bot sElse
+            then sElse
+            else transformer else_e >> get
+  let ns = tState `join_intstate` eState
+  put ns
+-}  
+{-
+do
+  (vals,acts) <- transformer cond
+  -- vals is both false and true 
+  let (isTrue,isFalse) = checkBoolVals vals
+  (tVal,tAct) <-
+    if isTrue
+    then case mThen of
+           Nothing -> error "cond_transformer: cond is true and there is not then"
+           Just e -> transformer e
+    else return ([],bot_act)
+  (eVal,eAct) <-
+    if isFalse
+    then transformer else_e
+    else return ([],bot_act)
+  let res_vals = tVal ++ eVal
+      res_acts = acts `join_act` tAct `join_act` eAct
+  return (res_vals,res_acts) 
+-}
+
+-- | Transformer for constants.
+const_transformer :: Constant -> IntTOp (IntValue,Act)
+const_transformer const =
+  case toValue const of
+    VInt i -> return (InterVal (I i, I i), bot_act)
+    _ -> error "const_transformer: not supported non-int constants"
+
+-- | Transformer for unary operations.
+unop_transformer :: UnaryOp -> SExpression -> IntTOp (IntValue,Act)
+unop_transformer unOp expr = do 
+  case unOp of
+    CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
+    CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
+    CPostIncOp -> error "unop_transformer: CPostIncOp not supported"   
+    CPostDecOp -> error "unop_transformer: CPostDecOp not supported"   
+    CAdrOp     -> error "unop_transformer: CAdrOp     not supported"    
+    CIndOp     -> error "unop_transformer: CIndOp     not supported" 
+    CPlusOp    -> transformer expr 
+    CMinOp     -> do
+      (expr_vals,res_acts) <- transformer expr 
+      return ((InterVal (I 0, I 0)) - expr_vals,res_acts)
+    CCompOp    -> error "unop_transformer: CCompOp not supported" 
+    CNegOp     -> transformer $ negExp expr 
+
+-- | Transformer for var expressions.
+var_transformer :: SymId -> IntTOp (IntValue,Act)
+var_transformer id = do
+  s@IntTState{..} <- get
+  -- First search in the heap
+  case M.lookup id (heap st) of
+    Nothing -> 
+      -- If not in the heap, search in the thread
+      case scope of
+        Global -> error "var_transformer: id is not the heap and scope is global"
+        Local i -> case M.lookup i (th_states st) of
+          Nothing -> error "var_transformer: scope does not match the state"
+          Just ths@ThState{..} -> case M.lookup id locals of
+            Nothing -> error "var_transformer: id is not in the local state of thread"
+            Just v  -> do
+              let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs 
+              return (v,reds)
+    Just cell@MCell{..} -> do
+      let reds = Act (MemAddrs [MemAddr id Global]) bot_maddrs bot_maddrs bot_maddrs 
+      return (val,reds)
+  
 -- negates logical expression using De Morgan Laws
-negExp :: Expression -> Expression
+negExp :: SExpression -> SExpression
 negExp expr = case expr of
-  BinOp CLndOp l r -> BinOp CLorOp (negExp l) (negExp r)
-  BinOp CLorOp l r -> BinOp CLndOp (negExp l) (negExp r)
-  BinOp op l r -> BinOp (negOp op) l r
-  UnaryOp CNegOp e -> negExp e
+  Binary CLndOp l r -> Binary CLorOp (negExp l) (negExp r)
+  Binary CLorOp l r -> Binary CLndOp (negExp l) (negExp r)
+  Binary op l r -> Binary (negOp op) l r
+  Unary CNegOp e -> negExp e
   _ -> error $ "negExp: unsupported " ++ show expr
 
-negOp :: OpCode -> OpCode
+negOp :: BinaryOp -> BinaryOp 
 negOp op = case op of
   CLeOp -> CGeqOp
   CGrOp -> CLeqOp
@@ -392,35 +401,36 @@ negOp op = case op of
   CEqOp -> CNeqOp
   CNeqOp -> CEqOp
   _ -> error $ "negOp: unsupported " ++ show op
-  
+
+{-
 -- apply logical operations
 -- if this function returns nothing is because the condition is false
 applyLogic :: Sigma -> OpCode -> Expression -> Expression -> Maybe Sigma
-applyLogic s op lhs rhs = 
+applyLogic s op lhs rhs =
   let one = Const (IntValue 1)
   in case op of
     -- e1 < e2 ~> e1 <= (e2 - 1)
     CLeOp  -> interval_leq s lhs (BinOp CSubOp rhs one)
     -- e1 > e2 ~> e2 <= (e1 - 1)
     CGrOp  -> interval_leq s (BinOp CAddOp rhs one) lhs
-    -- e1 <= e2 
+    -- e1 <= e2
     CLeqOp -> interval_leq s lhs rhs
     -- e1 >= e2 ~> e2 <= e1
     CGeqOp -> interval_leq s rhs lhs
     -- e1 == e2 ~> (e1 <= e2) and (e2 <= e1)
-    CEqOp  -> 
+    CEqOp  ->
       let lhs' = BinOp CLeqOp lhs rhs
           rhs' = BinOp CLeqOp rhs lhs
       in applyLogic s CLndOp lhs' rhs'
     -- e1 != e2 ~> (e1 <= (e2 - 1)) or (e2 <= (e1 - 1))
-    CNeqOp -> 
+    CNeqOp ->
       let lhs' = BinOp CLeqOp lhs (BinOp CSubOp rhs one)
           rhs' = BinOp CLeqOp rhs (BinOp CSubOp lhs one)
       in applyLogic s CLorOp lhs' rhs'
     CLndOp -> do
       lhs_res <- evalCond lhs s
       evalCond rhs lhs_res
-    CLorOp -> 
+    CLorOp ->
       case evalCond lhs s of
         Nothing -> evalCond rhs s
         Just lhs_res -> return lhs_res
@@ -455,3 +465,22 @@ interval_leq s lhs rhs =
   in case lhs_val `iMeet` rhs_val of
     Bot -> Nothing
     _ -> Just s
+-}
+
+-- | get the addresses of an identifier
+--   super simple now by assuming not having pointers
+get_addrs_id :: IntState -> Scope -> SymId -> MemAddrs
+get_addrs_id st scope id = 
+  case M.lookup id (heap st) of
+    Nothing -> MemAddrs [MemAddr id scope] 
+    Just i  -> MemAddrs [MemAddr id Global] 
+
+-- | get_addrs retrieves the information from the 
+--   points to analysis.
+--   Simplify to onlu consider the case where the 
+--   the expression is a LHS (var or array index).
+get_addrs :: IntState -> Scope -> SExpression -> MemAddrs
+get_addrs st scope expr =
+  case expr of
+    Var id -> get_addrs_id st scope id 
+    _ -> error "get_addrs: not supported"
