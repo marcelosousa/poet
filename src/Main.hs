@@ -40,7 +40,7 @@ import Util.Generic
 _program, _summary :: String
 _summary =
   unlines ["POET - v0.2.1","Partial Order Exploration Tools"
-          ++"is a set of exploration methods for concurrent C programs."
+          ,"is a set of exploration methods for concurrent C programs."
           ,"Copyright 2015-16 @ Marcelo Sousa"]
 _program = "poet"
 _help    = "The input files of poet are C files written in a restricted subset of the C language."
