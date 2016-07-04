@@ -27,6 +27,7 @@ import Domain.Action
 import Domain.Util
 
 import Language.C.Syntax.Ops 
+import Language.C.Syntax.Constants
 import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Flow
@@ -176,13 +177,81 @@ transformer_expr expr = do
 -- are going to be considered written
 bool_transformer_expr :: SExpression -> IntTOp Act
 bool_transformer_expr expr = case expr of
-  Binary op lhs rhs -> apply_logic op lhs rhs
+  Binary op lhs rhs -> do 
+    (val,act) <- apply_logic op lhs rhs
+    return act
   Unary CNegOp rhs ->
     let rhs' = negExp rhs
     in bool_transformer_expr rhs' 
   _ -> error $ "bool_transformer_expr: not supported " ++ show expr
 
-apply_logic = undefined
+apply_logic :: BinaryOp -> SExpression -> SExpression -> IntTOp (IntValue,Act)
+apply_logic op lhs rhs =
+  let one = Const $ IntConst $ CInteger 1 DecRepr $ Flags 0 
+  in case op of
+    -- e1 < e2 ~> e1 <= (e2 - 1)
+    CLeOp  -> interval_leq lhs (Binary CSubOp rhs one)
+    -- e1 > e2 ~> e2 <= (e1 - 1)
+    CGrOp  -> interval_leq (Binary CAddOp rhs one) lhs
+    -- e1 <= e2
+    CLeqOp -> interval_leq lhs rhs
+    -- e1 >= e2 ~> e2 <= e1
+    CGeqOp -> interval_leq rhs lhs
+    -- e1 == e2 ~> (e1 <= e2) and (e2 <= e1)
+    CEqOp  ->
+      let lhs' = Binary CLeqOp lhs rhs
+          rhs' = Binary CLeqOp rhs lhs
+      in apply_logic CLndOp lhs' rhs'
+    -- e1 != e2 ~> (e1 <= (e2 - 1)) or (e2 <= (e1 - 1))
+    CNeqOp ->
+      let lhs' = Binary CLeqOp lhs (Binary CSubOp rhs one)
+          rhs' = Binary CLeqOp rhs (Binary CSubOp lhs one)
+      in apply_logic CLorOp lhs' rhs'
+    CLndOp -> do
+      lhs_act <- bool_transformer_expr lhs 
+      rhs_act <- bool_transformer_expr rhs
+      return $ (error "CLndOp",lhs_act `join_act` rhs_act)
+    CLorOp -> do
+      lhs_act <- bool_transformer_expr lhs
+      s@IntTState{..} <- get
+      if is_bot st
+      then do
+        rhs_act <- bool_transformer_expr rhs
+        return $ (error "CLorOp",lhs_act `join_act` rhs_act)
+      else return (error "CLorOp",lhs_act) 
+
+-- Logical Operations
+-- Less than (CLeOp)
+interval_leq :: SExpression -> SExpression -> IntTOp (IntValue,Act)
+interval_leq = undefined
+{- 
+interval_leq (Ident x_i) rhs =
+  let v' = lowerBound $ eval rhs s
+      x = BS.pack x_i
+      x_val = safeLookup "interval_leq" s x
+  in case x_val of
+    Bot -> Nothing
+    Interval (a,b) ->
+      if a <= v'
+      then Just $ insert x (i a (min b v')) s
+      else Nothing
+    _ -> error "interval_leq"
+interval_leq s lhs (Ident x_i) =
+  let lhs_val = eval lhs s
+      x = BS.pack x_i
+      x_val = safeLookup "interval_leq" s x
+      aux = i (upperBound lhs_val) PlusInf
+      res = aux `iMeet` x_val
+  in case res of
+    Bot -> Nothing
+    _ -> Just $ insert x res s
+interval_leq s lhs rhs =
+  let lhs_val = eval lhs s
+      rhs_val = eval rhs s
+  in case lhs_val `iMeet` rhs_val of
+    Bot -> Nothing
+    _ -> Just s
+-}
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,Act)
@@ -407,64 +476,6 @@ negOp op = case op of
 -- if this function returns nothing is because the condition is false
 applyLogic :: Sigma -> OpCode -> Expression -> Expression -> Maybe Sigma
 applyLogic s op lhs rhs =
-  let one = Const (IntValue 1)
-  in case op of
-    -- e1 < e2 ~> e1 <= (e2 - 1)
-    CLeOp  -> interval_leq s lhs (BinOp CSubOp rhs one)
-    -- e1 > e2 ~> e2 <= (e1 - 1)
-    CGrOp  -> interval_leq s (BinOp CAddOp rhs one) lhs
-    -- e1 <= e2
-    CLeqOp -> interval_leq s lhs rhs
-    -- e1 >= e2 ~> e2 <= e1
-    CGeqOp -> interval_leq s rhs lhs
-    -- e1 == e2 ~> (e1 <= e2) and (e2 <= e1)
-    CEqOp  ->
-      let lhs' = BinOp CLeqOp lhs rhs
-          rhs' = BinOp CLeqOp rhs lhs
-      in applyLogic s CLndOp lhs' rhs'
-    -- e1 != e2 ~> (e1 <= (e2 - 1)) or (e2 <= (e1 - 1))
-    CNeqOp ->
-      let lhs' = BinOp CLeqOp lhs (BinOp CSubOp rhs one)
-          rhs' = BinOp CLeqOp rhs (BinOp CSubOp lhs one)
-      in applyLogic s CLorOp lhs' rhs'
-    CLndOp -> do
-      lhs_res <- evalCond lhs s
-      evalCond rhs lhs_res
-    CLorOp ->
-      case evalCond lhs s of
-        Nothing -> evalCond rhs s
-        Just lhs_res -> return lhs_res
-apply _ _ _ = error "apply: not all sides are just integer values"
-
--- Logical Operations
--- Less than (CLeOp)
-interval_leq :: Sigma -> Expression -> Expression -> Maybe Sigma
-interval_leq s (Ident x_i) rhs =
-  let v' = lowerBound $ eval rhs s
-      x = BS.pack x_i
-      x_val = safeLookup "interval_leq" s x
-  in case x_val of
-    Bot -> Nothing
-    Interval (a,b) ->
-      if a <= v'
-      then Just $ insert x (i a (min b v')) s
-      else Nothing
-    _ -> error "interval_leq"
-interval_leq s lhs (Ident x_i) =
-  let lhs_val = eval lhs s
-      x = BS.pack x_i
-      x_val = safeLookup "interval_leq" s x
-      aux = i (upperBound lhs_val) PlusInf
-      res = aux `iMeet` x_val
-  in case res of
-    Bot -> Nothing
-    _ -> Just $ insert x res s
-interval_leq s lhs rhs =
-  let lhs_val = eval lhs s
-      rhs_val = eval rhs s
-  in case lhs_val `iMeet` rhs_val of
-    Bot -> Nothing
-    _ -> Just s
 -}
 
 -- | get the addresses of an identifier
