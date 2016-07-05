@@ -29,7 +29,7 @@ import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
-import Model.GCS
+import qualified Model.GCS as GCS
 import Util.Generic hiding (safeLookup)
 
 -- | State of the concrete transformer
@@ -66,16 +66,16 @@ set_single_state state = do
 
 -- | converts the front end into a system
 -- @REVISED: July'16
-convert :: FrontEnd () (CState,Act) -> System CState Act
+convert :: FrontEnd () (CState,Act) -> GCS.System CState Act
 convert fe@FrontEnd{..} =
-  let pos_main = get_entry "main" cfgs symt
+  let pos_main = get_entry "main" cfgs symt 
       init_tstate = ConTState Global empty_state bot_sigma symt cfgs False
-      (acts,s@ConTState{..}) = runState (transformer_decls $ decls ast) init_tstate
-      st' = set_pos st main_tid pos_main  
-  in System st' acts cfgs symt [main_tid] 1
+      (acts,s) = runState (transformer_decls $ decls ast) init_tstate
+      st' = set_pos (st s) GCS.main_tid pos_main  
+  in GCS.System st' acts cfgs (sym s) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
-get_entry :: String -> Graphs SymId () (CState,Act) -> Map SymId Symbol -> Pos
+get_entry :: String -> Graphs SymId () (CState,Act) -> Map SymId Symbol -> GCS.Pos
 get_entry fnname graphs symt = 
   case M.foldrWithKey aux_get_entry Nothing graphs of
     Nothing -> error $ "get_entry: cant get entry for " ++ fnname

@@ -51,7 +51,7 @@ gen_collapse tid cfgs symt cfg@Graph{..} pos st =
   in worklist_fix tid cfgs symt cfg wlist [] 
 
 worklist_fix :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
-worklist_fix tid cfgs symt cfg@Graph{..} wlist res =
+worklist_fix tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
   case wlist of
     [] -> res 
     ((pre,eId,post):wlst) ->
