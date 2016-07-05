@@ -2,6 +2,9 @@
 {-#LANGUAGE FlexibleContexts #-}
 module Exploration.UNF.Unfolder (unfolder) where
 
+import System.IO.Unsafe
+import qualified Debug.Trace as T
+
 import Control.Monad.State.Strict
 import Control.Monad.ST
 import Data.Hashable
@@ -16,7 +19,6 @@ import Exploration.UNF.Cutoff.McMillan
 import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
 
-import System.IO.Unsafe
 import Prelude hiding (pred)
 import Util.Generic
 
@@ -60,8 +62,14 @@ separator = "-----------------------------------------\n"
 explore :: (Hashable st,GCS.Collapsible st act) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st act s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
+  str <- lift $ showEvents evts
+  T.trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+       ++ ", enevs = " ++ show enevs ++ ", alt = " 
+       ++ show alt ++ ", stack = " ++ show stak++")\nState:"++show state++"\n"++str) $ return ()
+  let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
-  if null enevs 
+  -- if null enevs 
+  k `seq` if null enevs 
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative

@@ -78,7 +78,7 @@ bot_th_state :: Pos -> SymId -> ThState
 bot_th_state pos id = ThState pos id M.empty
 
 bot_sigma :: Sigma
-bot_sigma = Sigma M.empty M.empty 0 False
+bot_sigma = Sigma M.empty M.empty 1 False
 
 bot_state :: CState
 bot_state = CState S.empty

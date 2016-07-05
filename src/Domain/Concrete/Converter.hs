@@ -41,6 +41,7 @@ data ConTState
  , sym :: Map SymId Symbol
  , cfgs :: Graphs SymId () (CState,Act)
  , cond :: Bool            -- is a condition? 
+ , exit :: Bool            -- is an exit? 
  }
 
 -- | Transformer operation 
@@ -69,7 +70,7 @@ set_single_state state = do
 convert :: FrontEnd () (CState,Act) -> GCS.System CState Act
 convert fe@FrontEnd{..} =
   let pos_main = get_entry "main" cfgs symt 
-      init_tstate = ConTState Global empty_state bot_sigma symt cfgs False
+      init_tstate = ConTState Global empty_state bot_sigma symt cfgs False False
       (acts,s) = runState (transformer_decls $ decls ast) init_tstate
       st' = set_pos (st s) GCS.main_tid pos_main  
   in GCS.System st' acts cfgs (sym s) [GCS.main_tid] 1
@@ -182,20 +183,23 @@ default_value ty = [ ConVal $ init_value ty ]
 -- of this expression and a set of actions
 -- performed by this expression.
 transformer_expr :: SExpression -> ConTOp Act
-transformer_expr expr = do
+transformer_expr expr = Debug.Trace.trace ("executing the expr " ++ show expr) $ do
   s@ConTState{..} <- get
   let states = S.toList $ sts st
   -- reset the states
   set_state $ CState S.empty
   -- for each previous state; run the transformer on that state
   valsacts <- mapM (\st -> set_single_state st >> transformer expr >>= \(a,b) -> return (st,a,b)) states
-  if cond
-  then do
-    -- filter the states and compute the actions
-    let (nsts,nvals) = foldr cond_transformer_expr ([],bot_act) valsacts
-    -- add the states
-    join_state $ CState $ S.fromList nsts 
-    return nvals 
+  if cond || exit
+  then if cond
+       then do -- filter the states and compute the actions
+         let (nsts,nvals) = foldr cond_transformer_expr ([],bot_act) valsacts
+         -- add the states
+         join_state $ CState $ S.fromList nsts 
+         return nvals
+       else do
+         join_state $ CState $ sts st
+         return $ foldr (\(_,_,a) r -> a `join_act` r) bot_act valsacts
   -- join all the actions
   else return $ foldr (\(_,_,a) r -> a `join_act` r) bot_act valsacts
  where
@@ -224,7 +228,10 @@ transformer e =
     Member expr ident bool -> error "transformer: member not supported"
     SizeofExpr expr -> error "transformer: sizeof expression not supported" 
     SizeofType decl -> error "transformer: sizeof type not supported"
-    Skip -> return ([],bot_act)
+    Skip -> do 
+      s@ConTState{..} <- get
+      join_state $ CState $ S.singleton cst 
+      return ([],bot_act)
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> unop_transformer unaryOp expr 
     Var ident -> var_transformer ident 
@@ -368,23 +375,23 @@ unop_transformer unOp expr = do
 
 -- | Transformer for var expressions.
 var_transformer :: SymId -> ConTOp (ConValues,Act)
-var_transformer id = do
+var_transformer symId = do
   s@ConTState{..} <- get
   -- First search in the heap
-  case M.lookup id (heap cst) of
+  case M.lookup symId (heap cst) of
     Nothing -> 
       -- If not in the heap, search in the thread
       case scope of
         Global -> error "var_transformer: id is not the heap and scope is global"
         Local i -> case M.lookup i (th_states cst) of
           Nothing -> error "var_transformer: scope does not match the state"
-          Just ths@ThState{..} -> case M.lookup id locals of
-            Nothing -> error $ "var_transformer: " ++ show id ++ " is not in the local state of thread"
+          Just ths@ThState{..} -> case M.lookup symId locals of
+            Nothing -> error $ "var_transformer: " ++ show symId ++ " is not in the local state of thread\nheap: " ++ show (heap cst) 
             Just v  -> do
-              let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs 
+              let reds = Act (MemAddrs [MemAddr symId scope]) bot_maddrs bot_maddrs bot_maddrs 
               return ([v],reds)
     Just cell@MCell{..} -> do
-      let reds = Act (MemAddrs [MemAddr id Global]) bot_maddrs bot_maddrs bot_maddrs 
+      let reds = Act (MemAddrs [MemAddr symId Global]) bot_maddrs bot_maddrs bot_maddrs 
       return ([val],reds)
   
 -- | get the addresses of an identifier

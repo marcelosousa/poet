@@ -22,7 +22,7 @@ data Act
   , locks   :: MemAddrs -- locks
   , unlocks :: MemAddrs -- unlocks
   }
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Show)
 
 bot_act :: Act
 bot_act =
@@ -41,6 +41,7 @@ add_writes ws act@Act{..} =
   let wrs' = ws `join_maddrs` wrs
   in act { wrs = wrs' }
   
+{-
 instance Show Act where
   show act@Act{..} =
     let rs = "reads: " ++ show rds
@@ -48,6 +49,7 @@ instance Show Act where
         lks = "locks: " ++ show locks
         ulks = "unlocks: " ++ show unlocks
     in rs++"\n"++wrds++"\n"++lks++"\n"++ulks
+-}
 
 instance Action Act where
   isBlocking act@Act{..} = 

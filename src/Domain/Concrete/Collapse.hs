@@ -23,6 +23,7 @@ import Language.SimpleC.AST
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
 import Model.GCS
+import qualified Debug.Trace as T
 
 type ConGraph = Graph SymId () (CState,Act) 
 type ConGraphs = Graphs SymId () (CState,Act) 
@@ -40,20 +41,21 @@ instance Collapsible CState Act where
         th_cfg = case M.lookup th_sym cfgs of
           Nothing -> error "collapse: cant find thread"
           Just cfg -> cfg 
-    in gen_collapse tid cfgs symt th_cfg pos st
+    in gen_collapse tid th_sym cfgs symt th_cfg pos st
 
 -- @TODO: Receive other options for widening and state splitting
-gen_collapse :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Pos -> CState -> ResultList 
-gen_collapse tid cfgs symt cfg@Graph{..} pos st =
+gen_collapse :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Pos -> CState -> ResultList 
+gen_collapse tid tsym cfgs symt cfg@Graph{..} pos st =
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-  --in worklist_fix tid cfgs symt cfg' wlist [] 
-  in single_edge tid cfgs symt cfg' wlist [] 
+      res = worklist_fix tid tsym cfgs symt cfg' wlist [] 
+  in filter (\(s,_,_) -> s /= bot_state) res 
+  --in single_edge tid tsym cfgs symt cfg' wlist [] 
 
-single_edge :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList
-single_edge  tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
+single_edge :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList
+single_edge tid tsym cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
   case wlist of
     [] -> res 
     ((pre,eId,post):wlst) ->
@@ -66,16 +68,17 @@ single_edge  tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
           -- get the edge info
           e@EdgeInfo{..} = get_edge_info cfg eId
           -- construct the transformer state
-          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs (is_cond edge_tags)
+          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs (is_cond edge_tags) (is_exit edge_tags)
           -- decide based on the type of edge which transformer to call
-          (acts,ns@ConTState{..}) = case edge_code of
+          (acts,ns@ConTState{..}) = T.trace ("collapsing: " ++ show edge_code) $ case edge_code of
               D decl -> runState (transformer_decl decl) tr_st 
                 -- execute the transformer
               E expr -> runState (transformer_expr expr) tr_st
-      in single_edge tid cfgs symt cfg wlst ((st,post,acts):res)
+          new_st = set_pos st tid (post,tsym)
+      in T.trace ("new state after collapse: " ++ show new_st) $ single_edge tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
 
-worklist_fix :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
-worklist_fix tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
+worklist_fix :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
+worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:" ++ show (wlist,res)) $
   case wlist of
     [] -> res 
     ((pre,eId,post):wlst) ->
@@ -88,35 +91,36 @@ worklist_fix tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
           -- get the edge info
           e@EdgeInfo{..} = get_edge_info cfg eId
           -- construct the transformer state
-          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs (is_cond edge_tags)
+          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs (is_cond edge_tags) (is_exit edge_tags)
           -- decide based on the type of edge which transformer to call
-          (acts,ns@ConTState{..}) = case edge_code of
+          (acts,ns@ConTState{..}) = T.trace ("collapsing: " ++ show edge_code) $ case edge_code of
               D decl -> runState (transformer_decl decl) tr_st 
                 -- execute the transformer
               E expr -> runState (transformer_expr expr) tr_st
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
-      in if isGlobal acts
-         then worklist_fix tid cfgs symt cfg wlst ((st,post,acts):res)
+          new_st = set_pos st tid (post,tsym)
+      in if isGlobal acts || is_exit edge_tags
+         then worklist_fix tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
          else 
            -- depending on the tags of the edge; the behaviour is different
            let (is_fix,node_table') =
                 if is_join edge_tags
                 -- join point: join the info in the cfg 
-                then join_update node_table post (st,acts) 
+                then join_update node_table post (new_st,acts) 
                 -- considering everything else the standard one: just replace 
                 -- the information in the cfg and add the succs of post to the worklist
-                else strong_update node_table post (st,acts) 
+                else strong_update node_table post (new_st,acts) 
                cfg' = cfg { node_table = node_table' }
                rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
                nwlist = if is_fix then wlst else (wlst ++ rwlst)
-           in worklist_fix tid cfgs symt cfg' nwlist res
+           in worklist_fix tid tsym cfgs symt cfg' nwlist res
 
 join_update :: Map NodeId [(CState,Act)] -> NodeId -> (CState,Act) -> (Bool, Map NodeId [(CState,Act)])
 join_update node_table node (st,act) =
   case M.lookup node node_table of
-    Nothing -> error "join_update: not suppose to happen"
+    Nothing -> (False, M.insert node [(st,act)] node_table)
     Just lst -> case lst of
       [] -> (False, M.insert node [(st,act)] node_table)
       [(st',act')] ->

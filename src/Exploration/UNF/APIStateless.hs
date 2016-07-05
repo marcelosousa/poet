@@ -444,7 +444,13 @@ partition_dependent êinfo events (dep,indep) es =
       else partition_dependent êinfo events (dep,e:indep) r
 
 is_independent :: (Show act, GCS.Action act) => EventID -> EventID -> Events act s -> ST s Bool
-is_independent = undefined
+is_independent e1 e2 evts =
+  if e1 == GCS.botID || e2 == GCS.botID
+  then return False
+  else do
+    ev1 <- get_event "is_independent" e1 evts
+    ev2 <- get_event "is_independent" e1 evts
+    return $ not $ is_dependent (name ev1, acts ev1) (name ev2, acts ev2) 
 
 -- | Checks if two event names are dependent
 -- This occurs if they are events of the same process
@@ -452,9 +458,10 @@ is_independent = undefined
 -- Of course, one can emulate events of the same process
 -- in their actions (by for example considering Writes to 
 -- the PC variable) but this would be more expensive.
-is_dependent :: GCS.Action act => EventInfo act -> EventInfo act -> Bool
-is_dependent ((pid,_),acts) ((pid',_),acts') =
-  pid == pid' || GCS.interferes acts acts'
+is_dependent :: (Show act, GCS.Action act) => EventInfo act -> EventInfo act -> Bool
+is_dependent a@((pid,_),acts) b@((pid',_),acts') =
+--  T.trace ("checking dependency between " ++ show (a,b)) $ 
+    pid == GCS.botID || pid' == GCS.botID || pid == pid' || GCS.interferes acts acts'
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event
