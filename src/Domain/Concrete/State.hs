@@ -88,15 +88,15 @@ empty_state :: CState
 empty_state = CState $ S.singleton bot_sigma 
 
 -- | Set the position in the cfg of a thread
-set_pos :: CState -> TId -> Pos -> CState
+set_pos :: CState -> TId -> (Pos,SymId) -> CState
 set_pos (CState st) tid npos = CState $ S.map (\s -> set_pos_s s tid npos) st
 
-set_pos_s :: Sigma -> TId -> Pos -> Sigma
-set_pos_s st@Sigma{..} tid npos = 
+set_pos_s :: Sigma -> TId -> (Pos,SymId) -> Sigma
+set_pos_s st@Sigma{..} tid (npos,sid) = 
   let th_st' =
         case M.lookup tid th_states of
           -- if nothing, it could be the beginning
-          Nothing -> ThState npos (SymId tid) M.empty
+          Nothing -> ThState npos sid M.empty
           Just t@ThState{..} ->
             let pos' = npos
             in t { pos = pos' }
@@ -160,6 +160,10 @@ instance Projection Sigma where
   controlPart st@Sigma{..} = M.map pos th_states
   subsumes a b = subsumes_concrete a b
   isBottom = is_bot 
+  toThSym st@Sigma{..} tid =
+    case M.lookup tid th_states of
+      Nothing -> error "toThSym sigma failed"
+      Just s@ThState{..} -> id
 
 instance Projection CState where
   controlPart (CState a) =
@@ -171,6 +175,7 @@ instance Projection CState where
             else S.elemAt 0 s
   subsumes (CState a) (CState b) = S.isSubsetOf b a
   isBottom (CState a) = S.null a
+  toThSym (CState a) tid = toThSym (S.elemAt 0 a) tid
  
 -- | API for modifying the state
 

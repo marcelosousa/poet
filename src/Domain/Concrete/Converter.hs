@@ -75,7 +75,7 @@ convert fe@FrontEnd{..} =
   in GCS.System st' acts cfgs (sym s) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
-get_entry :: String -> Graphs SymId () (CState,Act) -> Map SymId Symbol -> GCS.Pos
+get_entry :: String -> Graphs SymId () (CState,Act) -> Map SymId Symbol -> (GCS.Pos,SymId)
 get_entry fnname graphs symt = 
   case M.foldrWithKey aux_get_entry Nothing graphs of
     Nothing -> error $ "get_entry: cant get entry for " ++ fnname
@@ -88,7 +88,7 @@ get_entry fnname graphs symt =
          case M.lookup sym symt of
            Nothing -> Nothing
            Just s  -> if get_name s == fnname
-                      then Just $ entry_node cfg
+                      then Just (entry_node cfg,sym)
                       else Nothing 
 
 -- | processes a list of declarations 
@@ -318,7 +318,7 @@ call_transformer_name name args = case name of
         th_sym = get_expr_id $ args !! 3
         th_name = get_symbol_name th_sym sym
         th_pos = get_entry th_name cfgs sym
-        st' = insert_thread cst th_id th_pos
+        st' = insert_thread cst th_id $ fst th_pos
     join_state st' 
     return ([],bot_act) 
   _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
@@ -379,7 +379,7 @@ var_transformer id = do
         Local i -> case M.lookup i (th_states cst) of
           Nothing -> error "var_transformer: scope does not match the state"
           Just ths@ThState{..} -> case M.lookup id locals of
-            Nothing -> error "var_transformer: id is not in the local state of thread"
+            Nothing -> error $ "var_transformer: " ++ show id ++ " is not in the local state of thread"
             Just v  -> do
               let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs 
               return ([v],reds)

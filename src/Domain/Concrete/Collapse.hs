@@ -36,7 +36,7 @@ instance Collapsible CState Act where
         pos = case M.lookup tid control of
           Nothing -> error "collapse: tid is not represented in the control"
           Just p  -> p
-        th_sym = SymId tid
+        th_sym = toThSym st tid 
         th_cfg = case M.lookup th_sym cfgs of
           Nothing -> error "collapse: cant find thread"
           Just cfg -> cfg 
@@ -47,8 +47,32 @@ gen_collapse :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Pos -> CState -> 
 gen_collapse tid cfgs symt cfg@Graph{..} pos st =
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
-      wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg pos
-  in worklist_fix tid cfgs symt cfg wlist [] 
+      cfg' = cfg { node_table = node_table' }
+      wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
+  --in worklist_fix tid cfgs symt cfg' wlist [] 
+  in single_edge tid cfgs symt cfg' wlist [] 
+
+single_edge :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList
+single_edge  tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
+  case wlist of
+    [] -> res 
+    ((pre,eId,post):wlst) ->
+      -- get the current state in the pre
+      let l_st = get_node_info cfg pre
+          node_st = case l_st of
+                 [] -> error "worklist_fix: bottom state not supposed to happen"
+                 [s] -> s
+                 _ -> error "worklist_fix: more than one abstract state in the node" 
+          -- get the edge info
+          e@EdgeInfo{..} = get_edge_info cfg eId
+          -- construct the transformer state
+          tr_st = ConTState (Local tid) (fst node_st) bot_sigma symt cfgs (is_cond edge_tags)
+          -- decide based on the type of edge which transformer to call
+          (acts,ns@ConTState{..}) = case edge_code of
+              D decl -> runState (transformer_decl decl) tr_st 
+                -- execute the transformer
+              E expr -> runState (transformer_expr expr) tr_st
+      in single_edge tid cfgs symt cfg wlst ((st,post,acts):res)
 
 worklist_fix :: TId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
 worklist_fix tid cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
@@ -106,7 +130,7 @@ join_update node_table node (st,act) =
 strong_update :: Map NodeId [(CState,Act)] -> NodeId -> (CState,Act) -> (Bool, Map NodeId [(CState,Act)])
 strong_update node_table node (st,act) =
   case M.lookup node node_table of
-    Nothing -> error "strong_update: not suppose to happen"
+    Nothing -> (False, M.insert node [(st,act)] node_table) -- error "strong_update: not suppose to happen"
     Just lst -> case lst of
       [] -> (False, M.insert node [(st,act)] node_table)
       [(st',act')] ->

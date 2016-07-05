@@ -70,6 +70,7 @@ class Projection st where
   controlPart :: st -> Control 
   subsumes :: st -> st -> Bool
   isBottom :: st -> Bool
+  toThSym :: st -> TId -> SymId
 
 class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
