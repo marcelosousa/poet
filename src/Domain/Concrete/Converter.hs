@@ -145,7 +145,7 @@ transformer_init id ty minit = do
                   Global -> insert_heap cst id ty val
                   Local i -> insert_local cst i id val 
           id_addrs = get_addrs_id cst scope id
-          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
+          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
       join_state st'
       return acts
     Just i  ->
@@ -319,15 +319,15 @@ call_transformer fn args =
 
 call_transformer_name :: String -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer_name name args = case name of
-  "pthread_create" -> do
+  "pthread_create" -> Debug.Trace.trace ("pthread_create transformer") $ do
     s@ConTState{..} <- get
     let th_id = get_expr_id $ args !! 1
         th_sym = get_expr_id $ args !! 3
         th_name = get_symbol_name th_sym sym
         th_pos = get_entry th_name cfgs sym
         st' = insert_thread cst th_id $ fst th_pos
-    join_state st' 
-    return ([],bot_act) 
+    Debug.Trace.trace ("adding state: " ++ show st') $ join_state st' 
+    return ([],create_thread_act th_sym) 
   _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
 
 cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValues,Act)
@@ -388,10 +388,10 @@ var_transformer symId = do
           Just ths@ThState{..} -> case M.lookup symId locals of
             Nothing -> error $ "var_transformer: " ++ show symId ++ " is not in the local state of thread\nheap: " ++ show (heap cst) 
             Just v  -> do
-              let reds = Act (MemAddrs [MemAddr symId scope]) bot_maddrs bot_maddrs bot_maddrs 
+              let reds = Act (MemAddrs [MemAddr symId scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
               return ([v],reds)
     Just cell@MCell{..} -> do
-      let reds = Act (MemAddrs [MemAddr symId Global]) bot_maddrs bot_maddrs bot_maddrs 
+      let reds = Act (MemAddrs [MemAddr symId Global]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
       return ([val],reds)
   
 -- | get the addresses of an identifier

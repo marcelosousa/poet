@@ -126,7 +126,7 @@ transformer_init id ty minit = do
                   Global -> insert_heap st id ty val
                   Local i -> insert_local st i id val 
           id_addrs = get_addrs_id st scope id
-          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs
+          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
       set_state st'
       return acts
     Just i  ->
@@ -446,10 +446,10 @@ var_transformer id = do
           Just ths@ThState{..} -> case M.lookup id locals of
             Nothing -> error "var_transformer: id is not in the local state of thread"
             Just v  -> do
-              let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs 
+              let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
               return (v,reds)
     Just cell@MCell{..} -> do
-      let reds = Act (MemAddrs [MemAddr id Global]) bot_maddrs bot_maddrs bot_maddrs 
+      let reds = Act (MemAddrs [MemAddr id Global]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
       return (val,reds)
   
 -- negates logical expression using De Morgan Laws

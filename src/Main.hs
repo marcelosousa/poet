@@ -40,7 +40,7 @@ import Domain.Concrete.State
 import Domain.Action
 
 mytest :: IO (FrontEnd () (CState,Act))
-mytest = extract "" "/home/msousa/poet/benchmarks/popl16/regression/test1.c" 
+mytest = extract "" "/home/msousa/poet/benchmarks/popl16/regression/test2.c" 
 
 -- Command Line Options Strings
 _program, _summary :: String

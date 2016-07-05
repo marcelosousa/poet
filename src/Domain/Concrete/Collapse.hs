@@ -51,7 +51,8 @@ gen_collapse tid tsym cfgs symt cfg@Graph{..} pos st =
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
       res = worklist_fix tid tsym cfgs symt cfg' wlist [] 
-  in filter (\(s,_,_) -> s /= bot_state) res 
+      finalres = filter (\(s,_,_) -> s /= bot_state) res
+  in T.trace ("new states after collapase: " ++ show finalres) $ finalres
   --in single_edge tid tsym cfgs symt cfg' wlist [] 
 
 single_edge :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList
@@ -102,7 +103,7 @@ worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:"
       -- the cfg with them 
           new_st = set_pos st tid (post,tsym)
       in if isGlobal acts || is_exit edge_tags
-         then worklist_fix tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
+         then T.trace ("stoping this branch: " ++ show new_st) $ worklist_fix tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
          else 
            -- depending on the tags of the edge; the behaviour is different
            let (is_fix,node_table') =

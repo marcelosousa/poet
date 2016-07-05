@@ -8,6 +8,7 @@
 -------------------------------------------------------------------------------
 module Domain.Action where
 
+import Language.SimpleC.AST
 import Domain.Util
 import Model.GCS
 
@@ -21,12 +22,18 @@ data Act
   , wrs     :: MemAddrs -- write
   , locks   :: MemAddrs -- locks
   , unlocks :: MemAddrs -- unlocks
+  , tcreate :: MemAddrs -- phtread_create 
+  , tjoin   :: MemAddrs -- phtread_join
   }
   deriving (Eq,Ord,Show)
 
 bot_act :: Act
 bot_act =
-  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+
+create_thread_act :: SymId -> Act
+create_thread_act tid = 
+  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid Global]) bot_maddrs
 
 join_act :: Act -> Act -> Act
 join_act a1 a2 =
@@ -34,7 +41,9 @@ join_act a1 a2 =
       w = wrs a1 `join_maddrs` wrs a2 
       l = locks a1 `join_maddrs` locks a2 
       u = unlocks a1 `join_maddrs` unlocks a2
-  in Act r w l u 
+      c = tcreate a1 `join_maddrs` tcreate a2 
+      j = tjoin  a1 `join_maddrs` tjoin a2
+  in Act r w l u c j 
 
 add_writes :: MemAddrs -> Act -> Act
 add_writes ws act@Act{..} =
