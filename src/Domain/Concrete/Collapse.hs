@@ -39,7 +39,7 @@ instance Collapsible CState Act where
           Just p  -> p
         th_sym = toThSym st tid 
         th_cfg = case M.lookup th_sym cfgs of
-          Nothing -> error "collapse: cant find thread"
+          Nothing -> error $ "\n\ncollapse: cant find thread " ++ show (th_sym) ++ " in \n " ++ show cfgs
           Just cfg -> cfg 
     in gen_collapse tid th_sym cfgs symt th_cfg pos st
 
@@ -51,9 +51,9 @@ gen_collapse tid tsym cfgs symt cfg@Graph{..} pos st =
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
       res = worklist_fix tid tsym cfgs symt cfg' wlist [] 
+      --res = single_edge tid tsym cfgs symt cfg' wlist [] 
       finalres = filter (\(s,_,_) -> s /= bot_state) res
   in T.trace ("new states after collapase: " ++ show finalres) $ finalres
-  --in single_edge tid tsym cfgs symt cfg' wlist [] 
 
 single_edge :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList
 single_edge tid tsym cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
@@ -76,7 +76,7 @@ single_edge tid tsym cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
                 -- execute the transformer
               E expr -> runState (transformer_expr expr) tr_st
           new_st = set_pos st tid (post,tsym)
-      in T.trace ("new state after collapse: " ++ show new_st) $ single_edge tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
+      in single_edge tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
 
 worklist_fix :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
 worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:" ++ show (wlist,res)) $
@@ -104,7 +104,7 @@ worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:"
           new_st = set_pos st tid (post,tsym)
       in if isGlobal acts || is_exit edge_tags
          then T.trace ("stoping this branch: " ++ show new_st) $ worklist_fix tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
-         else 
+         else T.trace ("collapse: continuing .... " ++ show acts) $  
            -- depending on the tags of the edge; the behaviour is different
            let (is_fix,node_table') =
                 if is_join edge_tags

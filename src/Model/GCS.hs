@@ -97,7 +97,8 @@ class (Eq act) => Action act where
   -- or lock with an address that is touched
   -- by a1.
   isUnlockOf :: act -> act -> Bool 
-  isLockOf :: act -> act -> Bool 
+  isLockOf :: act -> act -> Bool
+  isCreateOf :: TId -> act -> Bool 
   -- Two sets of actions are independent
   interferes :: act -> act -> Bool
   isGlobal :: act -> Bool

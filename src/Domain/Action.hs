@@ -86,6 +86,10 @@ instance Action Act where
   isGlobal act =
     let acts = act_addrs act
     in is_global acts
+  isCreateOf tid a1@Act{..} =
+    case tcreate of
+      MemAddrTop -> True
+      MemAddrs at -> any (\a -> a == MemAddr (SymId tid) Global) at 
 
 is_global :: MemAddrs -> Bool
 is_global maddr = case maddr of
@@ -94,4 +98,4 @@ is_global maddr = case maddr of
 
 act_addrs :: Act -> MemAddrs
 act_addrs a@Act{..} =
-  rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` unlocks 
+  rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` unlocks `join_maddrs` tcreate `join_maddrs` tjoin 

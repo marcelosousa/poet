@@ -39,7 +39,7 @@ data ConTState
  , st :: CState            -- the set of states
  , cst :: Sigma            -- current state in the state 
  , sym :: Map SymId Symbol
- , cfgs :: Graphs SymId () (CState,Act)
+ , cfgst :: Graphs SymId () (CState,Act)
  , cond :: Bool            -- is a condition? 
  , exit :: Bool            -- is an exit? 
  }
@@ -88,7 +88,7 @@ get_entry fnname graphs symt =
        Nothing -> 
          case M.lookup sym symt of
            Nothing -> Nothing
-           Just s  -> if get_name s == fnname
+           Just s  -> Debug.Trace.trace ("get_entry: name is " ++ get_name s) $ if get_name s == fnname
                       then Just (entry_node cfg,sym)
                       else Nothing 
 
@@ -319,15 +319,23 @@ call_transformer fn args =
 
 call_transformer_name :: String -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer_name name args = case name of
-  "pthread_create" -> Debug.Trace.trace ("pthread_create transformer") $ do
-    s@ConTState{..} <- get
-    let th_id = get_expr_id $ args !! 1
-        th_sym = get_expr_id $ args !! 3
-        th_name = get_symbol_name th_sym sym
-        th_pos = get_entry th_name cfgs sym
-        st' = insert_thread cst th_id $ fst th_pos
-    Debug.Trace.trace ("adding state: " ++ show st') $ join_state st' 
-    return ([],create_thread_act th_sym) 
+  "pthread_create" -> Debug.Trace.trace ("pthread_create transformer: " ++ show args) $ do
+    s <- get
+    let th_id = get_expr_id $ args !! 0
+        th_sym = get_expr_id $ args !! 2
+        th_name = get_symbol_name th_sym (sym s)
+        th_pos = get_entry th_name (cfgst s) (sym s)
+        (tid,st') = insert_thread (cst s) th_sym $ fst th_pos
+    Debug.Trace.trace ("info: " ++ show (th_id,th_sym,th_name,th_pos)) $ join_state st' 
+    return ([],create_thread_act $ SymId tid) 
+  "nondet" -> do 
+    Debug.Trace.trace ("nondet transformer: " ++ show args) $ do
+    (lVal,lacts) <- transformer $ args !! 0
+    (uVal,uacts) <- transformer $ args !! 1
+    case (lVal,uVal) of 
+      ([ConVal (VInt l)],[ConVal (VInt u)]) -> do
+       let vals = map (ConVal . VInt) [l..u]
+       return (vals,lacts `join_act` uacts) 
   _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
 
 cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> ConTOp (ConValues,Act)

@@ -65,7 +65,7 @@ explore c@Conf{..} ê d alt = do
   str <- lift $ showEvents evts
   T.trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
-       ++ show alt ++ ", stack = " ++ show stak++")\nState:"++show state++"\n"++str) $ return ()
+       ++ show alt ++ ", stack = " ++ show stak++")\nState:"++show state++"\n"++str++"\n"++separator) $ return ()
   let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
   -- if null enevs 
@@ -195,7 +195,7 @@ expandWith e maxevs st th = do
 -- set of maximal events with events) of a given name which contain
 -- *e* as an immediate predecessor and returns the event with history h0.
 extend :: (Hashable st, Show act, GCS.Collapsible st act) => EventID -> EventsID -> EventName -> act -> UnfolderOp st act s EventsID
-extend e maxevs êname êacts = do 
+extend e maxevs êname êacts = T.trace ("extending the prefix " ++ show (e,êname,êacts)) $ do 
   s@UnfolderState{..} <- get
   -- @ retrieve the immediate successors of e with the same name to avoid duplicates
   succe <- lift $ get_succ e evts 

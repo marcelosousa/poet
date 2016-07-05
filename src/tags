@@ -111,7 +111,7 @@ _helpTest	Main.hs	65;"	v
 _program	Main.hs	51;"	v
 _summary	Main.hs	47;"	v
 absIVal	./Domain/Interval/Type.hs	71;"	v
-act_addrs	./Domain/Action.hs	96;"	v
+act_addrs	./Domain/Action.hs	100;"	v
 acts	./Exploration/UNF/APIStateless.hs	38;"	v
 add	./Domain/Concrete/Converter.hs	419;"	v
 addEvent	./Exploration/UNF/Unfolder.hs	407;"	v	file:
@@ -149,9 +149,9 @@ call_transformer_name	./Domain/Concrete/Converter.hs	321;"	v
 call_transformer_name	./Domain/Interval/Converter.hs	352;"	v
 catMaybes	./Util/Generic.hs	42;"	v
 cfevs	./Exploration/UNF/APIStateless.hs	79;"	v
-cfgs	./Domain/Concrete/Converter.hs	42;"	v
 cfgs	./Domain/Interval/Converter.hs	44;"	v
 cfgs	./Model/GCS.hs	42;"	v
+cfgst	./Domain/Concrete/Converter.hs	42;"	v
 checkBoolVals	./Domain/Concrete/State.hs	257;"	v
 cntr	./Exploration/UNF/APIStateless.hs	146;"	v
 collapse	./Model/GCS.hs	81;"	v
@@ -230,7 +230,7 @@ get_disa	./Exploration/UNF/APIStateless.hs	238;"	v
 get_entry	./Domain/Concrete/Converter.hs	80;"	v
 get_entry	./Domain/Interval/Converter.hs	74;"	v
 get_event	./Exploration/UNF/APIStateless.hs	219;"	v
-get_evts_of_conf	./Exploration/UNF/APIStateless.hs	490;"	v
+get_evts_of_conf	./Exploration/UNF/APIStateless.hs	493;"	v
 get_icnf	./Exploration/UNF/APIStateless.hs	235;"	v
 get_name	./Exploration/UNF/APIStateless.hs	244;"	v
 get_pred	./Exploration/UNF/APIStateless.hs	229;"	v
@@ -265,7 +265,7 @@ insert_local	./Domain/Interval/State.hs	180;"	v
 insert_local_sigma	./Domain/Concrete/State.hs	213;"	v
 insert_thread	./Domain/Concrete/State.hs	249;"	v
 insert_thread	./Domain/Interval/State.hs	217;"	v
-interferes	./Model/GCS.hs	102;"	v
+interferes	./Model/GCS.hs	103;"	v
 interpretMode	Main.hs	95;"	v
 interval_diff	./Domain/Interval/Value.hs	166;"	v
 interval_diff'	./Domain/Interval/Value.hs	172;"	v
@@ -274,17 +274,18 @@ interval_div	./Domain/Interval/Value.hs	147;"	v
 interval_leq	./Domain/Interval/Converter.hs	226;"	v
 isBlocking	./Model/GCS.hs	94;"	v
 isBottom	./Model/GCS.hs	72;"	v
+isCreateOf	./Model/GCS.hs	101;"	v
 isFalse	./Domain/Concrete/State.hs	267;"	v
-isGlobal	./Model/GCS.hs	103;"	v
+isGlobal	./Model/GCS.hs	104;"	v
 isLockOf	./Model/GCS.hs	100;"	v
 isTrue	./Domain/Concrete/State.hs	260;"	v
 isUnlockOf	./Model/GCS.hs	99;"	v
 is_bot	./Domain/Concrete/State.hs	61;"	v
 is_bot	./Domain/Interval/State.hs	45;"	v
-is_causally_closed	./Exploration/UNF/APIStateless.hs	512;"	v
-is_configuration	./Exploration/UNF/APIStateless.hs	506;"	v
+is_causally_closed	./Exploration/UNF/APIStateless.hs	515;"	v
+is_configuration	./Exploration/UNF/APIStateless.hs	509;"	v
 is_dependent	./Exploration/UNF/APIStateless.hs	462;"	v
-is_global	./Domain/Action.hs	91;"	v
+is_global	./Domain/Action.hs	95;"	v
 is_independent	./Exploration/UNF/APIStateless.hs	447;"	v
 is_maddrs_bot	./Domain/Util.hs	59;"	v
 join_act	./Domain/Action.hs	39;"	v
@@ -297,7 +298,7 @@ join_intthsts	./Domain/Interval/State.hs	147;"	v
 join_maddrs	./Domain/Util.hs	73;"	v
 join_state	./Domain/Concrete/Converter.hs	56;"	v
 join_state	./Domain/Interval/Converter.hs	57;"	v
-join_update	./Domain/Concrete/Collapse.hs	121;"	v
+join_update	./Domain/Concrete/Collapse.hs	122;"	v
 join_update	./Domain/Interval/Collapse.hs	93;"	v
 land	./Domain/Concrete/Converter.hs	431;"	v
 land_conval	./Domain/Concrete/State.hs	316;"	v
@@ -355,8 +356,8 @@ pop	./Exploration/UNF/APIStateless.hs	355;"	v
 pos	./Domain/Concrete/State.hs	71;"	v
 pos	./Domain/Interval/State.hs	55;"	v
 pred	./Exploration/UNF/APIStateless.hs	39;"	v
-predecessorWith	./Exploration/UNF/APIStateless.hs	520;"	v
-predecessors	./Exploration/UNF/APIStateless.hs	470;"	v
+predecessorWith	./Exploration/UNF/APIStateless.hs	523;"	v
+predecessors	./Exploration/UNF/APIStateless.hs	473;"	v
 primeMode	Main.hs	109;"	v
 printCausality	./Util/Printer.hs	39;"	v
 printConflict	./Util/Printer.hs	42;"	v
@@ -382,7 +383,7 @@ set_pcnf	./Exploration/UNF/APIStateless.hs	340;"	v
 set_pos	./Domain/Concrete/State.hs	92;"	v
 set_pos	./Domain/Interval/State.hs	67;"	v
 set_pos_s	./Domain/Concrete/State.hs	95;"	v
-set_previous_disa	./Exploration/UNF/APIStateless.hs	497;"	v
+set_previous_disa	./Exploration/UNF/APIStateless.hs	500;"	v
 set_single_state	./Domain/Concrete/Converter.hs	64;"	v
 set_state	./Domain/Concrete/Converter.hs	51;"	v
 set_state	./Domain/Interval/Converter.hs	52;"	v
@@ -390,7 +391,7 @@ showActs	./Util/Printer.hs	36;"	v
 showEvents	./Exploration/UNF/APIStateless.hs	63;"	v
 signumIVal	./Domain/Interval/Type.hs	76;"	v
 simple_run	./Model/GCS.hs	90;"	v
-single_edge	./Domain/Concrete/Collapse.hs	58;"	v
+single_edge	./Domain/Concrete/Collapse.hs	59;"	v
 snd4	./Util/Generic.hs	29;"	v
 st	./Domain/Concrete/Converter.hs	39;"	v
 st	./Domain/Interval/Converter.hs	42;"	v
@@ -400,7 +401,7 @@ state	./Exploration/UNF/APIStateless.hs	76;"	v
 stateful	Main.hs	77;"	v
 stateless	./Exploration/UNF/APIStateless.hs	102;"	v
 stats	./Exploration/UNF/APIStateless.hs	149;"	v
-strong_update	./Domain/Concrete/Collapse.hs	135;"	v
+strong_update	./Domain/Concrete/Collapse.hs	136;"	v
 strong_update	./Domain/Interval/Collapse.hs	107;"	v
 sts	./Domain/Concrete/State.hs	49;"	v
 sub	./Domain/Concrete/Converter.hs	420;"	v
@@ -411,7 +412,7 @@ subsumes	./Model/GCS.hs	71;"	v
 subsumes_concrete	./Domain/Concrete/State.hs	118;"	v
 subsumes_interval	./Domain/Interval/State.hs	84;"	v
 succ	./Exploration/UNF/APIStateless.hs	40;"	v
-successors	./Exploration/UNF/APIStateless.hs	479;"	v
+successors	./Exploration/UNF/APIStateless.hs	482;"	v
 sum_size_max_conf	./Exploration/UNF/APIStateless.hs	117;"	v
 sym	./Domain/Concrete/Converter.hs	41;"	v
 sym	./Domain/Interval/Converter.hs	43;"	v
@@ -451,6 +452,6 @@ upperBound	./Domain/Interval/Value.hs	187;"	v
 var_transformer	./Domain/Concrete/Converter.hs	378;"	v
 var_transformer	./Domain/Interval/Converter.hs	436;"	v
 widening	./Domain/Interval/Value.hs	198;"	v
-worklist_fix	./Domain/Concrete/Collapse.hs	81;"	v
+worklist_fix	./Domain/Concrete/Collapse.hs	82;"	v
 worklist_fix	./Domain/Interval/Collapse.hs	54;"	v
 wrs	./Domain/Action.hs	22;"	v

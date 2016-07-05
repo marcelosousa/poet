@@ -460,8 +460,11 @@ is_independent e1 e2 evts =
 -- the PC variable) but this would be more expensive.
 is_dependent :: (Show act, GCS.Action act) => EventInfo act -> EventInfo act -> Bool
 is_dependent a@((pid,_),acts) b@((pid',_),acts') =
---  T.trace ("checking dependency between " ++ show (a,b)) $ 
-    pid == GCS.botID || pid' == GCS.botID || pid == pid' || GCS.interferes acts acts'
+--  T.trace ("checking dependency between " ++ show (a,b)) $
+-- Missing to check if there is an action which is a create of a pid
+  let c1 = GCS.isCreateOf pid' acts  
+      c2 = GCS.isCreateOf pid acts' 
+  in c1 || c2 || pid == GCS.botID || pid' == GCS.botID || pid == pid' || GCS.interferes acts acts'
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event

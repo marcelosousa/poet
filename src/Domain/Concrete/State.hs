@@ -106,7 +106,7 @@ set_pos_s st@Sigma{..} tid (npos,sid) =
 inc_num_th :: Sigma -> (Int,Sigma)
 inc_num_th s@Sigma{..} =
   let n = num_th + 1
-  in (n,s { num_th = n })
+  in (num_th,s { num_th = n })
 
 -- | Checks for state subsumption
 -- 1. Check bottoms 
@@ -245,13 +245,13 @@ modify_local_sigma scope st@Sigma{..} sym val =
         Local i -> insert_local_sigma st i sym val 
     Just _ -> modify_heap st sym val
 
-insert_thread :: Sigma -> SymId -> Pos -> CState
+insert_thread :: Sigma -> SymId -> Pos -> (TId,CState)
 insert_thread s sym pos =
   let (tid,s'@Sigma{..}) = inc_num_th s
       th = bot_th_state pos sym 
       th_states' = M.insert tid th th_states
       ns = s' { th_states = th_states' }
-  in CState $ S.singleton ns 
+  in (tid,CState $ S.singleton ns)
    
 checkBoolVals :: ConValues -> (Bool,Bool)
 checkBoolVals vals = (any isTrue vals, any isFalse vals)
