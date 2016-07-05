@@ -95,7 +95,7 @@ set_pos_s :: Sigma -> TId -> Pos -> Sigma
 set_pos_s st@Sigma{..} tid npos = 
   let th_st' =
         case M.lookup tid th_states of
-          Nothing -> error "set_pos: tid not in th_states"
+          Nothing -> error "concrete set_pos: tid not in th_states"
           Just t@ThState{..} ->
             let pos' = npos
             in t { pos = pos' }

@@ -119,6 +119,12 @@ data UnfolderStats =
   }
   deriving (Show,Eq,Ord)
 
+print_stats :: Counter -> UnfolderStats -> IO ()
+print_stats cnt u@UnfStats{..} = do
+  print $ "nr of maximal configurations: " ++ show nr_max_conf
+  print $ "nr of events: " ++ show cnt 
+  print $ "size of prefix: " ++ show nr_evs_prefix 
+
 default_unf_stats :: UnfolderStats
 default_unf_stats =
  let nr_max_conf = 0
