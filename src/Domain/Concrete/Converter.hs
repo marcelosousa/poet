@@ -88,7 +88,7 @@ get_entry fnname graphs symt =
        Nothing -> 
          case M.lookup sym symt of
            Nothing -> Nothing
-           Just s  -> Debug.Trace.trace ("get_entry: name is " ++ get_name s) $ if get_name s == fnname
+           Just s  -> if get_name s == fnname
                       then Just (entry_node cfg,sym)
                       else Nothing 
 
@@ -183,7 +183,7 @@ default_value ty = [ ConVal $ init_value ty ]
 -- of this expression and a set of actions
 -- performed by this expression.
 transformer_expr :: SExpression -> ConTOp Act
-transformer_expr expr = Debug.Trace.trace ("executing the expr " ++ show expr) $ do
+transformer_expr expr = do
   s@ConTState{..} <- get
   let states = S.toList $ sts st
   -- reset the states
@@ -319,14 +319,14 @@ call_transformer fn args =
 
 call_transformer_name :: String -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer_name name args = case name of
-  "pthread_create" -> Debug.Trace.trace ("pthread_create transformer: " ++ show args) $ do
+  "pthread_create" -> do --Debug.Trace.trace ("pthread_create transformer: " ++ show args) $ do
     s <- get
     let th_id = get_expr_id $ args !! 0
         th_sym = get_expr_id $ args !! 2
         th_name = get_symbol_name th_sym (sym s)
         th_pos = get_entry th_name (cfgst s) (sym s)
         (tid,st') = insert_thread (cst s) th_sym $ fst th_pos
-    Debug.Trace.trace ("info: " ++ show (th_id,th_sym,th_name,th_pos)) $ join_state st' 
+    join_state st' 
     return ([],create_thread_act $ SymId tid) 
   "nondet" -> do 
     Debug.Trace.trace ("nondet transformer: " ++ show args) $ do

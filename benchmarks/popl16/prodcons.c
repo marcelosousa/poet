@@ -1,71 +1,55 @@
-/*  */
-
-#include "pthread.h"
-
 #define MAX   6
 #define MIN   0
 
 int buf=0;
-pthread_mutex_t l1; 
 
 void *prod1()
 {
-    int aux=0;
-    while(1){
-        pthread_mutex_lock(l1);
-        if(buf < MAX){
-            aux=buf;
-            buf=aux+1;
-            aux=0;
-        }
-        pthread_mutex_unlock(l1);         
+  int c1=0;
+  while(c1==0){
+    if(buf < MAX){
+      buf++;
     }
+  }
 }
 
 
 void *prod2()
 {
-    int aux=0;
-    while(1){
-        pthread_mutex_lock(l1);
-        if(buf < MAX){
-            aux=buf;
-            buf=aux+2;
-            aux=0;
-        }
-        pthread_mutex_unlock(l1);         
+  int c2=0;
+  while(c2==0){
+    if(buf < MAX){
+      buf = buf + 2;
     }
+  }
 }
 
 
 void *cons()
 {
-    int aux=0;
-    while(1){
-       pthread_mutex_lock(l1);
-       if(buf > MIN){
-           aux=buf;
-           buf=aux-1;
-//           aux=0;
-       }
-       pthread_mutex_unlock(l1); 
-    }
+  int c3=0; 
+  int local=0; 
+  while(1){
+     local = buf;
+     if(local > MIN){
+       buf--; 
+     }
+
+     while(local > 0) {
+       local--;
+     }
+  }
 }
 
 int main()
 {
 
-  pthread_t id1; 
-  pthread_t id2;
-  pthread_t id3;
+  int id1; 
+  int id2;
+  int id3;
 
-  pthread_mutex_init(l1, NULL); 
-  
   pthread_create(id1, NULL, prod1, NULL);
   pthread_create(id2, NULL, prod2, NULL);
   pthread_create(id3, NULL, cons, NULL);
-
-  pthread_join(id1, NULL);
-  pthread_join(id2, NULL);
-  pthread_join(id3, NULL);
+  return 0;
 }

@@ -79,7 +79,7 @@ single_edge tid tsym cfgs symt cfg@Graph{..} wlist res = trace "worklist_fix" $
       in single_edge tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
 
 worklist_fix :: TId -> SymId -> ConGraphs -> SymbolTable -> ConGraph -> Worklist -> ResultList -> ResultList 
-worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:" ++ show (wlist,res)) $
+worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:" ++ show (wlist, length res)) $
   case wlist of
     [] -> res 
     ((pre,eId,post):wlst) ->
@@ -103,8 +103,8 @@ worklist_fix tid tsym cfgs symt cfg@Graph{..} wlist res = T.trace ("chaotic_it:"
       -- the cfg with them 
           new_st = set_pos st tid (post,tsym)
       in if isGlobal acts || is_exit edge_tags
-         then T.trace ("stoping this branch: " ++ show new_st) $ worklist_fix tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
-         else T.trace ("collapse: continuing .... " ++ show acts) $  
+         then worklist_fix tid tsym cfgs symt cfg wlst ((new_st,post,acts):res)
+         else 
            -- depending on the tags of the edge; the behaviour is different
            let (is_fix,node_table') =
                 if is_join edge_tags
