@@ -21,6 +21,7 @@ import qualified Domain.Concrete.Converter as CC
 import qualified Domain.Interval.Converter as IC
 --import Model.Interpreter
 import qualified Exploration.UNF.Unfolder as Exp
+import Exploration.SUNF.Unfolder
 import Exploration.UNF.APIStateless 
 --import Exploration.UNF.Prime
 
@@ -43,8 +44,8 @@ import Haskroid.Haskroid
 
 testRoid :: IO ()
 testRoid = do
-  str <- steroidInit
-  c <- steroidTerm str
+  str <- stidInit
+  c <- stidTerm str
   print c
 
 mytest :: IO (FrontEnd () (CState,Act))
