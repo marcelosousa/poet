@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
 -- Module    :  Main
--- Copyright :  (c) 2015 Marcelo Sousa
+-- Copyright :  (c) 2015-16 Marcelo Sousa
 -------------------------------------------------------------------------------
 
 module Main where
@@ -38,6 +38,14 @@ import Util.Generic
 
 import Domain.Concrete.State
 import Domain.Action
+
+import Haskroid.Haskroid
+
+testRoid :: IO ()
+testRoid = do
+  str <- steroidInit
+  c <- steroidTerm str
+  print c
 
 mytest :: IO (FrontEnd () (CState,Act))
 mytest = extract "" "/home/msousa/poet/benchmarks/popl16/regression/test2.c" 
