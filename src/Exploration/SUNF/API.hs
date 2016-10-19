@@ -6,27 +6,27 @@
 -------------------------------------------------------------------------------
 module Exploration.SUNF.API where
 
-import Prelude hiding (succ)
-
 import Control.Monad.State.Strict
-import Control.Monad.ST
--- Data Structures
-import qualified Data.HashTable.ST.Cuckoo as C
-import qualified Data.HashTable.Class as H
+import Data.List
 import Data.Map (Map,fromList,empty)
+import Domain.Synchron
+import Exploration.SUNF.State
+import Prelude hiding (succ)
+import Util.Generic
+import qualified Data.HashTable.IO as H
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
-import Data.List
-import Util.Generic
 
-import Domain.Synchro
-import Control.Monad.ST
-import Exploration.SUNF.State
+sep = "-----------------------------------------\n"
+
+-- | Bottom Event
+botEID :: Int
+botEID = 0
 
 -- API
 -- GETTERS 
 -- | Retrieves the event associated with the event id 
-get_event :: String -> EventID -> Events s -> ST s Event 
+get_event :: String -> EventID -> Events -> IO Event 
 {-# INLINE get_event #-}
 get_event s e events = do
   mv <- H.lookup events e 
@@ -37,7 +37,7 @@ get_event s e events = do
     Just ev -> return ev 
 
 -- | Retrieves fields of an event: immediate sucessors, predecessors, etc.
--- get_pred,get_succ,... :: EventID -> Events act s -> ST s EventsID
+-- get_pred,get_succ,... :: EventID -> Events -> IO EventsID
 get_pred e events = do
   ev@Event{..} <- get_event "getIPred(ecessors)" e events
   return pred 
@@ -61,11 +61,11 @@ get_tid e events = do
   return $ fst name
   
 -- SETTERS
-set_event :: EventID -> Event -> Events s -> ST s ()
+set_event :: EventID -> Event -> Events -> IO ()
 set_event eID ev events = H.insert events eID ev
 
 -- | delete an event from the event hashtable
-del_event :: EventID -> Events s -> ST s ()
+del_event :: EventID -> Events -> IO ()
 del_event e events = do
   check <- filterEvent e events 
   if check
@@ -77,7 +77,7 @@ del_event e events = do
     H.delete events e
   else return ()
 
-add_succ,del_succ,add_icnf,del_icnf,add_disa :: EventID -> EventID -> Events s -> ST s ()
+add_succ,del_succ,add_icnf,del_icnf,add_disa :: EventID -> EventID -> Events -> IO ()
 -- | add e as a sucessor of e'
 add_succ e e' events = -- trace ("add_succ: " ++ show e ++ " of " ++ show e') $ 
  do
@@ -123,7 +123,7 @@ add_disa e ê events = -- trace ("add_disa: " ++ show e ++ " of " ++ show ê) $
   set_event ê ev' events 
 
 -- | set de as the disabled set of e
-set_disa :: EventID -> EventsID -> Events s -> ST s ()
+set_disa :: EventID -> EventsID -> Events -> IO ()
 set_disa e de events = -- trace ("setDisa: " ++ show de ++ " of " ++ show e) $ 
  do
   ev@Event{..} <- get_event "set_disa" e events
@@ -131,7 +131,7 @@ set_disa e de events = -- trace ("setDisa: " ++ show de ++ " of " ++ show e) $
   set_event e ev' events 
 
 -- | add v to the alternatives of e
-add_alte :: EventID -> Alternative -> Events s -> ST s ()
+add_alte :: EventID -> Alternative -> Events -> IO ()
 add_alte e v events = -- trace ("adding alternative " ++ show v ++ " of " ++ show e) $ 
  do
   ev@Event{..} <- get_event "add_alte" e events
@@ -140,7 +140,7 @@ add_alte e v events = -- trace ("adding alternative " ++ show v ++ " of " ++ sho
   set_event e ev' events 
 
 -- | reset the alternatives of e
-reset_alte :: EventID -> Events s -> ST s ()
+reset_alte :: EventID -> Events -> IO ()
 reset_alte e events = do
   ev@Event{..} <- get_event "reset_alte" e events
   let altEv = []
@@ -148,7 +148,7 @@ reset_alte e events = do
   set_event e ev' events
 
 -- | set conf as the previous configuration
-set_pcnf :: Configuration -> UnfolderOp s ()
+set_pcnf :: Configuration -> UnfolderOp ()
 set_pcnf conf = do
   s@UnfolderState{..} <- get
   let ns = s{ pcnf = conf } 
@@ -156,21 +156,21 @@ set_pcnf conf = do
 
 -- Stack related operations
 -- @ push 
-push :: EventID -> UnfolderOp s ()
+push :: EventID -> UnfolderOp ()
 push e = do 
   s@UnfolderState{..} <- get
   let nstack = e:stak
   put s{ stak = nstack }
 
 -- @ pop
-pop :: UnfolderOp s ()
+pop :: UnfolderOp ()
 pop = do
   s@UnfolderState{..} <- get
   let nstack = tail stak
   put s{ stak = nstack }
 
 -- @ freshCounter - updates the counter of events
-freshCounter :: UnfolderOp s Counter
+freshCounter :: UnfolderOp Counter
 freshCounter = do
   s@UnfolderState{..} <- get
   let ec = cntr
@@ -179,7 +179,7 @@ freshCounter = do
   return ec
 
 -- Update statistics of the unfolding exploration
-inc_max_conf,inc_cutoffs,inc_evs_prefix,dec_evs_prefix,inc_sum_size_max_conf :: UnfolderOp s ()
+inc_max_conf,inc_cutoffs,inc_evs_prefix,dec_evs_prefix,inc_sum_size_max_conf :: UnfolderOp ()
 -- | increment nr of maximal configurations
 inc_max_conf = do
   s@UnfolderState{..} <- get
@@ -194,7 +194,7 @@ inc_cutoffs = do
       stats' = stats { nr_cutoffs = n_cutoffs }
   put s{ stats = stats' }
 
-op_evs_prefix :: (Counter -> Counter -> Counter) -> UnfolderOp s ()
+op_evs_prefix :: (Counter -> Counter -> Counter) -> UnfolderOp ()
 op_evs_prefix op = do
   s@UnfolderState{..} <- get
   let n_evs_prefix = op (nr_evs_prefix stats) 1
@@ -213,7 +213,7 @@ inc_sum_size_max_conf = do
   put s{ stats = stats' }
 
 -- | increment the table of event names 
-inc_evs_per_name :: EventName -> UnfolderOp s ()
+inc_evs_per_name :: EventName -> UnfolderOp ()
 inc_evs_per_name name = do
   s@UnfolderState{..} <- get  
   let info = nr_evs_per_name stats 
@@ -226,17 +226,37 @@ inc_evs_per_name name = do
 
 -- | Utility functions
 -- | Filters a list of events ids that are still in the prefix 
-filterEvents :: EventsID -> Events s -> ST s EventsID
+filterEvents :: EventsID -> Events -> IO EventsID
 filterEvents es events = filterM (\e -> filterEvent e events) es
 
 -- | Checks if an event id *e* is still in the prefix
-filterEvent :: EventID -> Events s -> ST s Bool
+filterEvent :: EventID -> Events -> IO Bool
 filterEvent e events = do
   mv <- H.lookup events e
   case mv of
     Nothing -> return False
     Just ev -> return True
 
+-- | Potentially expensive functions
+-- | check if e1 >= e2
+is_same_or_succ :: EventID -> EventID -> UnfolderOp Bool
+is_same_or_succ e1 e2 = undefined 
+
+-- | check if e1 || e2
+is_concur :: EventID -> EventID -> UnfolderOp Bool
+is_concur e1 e2 = undefined
+
+latest_ev_proc :: EventName -> EventsID -> UnfolderOp EventID
+latest_ev_proc = undefined
+
+find_lock_cnfl :: PEvent -> EventID -> UnfolderOp EventID
+find_lock_cnfl = undefined
+
+find_prev_unlock :: EventID -> UnfolderOp EventID
+find_prev_unlock = undefined
+
+partition_dependent :: PEvent -> Events -> (EventsID,EventsID) -> EventsID -> IO (EventsID,EventsID)
+partition_dependent = undefined
 {-
 -- | Splits between events that are dependent and independent of
 -- the event name and actions
@@ -275,13 +295,13 @@ is_dependent a@((pid,_),acts) b@((pid',_),acts') =
 -}
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event
-predecessors, successors :: EventID -> Events s -> ST s EventsID
+predecessors, successors :: EventID -> Events -> IO EventsID
 {-# INLINABLE predecessors #-}
 predecessors e events =  do
   preds <- predecessors' e events
   return $ nub preds 
  where
-  predecessors' :: EventID -> Events s -> ST s EventsID
+  predecessors' :: EventID -> Events -> IO EventsID
   predecessors' e events = do
      ev@Event{..} <- get_event "predecessors" e events 
      foldM (\a e -> predecessors' e events >>= \r -> return $ a ++ r) pred pred
@@ -290,13 +310,13 @@ successors e events =  do
   succs <- successors' e events
   return $ nub succs 
  where
-  successors' :: EventID -> Events s -> ST s EventsID
+  successors' :: EventID -> Events -> IO EventsID
   successors' e events = do
      ev@Event{..} <- get_event "successors" e events 
      foldM (\a e -> successors' e events >>= \r -> return $ a ++ r) succ succ
 
 -- | Retrieves all events of a configuration
-get_evts_of_conf :: EventsID -> Events s -> ST s EventsID
+get_evts_of_conf :: EventsID -> Events -> IO EventsID
 get_evts_of_conf maxevs events = do
   preds <- mapM (\e -> predecessors e events) maxevs
   return $ maxevs ++ (nub $ concat preds) 

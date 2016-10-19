@@ -1,4 +1,5 @@
 {-#LANGUAGE RecordWildCards #-}
+{-#LANGUAGE MagicHash #-}
 -------------------------------------------------------------------------------
 -- Module    :  Exploration.SUNF.State
 -- Desc      :  Unfolder state used in this unfolder 
@@ -6,29 +7,27 @@
 -------------------------------------------------------------------------------
 module Exploration.SUNF.State where
 
-import Prelude hiding (succ)
-
 import Control.Monad.State.Strict
-import Control.Monad.ST
--- Data Structures
-import qualified Data.HashTable.ST.Cuckoo as C
-import qualified Data.HashTable.Class as H
+import Control.Monad.Trans
+import Data.List
 import Data.Map (Map,fromList,empty)
+import Domain.Synchron
+import Prelude hiding (succ)
+import Util.Generic
+import Data.HashTable.IO
+import qualified Data.HashTable.IO as H
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
-import Data.List
-import Util.Generic
-
-import Domain.Synchro
 import qualified Debug.Trace as T
 
-mytrace True a b = T.trace a b
-mytrace False a b = b
+mtrace True  a b = T.trace a b
+mtrace False a b = b
 
 -- @ The most basic type is event_id :: Int
 --   Pointer to an event
 type EventID   = Int
 type EventsID  = [EventID]
+-- @TODO: Add the Act to the name and remove it from Event
 type EventName = (TId, Pos)
 type EventInfo = (EventName, Act) 
 
@@ -49,10 +48,10 @@ data Event =
 
 -- @ Events represents the unfolding prefix as LPES
 --   with a HashTable : EventID -> Event 
-type Events s = HashTable s EventID Event 
+type Events = CuckooHashTable EventID Event 
 
 -- @ Show the set of events
-showEvents :: Events s -> ST s String
+showEvents :: Events -> IO String
 showEvents evs = do
   m <- H.toList evs
   let km = sortBy (\a b -> compare (fst a) (fst b)) m
@@ -66,7 +65,8 @@ type Counter = Int
 data Configuration =
   Conf 
   {
-    maevs :: EventsID  -- ^ maximal events 
+    state :: St        -- ^ state of the configuration
+  , maevs :: EventsID  -- ^ maximal events 
   , enevs :: EventsID  -- ^ enabled events 
   , cfevs :: EventsID  -- ^ special events: the ones that have imm conflicts
   }
@@ -123,11 +123,11 @@ default_unf_stats =
              sum_size_max_conf nr_evs_per_name
 
 -- @ The state of the unfolder at any moment
-data UnfolderState s = 
+data UnfolderState = 
   UnfolderState
   {
     syst  :: System            -- ^ The system being analyzed
-  , evts  :: Events s          -- ^ Unfolding prefix 
+  , evts  :: Events            -- ^ Unfolding prefix 
   , pcnf  :: Configuration     -- ^ Previous configuration
   , stak  :: EventsID          -- ^ Call stack
   , cntr  :: Counter           -- ^ Event counter
@@ -136,17 +136,17 @@ data UnfolderState s =
   }
 
 -- @ Abbreviation of the type of an operation of the unfolder
-type UnfolderOp s a = StateT (UnfolderState s) (ST s) a
+type UnfolderOp a = StateT UnfolderState IO a
 
 -- @ Initial state of the unfolder
-i_unf_state:: Bool -> Bool -> System -> ST s (UnfolderState s) 
-i_unf_state stateless_mode cutoff_mode syst = do
+i_unf_state:: Bool -> Bool -> System -> IO UnfolderState 
+i_unf_state stl cut syst = do
   evts <- H.new
-  let pcnf = Conf [] [] [] 
+  let pcnf = Conf (fst_pos syst) [] [] [] 
       stak = []
       cntr = 0
-      opts = UnfOpts stateless_mode cutoff_mode
+      opts = UnfOpts stl cut
   return $ UnfolderState syst evts pcnf stak cntr opts default_unf_stats 
 
-instance Show (UnfolderState s) where
+instance Show UnfolderState where
     show (u@UnfolderState{..}) = show stats 
