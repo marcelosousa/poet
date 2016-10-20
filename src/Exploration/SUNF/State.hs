@@ -9,12 +9,12 @@ module Exploration.SUNF.State where
 
 import Control.Monad.State.Strict
 import Control.Monad.Trans
+import Data.HashTable.IO
 import Data.List
 import Data.Map (Map,fromList,empty)
 import Domain.Synchron
 import Prelude hiding (succ)
 import Util.Generic
-import Data.HashTable.IO
 import qualified Data.HashTable.IO as H
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
@@ -137,16 +137,6 @@ data UnfolderState =
 
 -- @ Abbreviation of the type of an operation of the unfolder
 type UnfolderOp a = StateT UnfolderState IO a
-
--- @ Initial state of the unfolder
-i_unf_state:: Bool -> Bool -> System -> IO UnfolderState 
-i_unf_state stl cut syst = do
-  evts <- H.new
-  let pcnf = Conf (fst_pos syst) [] [] [] 
-      stak = []
-      cntr = 0
-      opts = UnfOpts stl cut
-  return $ UnfolderState syst evts pcnf stak cntr opts default_unf_stats 
 
 instance Show UnfolderState where
     show (u@UnfolderState{..}) = show stats 

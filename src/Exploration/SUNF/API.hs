@@ -6,11 +6,11 @@
 -------------------------------------------------------------------------------
 module Exploration.SUNF.API where
 
-import Control.Monad.State.Strict
+import Control.Monad.State.Strict hiding (state)
 import Data.List
 import Data.Map (Map,fromList,empty)
 import Domain.Synchron
-import Exploration.SUNF.State
+import Exploration.SUNF.State hiding (state)
 import Prelude hiding (succ)
 import Util.Generic
 import qualified Data.HashTable.IO as H
@@ -22,6 +22,20 @@ sep = "-----------------------------------------\n"
 -- | Bottom Event
 botEID :: Int
 botEID = 0
+
+botEvent :: Event
+botEvent = undefined
+
+-- @ Initial state of the unfolder
+i_unf_state:: Bool -> Bool -> System -> IO UnfolderState 
+i_unf_state stl cut syst = do
+  evts <- H.new
+  H.insert evts botEID botEvent 
+  let pcnf = Conf (state syst) [botEID] [] [] 
+      stak = [botEID]
+      cntr = 1
+      opts = UnfOpts stl cut
+  return $ UnfolderState syst evts pcnf stak cntr opts default_unf_stats 
 
 -- API
 -- GETTERS 
@@ -147,6 +161,13 @@ reset_alte e events = do
       ev' = ev{ alte = altEv }
   set_event e ev' events
 
+-- | set new system 
+set_sys :: System -> UnfolderOp ()
+set_sys sys = do
+  s@UnfolderState{..} <- get
+  let ns = s{ syst = sys } 
+  put ns
+
 -- | set conf as the previous configuration
 set_pcnf :: Configuration -> UnfolderOp ()
 set_pcnf conf = do
@@ -249,6 +270,23 @@ is_concur e1 e2 = undefined
 latest_ev_proc :: EventName -> EventsID -> UnfolderOp EventID
 latest_ev_proc = undefined
 
+latest_ev_unlk :: Integer -> EventsID -> UnfolderOp EventID
+latest_ev_unlk = undefined
+
+exit_ev :: Integer -> EventsID -> UnfolderOp EventID
+exit_ev = undefined
+
+compute_hist :: EventID -> EventID -> UnfolderOp History
+compute_hist e1 e2 = do
+  c1 <- is_same_or_succ e1 e2 
+  if c1 
+  then return [e1]
+  else do
+    c2 <- is_concur e1 e2 
+    if c2
+    then return [e1, e2]
+    else return [e2]
+
 find_lock_cnfl :: PEvent -> EventID -> UnfolderOp EventID
 find_lock_cnfl = undefined
 
@@ -257,42 +295,7 @@ find_prev_unlock = undefined
 
 partition_dependent :: PEvent -> Events -> (EventsID,EventsID) -> EventsID -> IO (EventsID,EventsID)
 partition_dependent = undefined
-{-
--- | Splits between events that are dependent and independent of
--- the event name and actions
-partition_dependent :: EventInfo -> Events s -> (EventsID,EventsID) -> EventsID -> ST s (EventsID,EventsID)
-partition_dependent êinfo events (dep,indep) es =
-  case es of
-    [] -> return (dep,indep)
-    (e:r) -> do
-      ev@Event{..} <- get_event "partition_dependent" e events
-      if is_dependent êinfo (name,acts)
-      then partition_dependent êinfo events (e:dep,indep) r
-      else partition_dependent êinfo events (dep,e:indep) r
 
-is_independent :: EventID -> EventID -> Events s -> ST s Bool
-is_independent e1 e2 evts =
-  if e1 == GCS.botID || e2 == GCS.botID
-  then return False
-  else do
-    ev1 <- get_event "is_independent" e1 evts
-    ev2 <- get_event "is_independent" e1 evts
-    return $ not $ is_dependent (name ev1, acts ev1) (name ev2, acts ev2) 
-
--- | Checks if two event names are dependent
--- This occurs if they are events of the same process
--- or their actions are interfering.
--- Of course, one can emulate events of the same process
--- in their actions (by for example considering Writes to 
--- the PC variable) but this would be more expensive.
-is_dependent :: EventInfo -> EventInfo -> Bool
-is_dependent a@((pid,_),acts) b@((pid',_),acts') =
---  T.trace ("checking dependency between " ++ show (a,b)) $
--- Missing to check if there is an action which is a create of a pid
-  let c1 = GCS.isCreateOf pid' acts  
-      c2 = GCS.isCreateOf pid acts' 
-  in c1 || c2 || pid == GCS.botID || pid' == GCS.botID || pid == pid' || GCS.interferes acts acts'
--}
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event
 predecessors, successors :: EventID -> Events -> IO EventsID

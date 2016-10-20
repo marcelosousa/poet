@@ -11,11 +11,12 @@ import Data.Hashable
 import Data.List
 import Data.Maybe hiding (catMaybes)
 import Data.Set (isSubsetOf)
-import Domain.Synchron (PEvent, System, Act) 
+import Domain.Synchron (PEvent(..), System, Act) 
 import Exploration.SUNF.API
 import Exploration.SUNF.APIStateless
 import Exploration.SUNF.APIStid
-import Exploration.SUNF.State
+import Exploration.SUNF.State 
+import Haskroid.Hapiroid hiding (Event)
 import Prelude hiding (pred)
 import System.IO.Unsafe
 import Util.Generic
@@ -28,20 +29,15 @@ import qualified Domain.Synchron as SYS
 synfolder :: Bool -> Bool -> System -> IO UnfolderState
 synfolder stl cut syst = do
   is    <- i_unf_state stl cut syst 
-  (a,s) <- runStateT botExplore is 
+  (a,s) <- runStateT bot_explore is 
   return $! s
 
 -- This is the beginning of the exploration
 -- where we construct the initial unfolding prefix 
 -- with the bottom event
-bot_test :: UnfolderOp ()
-bot_test = do
-  liftIO $ print "Hello"
-  return () 
-
-botExplore :: UnfolderOp () 
-botExplore = do 
-  iConf <- initialExtensions 
+bot_explore :: UnfolderOp () 
+bot_explore = do 
+  iConf <- initial_ext
   explore iConf botEID [] []
 
 -- The extensions from the bottom event
@@ -50,16 +46,16 @@ botExplore = do
 -- v2 (Oct'16): It is no longer the case that it contains all 
 -- extensions from bottom. It contains the enabled events of 
 -- the underlying PO passed by STID.
-initialExtensions :: UnfolderOp Configuration
-initialExtensions = do
+initial_ext :: UnfolderOp Configuration
+initial_ext = do
   s@UnfolderState{..} <- get
   let e    = botEID
       cevs = [e]
-      pos0 = SYS.fst_pos syst
-      nees = SYS.enabled syst pos0 
+      ist  = SYS.state syst
+      nees = SYS.enabled syst ist 
   enevs <- mapM (extend e cevs) nees 
   s@UnfolderState{..} <- get 
-  let iConf = Conf pos0 cevs enevs []
+  let iConf = Conf ist cevs enevs []
   put s { pcnf = iConf }
   return $! iConf
 
@@ -108,8 +104,9 @@ explore c@Conf{..} ê d alt = do
     malt <- alt2 (e:d) (e:d) 
     case malt of
       Nothing -> return ()
-      -- @ TODO: compute the replay; get the new po 
-      Just alt' -> explore c ê (e:d) (alt' \\ stak)
+      Just alt' -> do 
+         stid_replay alt' stak 
+         explore c ê (e:d) (alt' \\ stak)
     -- @ remove irrelevant parts of the prefix 
     if stateless opts 
     then do
@@ -202,30 +199,19 @@ extend e maxevs pe = T.trace ("extending the prefix with " ++ show (e,pe)) $ do
 -- For the remainder, we only need to get the latest event in the process
 -- and that will correspond to h0.
 history :: PEvent -> EventsID -> UnfolderOp History
-history pe maxevs = do
-  s@UnfolderState{..} <- get
-  (maxevs_h0,maxevs') <- lift $ partition_dependent pe evts ([],[]) maxevs 
-  -- @ going up the causality of maxevs' until all maximal events are dependent with tr
-  h0 <- lift $ prune_config evts maxevs_h0 maxevs'
-  -- @ ASSERT: h0 does not contain repeated elements
-  return h0
- where
-    -- | prune_config 
-    --   Given a set of maximal events which are independent with transition tr
-    --   go up in the causality to search for the rest of maximal events that are dependent
-    prune_config events pre_his es = do
-      -- immd predecessors of es
-      predes <- mapM (\e -> get_pred e events) es >>= return . nub . concat
-      -- filter the predecessors that are not maximal
-      -- @ FIXME: Optimise this!
-      -- @ NOTE: CRITICAL: THIS NEEDS TO BE CHANGED JUNE 06'16
-      mpredes <- filterM (\e -> successors e events >>= 
-               \succe -> return $ null $ succe `intersect` (pre_his ++ predes)) predes
-      -- split between dependent and independent 
-      (pre_his',es') <- partition_dependent pe events (pre_his,[]) mpredes
-      if null es'
-      then return pre_his' 
-      else prune_config events pre_his' es'
+history pe@PEv{..} maxevs = do
+  let name = SYS.pe_name pe
+  e_proc <- latest_ev_proc name maxevs
+  case act_ty act of 
+    JOIN -> do 
+      let exit_tid = SYS.pe_exit_tid act
+      e_exit <- exit_ev exit_tid maxevs
+      compute_hist e_proc e_exit 
+    LOCK -> do
+      let mut_addr = SYS.pe_mut_addr act
+      e_unlk <- latest_ev_unlk mut_addr maxevs
+      compute_hist e_proc e_unlk 
+    _ -> return [e_proc]
 
 -- | Going to compute the histories of a lock event.
 --   This history can be composed of at most two events
@@ -233,8 +219,8 @@ history pe maxevs = do
 --   an unlock from another thread.
 histories_lock :: PEvent -> EventsID -> UnfolderOp [(History,EventsID)]
 histories_lock pe h0 = do
-  let name  = SYS.pe_name pe
-      mut_addr  = SYS.pe_mut_addr pe
+  let name     = SYS.pe_name pe
+      mut_addr = SYS.pe_mut_addr pe
   -- 1. Get e_proc: the last event in the thread of pe
   e_proc <- latest_ev_proc name h0
   -- 2. Get e_unlk: the event in hs that is the unlock
@@ -274,7 +260,7 @@ histories_lock_inner pe e_proc e_unlk = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-add_event::EventsID -> [(EventID,Event)] -> PEvent -> (History,EventsID) -> UnfolderOp EventID 
+add_event :: EventsID -> [(EventID, Event)] -> PEvent -> (History, EventsID) -> UnfolderOp EventID 
 add_event stack dup pe (history,cnfls) = do
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if not $ null hasDup  

@@ -22,6 +22,7 @@ import Domain.Concrete.State
 import Domain.Interval
 import Domain.Synchron
 import Exploration.SUNF.Unfolder
+import Exploration.SUNF.APIStid
 import Exploration.UNF.Unfolder  
 import Language.SimpleC
 import System.Console.CmdArgs
