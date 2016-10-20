@@ -25,7 +25,7 @@ botEID :: Int
 botEID = (-1)
 
 botEvent :: Event
-botEvent = Event (-1,-1) (Act ENTRY (-1) (-1)) [] [] [] [] []
+botEvent = Event (-1,Active 0) (Act ENTRY (-1) (-1)) [] [] [] [] []
 
 -- @ Initial state of the unfolder
 i_unf_state:: Bool -> Bool -> System -> IO UnfolderState 
