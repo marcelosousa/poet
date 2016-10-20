@@ -11,6 +11,7 @@ import Data.List
 import Data.Map (Map,fromList,empty)
 import Domain.Synchron
 import Exploration.SUNF.State hiding (state)
+import Haskroid.Hapiroid (ActType(..), Action(..))
 import Prelude hiding (succ)
 import Util.Generic
 import qualified Data.HashTable.IO as H
@@ -21,10 +22,10 @@ sep = "-----------------------------------------\n"
 
 -- | Bottom Event
 botEID :: Int
-botEID = 0
+botEID = (-1)
 
 botEvent :: Event
-botEvent = undefined
+botEvent = Event (-1,-1) (Act ENTRY (-1) (-1)) [] [] [] [] []
 
 -- @ Initial state of the unfolder
 i_unf_state:: Bool -> Bool -> System -> IO UnfolderState 
@@ -287,14 +288,14 @@ compute_hist e1 e2 = do
     then return [e1, e2]
     else return [e2]
 
+is_unlock_of :: Integer -> EventID -> UnfolderOp Bool 
+is_unlock_of addr eID = undefined
+
 find_lock_cnfl :: PEvent -> EventID -> UnfolderOp EventID
 find_lock_cnfl = undefined
 
 find_prev_unlock :: EventID -> UnfolderOp EventID
 find_prev_unlock = undefined
-
-partition_dependent :: PEvent -> Events -> (EventsID,EventsID) -> EventsID -> IO (EventsID,EventsID)
-partition_dependent = undefined
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event

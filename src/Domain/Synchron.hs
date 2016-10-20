@@ -72,16 +72,26 @@ can_have_two_pred a@STID.Act{..} =
     STID.LOCK -> True
     _         -> False
 
+pe_name :: PEvent -> (TId, Pos)
+pe_name pe@PEv{..} = (tid, idx)
+
+pe_act :: PEvent -> Act 
+pe_act pe@PEv{..} = act 
+
+pe_exit_tid :: Act -> Integer
+pe_exit_tid = STID.act_val 
+
+pe_mut_addr :: Act -> Integer
+pe_mut_addr = STID.act_addr 
+
+is_lock :: PEvent -> Bool
+is_lock pe@PEv{..} =
+  case STID.act_ty act of
+    STID.LOCK -> True
+    _         -> False 
+ 
 run :: System -> St -> (TId, Pos) -> St
 run = undefined
 
 enabled :: System -> St -> [PEvent]
 enabled = undefined
-
-pe_name = undefined
-pe_act = undefined
-pe_exit_tid = undefined
-pe_mut_addr = undefined
-is_lock = undefined
-is_unlock_of = undefined
-psucc = undefined

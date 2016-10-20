@@ -220,11 +220,11 @@ history pe@PEv{..} maxevs = do
 histories_lock :: PEvent -> EventsID -> UnfolderOp [(History,EventsID)]
 histories_lock pe h0 = do
   let name     = SYS.pe_name pe
-      mut_addr = SYS.pe_mut_addr pe
+      mut_addr = SYS.pe_mut_addr $ SYS.pe_act pe
   -- 1. Get e_proc: the last event in the thread of pe
   e_proc <- latest_ev_proc name h0
   -- 2. Get e_unlk: the event in hs that is the unlock
-  let hs_unlk = filter (SYS.is_unlock_of mut_addr) h0
+  hs_unlk <- filterM (is_unlock_of mut_addr) h0
   case hs_unlk of
     -- @TODO: check that h0 = [e_unlk] or [e_unlk, e_proc] ?
     [e_unlk] -> do 
