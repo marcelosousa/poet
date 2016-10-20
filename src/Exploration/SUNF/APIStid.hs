@@ -20,7 +20,7 @@ stid_fe file = do
   stid_ptr <- start_and_load file 
   poset_   <- run_free stid_ptr
   let poset = toPoset poset_
-      iSys = Sys stid_ptr poset []
+      iSys = Sys stid_ptr poset (initial_state poset) 
   return iSys  
 
 stid_end :: System -> IO ()

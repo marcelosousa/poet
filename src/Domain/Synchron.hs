@@ -89,9 +89,28 @@ is_lock pe@PEv{..} =
   case STID.act_ty act of
     STID.LOCK -> True
     _         -> False 
+
+-- | Partial order model
+initial_state :: Poset -> St
+initial_state p@Poset{..} = 
+  map (is_ready . head) evs_procs 
+
+is_ready :: PEvent -> Pos 
+is_ready p@PEv{..} 
+  | pre_mem_tid == 0 && pre_mem_idx == 0 = -1
+  | otherwise = 0
  
+-- | Need forward pointers; otherwise it gets harder
 run :: System -> St -> (TId, Pos) -> St
 run = undefined
 
+-- | Naive procedure
 enabled :: System -> St -> [PEvent]
-enabled = undefined
+enabled sys@Sys{..} st =
+  let th_pos = zip [0..] $ map fromInteger st
+  in foldr (\(tid,pos) pes ->
+       if pos >= 0 && pos < length (evs_procs poset !! tid)
+       then let e = (evs_procs poset !! tid) !! pos 
+            in e:pes
+       else pes) [] th_pos
+    
