@@ -32,7 +32,7 @@ i_unf_state:: Bool -> Bool -> System -> IO UnfolderState
 i_unf_state stl cut syst = do
   evts <- H.new
   H.insert evts botEID botEvent 
-  let pcnf = Conf (state syst) [botEID] [] [] 
+  let pcnf = Conf (state syst) [botEID] (MA.fromList [(-1,botEID)]) [] []  
       stak = [botEID]
       cntr = 1
       opts = UnfOpts stl cut
@@ -259,23 +259,27 @@ filterEvent e events = do
     Nothing -> return False
     Just ev -> return True
 
--- | Potentially expensive functions
--- | check if e1 >= e2
-is_same_or_succ :: EventID -> EventID -> UnfolderOp Bool
-is_same_or_succ e1 e2 = undefined 
+get_events :: String -> EventsID -> UnfolderOp [(EventID, Event)]
+get_events str eIDs = do
+  s@UnfolderState{..} <- get
+  lift $ mapM (\e -> get_event "exit_ev" e evts >>= \ev -> return (e,ev)) eIDs
 
--- | check if e1 || e2
-is_concur :: EventID -> EventID -> UnfolderOp Bool
-is_concur e1 e2 = undefined
+is_of_tid :: TId -> Event -> Bool
+is_of_tid tid e@Event{..} = tid == (fst name) 
 
-latest_ev_proc :: EventName -> EventsID -> UnfolderOp EventID
-latest_ev_proc = undefined
-
-latest_ev_unlk :: Integer -> EventsID -> UnfolderOp EventID
-latest_ev_unlk = undefined
-
+-- | traverse evs up searching for the event EXIT of tid
 exit_ev :: Integer -> EventsID -> UnfolderOp EventID
-exit_ev = undefined
+exit_ev tid []   = error $ "couldn't find the exit event of th " ++ show tid
+exit_ev tid eIDs = do
+  s@UnfolderState{..} <- get
+  evs <- get_events "exit_ev" eIDs   
+  case filter (\(_,e) -> is_of_tid tid e) evs of
+    []      -> do
+      -- get all immediate predecessors of eIDs
+      _preds <- lift $ mapM (\e -> get_pred e evts) eIDs
+      let preds = nub $ concat _preds
+      exit_ev tid preds 
+    [(e,_)] -> return e -- as the exit event is the last one 
 
 compute_hist :: EventID -> EventID -> UnfolderOp History
 compute_hist e1 e2 = do
@@ -283,19 +287,98 @@ compute_hist e1 e2 = do
   if c1 
   then return [e1]
   else do
-    c2 <- is_concur e1 e2 
+    c2 <- is_pred e1 e2 
     if c2
     then return [e1, e2]
     else return [e2]
 
 is_unlock_of :: Integer -> EventID -> UnfolderOp Bool 
-is_unlock_of addr eID = undefined
+is_unlock_of addr eID = do
+  s@UnfolderState{..} <- get
+  e@Event{..} <- lift $ get_event "is_unlock_of" eID evts
+  return $ is_unlock_act_of acts addr 
+
+is_lock_of :: Integer -> EventID -> UnfolderOp Bool 
+is_lock_of addr eID = do
+  s@UnfolderState{..} <- get
+  e@Event{..} <- lift $ get_event "is_lock_of" eID evts
+  return $ is_lock_act_of acts addr
+ 
+-- | Potentially expensive functions
+-- | check if e1 >= e2
+is_same_or_succ :: EventID -> EventID -> UnfolderOp Bool
+is_same_or_succ e1 e2
+  | e2 == botEID = return True 
+  | e1 == e2     = return True
+  | e1 == botEID = return False 
+  | e1 < e2      = return False 
+  | otherwise = do
+      -- check if they are of the same process
+      s@UnfolderState{..} <- get
+      ev1 <- lift $ get_event "is_same_or_succ" e1 evts
+      ev2 <- lift $ get_event "is_same_or_succ" e2 evts
+      let (th1,i1) = name ev1
+          (th2,i2) = name ev2
+      if th1 == th2
+      then return $ i1 >= i2 
+      else do 
+        -- they are in different threads
+        preds <- lift $ predecessors e1 evts
+        return $ elem e2 preds 
+
+-- | Check if e1 < e2
+is_pred :: EventID -> EventID -> UnfolderOp Bool
+is_pred e1 e2 
+  | e1 == botEID = return True
+  | e2 == botEID = return False 
+  | e1 >= e2     = return False 
+  | otherwise = do
+      -- check if they are of the same process
+      s@UnfolderState{..} <- get
+      ev1 <- lift $ get_event "is_pred" e1 evts
+      ev2 <- lift $ get_event "is_pred" e2 evts
+      let (th1,i1) = name ev1
+          (th2,i2) = name ev2
+      if th1 == th2
+      then return $ i1 < i2 
+      else do
+        -- they are in different threads
+        preds <- lift $ predecessors e2 evts
+        return $ elem e1 preds 
+
+-- | Find all unlocks
+--    Given a linearization it will reverse it
+--    and filter all unlocks of a given addr
+--  This is expensive for now.
+unlocks_of_addr :: Integer -> EventsID -> UnfolderOp EventsID
+unlocks_of_addr addr stak = foldM (unlock_of_addr addr) [] stak 
+
+unlock_of_addr :: Integer -> EventsID -> EventID -> UnfolderOp EventsID
+unlock_of_addr addr unlks e = do
+  b <- is_unlock_of addr e
+  if b
+  then return $ e:unlks
+  else return unlks  
+
+latest_ev_proc :: TId -> MEventsID -> UnfolderOp EventID
+latest_ev_proc _tid maxes = do
+  let tid = fromInteger _tid 
+  case MA.lookup tid maxes of
+    Nothing -> error "latest_ev_proc: key not found"
+    Just e  -> return e 
 
 find_lock_cnfl :: PEvent -> EventID -> UnfolderOp EventID
-find_lock_cnfl = undefined
+find_lock_cnfl lk_pe e_unlk = do
+  s@UnfolderState{..} <- get
+  if is_lock lk_pe
+  then do
+    es  <- lift $ get_succ e_unlk evts
+    evs <- get_events "find_lock_cnfl" es 
+    case filter (\(_,e) -> is_lock_act_of (acts e) (lock_addr lk_pe)) evs of
+      [] -> error "find_lock_cnfl: broken assumption"
+      [(e,_)] -> return e 
+  else error "find_lock_cnfl: input pe is not a lock" 
 
-find_prev_unlock :: EventID -> UnfolderOp EventID
-find_prev_unlock = undefined
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event

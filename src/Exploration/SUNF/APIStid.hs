@@ -6,11 +6,12 @@
 -------------------------------------------------------------------------------
 module Exploration.SUNF.APIStid where
 
-import Control.Monad.State.Strict
+import Control.Monad.State.Strict hiding (state)
 import Domain.Synchron
 import Exploration.SUNF.API
-import Exploration.SUNF.State
-import Haskroid.Hapiroid hiding (Poset, toPoset)
+import Exploration.SUNF.State hiding (state)
+import Haskroid.Hapiroid hiding (Poset, toPoset, Event)
+import Haskroid.Haskroid
 
 -- | Initial System
 --   Initialize the steroid
@@ -26,19 +27,34 @@ stid_fe file = do
 stid_end :: System -> IO ()
 stid_end s@Sys{..} = terminate stid_ptr 
 
-stid_replay :: EventsID -> EventsID -> UnfolderOp ()
-stid_replay alte stak = do
+stid_replay :: EventsID -> UnfolderOp ()
+stid_replay alte = do
   s@UnfolderState{..} <- get
   let stid = stid_ptr syst 
   (rep, len_rep) <- build_replay alte  
   po <- lift $ replay stid rep len_rep
-  -- need to put itself in the right position
-  let pos   = move_to po stak
-      poset = toPoset po 
-      nsys  = Sys stid poset pos
+  let poset = toPoset po 
+      nsys  = Sys stid poset (state syst)
   set_sys nsys
   
 build_replay :: EventsID -> UnfolderOp (Replay, Int)
-build_replay alte = undefined
+build_replay alte = do
+  s@UnfolderState{..} <- get
+  evs <- lift $ mapM (\e -> get_event "build_replay" e evts) alte 
+  return $ build_replay_es evs (-1,0) ([],0)
 
-move_to = undefined 
+build_replay_es :: [Event] -> (Int,Int) -> (Replay,Int) -> (Replay, Int)
+build_replay_es [] (tid,c) (rep,n) =
+  if c /= 0
+  then (add_to_replay (tid,c) rep,n)
+  else (rep,n)
+build_replay_es (e@Event{..}:es) (tid,c) (rep,n) =
+  let ntid = fromInteger $ fst name
+  in if ntid == tid
+     then build_replay_es es (tid,c+1) (rep,n+1)
+     else build_replay_es es (ntid,1)  (add_to_replay (tid,c) rep, n+1) 
+
+add_to_replay :: (Int,Int) -> Replay -> Replay
+add_to_replay (th,nr) rep =
+   (SteroidCTSW (fromInteger $ toInteger th) (fromInteger $ toInteger nr)):rep
+

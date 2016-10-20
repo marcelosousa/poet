@@ -98,6 +98,33 @@ is_lock pe@PEv{..} =
     STID.LOCK -> True
     _         -> False 
 
+lock_addr :: PEvent -> Integer 
+lock_addr pe@PEv{..} = STID.act_addr act 
+
+is_unlock :: Act -> Bool
+is_unlock a@STID.Act{..} =
+  case act_ty of
+    STID.UNLOCK -> True
+    _ -> False
+ 
+is_unlock_act_of :: Act -> Integer -> Bool
+is_unlock_act_of a@STID.Act{..} addr =
+  case act_ty of
+    STID.UNLOCK -> act_addr == addr 
+    _ -> False
+
+is_lock_act_of :: Act -> Integer -> Bool
+is_lock_act_of a@STID.Act{..} addr =
+  case act_ty of
+    STID.LOCK -> act_addr == addr 
+    _ -> False
+
+is_exit :: Act -> Bool
+is_exit a@STID.Act{..} =
+  case act_ty of
+    STID.EXIT -> True
+    _ -> False
+
 -- | Partial order model
 initial_state :: Poset -> St
 initial_state p@Poset{..} = 

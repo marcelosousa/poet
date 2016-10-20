@@ -51,11 +51,12 @@ initial_ext = do
   s@UnfolderState{..} <- get
   let e    = botEID
       cevs = [e]
+      mevs = (M.fromList [(-1,botEID)])
       ist  = SYS.state syst
       nees = SYS.enabled syst ist 
-  enevs <- mapM (extend e cevs) nees 
+  enevs <- mapM (extend e cevs mevs) nees 
   s@UnfolderState{..} <- get 
-  let iConf = Conf ist cevs enevs []
+  let iConf = Conf ist cevs mevs enevs [] 
   put s { pcnf = iConf }
   return $! iConf
 
@@ -105,7 +106,7 @@ explore c@Conf{..} ê d alt = do
     case malt of
       Nothing -> return ()
       Just alt' -> do 
-         stid_replay alt' stak 
+         stid_replay alt' 
          explore c ê (e:d) (alt' \\ stak)
     -- @ remove irrelevant parts of the prefix 
     if stateless opts 
@@ -128,7 +129,9 @@ unfold conf@Conf{..} e = do
   -- @ 2. compute the new set of maximal events
   iprede <- lift $ get_pred e evts 
   let nmaxevs = e:(maevs \\ iprede)
-  -- @ 3. compute the new set of enabled events
+  -- @ 3. update the maximal event per process
+      nmaxevsproc = M.insert (fromInteger $ fst $ name eve) e maxev  
+  -- @ 4. compute the new set of enabled events
       es = delete e enevs 
       -- - compute the set of enabled pre-events at the new state
       entrs = SYS.enabled syst nstc 
@@ -137,7 +140,7 @@ unfold conf@Conf{..} e = do
   -- filter the new enabled pre-events that are not enabled events
   let netrs = filter (\npe -> any (\e@Event{..} -> name /= SYS.pe_name npe) ievs) entrs
   -- compute the new enabled events
-  nnevs <- mapM (extend e nmaxevs) netrs 
+  nnevs <- mapM (extend e nmaxevs nmaxevsproc) netrs 
   -- compute all the events of the configuration 
   let confEvs = e:stak
   -- filter from nnevs events that may have 
@@ -150,10 +153,12 @@ unfold conf@Conf{..} e = do
   else do 
     let nenevs = nnevs ++ es
     -- @ 4. compute the new set of special events
-    evs <- lift $ mapM (\e -> get_event "unfold" e evts >>= \ev -> return (e,ev)) confEvs 
-    let ncevs = map fst $ filter (\(_,ev) -> not $ null $ icnf ev) evs 
+    evs <- lift $ mapM (\e -> get_event "unfold" e evts >>= 
+                        \ev -> return (e,ev)) confEvs 
+    let ncevs = map fst $ filter (\(_,ev) -> not $ null $ icnf ev) evs
+    -- @ 5. if this event is an unlock, we add it 
     -- @ build the new configuration
-    let nconf = Conf nstc nmaxevs nenevs ncevs
+    let nconf = Conf nstc nmaxevs nmaxevsproc nenevs ncevs
     s@UnfolderState{..} <- get
     put s{ pcnf = nconf }
     return $! nconf
@@ -161,30 +166,39 @@ unfold conf@Conf{..} e = do
 -- | extends the unfolding prefix based on a configuration of a given
 --  pre event which contain *e* as an immediate predecessor and returns
 --  the event with history h0.
-extend :: EventID -> EventsID -> PEvent -> UnfolderOp EventID
-extend e maxevs pe = T.trace ("extending the prefix with " ++ show (e,pe)) $ do 
+extend :: EventID -> EventsID -> MEventsID -> PEvent -> UnfolderOp EventID
+extend e maxevs mpevs pe = T.trace ("ext prefix with " ++ show (e,pe)) $ do 
   s@UnfolderState{..} <- get
   -- @ retrieve the immediate successors of e with the same name to avoid duplicates
   succe <- lift $ get_succ e evts 
            >>= mapM (\e -> get_event "extend" e evts >>= \ev -> return (e,ev)) 
            >>= return . filter (\(e,ev) -> name ev == SYS.pe_name pe)
-  -- @ computes h0, the maximal history:
-  h0 <- history pe maxevs 
-  if null h0 
-  then error $ "null h0 or c0 at extend(e="++show e
-             ++",pe="++show pe++",maxevs="++show maxevs++")"
+  if SYS.is_lock pe
+  then do
+    -- @ compute the addr in question
+    let addr = SYS.pe_mut_addr $ act pe
+    -- @ compute the reversed sequence of unlocks
+    unlks_addr <- unlocks_of_addr addr stak
+    -- @ compute the predecessor in the thread
+    let name = SYS.pe_name pe
+    e_proc <- latest_ev_proc (fst name) mpevs
+    case unlks_addr of
+      -- @ first lock ever
+      []    -> add_event stak succe pe ([e_proc],[]) 
+      -- @ more than one lock 
+      (u:r) -> do
+        h0  <- compute_hist e_proc u 
+        his <- histories_lock pe e_proc r 
+        mapM (add_event stak succe pe) his
+        add_event stak succe pe (h0,[])
   else do
-    -- e should be a valid maximal event
-    -- @NOTE: Remove this check for benchmarking
-    if e `elem` h0
-    then do
-      -- @ Compute other histories, i.e. conflicting extensions 
-      his <- if SYS.is_lock pe
-             then histories_lock pe h0
-             else return []
-      mapM (add_event stak succe pe) his
-      add_event stak succe pe (h0,[])
-    else error "e must always be in h0"  
+    -- @ computes h0, the maximal history:
+    h0 <- history pe maxevs mpevs
+    if null h0 
+    then error $ "null h0 or c0 at extend(e="++show e
+               ++",pe="++show pe++",maxevs="++show maxevs
+               ++",maxprocevs="++show mpevs++")"
+    else add_event stak succe pe (h0,[])
 
 -- | history computes the largest history of an event which we call h0 
 --   Input: 
@@ -198,57 +212,39 @@ extend e maxevs pe = T.trace ("extending the prefix with " ++ show (e,pe)) $ do
 --  LOCK and JOIN.
 -- For the remainder, we only need to get the latest event in the process
 -- and that will correspond to h0.
-history :: PEvent -> EventsID -> UnfolderOp History
-history pe@PEv{..} maxevs = do
+history :: PEvent -> EventsID -> MEventsID -> UnfolderOp History
+history pe@PEv{..} maxevs mpevs = do
   let name = SYS.pe_name pe
-  e_proc <- latest_ev_proc name maxevs
+  e_proc <- latest_ev_proc (fst name) mpevs 
   case act_ty act of 
     JOIN -> do 
       let exit_tid = SYS.pe_exit_tid act
-      e_exit <- exit_ev exit_tid maxevs
+      e_exit <- latest_ev_proc exit_tid mpevs 
       compute_hist e_proc e_exit 
-    LOCK -> do
-      let mut_addr = SYS.pe_mut_addr act
-      e_unlk <- latest_ev_unlk mut_addr maxevs
-      compute_hist e_proc e_unlk 
+    LOCK -> error "should never happen"
     _ -> return [e_proc]
 
 -- | Going to compute the histories of a lock event.
 --   This history can be composed of at most two events
 --   one to enable this transition in the thread and 
 --   an unlock from another thread.
-histories_lock :: PEvent -> EventsID -> UnfolderOp [(History,EventsID)]
-histories_lock pe h0 = do
-  let name     = SYS.pe_name pe
-      mut_addr = SYS.pe_mut_addr $ SYS.pe_act pe
-  -- 1. Get e_proc: the last event in the thread of pe
-  e_proc <- latest_ev_proc name h0
-  -- 2. Get e_unlk: the event in hs that is the unlock
-  hs_unlk <- filterM (is_unlock_of mut_addr) h0
-  case hs_unlk of
-    -- @TODO: check that h0 = [e_unlk] or [e_unlk, e_proc] ?
-    [e_unlk] -> do 
-      e_unlk' <- find_prev_unlock e_unlk
-      histories_lock_inner pe e_proc e_unlk' 
-    _ -> error "histories_lock: there is no unlock event in h0"
-
 -- | check if {e_proc, e_unlk} can be an history of 
 --   pe (accounting for the fact that e_proc can be
 --   a predecessor of e_unlk.
 --   If that is the case, return {e_proc, e_unlk}, e_lk
 --   where e_lk is the lock event that is an immediate
 --   successor of e_unlk, with the same name as pe
-histories_lock_inner :: PEvent -> EventID -> EventID -> UnfolderOp [(History,EventsID)]
-histories_lock_inner pe e_proc e_unlk = do
+histories_lock :: PEvent -> EventID -> EventsID -> UnfolderOp [(History,EventsID)]
+histories_lock pe e_proc []    = return []
+histories_lock pe e_proc (e_unlk:r) = do
   c1 <- is_same_or_succ e_proc e_unlk 
   if c1 
   then return []
   else do
       e_lk    <- find_lock_cnfl pe e_unlk
-      c2      <- is_concur e_proc e_unlk
+      c2      <- is_pred e_proc e_unlk
       let h   = if c2 then [e_proc, e_unlk] else [e_unlk]
-      e_unlk' <- find_prev_unlock e_unlk
-      hist    <- histories_lock_inner pe e_proc e_unlk'
+      hist    <- histories_lock pe e_proc r
       return $ (h,[e_lk]):hist
 
 -- @ add_event: Given a pre-event and the history

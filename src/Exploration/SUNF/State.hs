@@ -27,6 +27,7 @@ mtrace False a b = b
 --   Pointer to an event
 type EventID   = Int
 type EventsID  = [EventID]
+type MEventsID = Map Int EventID
 -- @TODO: Add the Act to the name and remove it from Event
 type EventName = (TId, Pos)
 type EventInfo = (EventName, Act) 
@@ -65,10 +66,11 @@ type Counter = Int
 data Configuration =
   Conf 
   {
-    state :: St        -- ^ state of the configuration
-  , maevs :: EventsID  -- ^ maximal events 
-  , enevs :: EventsID  -- ^ enabled events 
-  , cfevs :: EventsID  -- ^ special events: the ones that have imm conflicts
+    state :: St         -- ^ state of the configuration
+  , maevs :: EventsID   -- ^ maximal events 
+  , maxev :: MEventsID  -- ^ maximal event per process 
+  , enevs :: EventsID   -- ^ enabled events 
+  , cfevs :: EventsID   -- ^ special events: the ones that have imm conflicts
   }
 
 -- @ An history is a set of maximal events of a configuration
