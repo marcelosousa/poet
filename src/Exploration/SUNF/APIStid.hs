@@ -12,6 +12,8 @@ import Exploration.SUNF.API
 import Exploration.SUNF.State hiding (state)
 import Haskroid.Hapiroid hiding (Poset, toPoset, Event)
 import Haskroid.Haskroid
+import qualified Data.Map as M
+import qualified Debug.Trace as T
 
 -- | Initial System
 --   Initialize the steroid
@@ -28,19 +30,38 @@ stid_fe file = do
 stid_end :: System -> IO ()
 stid_end s@Sys{..} = terminate stid_ptr 
 
-stid_replay :: EventsID -> UnfolderOp ()
-stid_replay alte = do
+stid_replay :: St -> EventsID -> UnfolderOp St
+stid_replay st alte = do
   s@UnfolderState{..} <- get
   let stid = stid_ptr syst 
   (rep_, len_rep) <- build_replay alte  
   let rep = reverse rep_
-  lift $ print $ "stid_replay: " ++ show (rep, len_rep) 
+  lift $ putStrLn $ "stid_replay: " ++ show (rep, len_rep) 
   po <- lift $ replay stid rep len_rep
   let poset = toPoset po 
       nsys  = Sys stid poset (state syst)
-  lift $ print $ "stid_replay: " ++ show poset 
+  lift $ putStrLn $ "stid_replay: " ++ show poset 
   set_sys nsys
-  
+  lift $ putStrLn $ "stid_replay:\n" ++ show_st st
+  return $ run_replay nsys st (state syst)  
+ 
+run_replay :: System -> St -> St -> St
+run_replay sys s is = T.trace ("run_replay:\n" ++ show_st is) $
+  let a = M.filterWithKey (\tid (p,_) -> 
+       case M.lookup tid is of
+         Nothing -> False
+         Just (p',_) -> (p /= p')) s 
+  in if M.null a
+     then is
+     else case enabled sys is of
+         [] -> error "run_replay: not supposed to happen"
+         l -> case filter (\pe -> case M.lookup (fromInteger $ tid pe) a of
+                            Nothing -> False
+                            Just _ -> True) l of
+                [] -> error "run_replay: not supposed to happen anymore"
+                (pe:_) -> let n = (tid pe, idx pe)
+                          in run_replay sys s (run sys is n) 
+ 
 build_replay :: EventsID -> UnfolderOp (Replay, Int)
 build_replay alte = do
   lift $ print $ "build_replay: " ++ show alte

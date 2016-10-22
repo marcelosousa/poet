@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------
 module Exploration.SUNF.Unfolder (synfolder) where
 
-import Control.Monad.State.Strict
+import Control.Monad.State.Strict hiding (state)
 import Data.Hashable
 import Data.List
 import Data.Maybe hiding (catMaybes)
@@ -107,7 +107,7 @@ explore c@Conf{..} ê d alt = do
       else return c
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
-    nc <- unfold pruned_conf e
+    nc <- unfold False pruned_conf e
     -- @ recursive call
     push e
     explore nc e d (e `delete` alt)
@@ -117,10 +117,11 @@ explore c@Conf{..} ê d alt = do
     case malt of
       Nothing -> return ()
       Just alt' -> do
-         lift $ print $ "Computed alt': " ++ show alt' 
-         stid_replay $ tail $ reverse alt'
-         let c' = remove_ev c e
-         explore c' ê (e:d) (alt' \\ stak)
+         lift $ putStrLn $ "Computed alt': " ++ show alt' 
+         nst <- stid_replay state $ tail $ reverse alt'
+         let c' = remove_ev c nst e
+         c'' <- unfold True c' ê 
+         explore c'' ê (e:d) (alt' \\ stak)
     -- @ remove irrelevant parts of the prefix 
     if stateless opts 
     then do
@@ -128,29 +129,29 @@ explore c@Conf{..} ê d alt = do
       prune e core_prefix
     else return ()
 
-remove_ev :: Configuration -> EventID -> Configuration
-remove_ev conf@Conf{..} e = 
+remove_ev :: Configuration -> SYS.St -> EventID -> Configuration
+remove_ev conf@Conf{..} st e = 
   let en = delete e enevs
-  in conf {enevs = en}
+  in conf {enevs = en, state = st}
 
 -- @@ unfold receives the configuration and event that is going to executed
 --    and returns the new configuration with that event
 --    Build the configuration step by step
 -- @revised 08-04-15
 -- @v2 revised 19-10-16
-unfold :: Configuration -> EventID -> UnfolderOp Configuration
-unfold conf@Conf{..} e = do
+unfold :: Bool -> Configuration -> EventID -> UnfolderOp Configuration
+unfold b conf@Conf{..} e = do
   lift $ putStrLn $ "unfold: event *" ++ show e ++ "* with state\n" ++ SYS.show_st state
   s@UnfolderState{..} <- get
   -- @ 1. compute the new state after executing the event e
   eve <- lift $ get_event "unfold" e evts
   lift $ putStrLn $ "unfold: run" 
-  let nstc = SYS.run syst state (name eve)
+  let nstc = if b then state else SYS.run syst state (name eve)
   -- @ 2. compute the new set of maximal events
   iprede <- lift $ get_pred e evts 
   let nmaxevs = e:(maevs \\ iprede)
   -- @ 3. update the maximal event per process
-      nmaxevsproc = M.insert (fromInteger $ fst $ name eve) e maxev  
+      nmaxevsproc = update_max_proc maxev eve e
       -- - compute the set of enabled pre-events at the new state
       entrs = SYS.enabled syst nstc 
   -- @ 4. compute the new set of enabled events
@@ -177,6 +178,13 @@ unfold conf@Conf{..} e = do
   put s{ pcnf = nconf }
   return $! nconf
 
+update_max_proc :: MEventsID -> Event -> EventID -> MEventsID
+update_max_proc maxev e@Event{..} eID =
+  let n_maxev = M.insert (fromInteger $ fst name) eID maxev
+  in case act_ty acts of
+    CREATE -> M.insert (fromInteger $ act_val acts) eID n_maxev 
+    _ -> n_maxev  
+
 clean :: [PEvent] -> EventID -> UnfolderOp Bool
 clean ts e = do
   s@UnfolderState{..} <- get
@@ -197,7 +205,7 @@ extend e maxevs mpevs pe = do
     -- @ compute the addr in question
     let addr = SYS.pe_mut_addr $ act pe 
     -- @ compute the reversed sequence of unlocks
-    unlks_addr <- unlocks_of_addr (tid pe) addr (e:stak)
+    unlks_addr <- unlocks_of_addr (tid pe) addr $ nub (e:stak)
     -- @ compute the predecessor in the thread
     let name = SYS.pe_name pe
     e_proc <- latest_ev_proc (fst name) mpevs
@@ -262,17 +270,18 @@ history pe@PEv{..} maxevs mpevs = do
 --   where e_lk is the lock event that is an immediate
 --   successor of e_unlk, with the same name as pe
 histories_lock :: PEvent -> EventID -> EventsID -> UnfolderOp [(History,EventsID)]
-histories_lock pe e_proc []      = error "histories_lock: empty list error" 
+histories_lock pe e_proc []      = return [] -- error "histories_lock: empty list error" 
 histories_lock pe e_proc [lk]    = return [([e_proc],[lk])]
-histories_lock pe e_proc (e_lk:e_unlk:r) = do
+histories_lock pe e_proc l@(e_lk:e_unlk:r) = do
+  lift $ putStrLn $ "histories_lock: " ++ show l
   c1 <- is_same_or_succ e_proc e_unlk 
   if c1 
   then return []
   else do
       -- let e_lk = head r -- find_lock_cnfl pe e_unlk
       c2      <- is_pred e_proc e_unlk
-      let h   = if c2 then [e_proc, e_unlk] else [e_unlk]
-      hist    <- histories_lock pe e_proc $ tail r
+      let h   = if c2 then [e_unlk] else [e_proc, e_unlk] 
+      hist    <- histories_lock pe e_proc r
       return $ (h,[e_lk]):hist
 
 is_duplicate :: PEvent -> History -> (EventID, Event) -> Bool
@@ -310,16 +319,18 @@ add_event' stack pe (history, cnfls) = do
   neID <- freshCounter
   -- @ 2. Compute the immediate conflicts
   -- @  b) Computes the immediate conflicts of all events in the local configuration
+  cnflse <- get_events "add_event'" cnfls
   -- @ 3. Insert the new event in the hash table
   let name = SYS.pe_name pe
       acts = SYS.pe_act pe
-      e = Event name history [] cnfls [] [] acts
+      ncnfls = concatMap (\(eID,ev@Event{..}) -> eID:icnf) cnflse
+      e = Event name history [] ncnfls [] [] acts
   s@UnfolderState{..} <- get
   lift $ set_event neID e evts 
   -- @ 4. Update all events in the history to include neID as their successor
   lift $ mapM (\e -> add_succ neID e evts) history
   -- @ 5. Update all events in the immediate conflicts to include neID as one 
-  lift $ mapM (\e -> add_icnf neID e evts) cnfls 
+  lift $ mapM (\e -> add_icnf neID e evts) ncnfls 
   inc_evs_per_name name 
   return $! neID
 

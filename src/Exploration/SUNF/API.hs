@@ -283,16 +283,20 @@ exit_ev tid eIDs = do
 
 compute_hist :: EventID -> EventID -> UnfolderOp History
 compute_hist e1 e2 = do
-  lift $ print $ "compute_hist " ++ show (e1,e2) 
   c1 <- is_same_or_succ e1 e2 
   if c1 
-  then return [e1]
+  then do
+    lift $ putStrLn $ "compute_hist " ++ show (e1,e2) ++ " is " ++ show [e1]
+    return [e1]
   else do
-    lift $ print $ "e1 is not same or successor of e2" 
     c2 <- is_pred e1 e2 
     if c2
-    then return [e2]
-    else return [e1, e2]
+    then do
+      lift $ putStrLn $ "compute_hist " ++ show (e1,e2) ++ " is " ++ show [e2]
+      return [e2]
+    else do
+      lift $ putStrLn $ "compute_hist " ++ show (e1,e2) ++ " is " ++ show [e1,e2]
+      return [e1, e2]
 
 is_unlock_of :: Integer -> EventID -> UnfolderOp Bool 
 is_unlock_of addr eID = do
