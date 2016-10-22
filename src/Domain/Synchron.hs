@@ -146,6 +146,12 @@ is_lock pe@PEv{..} =
     STID.LOCK -> True
     _         -> False 
 
+is_join :: PEvent -> Bool
+is_join pe@PEv{..} =
+  case STID.act_ty act of
+    STID.JOIN -> True
+    _         -> False 
+
 lock_addr :: PEvent -> Integer 
 lock_addr pe@PEv{..} = STID.act_addr act 
 

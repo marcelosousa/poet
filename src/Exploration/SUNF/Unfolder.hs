@@ -17,7 +17,7 @@ import Exploration.SUNF.APIStateless
 import Exploration.SUNF.APIStid
 import Exploration.SUNF.State 
 import Haskroid.Hapiroid hiding (Event)
-import Prelude hiding (pred)
+import Prelude hiding (pred, putStrLn)
 import System.IO.Unsafe
 import Util.Generic
 import Util.Printer (unfToDot)
@@ -26,6 +26,8 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Debug.Trace as T
 import qualified Domain.Synchron as SYS 
+
+-- putStrLn a = return ()
 
 synfolder :: Bool -> Bool -> System -> IO UnfolderState
 synfolder stl cut syst = do
@@ -79,7 +81,7 @@ explore c@Conf{..} ê d alt = do
   lift $ putStrLn (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak++")\nState:\n"++SYS.show_st state++str++separator) 
-  k <- lift $ getChar
+  -- k <- lift $ getChar
   -- @ configuration is maximal?
   if null enevs 
   then do
@@ -233,7 +235,13 @@ extend e maxevs mpevs pe = do
     then error $ "null h0 or c0 at extend(e="++show e
                ++",pe="++show pe++",maxevs="++show maxevs
                ++",maxprocevs="++show mpevs++")"
-    else add_event' stak pe (h0,[])
+    else if SYS.is_join pe
+         then do
+           l <- add_event stak pe (h0,[])
+           case l of 
+             [e'] -> return e'
+             _ -> error "extend: add_event join returned invalid list"
+         else add_event' stak pe (h0,[])
 
 -- | history computes the largest history of an event which we call h0 
 --   Input: 

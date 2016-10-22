@@ -12,13 +12,15 @@ import Data.Map (Map,fromList,empty)
 import Domain.Synchron
 import Exploration.SUNF.State hiding (state)
 import Haskroid.Hapiroid (ActType(..), Action(..))
-import Prelude hiding (succ)
+import Prelude hiding (succ, putStrLn)
 import Util.Generic
 import qualified Data.HashTable.IO as H
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
 
 sep = "-----------------------------------------\n"
+
+putStrLn a = return ()
 
 -- | Bottom Event
 botEID :: Int

@@ -6,6 +6,7 @@
 -------------------------------------------------------------------------------
 module Exploration.SUNF.APIStid where
 
+import Prelude hiding (putStrLn)
 import Control.Monad.State.Strict hiding (state)
 import Domain.Synchron
 import Exploration.SUNF.API
@@ -14,6 +15,9 @@ import Haskroid.Hapiroid hiding (Poset, toPoset, Event)
 import Haskroid.Haskroid
 import qualified Data.Map as M
 import qualified Debug.Trace as T
+
+trace a b = b
+-- trace = T.trace
 
 -- | Initial System
 --   Initialize the steroid
@@ -46,7 +50,7 @@ stid_replay st alte = do
   return $ run_replay nsys st (state syst)  
  
 run_replay :: System -> St -> St -> St
-run_replay sys s is = T.trace ("run_replay:\n" ++ show_st is) $
+run_replay sys s is = trace ("run_replay:\n" ++ show_st is) $
   let a = M.filterWithKey (\tid (p,_) -> 
        case M.lookup tid is of
          Nothing -> False
@@ -64,7 +68,7 @@ run_replay sys s is = T.trace ("run_replay:\n" ++ show_st is) $
  
 build_replay :: EventsID -> UnfolderOp (Replay, Int)
 build_replay alte = do
-  lift $ print $ "build_replay: " ++ show alte
+  lift $ putStrLn $ "build_replay: " ++ show alte
   s@UnfolderState{..} <- get
   evs <- lift $ mapM (\e -> get_event "build_replay" e evts) alte 
   return $ build_replay_es evs (0,0) ([],0)
@@ -77,10 +81,23 @@ build_replay_es [] (tid,c) (rep,n) =
 build_replay_es (e@Event{..}:es) (tid,c) (rep,n) =
   let ntid = fromInteger $ fst name
   in if ntid == tid
-     then build_replay_es es (tid,c+1) (rep,n)
-     else build_replay_es es (ntid,1)  (add_to_replay (tid,c) rep, n+1) 
+     then case act_ty acts of 
+            ENTRY  -> build_replay_es es (tid,c+1) (rep,n)
+            CREATE -> build_replay_es es (tid,c+1) (rep,n)
+            LOCK   -> build_replay_es es (tid,c+1) (rep,n)
+            UNLOCK -> build_replay_es es (tid,c)   (rep,n)
+            JOIN   -> build_replay_es es (tid,c+1) (rep,n)
+            EXIT   -> build_replay_es es (tid,c)   (rep,n)
+     else case act_ty acts of 
+            ENTRY  -> build_replay_es es (ntid,1)  (add_to_replay (tid,c) rep, n+1) 
+            CREATE -> build_replay_es es (ntid,1)  (add_to_replay (tid,c) rep, n+1) 
+            LOCK   -> build_replay_es es (ntid,1)  (add_to_replay (tid,c) rep, n+1) 
+            UNLOCK -> build_replay_es es (tid,c)   (rep, n) 
+            JOIN   -> build_replay_es es (ntid,1)  (add_to_replay (tid,c) rep, n+1) 
+            EXIT   -> build_replay_es es (tid,c)   (rep, n) 
 
-add_to_replay :: (Int,Int) -> Replay -> Replay
+add_to_replay :: (Int, Int) -> Replay -> Replay
+add_to_replay (th,0) rep = rep
 add_to_replay (th,nr) rep =
    (SteroidCTSW (fromInteger $ toInteger th) (fromInteger $ toInteger nr)):rep
 
