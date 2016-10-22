@@ -362,8 +362,9 @@ unlocks_of_addr :: TId -> Integer -> EventsID -> UnfolderOp EventsID
 unlocks_of_addr tid addr stak = do
   lift $ putStrLn $ "unlocks_of_addr: " ++ show (addr,tid) ++ " " ++ show stak
   res <- foldM (unlock_of_addr addr) [] stak
-  lift $ putStrLn $ "unlocks_of_addr: result " ++ show res
-  return $ reverse res
+  let rres = reverse res
+  lift $ putStrLn $ "unlocks_of_addr: result " ++ show rres
+  return $ rres
 
 unlock_of_addr :: Integer -> EventsID -> EventID -> UnfolderOp EventsID
 unlock_of_addr addr unlks e = do

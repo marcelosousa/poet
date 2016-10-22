@@ -204,14 +204,20 @@ extend e maxevs mpevs pe = do
     case unlks_addr of
       -- @ first lock ever
       [] -> do 
-        add_event' stak pe ([e_proc],[])
+        l <- add_event stak pe ([e_proc],[])
+        case l of 
+          [e'] -> return e'
+          _ -> error "extend: add_event returned invalid list"
       -- @ more than one lock 
       (u:r) -> do
         h0  <- compute_hist e_proc u 
         his <- histories_lock pe e_proc r 
         lift $ putStrLn $ "extend: lock histories " ++ show his
         mapM (add_event stak pe) his
-        add_event' stak pe (h0,[])
+        l <- add_event stak pe (h0,[])
+        case l of 
+          [e'] -> return e'
+          _ -> error "extend: add_event returned invalid list"
   else do
     -- @ computes h0, the maximal history:
     h0 <- history pe maxevs mpevs
@@ -286,13 +292,14 @@ add_event :: EventsID -> PEvent -> (History, EventsID) -> UnfolderOp EventsID
 add_event stack pe (history,cnfls) = do
   s@UnfolderState{..} <- get
   m <- lift $ H.toList evts
-  if any (is_duplicate pe history) m 
-  then do
-    lift $ putStrLn $ "add_event duplicate! " ++ show pe ++ ", hist = " ++ show history 
-    return [] -- check if this is correct
-  else do
-    e <- add_event' stack pe (history, cnfls)
-    return [e]
+  case filter (is_duplicate pe history) m of
+    [] -> do
+      e <- add_event' stack pe (history, cnfls)
+      return [e]
+    [(eID,_)] -> do
+      lift $ putStrLn $ "add_event duplicate! " ++ show pe ++ ", hist = " ++ show history 
+      return [eID]
+    _ -> error "add_event: more than one event with the same history"  
 
 add_event' :: EventsID -> PEvent -> (History, EventsID) -> UnfolderOp EventID 
 add_event' stack pe (history, cnfls) = do
