@@ -38,12 +38,12 @@ data Event =
   Event 
   {
     name :: EventName    -- ^ Event name 
-  , acts :: Act          -- ^ Event actions 
   , pred :: EventsID     -- ^ Immediate predecessors
   , succ :: EventsID     -- ^ Immediate successors
   , icnf :: EventsID     -- ^ Immediate conflicts: #^
   , disa :: EventsID     -- ^ Disabled events: D
   , alte :: Alternatives -- ^ Valid alternatives: V
+  , acts :: Act          -- ^ Event actions 
   } 
   deriving (Show,Eq,Ord)
 

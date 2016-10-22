@@ -25,7 +25,7 @@ botEID :: Int
 botEID = (-1)
 
 botEvent :: Event
-botEvent = Event (-1,Active 0) (Act ENTRY (-1) (-1)) [] [] [] [] []
+botEvent = Event (-1, 0) [] [] [] [] [] (Act ENTRY (-1) (-1)) 
 
 -- @ Initial state of the unfolder
 i_unf_state:: Bool -> Bool -> System -> IO UnfolderState 
@@ -283,20 +283,28 @@ exit_ev tid eIDs = do
 
 compute_hist :: EventID -> EventID -> UnfolderOp History
 compute_hist e1 e2 = do
+  lift $ print $ "compute_hist " ++ show (e1,e2) 
   c1 <- is_same_or_succ e1 e2 
   if c1 
   then return [e1]
   else do
+    lift $ print $ "e1 is not same or successor of e2" 
     c2 <- is_pred e1 e2 
     if c2
-    then return [e1, e2]
-    else return [e2]
+    then return [e2]
+    else return [e1, e2]
 
 is_unlock_of :: Integer -> EventID -> UnfolderOp Bool 
 is_unlock_of addr eID = do
   s@UnfolderState{..} <- get
   e@Event{..} <- lift $ get_event "is_unlock_of" eID evts
   return $ is_unlock_act_of acts addr 
+
+is_begin_of :: TId -> EventID -> UnfolderOp Bool 
+is_begin_of tid eID = do
+  s@UnfolderState{..} <- get
+  e@Event{..} <- lift $ get_event "is_begin_of" eID evts
+  return $ is_begin_act_of acts (fst name) tid 
 
 is_lock_of :: Integer -> EventID -> UnfolderOp Bool 
 is_lock_of addr eID = do
@@ -350,21 +358,27 @@ is_pred e1 e2
 --    Given a linearization it will reverse it
 --    and filter all unlocks of a given addr
 --  This is expensive for now.
-unlocks_of_addr :: Integer -> EventsID -> UnfolderOp EventsID
-unlocks_of_addr addr stak = foldM (unlock_of_addr addr) [] stak 
+unlocks_of_addr :: TId -> Integer -> EventsID -> UnfolderOp EventsID
+unlocks_of_addr tid addr stak = do
+  lift $ putStrLn $ "unlocks_of_addr: " ++ show (addr,tid) ++ " " ++ show stak
+  res <- foldM (unlock_of_addr addr) [] stak
+  lift $ putStrLn $ "unlocks_of_addr: result " ++ show res
+  return $ reverse res
 
 unlock_of_addr :: Integer -> EventsID -> EventID -> UnfolderOp EventsID
 unlock_of_addr addr unlks e = do
   b <- is_unlock_of addr e
-  if b
+  c <- is_lock_of addr e
+  if b || c
   then return $ e:unlks
   else return unlks  
 
 latest_ev_proc :: TId -> MEventsID -> UnfolderOp EventID
+latest_ev_proc (-1) maxes = return botEID 
 latest_ev_proc _tid maxes = do
   let tid = fromInteger _tid 
   case MA.lookup tid maxes of
-    Nothing -> error "latest_ev_proc: key not found"
+    Nothing -> return botEID -- error $ "latest_ev_proc: key not found " ++ show tid
     Just e  -> return e 
 
 find_lock_cnfl :: PEvent -> EventID -> UnfolderOp EventID

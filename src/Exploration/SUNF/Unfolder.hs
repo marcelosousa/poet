@@ -21,6 +21,7 @@ import Prelude hiding (pred)
 import System.IO.Unsafe
 import Util.Generic
 import Util.Printer (unfToDot)
+import qualified Data.HashTable.IO as H
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Debug.Trace as T
@@ -28,6 +29,7 @@ import qualified Domain.Synchron as SYS
 
 synfolder :: Bool -> Bool -> System -> IO UnfolderState
 synfolder stl cut syst = do
+  putStrLn "synfolder"
   is    <- i_unf_state stl cut syst 
   (a,s) <- runStateT bot_explore is 
   return $! s
@@ -48,17 +50,21 @@ bot_explore = do
 -- the underlying PO passed by STID.
 initial_ext :: UnfolderOp Configuration
 initial_ext = do
+  lift $ putStrLn "initial_ext"
   s@UnfolderState{..} <- get
   let e    = botEID
       cevs = [e]
       mevs = (M.fromList [(-1,botEID)])
       ist  = SYS.state syst
       nees = SYS.enabled syst ist 
+  lift $ putStrLn $ "initial enabled threads " ++ show nees
   enevs <- mapM (extend e cevs mevs) nees 
   s@UnfolderState{..} <- get 
   let iConf = Conf ist cevs mevs enevs [] 
   put s { pcnf = iConf }
   return $! iConf
+
+separator = "-----------------------------------------\n"
 
 -- | explore: the main exploration function
 --  Input: 
@@ -69,6 +75,11 @@ initial_ext = do
 explore :: Configuration -> EventID -> EventsID -> Alternative -> UnfolderOp ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
+  str <- lift $ showEvents evts
+  lift $ putStrLn (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+       ++ ", enevs = " ++ show enevs ++ ", alt = " 
+       ++ show alt ++ ", stack = " ++ show stak++")\nState:\n"++SYS.show_st state++str++separator) 
+  k <- lift $ getChar
   -- @ configuration is maximal?
   if null enevs 
   then do
@@ -105,15 +116,22 @@ explore c@Conf{..} ê d alt = do
     malt <- alt2 (e:d) (e:d) 
     case malt of
       Nothing -> return ()
-      Just alt' -> do 
-         stid_replay alt' 
-         explore c ê (e:d) (alt' \\ stak)
+      Just alt' -> do
+         lift $ print $ "Computed alt': " ++ show alt' 
+         stid_replay $ tail $ reverse alt'
+         let c' = remove_ev c e
+         explore c' ê (e:d) (alt' \\ stak)
     -- @ remove irrelevant parts of the prefix 
     if stateless opts 
     then do
       core_prefix <- lift $ core stak d evts
       prune e core_prefix
     else return ()
+
+remove_ev :: Configuration -> EventID -> Configuration
+remove_ev conf@Conf{..} e = 
+  let en = delete e enevs
+  in conf {enevs = en}
 
 -- @@ unfold receives the configuration and event that is going to executed
 --    and returns the new configuration with that event
@@ -122,75 +140,78 @@ explore c@Conf{..} ê d alt = do
 -- @v2 revised 19-10-16
 unfold :: Configuration -> EventID -> UnfolderOp Configuration
 unfold conf@Conf{..} e = do
+  lift $ putStrLn $ "unfold: event *" ++ show e ++ "* with state\n" ++ SYS.show_st state
   s@UnfolderState{..} <- get
   -- @ 1. compute the new state after executing the event e
   eve <- lift $ get_event "unfold" e evts
+  lift $ putStrLn $ "unfold: run" 
   let nstc = SYS.run syst state (name eve)
   -- @ 2. compute the new set of maximal events
   iprede <- lift $ get_pred e evts 
   let nmaxevs = e:(maevs \\ iprede)
   -- @ 3. update the maximal event per process
       nmaxevsproc = M.insert (fromInteger $ fst $ name eve) e maxev  
-  -- @ 4. compute the new set of enabled events
-      es = delete e enevs 
       -- - compute the set of enabled pre-events at the new state
       entrs = SYS.enabled syst nstc 
+  -- @ 4. compute the new set of enabled events
+  es <- filterM (clean entrs) $ delete e enevs
   -- get the events that are still enabled 
   ievs <- lift $ mapM (\e -> get_event "unfold" e evts) es
   -- filter the new enabled pre-events that are not enabled events
-  let netrs = filter (\npe -> any (\e@Event{..} -> name /= SYS.pe_name npe) ievs) entrs
+  let netrs = filter (\npe -> all (\e@Event{..} -> name /= SYS.pe_name npe) ievs) entrs
   -- compute the new enabled events
+  lift $ putStrLn $ "unfold: new state\n" ++ SYS.show_st nstc
+  lift $ putStrLn $ "unfold: enabled pre-events:\n" ++ (foldr (\a b -> show a ++ "\n" ++ b) "" netrs)
   nnevs <- mapM (extend e nmaxevs nmaxevsproc) netrs 
   -- compute all the events of the configuration 
   let confEvs = e:stak
-  -- filter from nnevs events that may have 
-   --  immediate conflicts with events in the configuration
-  -- @ASSERT The set nnevs should not contain any such event!
-  nnevs' <- lift $ filterM (\e -> get_event "unfold" e evts >>= 
-                            \ev -> return $ not $ null (icnf ev `intersect` confEvs)) nnevs
-  if not $ null nnevs'
-  then error "unfold: fatal: invalid configuration"
-  else do 
-    let nenevs = nnevs ++ es
-    -- @ 4. compute the new set of special events
-    evs <- lift $ mapM (\e -> get_event "unfold" e evts >>= 
-                        \ev -> return (e,ev)) confEvs 
-    let ncevs = map fst $ filter (\(_,ev) -> not $ null $ icnf ev) evs
-    -- @ 5. if this event is an unlock, we add it 
-    -- @ build the new configuration
-    let nconf = Conf nstc nmaxevs nmaxevsproc nenevs ncevs
-    s@UnfolderState{..} <- get
-    put s{ pcnf = nconf }
-    return $! nconf
+      nenevs = nnevs ++ es
+  -- @ 4. compute the new set of special events
+  evs <- lift $ mapM (\e -> get_event "unfold" e evts >>= 
+                      \ev -> return (e,ev)) confEvs 
+  let ncevs = map fst $ filter (\(_,ev) -> not $ null $ icnf ev) evs
+  -- @ 5. if this event is an unlock, we add it 
+  -- @ build the new configuration
+  let nconf = Conf nstc nmaxevs nmaxevsproc nenevs ncevs
+  s@UnfolderState{..} <- get
+  put s{ pcnf = nconf }
+  return $! nconf
+
+clean :: [PEvent] -> EventID -> UnfolderOp Bool
+clean ts e = do
+  s@UnfolderState{..} <- get
+  ev@Event{..} <- lift $ get_event "clean" e evts
+  return $ any (\t -> tid t == fst name) ts
 
 -- | extends the unfolding prefix based on a configuration of a given
 --  pre event which contain *e* as an immediate predecessor and returns
 --  the event with history h0.
 extend :: EventID -> EventsID -> MEventsID -> PEvent -> UnfolderOp EventID
-extend e maxevs mpevs pe = T.trace ("ext prefix with " ++ show (e,pe)) $ do 
+extend e maxevs mpevs pe = do
+  lift $ putStrLn $ "extend: e=" ++ show e ++ ", maxevs: " 
+                 ++ show maxevs ++ ", maxevs_proc: " ++ show mpevs
+                 ++ ", pe: " ++ show pe 
   s@UnfolderState{..} <- get
-  -- @ retrieve the immediate successors of e with the same name to avoid duplicates
-  succe <- lift $ get_succ e evts 
-           >>= mapM (\e -> get_event "extend" e evts >>= \ev -> return (e,ev)) 
-           >>= return . filter (\(e,ev) -> name ev == SYS.pe_name pe)
   if SYS.is_lock pe
   then do
     -- @ compute the addr in question
-    let addr = SYS.pe_mut_addr $ act pe
+    let addr = SYS.pe_mut_addr $ act pe 
     -- @ compute the reversed sequence of unlocks
-    unlks_addr <- unlocks_of_addr addr stak
+    unlks_addr <- unlocks_of_addr (tid pe) addr (e:stak)
     -- @ compute the predecessor in the thread
     let name = SYS.pe_name pe
     e_proc <- latest_ev_proc (fst name) mpevs
     case unlks_addr of
       -- @ first lock ever
-      []    -> add_event stak succe pe ([e_proc],[]) 
+      [] -> do 
+        add_event' stak pe ([e_proc],[])
       -- @ more than one lock 
       (u:r) -> do
         h0  <- compute_hist e_proc u 
         his <- histories_lock pe e_proc r 
-        mapM (add_event stak succe pe) his
-        add_event stak succe pe (h0,[])
+        lift $ putStrLn $ "extend: lock histories " ++ show his
+        mapM (add_event stak pe) his
+        add_event' stak pe (h0,[])
   else do
     -- @ computes h0, the maximal history:
     h0 <- history pe maxevs mpevs
@@ -198,7 +219,7 @@ extend e maxevs mpevs pe = T.trace ("ext prefix with " ++ show (e,pe)) $ do
     then error $ "null h0 or c0 at extend(e="++show e
                ++",pe="++show pe++",maxevs="++show maxevs
                ++",maxprocevs="++show mpevs++")"
-    else add_event stak succe pe (h0,[])
+    else add_event' stak pe (h0,[])
 
 -- | history computes the largest history of an event which we call h0 
 --   Input: 
@@ -235,17 +256,22 @@ history pe@PEv{..} maxevs mpevs = do
 --   where e_lk is the lock event that is an immediate
 --   successor of e_unlk, with the same name as pe
 histories_lock :: PEvent -> EventID -> EventsID -> UnfolderOp [(History,EventsID)]
-histories_lock pe e_proc []    = return []
-histories_lock pe e_proc (e_unlk:r) = do
+histories_lock pe e_proc []      = error "histories_lock: empty list error" 
+histories_lock pe e_proc [lk]    = return [([e_proc],[lk])]
+histories_lock pe e_proc (e_lk:e_unlk:r) = do
   c1 <- is_same_or_succ e_proc e_unlk 
   if c1 
   then return []
   else do
-      e_lk    <- find_lock_cnfl pe e_unlk
+      -- let e_lk = head r -- find_lock_cnfl pe e_unlk
       c2      <- is_pred e_proc e_unlk
       let h   = if c2 then [e_proc, e_unlk] else [e_unlk]
-      hist    <- histories_lock pe e_proc r
+      hist    <- histories_lock pe e_proc $ tail r
       return $ (h,[e_lk]):hist
+
+is_duplicate :: PEvent -> History -> (EventID, Event) -> Bool
+is_duplicate pe@PEv{..} hist (_,e@Event{..}) =
+  name == (tid, idx) && (S.fromList hist) == (S.fromList pred) 
 
 -- @ add_event: Given a pre-event and the history
 --   adds the correspondent event.
@@ -256,32 +282,39 @@ histories_lock pe e_proc (e_unlk:r) = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-add_event :: EventsID -> [(EventID, Event)] -> PEvent -> (History, EventsID) -> UnfolderOp EventID 
-add_event stack dup pe (history,cnfls) = do
-  let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
-  if not $ null hasDup  
-  then if length hasDup > 1
-       then error "the number of duplicates is higher than 1"
-       else return $ fst $ head hasDup 
-  else do 
-    -- Increment the number of events in the prefix
-    inc_evs_prefix 
-    -- @ 1. Fresh event id 
-    neID <- freshCounter
-    -- @ 2. Compute the immediate conflicts
-    -- @  b) Computes the immediate conflicts of all events in the local configuration
-    -- @ 3. Insert the new event in the hash table
-    let name = SYS.pe_name pe
-        acts = SYS.pe_act pe
-        e = Event name acts history [] cnfls [] []
-    s@UnfolderState{..} <- get
-    lift $ set_event neID e evts 
-    -- @ 4. Update all events in the history to include neID as their successor
-    lift $ mapM (\e -> add_succ neID e evts) history
-    -- @ 5. Update all events in the immediate conflicts to include neID as one 
-    lift $ mapM (\e -> add_icnf neID e evts) cnfls 
-    inc_evs_per_name name 
-    return $! neID
+add_event :: EventsID -> PEvent -> (History, EventsID) -> UnfolderOp EventsID 
+add_event stack pe (history,cnfls) = do
+  s@UnfolderState{..} <- get
+  m <- lift $ H.toList evts
+  if any (is_duplicate pe history) m 
+  then do
+    lift $ putStrLn $ "add_event duplicate! " ++ show pe ++ ", hist = " ++ show history 
+    return [] -- check if this is correct
+  else do
+    e <- add_event' stack pe (history, cnfls)
+    return [e]
+
+add_event' :: EventsID -> PEvent -> (History, EventsID) -> UnfolderOp EventID 
+add_event' stack pe (history, cnfls) = do
+  lift $ putStrLn $ "add_event': " ++ show pe ++ ", hist = " ++ show history ++ ", cnfl = " ++ show cnfls
+  -- Increment the number of events in the prefix
+  inc_evs_prefix 
+  -- @ 1. Fresh event id 
+  neID <- freshCounter
+  -- @ 2. Compute the immediate conflicts
+  -- @  b) Computes the immediate conflicts of all events in the local configuration
+  -- @ 3. Insert the new event in the hash table
+  let name = SYS.pe_name pe
+      acts = SYS.pe_act pe
+      e = Event name history [] cnfls [] [] acts
+  s@UnfolderState{..} <- get
+  lift $ set_event neID e evts 
+  -- @ 4. Update all events in the history to include neID as their successor
+  lift $ mapM (\e -> add_succ neID e evts) history
+  -- @ 5. Update all events in the immediate conflicts to include neID as one 
+  lift $ mapM (\e -> add_icnf neID e evts) cnfls 
+  inc_evs_per_name name 
+  return $! neID
 
 -- Let e be an event of a configuration C.
 --   Let cext be the conflicting extensions of C, 
@@ -336,7 +369,7 @@ possible_altes maxevs evs =  do
         succes' <- mapM (\ce' -> successors ce' events >>= return . (ce':)) clfec'
         -- @ 1 and 2
         let common = stack \\ (concat succes') 
-            v = common ++ [e'] 
+            v = e':common 
             -- this check is probably redundant now
             isStackValid = all (\e' -> e' `elem` v) stackE 
         if isStackValid

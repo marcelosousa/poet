@@ -138,6 +138,7 @@ stid f stl cut = do
   syst <- stid_fe f
   ust  <- synfolder stl cut syst
   let (cntr, stats) = (SS.cntr ust, SS.stats ust)
+  -- putStrLn $ show syst 
   stid_end syst
   putStrLn $ show (cntr, stats) 
   putStrLn "explore end"
