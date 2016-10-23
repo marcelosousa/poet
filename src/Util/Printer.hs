@@ -9,6 +9,7 @@ import qualified Data.ByteString.Char8 as BS
 --import qualified Exploration.UNF.APIStateless as O
 import Exploration.SUNF.State 
 import Model.GCS
+import Haskroid.Hapiroid
 
 import qualified Data.Map as M
 {-
@@ -24,31 +25,35 @@ unfToDot sys@UnfolderState{..} = do
     events <- HIO.toList evts
     let maxConf = nr_max_conf stats
         cutoffCntr = nr_cutoffs stats
-    return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stak ++ "}")
+    return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ "node    [shape=box style=filled fillcolor=grey80];\n" ++ (fst $ toDot events stak) ++ "}")
 
-class ToDot a where
-    toDot :: a -> EventsID -> String
+-- class ToDot a where
+--    toDot :: a -> EventsID -> String
     
-instance ToDot [(EventID, Event)] where
-    toDot events stack = foldr (\el res -> toDot el stack ++ res) "" events
+-- instance ToDot [(EventID, Event)] where
+toDot events stack = foldr (\el res -> toDotE el stack res) ("",[]) events
 
-instance ToDot (EventID, Event) where
-    toDot (eID, ev@Event{..}) stack = 
-      let causality = foldr (printCausality eID) "" succ
-          conflict = foldr (printConflict eID) "" icnf
-          (tID,pos) = name 
-          label = show eID ++ " [label=\"eID = " ++ show eID 
-               ++ " tr=(" ++ show tID ++ "," ++ show pos ++ "," ++ show acts++")\"]\n"
-      in causality ++ conflict ++ label
+--instance ToDot (EventID, Event) where
+toDotE (eID, ev@Event{..}) stack (s,l) = 
+   let causality = foldr (printCausality eID) "" succ
+       (conflict,l') = foldr (printConflict eID) ("",l) icnf
+       (tID,pos) = name 
+       label = show eID ++ " [label=\"" ++ "p:" ++ show tID ++ " " ++ show_pretty acts++"\"]\n"
+   in (causality ++ conflict ++ label ++ s, l')
 
-showActs :: Show act => [act] -> String
-showActs acts = foldr (\act res -> show act ++ "," ++ res) "" acts
+-- showActs :: Show act => [act] -> String
+-- showActs acts = foldr (\act res -> show_pretty act ++ "," ++ res) "" acts
 
 printCausality :: EventID -> EventID -> String -> String
 printCausality e1 e2 s = show e1 ++ " -> " ++ show e2 ++ ";\n" ++ s
 
-printConflict :: EventID -> EventID -> String -> String
-printConflict e1 e2 s = show e1 ++ " -> " ++ show e2 ++ " [style=dotted];\n" ++ s  
+printConflict :: EventID -> EventID -> (String,[(EventID,EventID)]) -> (String,[(EventID,EventID)])
+printConflict e1 e2 (s,l) = 
+  if (e2,e1) `elem` l
+  then (s,l) 
+  else
+   let ns = show e1 ++ " -> " ++ show e2  ++ " [style=dashed arrowhead=none color=red];\n" ++ s
+   in (ns, (e1,e2):l) 
 
 {-
 printUnfConf :: UnfoldingPrefix -> String
