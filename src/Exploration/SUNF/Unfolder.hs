@@ -32,7 +32,8 @@ import qualified Domain.Synchron as SYS
 synfolder :: Bool -> Bool -> System -> IO UnfolderState
 synfolder stl cut syst = do
   putStrLn "synfolder"
-  is    <- i_unf_state stl cut syst 
+  -- is    <- i_unf_state stl cut syst 
+  is    <- i_unf_state False cut syst 
   (a,s) <- runStateT bot_explore is 
   return $! s
 

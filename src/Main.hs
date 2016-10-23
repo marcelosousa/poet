@@ -140,7 +140,9 @@ stid f stl cut = do
   let (cntr, stats) = (SS.cntr ust, SS.stats ust)
   -- putStrLn $ show syst 
   stid_end syst
-  putStrLn $ show (cntr, stats) 
+  putStrLn $ show (cntr, stats)
+  (_,_,_,dots) <- unfToDot ust 
+  writeFile (replaceExtension f ".dot") dots
   putStrLn "explore end"
 
 debug :: FilePath -> Domain -> Bool -> IO ()

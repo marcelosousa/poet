@@ -3,16 +3,25 @@ module Util.Printer where
 
 import Control.Monad.ST
 import qualified Data.HashTable.Class as H
+import qualified Data.HashTable.IO as HIO
 import qualified Data.ByteString.Char8 as BS
 
-import Exploration.UNF.APIStateless
+--import qualified Exploration.UNF.APIStateless as O
+import Exploration.SUNF.State 
 import Model.GCS
 
 import qualified Data.Map as M
-
-unfToDot :: Show act => UnfolderState st act s -> ST s (Int,Int,Int,String)
+{-
+unfToDot :: Show act => O.UnfolderState st act s -> ST s (Int,Int,Int,String)
 unfToDot sys@UnfolderState{..} = do
     events <- H.toList evts
+    let maxConf = nr_max_conf stats
+        cutoffCntr = nr_cutoffs stats
+    return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stak ++ "}")
+-}
+unfToDot :: UnfolderState -> IO (Int,Int,Int,String)
+unfToDot sys@UnfolderState{..} = do
+    events <- HIO.toList evts
     let maxConf = nr_max_conf stats
         cutoffCntr = nr_cutoffs stats
     return (cntr, maxConf, cutoffCntr, "digraph unfolding {\n" ++ toDot events stak ++ "}")
@@ -20,10 +29,10 @@ unfToDot sys@UnfolderState{..} = do
 class ToDot a where
     toDot :: a -> EventsID -> String
     
-instance Show act => ToDot [(EventID, Event act)] where
+instance ToDot [(EventID, Event)] where
     toDot events stack = foldr (\el res -> toDot el stack ++ res) "" events
 
-instance Show act => ToDot (EventID, Event act) where
+instance ToDot (EventID, Event) where
     toDot (eID, ev@Event{..}) stack = 
       let causality = foldr (printCausality eID) "" succ
           conflict = foldr (printConflict eID) "" icnf

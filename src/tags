@@ -116,7 +116,7 @@ ThState	./Domain/Interval/State.hs	52;"	t
 ThState	./Domain/Interval/State.hs	53;"	d
 ThStates	./Domain/Concrete/State.hs	66;"	t
 ThStates	./Domain/Interval/State.hs	50;"	t
-ToDot	./Util/Printer.hs	20;"	t
+ToDot	./Util/Printer.hs	29;"	t
 UnfOpts	./Exploration/SUNF/State.hs	89;"	d
 UnfOpts	./Exploration/UNF/APIStateless.hs	100;"	d
 UnfStats	./Exploration/SUNF/State.hs	101;"	d
@@ -151,18 +151,18 @@ acts	./Exploration/SUNF/State.hs	46;"	v
 acts	./Exploration/UNF/APIStateless.hs	38;"	v
 add	./Domain/Concrete/Converter.hs	427;"	v
 addEvent	./Exploration/UNF/Unfolder.hs	407;"	v	file:
-add_alte	./Exploration/SUNF/API.hs	150;"	v
+add_alte	./Exploration/SUNF/API.hs	152;"	v
 add_alte	./Exploration/UNF/APIStateless.hs	323;"	v
 add_conval	./Domain/Concrete/State.hs	275;"	v
-add_disa	./Exploration/SUNF/API.hs	133;"	v
+add_disa	./Exploration/SUNF/API.hs	135;"	v
 add_disa	./Exploration/UNF/APIStateless.hs	306;"	v
 add_event	./Exploration/SUNF/Unfolder.hs	309;"	v	file:
 add_event'	./Exploration/SUNF/Unfolder.hs	322;"	v	file:
-add_icnf	./Exploration/SUNF/API.hs	116;"	v
+add_icnf	./Exploration/SUNF/API.hs	118;"	v
 add_icnf	./Exploration/UNF/APIStateless.hs	289;"	v
-add_succ	./Exploration/SUNF/API.hs	97;"	v
+add_succ	./Exploration/SUNF/API.hs	99;"	v
 add_succ	./Exploration/UNF/APIStateless.hs	270;"	v
-add_to_replay	./Exploration/SUNF/APIStid.hs	96;"	v
+add_to_replay	./Exploration/SUNF/APIStid.hs	100;"	v
 add_writes	./Domain/Action.hs	49;"	v
 allM	./Util/Generic.hs	18;"	v
 alt2	./Exploration/SUNF/Unfolder.hs	414;"	v	file:
@@ -177,9 +177,9 @@ beg	./Exploration/UNF/APIStateless.hs	169;"	v
 binop_transformer	./Domain/Concrete/Converter.hs	275;"	v
 binop_transformer	./Domain/Interval/Converter.hs	313;"	v
 bool_transformer_expr	./Domain/Interval/Converter.hs	179;"	v
-botEID	./Exploration/SUNF/API.hs	25;"	v
+botEID	./Exploration/SUNF/API.hs	27;"	v
 botEID	./Exploration/UNF/APIStateless.hs	49;"	v
-botEvent	./Exploration/SUNF/API.hs	28;"	v
+botEvent	./Exploration/SUNF/API.hs	30;"	v
 botEvent	./Exploration/UNF/APIStateless.hs	55;"	v
 botExplore	./Exploration/UNF/Unfolder.hs	35;"	v	file:
 botID	./Model/GCS.hs	62;"	v
@@ -191,8 +191,8 @@ bot_sigma	./Domain/Concrete/State.hs	81;"	v
 bot_state	./Domain/Concrete/State.hs	84;"	v
 bot_th_state	./Domain/Concrete/State.hs	78;"	v
 bot_th_state	./Domain/Interval/State.hs	209;"	v
-build_replay	./Exploration/SUNF/APIStid.hs	66;"	v
-build_replay_es	./Exploration/SUNF/APIStid.hs	73;"	v
+build_replay	./Exploration/SUNF/APIStid.hs	70;"	v
+build_replay_es	./Exploration/SUNF/APIStid.hs	77;"	v
 call_transformer	./Domain/Concrete/Converter.hs	312;"	v
 call_transformer	./Domain/Interval/Converter.hs	343;"	v
 call_transformer_name	./Domain/Concrete/Converter.hs	321;"	v
@@ -214,7 +214,7 @@ computeHistoriesBlocking	./Exploration/UNF/Unfolder.hs	316;"	v	file:
 computeHistory	./Exploration/UNF/Unfolder.hs	232;"	v	file:
 computePotentialAlternatives	./Exploration/UNF/Unfolder.hs	532;"	v	file:
 compute_conflicts	./Exploration/UNF/Unfolder.hs	496;"	v	file:
-compute_hist	./Exploration/SUNF/API.hs	285;"	v
+compute_hist	./Exploration/SUNF/API.hs	287;"	v
 cond	./Domain/Concrete/Converter.hs	43;"	v
 cond	./Domain/Interval/Converter.hs	45;"	v
 cond_transformer	./Domain/Concrete/Converter.hs	342;"	v
@@ -234,9 +234,9 @@ cutoffCheck	./Exploration/UNF/Cutoff/McMillan.hs	21;"	v
 cutoffs	./Exploration/SUNF/State.hs	92;"	v
 cutoffs	./Exploration/UNF/APIStateless.hs	103;"	v
 dcollapse	./Model/GCS.hs	82;"	v
-debug	Main.hs	147;"	v
+debug	Main.hs	149;"	v
 debug_mode	./Util/CmdOpts.hs	90;"	v
-dec_evs_prefix	./Exploration/SUNF/API.hs	228;"	v
+dec_evs_prefix	./Exploration/SUNF/API.hs	230;"	v
 dec_evs_prefix	./Exploration/UNF/APIStateless.hs	400;"	v
 default_unf_opts	./Exploration/SUNF/State.hs	97;"	v
 default_unf_opts	./Exploration/UNF/APIStateless.hs	108;"	v
@@ -244,11 +244,11 @@ default_unf_stats	./Exploration/SUNF/State.hs	118;"	v
 default_unf_stats	./Exploration/UNF/APIStateless.hs	129;"	v
 default_value	./Domain/Concrete/Converter.hs	178;"	v
 default_value	./Domain/Interval/Converter.hs	159;"	v
-del_event	./Exploration/SUNF/API.hs	84;"	v
+del_event	./Exploration/SUNF/API.hs	86;"	v
 del_event	./Exploration/UNF/APIStateless.hs	257;"	v
-del_icnf	./Exploration/SUNF/API.hs	124;"	v
+del_icnf	./Exploration/SUNF/API.hs	126;"	v
 del_icnf	./Exploration/UNF/APIStateless.hs	297;"	v
-del_succ	./Exploration/SUNF/API.hs	105;"	v
+del_succ	./Exploration/SUNF/API.hs	107;"	v
 del_succ	./Exploration/UNF/APIStateless.hs	278;"	v
 disa	./Exploration/SUNF/State.hs	44;"	v
 disa	./Exploration/UNF/APIStateless.hs	42;"	v
@@ -272,7 +272,7 @@ evts	./Exploration/UNF/APIStateless.hs	143;"	v
 execute	Main.hs	64;"	v
 execute_mode	./Util/CmdOpts.hs	77;"	v
 exit	./Domain/Concrete/Converter.hs	44;"	v
-exit_ev	./Exploration/SUNF/API.hs	272;"	v
+exit_ev	./Exploration/SUNF/API.hs	274;"	v
 expandWith	./Exploration/UNF/Unfolder.hs	181;"	v	file:
 explore	./Exploration/SUNF/Unfolder.hs	78;"	v	file:
 explore	./Exploration/UNF/Unfolder.hs	63;"	v	file:
@@ -280,13 +280,13 @@ explore	Main.hs	95;"	v
 explore_mode	./Util/CmdOpts.hs	97;"	v
 extend	./Exploration/SUNF/Unfolder.hs	200;"	v	file:
 extend	./Exploration/UNF/Unfolder.hs	198;"	v	file:
-filterEvent	./Exploration/SUNF/API.hs	256;"	v
+filterEvent	./Exploration/SUNF/API.hs	258;"	v
 filterEvent	./Exploration/UNF/APIStateless.hs	428;"	v
-filterEvents	./Exploration/SUNF/API.hs	252;"	v
+filterEvents	./Exploration/SUNF/API.hs	254;"	v
 filterEvents	./Exploration/UNF/APIStateless.hs	424;"	v
-find_lock_cnfl	./Exploration/SUNF/API.hs	390;"	v
+find_lock_cnfl	./Exploration/SUNF/API.hs	392;"	v
 frd4	./Util/Generic.hs	35;"	v
-freshCounter	./Exploration/SUNF/API.hs	196;"	v
+freshCounter	./Exploration/SUNF/API.hs	198;"	v
 freshCounter	./Exploration/UNF/APIStateless.hs	362;"	v
 fromBool	./Util/Generic.hs	71;"	v
 frontend	Main.hs	59;"	v
@@ -303,26 +303,26 @@ get_addrs	./Domain/Concrete/Converter.hs	418;"	v
 get_addrs	./Domain/Interval/Converter.hs	494;"	v
 get_addrs_id	./Domain/Concrete/Converter.hs	408;"	v
 get_addrs_id	./Domain/Interval/Converter.hs	484;"	v
-get_alte	./Exploration/SUNF/API.hs	68;"	v
+get_alte	./Exploration/SUNF/API.hs	70;"	v
 get_alte	./Exploration/UNF/APIStateless.hs	241;"	v
-get_disa	./Exploration/SUNF/API.hs	65;"	v
+get_disa	./Exploration/SUNF/API.hs	67;"	v
 get_disa	./Exploration/UNF/APIStateless.hs	238;"	v
 get_entry	./Domain/Concrete/Converter.hs	80;"	v
 get_entry	./Domain/Interval/Converter.hs	74;"	v
-get_event	./Exploration/SUNF/API.hs	46;"	v
+get_event	./Exploration/SUNF/API.hs	48;"	v
 get_event	./Exploration/UNF/APIStateless.hs	219;"	v
-get_events	./Exploration/SUNF/API.hs	263;"	v
-get_evts_of_conf	./Exploration/SUNF/API.hs	426;"	v
+get_events	./Exploration/SUNF/API.hs	265;"	v
+get_evts_of_conf	./Exploration/SUNF/API.hs	428;"	v
 get_evts_of_conf	./Exploration/UNF/APIStateless.hs	493;"	v
-get_icnf	./Exploration/SUNF/API.hs	62;"	v
+get_icnf	./Exploration/SUNF/API.hs	64;"	v
 get_icnf	./Exploration/UNF/APIStateless.hs	235;"	v
-get_name	./Exploration/SUNF/API.hs	71;"	v
+get_name	./Exploration/SUNF/API.hs	73;"	v
 get_name	./Exploration/UNF/APIStateless.hs	244;"	v
-get_pred	./Exploration/SUNF/API.hs	56;"	v
+get_pred	./Exploration/SUNF/API.hs	58;"	v
 get_pred	./Exploration/UNF/APIStateless.hs	229;"	v
-get_succ	./Exploration/SUNF/API.hs	59;"	v
+get_succ	./Exploration/SUNF/API.hs	61;"	v
 get_succ	./Exploration/UNF/APIStateless.hs	232;"	v
-get_tid	./Exploration/SUNF/API.hs	74;"	v
+get_tid	./Exploration/SUNF/API.hs	76;"	v
 get_tid	./Exploration/UNF/APIStateless.hs	247;"	v
 gr	./Domain/Concrete/Converter.hs	434;"	v
 gr_conval	./Domain/Concrete/State.hs	301;"	v
@@ -334,7 +334,7 @@ i	./Domain/Interval/Value.hs	49;"	v
 iDivide	./Domain/Interval/Value.hs	134;"	v
 iJoin	./Domain/Interval/Value.hs	53;"	v
 iMeet	./Domain/Interval/Value.hs	64;"	v
-i_unf_state	./Exploration/SUNF/API.hs	32;"	v
+i_unf_state	./Exploration/SUNF/API.hs	34;"	v
 i_unf_state	./Exploration/UNF/APIStateless.hs	154;"	v
 icnf	./Exploration/SUNF/State.hs	43;"	v
 icnf	./Exploration/UNF/APIStateless.hs	41;"	v
@@ -342,17 +342,17 @@ id	./Domain/Concrete/State.hs	72;"	v
 id	./Domain/Interval/State.hs	56;"	v
 idx	./Domain/Synchron.hs	116;"	v
 imm_succ	./Domain/Synchron.hs	119;"	v
-inc_cutoffs	./Exploration/SUNF/API.hs	213;"	v
+inc_cutoffs	./Exploration/SUNF/API.hs	215;"	v
 inc_cutoffs	./Exploration/UNF/APIStateless.hs	385;"	v
-inc_evs_per_name	./Exploration/SUNF/API.hs	239;"	v
+inc_evs_per_name	./Exploration/SUNF/API.hs	241;"	v
 inc_evs_per_name	./Exploration/UNF/APIStateless.hs	411;"	v
-inc_evs_prefix	./Exploration/SUNF/API.hs	226;"	v
+inc_evs_prefix	./Exploration/SUNF/API.hs	228;"	v
 inc_evs_prefix	./Exploration/UNF/APIStateless.hs	398;"	v
-inc_max_conf	./Exploration/SUNF/API.hs	206;"	v
+inc_max_conf	./Exploration/SUNF/API.hs	208;"	v
 inc_max_conf	./Exploration/UNF/APIStateless.hs	378;"	v
 inc_num_th	./Domain/Concrete/State.hs	107;"	v
 inc_num_th	./Domain/Interval/State.hs	212;"	v
-inc_sum_size_max_conf	./Exploration/SUNF/API.hs	231;"	v
+inc_sum_size_max_conf	./Exploration/SUNF/API.hs	233;"	v
 inc_sum_size_max_conf	./Exploration/UNF/APIStateless.hs	403;"	v
 initialExtensions	./Exploration/UNF/Unfolder.hs	43;"	v	file:
 initial_ext	./Exploration/SUNF/Unfolder.hs	54;"	v	file:
@@ -383,7 +383,7 @@ isLockOf	./Model/GCS.hs	100;"	v
 isTrue	./Domain/Concrete/State.hs	260;"	v
 isUnlockOf	./Model/GCS.hs	99;"	v
 is_begin_act_of	./Domain/Synchron.hs	165;"	v
-is_begin_of	./Exploration/SUNF/API.hs	308;"	v
+is_begin_of	./Exploration/SUNF/API.hs	310;"	v
 is_bot	./Domain/Concrete/State.hs	61;"	v
 is_bot	./Domain/Interval/State.hs	45;"	v
 is_causally_closed	./Exploration/UNF/APIStateless.hs	515;"	v
@@ -396,14 +396,14 @@ is_independent	./Exploration/UNF/APIStateless.hs	447;"	v
 is_join	./Domain/Synchron.hs	150;"	v
 is_lock	./Domain/Synchron.hs	144;"	v
 is_lock_act_of	./Domain/Synchron.hs	177;"	v
-is_lock_of	./Exploration/SUNF/API.hs	314;"	v
+is_lock_of	./Exploration/SUNF/API.hs	316;"	v
 is_maddrs_bot	./Domain/Util.hs	59;"	v
-is_of_tid	./Exploration/SUNF/API.hs	268;"	v
-is_pred	./Exploration/SUNF/API.hs	343;"	v
-is_same_or_succ	./Exploration/SUNF/API.hs	322;"	v
+is_of_tid	./Exploration/SUNF/API.hs	270;"	v
+is_pred	./Exploration/SUNF/API.hs	345;"	v
+is_same_or_succ	./Exploration/SUNF/API.hs	324;"	v
 is_unlock	./Domain/Synchron.hs	159;"	v
 is_unlock_act_of	./Domain/Synchron.hs	171;"	v
-is_unlock_of	./Exploration/SUNF/API.hs	302;"	v
+is_unlock_of	./Exploration/SUNF/API.hs	304;"	v
 join_act	./Domain/Action.hs	39;"	v
 join_cstate	./Domain/Concrete/State.hs	53;"	v
 join_intheap	./Domain/Interval/State.hs	144;"	v
@@ -418,7 +418,7 @@ join_update	./Domain/Concrete/Collapse.hs	122;"	v
 join_update	./Domain/Interval/Collapse.hs	93;"	v
 land	./Domain/Concrete/Converter.hs	439;"	v
 land_conval	./Domain/Concrete/State.hs	316;"	v
-latest_ev_proc	./Exploration/SUNF/API.hs	382;"	v
+latest_ev_proc	./Exploration/SUNF/API.hs	384;"	v
 le	./Domain/Concrete/Converter.hs	433;"	v
 le_conval	./Domain/Concrete/State.hs	298;"	v
 leq	./Domain/Concrete/Converter.hs	435;"	v
@@ -471,7 +471,7 @@ nr_max_conf	./Exploration/SUNF/State.hs	103;"	v
 nr_max_conf	./Exploration/UNF/APIStateless.hs	114;"	v
 num_th	./Domain/Concrete/State.hs	60;"	v
 num_th	./Domain/Interval/State.hs	44;"	v
-op_evs_prefix	./Exploration/SUNF/API.hs	220;"	v
+op_evs_prefix	./Exploration/SUNF/API.hs	222;"	v
 op_evs_prefix	./Exploration/UNF/APIStateless.hs	392;"	v
 opts	./Exploration/SUNF/State.hs	136;"	v
 opts	./Exploration/UNF/APIStateless.hs	148;"	v
@@ -484,7 +484,7 @@ pe_mut_addr	./Domain/Synchron.hs	141;"	v
 pe_name	./Domain/Synchron.hs	132;"	v
 plusIVal	./Domain/Interval/Type.hs	40;"	v
 plusValue	./Domain/Interval/Value.hs	89;"	v
-pop	./Exploration/SUNF/API.hs	189;"	v
+pop	./Exploration/SUNF/API.hs	191;"	v
 pop	./Exploration/UNF/APIStateless.hs	355;"	v
 pos	./Domain/Concrete/State.hs	71;"	v
 pos	./Domain/Interval/State.hs	55;"	v
@@ -495,12 +495,12 @@ pre_mem_tid	./Domain/Synchron.hs	117;"	v
 pred	./Exploration/SUNF/State.hs	41;"	v
 pred	./Exploration/UNF/APIStateless.hs	39;"	v
 predecessorWith	./Exploration/UNF/APIStateless.hs	523;"	v
-predecessors	./Exploration/SUNF/API.hs	406;"	v
+predecessors	./Exploration/SUNF/API.hs	408;"	v
 predecessors	./Exploration/UNF/APIStateless.hs	473;"	v
 prime	Main.hs	121;"	v
 prime_mode	./Util/CmdOpts.hs	105;"	v
-printCausality	./Util/Printer.hs	39;"	v
-printConflict	./Util/Printer.hs	42;"	v
+printCausality	./Util/Printer.hs	48;"	v
+printConflict	./Util/Printer.hs	51;"	v
 print_stats	./Exploration/SUNF/State.hs	112;"	v
 print_stats	./Exploration/UNF/APIStateless.hs	123;"	v
 prog_modes	./Util/CmdOpts.hs	123;"	v
@@ -508,18 +508,18 @@ prune	./Exploration/SUNF/APIStateless.hs	39;"	v
 prune	./Exploration/UNF/Unfolder.hs	637;"	v	file:
 prune_config	./Exploration/SUNF/APIStateless.hs	21;"	v
 prune_config	./Exploration/UNF/Unfolder.hs	619;"	v	file:
-push	./Exploration/SUNF/API.hs	182;"	v
+push	./Exploration/SUNF/API.hs	184;"	v
 push	./Exploration/UNF/APIStateless.hs	348;"	v
-putStrLn	./Exploration/SUNF/Unfolder.hs	30;"	v	file:
+putStrLn	./Exploration/SUNF/API.hs	23;"	v
 rds	./Domain/Action.hs	21;"	v
 remove_ev	./Exploration/SUNF/Unfolder.hs	135;"	v	file:
-reset_alte	./Exploration/SUNF/API.hs	159;"	v
+reset_alte	./Exploration/SUNF/API.hs	161;"	v
 reset_alte	./Exploration/UNF/APIStateless.hs	332;"	v
 rmdr	./Domain/Concrete/Converter.hs	431;"	v
 rmdr_conval	./Domain/Concrete/State.hs	287;"	v
 run	./Domain/Synchron.hs	195;"	v
 runOption	Main.hs	48;"	v
-run_replay	./Exploration/SUNF/APIStid.hs	49;"	v
+run_replay	./Exploration/SUNF/APIStid.hs	53;"	v
 safeLookup	./Util/Generic.hs	59;"	v
 scope	./Domain/Concrete/Converter.hs	38;"	v
 scope	./Domain/Interval/Converter.hs	41;"	v
@@ -528,11 +528,11 @@ sep	./Exploration/SUNF/API.hs	21;"	v
 separator	./Exploration/SUNF/Unfolder.hs	69;"	v	file:
 separator	./Exploration/UNF/Unfolder.hs	55;"	v	file:
 set_cutoff_table	./Exploration/UNF/APIStateless.hs	371;"	v
-set_disa	./Exploration/SUNF/API.hs	142;"	v
+set_disa	./Exploration/SUNF/API.hs	144;"	v
 set_disa	./Exploration/UNF/APIStateless.hs	315;"	v
-set_event	./Exploration/SUNF/API.hs	80;"	v
+set_event	./Exploration/SUNF/API.hs	82;"	v
 set_event	./Exploration/UNF/APIStateless.hs	253;"	v
-set_pcnf	./Exploration/SUNF/API.hs	174;"	v
+set_pcnf	./Exploration/SUNF/API.hs	176;"	v
 set_pcnf	./Exploration/UNF/APIStateless.hs	340;"	v
 set_pos	./Domain/Concrete/State.hs	92;"	v
 set_pos	./Domain/Interval/State.hs	67;"	v
@@ -541,8 +541,8 @@ set_previous_disa	./Exploration/UNF/APIStateless.hs	500;"	v
 set_single_state	./Domain/Concrete/Converter.hs	64;"	v
 set_state	./Domain/Concrete/Converter.hs	51;"	v
 set_state	./Domain/Interval/Converter.hs	52;"	v
-set_sys	./Exploration/SUNF/API.hs	167;"	v
-showActs	./Util/Printer.hs	36;"	v
+set_sys	./Exploration/SUNF/API.hs	169;"	v
+showActs	./Util/Printer.hs	45;"	v
 showEvents	./Exploration/SUNF/State.hs	56;"	v
 showEvents	./Exploration/UNF/APIStateless.hs	63;"	v
 show_st	./Domain/Synchron.hs	101;"	v
@@ -565,11 +565,11 @@ stats	./Exploration/SUNF/State.hs	137;"	v
 stats	./Exploration/UNF/APIStateless.hs	149;"	v
 stf	./Util/CmdOpts.hs	63;"	v
 stid	Main.hs	137;"	v
-stid_end	./Exploration/SUNF/APIStid.hs	31;"	v
-stid_fe	./Exploration/SUNF/APIStid.hs	22;"	v
+stid_end	./Exploration/SUNF/APIStid.hs	35;"	v
+stid_fe	./Exploration/SUNF/APIStid.hs	26;"	v
 stid_mode	./Util/CmdOpts.hs	113;"	v
 stid_ptr	./Domain/Synchron.hs	30;"	v
-stid_replay	./Exploration/SUNF/APIStid.hs	34;"	v
+stid_replay	./Exploration/SUNF/APIStid.hs	38;"	v
 strong_update	./Domain/Concrete/Collapse.hs	136;"	v
 strong_update	./Domain/Interval/Collapse.hs	107;"	v
 sts	./Domain/Concrete/State.hs	49;"	v
@@ -582,7 +582,7 @@ subsumes_concrete	./Domain/Concrete/State.hs	118;"	v
 subsumes_interval	./Domain/Interval/State.hs	84;"	v
 succ	./Exploration/SUNF/State.hs	42;"	v
 succ	./Exploration/UNF/APIStateless.hs	40;"	v
-successors	./Exploration/SUNF/API.hs	415;"	v
+successors	./Exploration/SUNF/API.hs	417;"	v
 successors	./Exploration/UNF/APIStateless.hs	482;"	v
 sum_size_max_conf	./Exploration/SUNF/State.hs	106;"	v
 sum_size_max_conf	./Exploration/UNF/APIStateless.hs	117;"	v
@@ -594,7 +594,7 @@ syst	./Exploration/SUNF/State.hs	131;"	v
 syst	./Exploration/UNF/APIStateless.hs	142;"	v
 tcnt	./Model/GCS.hs	45;"	v
 tcreate	./Domain/Action.hs	25;"	v
-test	Main.hs	161;"	v
+test	Main.hs	163;"	v
 test_mode	./Util/CmdOpts.hs	120;"	v
 th_states	./Domain/Concrete/State.hs	59;"	v
 th_states	./Domain/Interval/State.hs	43;"	v
@@ -602,13 +602,14 @@ thds	./Model/GCS.hs	44;"	v
 tid	./Domain/Synchron.hs	115;"	v
 tjoin	./Domain/Action.hs	26;"	v
 toBool	./Util/Generic.hs	66;"	v
-toDot	./Util/Printer.hs	21;"	v
+toDot	./Util/Printer.hs	30;"	v
 toFPoset	./Domain/Synchron.hs	61;"	v
 toFlat	./Domain/Synchron.hs	85;"	v
 toPEvent	./Domain/Synchron.hs	88;"	v
 toPoset	./Domain/Synchron.hs	49;"	v
 toThSym	./Model/GCS.hs	73;"	v
 top_interval	./Domain/Interval/Value.hs	46;"	v
+trace	./Exploration/SUNF/APIStid.hs	19;"	v
 transformer	./Domain/Concrete/Converter.hs	213;"	v
 transformer	./Domain/Interval/Converter.hs	258;"	v
 transformer_decl	./Domain/Concrete/Converter.hs	102;"	v
@@ -620,13 +621,13 @@ transformer_expr	./Domain/Interval/Converter.hs	166;"	v
 transformer_init	./Domain/Concrete/Converter.hs	139;"	v
 transformer_init	./Domain/Interval/Converter.hs	120;"	v
 trd4	./Util/Generic.hs	32;"	v
-unfToDot	./Util/Printer.hs	14;"	v
+unfToDot	./Util/Printer.hs	23;"	v
 unfold	./Exploration/SUNF/Unfolder.hs	145;"	v	file:
 unfold	./Exploration/UNF/Unfolder.hs	123;"	v	file:
 unfolder	./Exploration/UNF/Unfolder.hs	26;"	v
-unlock_of_addr	./Exploration/SUNF/API.hs	374;"	v
+unlock_of_addr	./Exploration/SUNF/API.hs	376;"	v
 unlocks	./Domain/Action.hs	24;"	v
-unlocks_of_addr	./Exploration/SUNF/API.hs	366;"	v
+unlocks_of_addr	./Exploration/SUNF/API.hs	368;"	v
 unop_transformer	./Domain/Concrete/Converter.hs	368;"	v
 unop_transformer	./Domain/Interval/Converter.hs	419;"	v
 updatePEvent	./Domain/Synchron.hs	65;"	v
