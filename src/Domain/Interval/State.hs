@@ -44,7 +44,17 @@ data IntState =
   , num_th  :: Int
   , is_bot  :: Bool 
   }
-  deriving (Show,Eq)
+  deriving Eq
+
+instance Show IntState where
+  show (IntState h s nt b) =
+    let h_s = if M.null h 
+              then "Empty Heap"
+              else "Heap\n" ++ showIntHeap h
+        s_s = "Thread States\n" ++ showThStates s
+    in h_s ++ "\n" ++ s_s
+
+showIntHeap s = M.foldWithKey (\k m r -> show k ++ " := " ++ show m ++ "\n" ++ r) "" s
 
 -- | A thread state is a control and local data
 type ThStates = Map TId ThState
@@ -58,16 +68,21 @@ data ThState =
   } 
   deriving (Show,Eq,Ord)
 
+showThStates s = 
+  M.foldWithKey (\k t r -> "Thread " ++ show k ++ "\n" ++ showThState t ++ "\n" ++ r) "" s
+
+showThState (ThState _ _ s ) = showIntHeap s
+
 -- | Initial state which is not bottom
 empty_state :: IntState 
 empty_state = IntState M.empty M.empty 0 False 
 
 -- | Set the position in the cfg of a thread
-set_pos :: IntState -> TId -> Pos -> IntState 
-set_pos st@IntState{..} tid npos = 
+set_pos :: IntState -> TId -> SymId -> Pos -> IntState 
+set_pos st@IntState{..} tid sym npos = 
   let th_st' =
         case M.lookup tid th_states of
-          Nothing -> error "set_pos: tid not in th_states"
+          Nothing -> ThState npos sym M.empty 
           Just t@ThState{..} ->
             let pos' = npos
             in t { pos = pos' }

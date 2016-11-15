@@ -31,6 +31,7 @@ import Language.SimpleC.Flow
 import Language.SimpleC.Util
 import qualified Model.GCS as GCS
 import Util.Generic hiding (safeLookup)
+import qualified Debug.Trace as T
 
 -- | State of the concrete transformer
 data ConTState 
@@ -183,7 +184,7 @@ default_value ty = [ ConVal $ init_value ty ]
 -- of this expression and a set of actions
 -- performed by this expression.
 transformer_expr :: SExpression -> ConTOp Act
-transformer_expr expr = do
+transformer_expr expr = T.trace "transformer_expr" $ do
   s@ConTState{..} <- get
   let states = S.toList $ sts st
   -- reset the states

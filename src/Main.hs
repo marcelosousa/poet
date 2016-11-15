@@ -9,7 +9,7 @@ module Main where
 --import Benchmark
 --import Exploration.UNF.Prime
 --import Frontend.PetriNet
---import Model.GCS
+import Model.GCS 
 --import Model.Interpreter
 --import Printer
 --import Test.Examples
@@ -19,24 +19,27 @@ import Control.Monad.ST
 import Domain.Action
 import Domain.Concrete
 import Domain.Concrete.State
+import Domain.Interval.Collapse
 import Domain.Interval
-import Domain.Synchron
-import Exploration.SUNF.Unfolder
-import Exploration.SUNF.APIStid
 import Exploration.UNF.Unfolder  
 import Language.SimpleC
+import qualified Language.SimpleC.Printer as P
 import System.Console.CmdArgs
 import System.FilePath.Posix
 import System.Random
 import Test.HUnit (runTestTT)
 import Util.CmdOpts
 import Util.Generic
-import Util.Printer
+-- import Util.Printer
 import qualified Data.Map as M
 import qualified Domain.Concrete.Converter as CC
 import qualified Domain.Interval.Converter as IC
-import qualified Exploration.SUNF.State       as SS
 import qualified Exploration.UNF.APIStateless as US
+-- Newer version for stid
+-- import Domain.Synchron
+-- import Exploration.SUNF.Unfolder
+-- import Exploration.SUNF.APIStid
+-- import qualified Exploration.SUNF.State       as SS
 
 -- | 'main' function 
 main :: IO ()
@@ -53,6 +56,7 @@ runOption opt = case opt of
   Prime     f dom stf cut -> prime     f dom (not $ toBool stf) (toBool cut)
   Stid      f     stf cut -> stid      f     (not $ toBool stf) (toBool cut)
   Debug     f dom cut     -> debug     f dom (toBool cut)
+  Ai        f             -> ai f 
   Test                    -> test
 
 frontend :: FilePath -> IO ()
@@ -132,9 +136,11 @@ prime f dom stl cut = do
                    \s -> return $ s ++ show (a,b,c))
   putStrLn pes
 -}
- 
+
 stid :: FilePath -> Bool -> Bool -> IO ()
 stid f stl cut = do
+  return ()
+{- 
   syst <- stid_fe f
   ust  <- synfolder stl cut syst
   let (cntr, stats) = (SS.cntr ust, SS.stats ust)
@@ -144,6 +150,7 @@ stid f stl cut = do
   (_,_,_,dots) <- unfToDot ust 
   writeFile (replaceExtension f ".dot") dots
   putStrLn "explore end"
+-}
 
 debug :: FilePath -> Domain -> Bool -> IO ()
 debug = error "v2: working in progress"
@@ -167,3 +174,12 @@ test =  do
   print succCount
 -}
 
+ai :: FilePath -> IO ()
+ai f = do
+  fe <- extract "" f
+  let syst = IC.convert fe
+      res = collapse syst (gbst syst) 1
+--  putStrLn $ show (gbst syst) 
+  writeFile (f ++ ".dot") $ P.pp_dot_graphs $ Language.SimpleC.cfgs fe
+  putStrLn $ showResultList res
+  putStrLn "explore end"

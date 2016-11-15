@@ -78,6 +78,8 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
     let control = controlPart st
         en = M.filter (>= 0) control
     in M.keys en
+  debug_collapse :: System st act -> st -> TId -> Graphs SymId () (st,act)
+  debug_collapse = error "debug_collapse not implemented"
   collapse :: System st act -> st -> TId -> [(st,Pos,act)]
   dcollapse :: System st act -> st -> (TId,Pos) -> (st,act)
   dcollapse syst st (tid,pos) =

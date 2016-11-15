@@ -49,6 +49,7 @@ _helpDebug = "poet debug receives a concurrent C program in a restricted "
           ++ "explores the unfolding. At the end, it prints the LPES."
 _helpTest = "poet test runs the explore mode over the set of examples in "
          ++ "Test/Examples."
+_helpAi = "poet ai -i=file.c runs the abstract interpreter for intervals"
 
 data Domain = Concrete | Interval
   deriving (Show, Data, Typeable, Eq, Enum)
@@ -64,6 +65,7 @@ data Option
   | Prime     {inp :: FilePath, dom :: Domain, stf :: Int, cut :: Int}
   | Stid      {inp :: FilePath,                stf :: Int, cut :: Int}
   | Debug     {inp :: FilePath, dom :: Domain,              cut:: Int}
+  | Ai        {inp :: FilePath}
   | Test 
   deriving (Show, Data, Typeable, Eq)
 
@@ -117,13 +119,18 @@ stid_mode =
   , cut = def &= help "cut mode (0=False [default], 1=True)"
   } &= help _helpStid
 
+ai_mode =
+  Ai
+  { inp = def
+  } &= help _helpAi
+
 test_mode = Test {} &= help _helpTest
 
 prog_modes :: Mode (CmdArgs Option)
 prog_modes = 
   cmdArgsMode $ modes [ frontend_mode, execute_mode, interpret_mode
                       , explore_mode, test_mode, debug_mode
-                      , prime_mode, stid_mode ]
+                      , prime_mode, stid_mode, ai_mode ]
          &= help _help
          &= program _program
          &= summary _summary

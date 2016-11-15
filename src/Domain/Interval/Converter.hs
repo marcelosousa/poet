@@ -16,7 +16,7 @@ import Control.Monad.State.Lazy
 import Data.Maybe
 import qualified Data.Map as M
 import Data.Map (Map)  
-import Debug.Trace
+import qualified Debug.Trace as T
 import Data.List 
 import qualified Data.Set as S
 
@@ -32,8 +32,9 @@ import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
-import Model.GCS
+import qualified Model.GCS as GCS
 import Util.Generic hiding (safeLookup)
+import qualified Debug.Trace as T
 
 -- | State of the concrete transformer
 data IntTState 
@@ -41,7 +42,7 @@ data IntTState
    scope :: Scope
  , st :: IntState          -- the state
  , sym :: Map SymId Symbol
- , cfgs :: Graphs SymId () (IntState,Act)
+ , i_cfgs :: Graphs SymId () (IntState,Act)
  , cond :: Bool            -- is a condition? 
  }
 
@@ -61,29 +62,29 @@ join_state nst = do
 
 -- | converts the front end into a system
 -- @REVISED: July'16
-convert :: FrontEnd () (IntState,Act) -> System IntState Act
-convert fe@FrontEnd{..} =
-  let pos_main = get_entry "main" cfgs symt
-      init_tstate = IntTState Global empty_state symt cfgs False
-      (acts,s@IntTState{..}) = runState (transformer_decls $ decls ast) init_tstate
-      st' = set_pos st main_tid pos_main  
-  in System st' acts cfgs symt [main_tid] 1
+convert :: FrontEnd () (IntState,Act) -> GCS.System IntState Act
+convert fe = 
+  let (pos_main,sym_main) = get_entry "main" (cfgs fe) (symt fe)
+      init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
+      (acts,s@IntTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
+      st' = set_pos st (symId sym_main) sym_main pos_main  
+  in T.trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
-get_entry :: String -> Graphs SymId () (IntState,Act) -> Map SymId Symbol -> Pos
+get_entry :: String -> Graphs SymId () (IntState, Act) -> Map SymId Symbol -> (GCS.Pos, SymId)
 get_entry fnname graphs symt = 
   case M.foldrWithKey aux_get_entry Nothing graphs of
     Nothing -> error $ "get_entry: cant get entry for " ++ fnname
-    Just p -> p
+    Just p -> p -- T.trace (show symt) p
  where 
-   aux_get_entry sym cfg r =
+   aux_get_entry sym cfg r = 
      case r of 
        Just res -> Just res
        Nothing -> 
          case M.lookup sym symt of
            Nothing -> Nothing
            Just s  -> if get_name s == fnname
-                      then Just $ entry_node cfg
+                      then Just (entry_node cfg, sym)
                       else Nothing 
 
 -- | processes a list of declarations 
@@ -163,7 +164,7 @@ default_value ty = --  [ ConVal $ init_value ty ]
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp Act
-transformer_expr expr = do
+transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
   then bool_transformer_expr expr
@@ -176,7 +177,7 @@ transformer_expr expr = do
 -- all the variables in this expression
 -- are going to be considered written
 bool_transformer_expr :: SExpression -> IntTOp Act
-bool_transformer_expr expr = case expr of
+bool_transformer_expr expr = trace ("bool_transformer") $ case expr of
   Binary op lhs rhs -> do 
     (val,act) <- apply_logic op lhs rhs
     return act
@@ -222,9 +223,9 @@ apply_logic op lhs rhs =
 
 -- Logical Operations
 -- Less than (CLeOp)
+-- Need to update the variables
 interval_leq :: SExpression -> SExpression -> IntTOp (IntValue,Act)
-interval_leq = undefined
-{- 
+{-
 interval_leq (Ident x_i) rhs =
   let v' = lowerBound $ eval rhs s
       x = BS.pack x_i
@@ -245,17 +246,15 @@ interval_leq s lhs (Ident x_i) =
   in case res of
     Bot -> Nothing
     _ -> Just $ insert x res s
-interval_leq s lhs rhs =
-  let lhs_val = eval lhs s
-      rhs_val = eval rhs s
-  in case lhs_val `iMeet` rhs_val of
-    Bot -> Nothing
-    _ -> Just s
 -}
+interval_leq lhs rhs = do
+  (lhs_val,lhs_act) <- transformer lhs 
+  (rhs_val,rhs_act) <- transformer rhs 
+  return (lhs_val `iMeet` rhs_val, lhs_act `join_act` rhs_act)
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,Act)
-transformer e =
+transformer e = trace ("transformer: " ++ show e) $
   case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
@@ -276,7 +275,7 @@ transformer e =
     Skip -> return (IntVal [],bot_act)
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> unop_transformer unaryOp expr 
-    Var ident -> var_transformer ident 
+    Var ident -> trace ("calling var_trans" ++ show ident) $ var_transformer ident 
     ComplexReal expr -> error "transformer: complex op not supported" 
     ComplexImag expr -> error "transformer: complex op not supported" 
 
@@ -355,10 +354,18 @@ call_transformer_name name args = case name of
     let th_id = get_expr_id $ args !! 1
         th_sym = get_expr_id $ args !! 3
         th_name = get_symbol_name th_sym sym
-        th_pos = get_entry th_name cfgs sym
+        (th_pos,_) = get_entry th_name i_cfgs sym
         st' = insert_thread st th_id th_pos
     set_state st' 
     return (IntVal [],bot_act) 
+  "nondet" -> do 
+    (lVal,lacts) <- transformer $ args !! 0
+    (uVal,uacts) <- transformer $ args !! 1
+    case (lVal,uVal) of 
+      (IntVal [VInt l],IntVal [VInt u]) -> 
+       return (InterVal (I l, I u),lacts `join_act` uacts)
+      (l, u) -> 
+       return (l `iJoin` u,lacts `join_act` uacts)
   _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
 
 -- Need to apply the cut over the state
@@ -433,23 +440,23 @@ unop_transformer unOp expr = do
 
 -- | Transformer for var expressions.
 var_transformer :: SymId -> IntTOp (IntValue,Act)
-var_transformer id = do
+var_transformer sym_id = do
   s@IntTState{..} <- get
   -- First search in the heap
-  case M.lookup id (heap st) of
+  case M.lookup sym_id (heap st) of
     Nothing -> 
       -- If not in the heap, search in the thread
       case scope of
         Global -> error "var_transformer: id is not the heap and scope is global"
         Local i -> case M.lookup i (th_states st) of
           Nothing -> error "var_transformer: scope does not match the state"
-          Just ths@ThState{..} -> case M.lookup id locals of
-            Nothing -> error "var_transformer: id is not in the local state of thread"
+          Just ths@ThState{..} -> case M.lookup sym_id locals of
+            Nothing -> error $ "var_transformer: id " ++ show sym_id ++ " is not in the local state of thread " ++ show locals
             Just v  -> do
-              let reds = Act (MemAddrs [MemAddr id scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
+              let reds = Act (MemAddrs [MemAddr sym_id scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
               return (v,reds)
     Just cell@MCell{..} -> do
-      let reds = Act (MemAddrs [MemAddr id Global]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
+      let reds = Act (MemAddrs [MemAddr sym_id Global]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
       return (val,reds)
   
 -- negates logical expression using De Morgan Laws

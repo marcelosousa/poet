@@ -16,7 +16,7 @@ import Data.Set (isSubsetOf)
 
 import Exploration.UNF.APIStateless
 import Exploration.UNF.Cutoff.McMillan
-import Util.Printer (unfToDot)
+-- import Util.Printer (unfToDot)
 import qualified Model.GCS as GCS
 
 import Prelude hiding (pred)
