@@ -68,7 +68,7 @@ convert fe =
       init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
       (acts,s@IntTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
       st' = set_pos st (symId sym_main) sym_main pos_main  
-  in T.trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
+  in trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
 get_entry :: String -> Graphs SymId () (IntState, Act) -> Map SymId Symbol -> (GCS.Pos, SymId)

@@ -1,6 +1,6 @@
 Act	./Domain/Action.hs	19;"	t
 Act	./Domain/Action.hs	20;"	d
-Action	./Model/GCS.hs	95;"	t
+Action	./Model/GCS.hs	93;"	t
 Ai	./Util/CmdOpts.hs	68;"	d
 Alternative	./Exploration/UNF/APIStateless.hs	90;"	t
 Alternatives	./Exploration/UNF/APIStateless.hs	91;"	t
@@ -124,7 +124,7 @@ add_disa	./Exploration/UNF/APIStateless.hs	306;"	v
 add_icnf	./Exploration/UNF/APIStateless.hs	289;"	v
 add_succ	./Exploration/UNF/APIStateless.hs	270;"	v
 add_writes	./Domain/Action.hs	49;"	v
-ai	Main.hs	177;"	v
+ai	Main.hs	180;"	v
 ai_mode	./Util/CmdOpts.hs	122;"	v
 allM	./Util/Generic.hs	18;"	v
 alt2	./Exploration/UNF/Unfolder.hs	590;"	v	file:
@@ -158,7 +158,7 @@ cfgs	./Model/GCS.hs	42;"	v
 cfgst	./Domain/Concrete/Converter.hs	43;"	v
 checkBoolVals	./Domain/Concrete/State.hs	257;"	v
 cntr	./Exploration/UNF/APIStateless.hs	146;"	v
-collapse	./Model/GCS.hs	83;"	v
+collapse	./Model/GCS.hs	81;"	v
 computeHistories	./Exploration/UNF/Unfolder.hs	266;"	v	file:
 computeHistoriesBlocking	./Exploration/UNF/Unfolder.hs	316;"	v	file:
 computeHistory	./Exploration/UNF/Unfolder.hs	232;"	v	file:
@@ -180,9 +180,8 @@ cut	./Util/CmdOpts.hs	64;"	v
 cutoff	./Exploration/UNF/Cutoff/McMillan.hs	11;"	v
 cutoffCheck	./Exploration/UNF/Cutoff/McMillan.hs	21;"	v
 cutoffs	./Exploration/UNF/APIStateless.hs	103;"	v
-dcollapse	./Model/GCS.hs	84;"	v
-debug	Main.hs	155;"	v
-debug_collapse	./Model/GCS.hs	81;"	v
+dcollapse	./Model/GCS.hs	82;"	v
+debug	Main.hs	158;"	v
 debug_mode	./Util/CmdOpts.hs	92;"	v
 dec_evs_prefix	./Exploration/UNF/APIStateless.hs	400;"	v
 default_unf_opts	./Exploration/UNF/APIStateless.hs	108;"	v
@@ -205,12 +204,12 @@ enevs	./Exploration/UNF/APIStateless.hs	78;"	v
 eq	./Domain/Concrete/Converter.hs	438;"	v
 eq_conval	./Domain/Concrete/State.hs	310;"	v
 evts	./Exploration/UNF/APIStateless.hs	143;"	v
-execute	Main.hs	67;"	v
+execute	Main.hs	70;"	v
 execute_mode	./Util/CmdOpts.hs	79;"	v
 exit	./Domain/Concrete/Converter.hs	45;"	v
 expandWith	./Exploration/UNF/Unfolder.hs	181;"	v	file:
 explore	./Exploration/UNF/Unfolder.hs	63;"	v	file:
-explore	Main.hs	98;"	v
+explore	Main.hs	101;"	v
 explore_mode	./Util/CmdOpts.hs	99;"	v
 extend	./Exploration/UNF/Unfolder.hs	198;"	v	file:
 filterEvent	./Exploration/UNF/APIStateless.hs	428;"	v
@@ -218,7 +217,7 @@ filterEvents	./Exploration/UNF/APIStateless.hs	424;"	v
 frd4	./Util/Generic.hs	35;"	v
 freshCounter	./Exploration/UNF/APIStateless.hs	362;"	v
 fromBool	./Util/Generic.hs	71;"	v
-frontend	Main.hs	62;"	v
+frontend	Main.hs	65;"	v
 frontend_mode	./Util/CmdOpts.hs	74;"	v
 fst4	./Util/Generic.hs	26;"	v
 gbac	./Model/GCS.hs	41;"	v
@@ -273,22 +272,22 @@ insert_local	./Domain/Interval/State.hs	195;"	v
 insert_local_sigma	./Domain/Concrete/State.hs	213;"	v
 insert_thread	./Domain/Concrete/State.hs	249;"	v
 insert_thread	./Domain/Interval/State.hs	232;"	v
-interferes	./Model/GCS.hs	105;"	v
-interpret	Main.hs	85;"	v
+interferes	./Model/GCS.hs	103;"	v
+interpret	Main.hs	88;"	v
 interpret_mode	./Util/CmdOpts.hs	86;"	v
 interval_diff	./Domain/Interval/Value.hs	166;"	v
 interval_diff'	./Domain/Interval/Value.hs	172;"	v
 interval_diff_eq	./Domain/Interval/Value.hs	169;"	v
 interval_div	./Domain/Interval/Value.hs	147;"	v
 interval_leq	./Domain/Interval/Converter.hs	250;"	v
-isBlocking	./Model/GCS.hs	96;"	v
+isBlocking	./Model/GCS.hs	94;"	v
 isBottom	./Model/GCS.hs	72;"	v
-isCreateOf	./Model/GCS.hs	103;"	v
+isCreateOf	./Model/GCS.hs	101;"	v
 isFalse	./Domain/Concrete/State.hs	267;"	v
-isGlobal	./Model/GCS.hs	106;"	v
-isLockOf	./Model/GCS.hs	102;"	v
+isGlobal	./Model/GCS.hs	104;"	v
+isLockOf	./Model/GCS.hs	100;"	v
 isTrue	./Domain/Concrete/State.hs	260;"	v
-isUnlockOf	./Model/GCS.hs	101;"	v
+isUnlockOf	./Model/GCS.hs	99;"	v
 is_bot	./Domain/Concrete/State.hs	61;"	v
 is_bot	./Domain/Interval/State.hs	45;"	v
 is_causally_closed	./Exploration/UNF/APIStateless.hs	515;"	v
@@ -308,7 +307,7 @@ join_maddrs	./Domain/Util.hs	73;"	v
 join_state	./Domain/Concrete/Converter.hs	57;"	v
 join_state	./Domain/Interval/Converter.hs	58;"	v
 join_update	./Domain/Concrete/Collapse.hs	122;"	v
-join_update	./Domain/Interval/Collapse.hs	102;"	v
+join_update	./Domain/Interval/Collapse.hs	104;"	v
 land	./Domain/Concrete/Converter.hs	440;"	v
 land_conval	./Domain/Concrete/State.hs	316;"	v
 le	./Domain/Concrete/Converter.hs	434;"	v
@@ -324,7 +323,7 @@ lor	./Domain/Concrete/Converter.hs	441;"	v
 lor_conval	./Domain/Concrete/State.hs	319;"	v
 lowerBound	./Domain/Interval/Value.hs	192;"	v
 maevs	./Exploration/UNF/APIStateless.hs	77;"	v
-main	Main.hs	45;"	v
+main	Main.hs	48;"	v
 main_tid	./Model/GCS.hs	58;"	v
 meet_maddrs	./Domain/Util.hs	65;"	v
 minus	./Domain/Concrete/Converter.hs	445;"	v
@@ -366,7 +365,7 @@ pos	./Domain/Interval/State.hs	65;"	v
 pred	./Exploration/UNF/APIStateless.hs	39;"	v
 predecessorWith	./Exploration/UNF/APIStateless.hs	523;"	v
 predecessors	./Exploration/UNF/APIStateless.hs	473;"	v
-prime	Main.hs	124;"	v
+prime	Main.hs	127;"	v
 prime_mode	./Util/CmdOpts.hs	107;"	v
 print_stats	./Exploration/UNF/APIStateless.hs	123;"	v
 prog_modes	./Util/CmdOpts.hs	130;"	v
@@ -377,7 +376,7 @@ rds	./Domain/Action.hs	21;"	v
 reset_alte	./Exploration/UNF/APIStateless.hs	332;"	v
 rmdr	./Domain/Concrete/Converter.hs	432;"	v
 rmdr_conval	./Domain/Concrete/State.hs	287;"	v
-runOption	Main.hs	50;"	v
+runOption	Main.hs	53;"	v
 safeLookup	./Util/Generic.hs	59;"	v
 scope	./Domain/Concrete/Converter.hs	39;"	v
 scope	./Domain/Interval/Converter.hs	42;"	v
@@ -400,7 +399,7 @@ showResultList	./Domain/Interval/Collapse.hs	35;"	v
 showThState	./Domain/Interval/State.hs	74;"	v
 showThStates	./Domain/Interval/State.hs	71;"	v
 signumIVal	./Domain/Interval/Type.hs	76;"	v
-simple_run	./Model/GCS.hs	92;"	v
+simple_run	./Model/GCS.hs	90;"	v
 single_edge	./Domain/Concrete/Collapse.hs	59;"	v
 snd4	./Util/Generic.hs	29;"	v
 st	./Domain/Concrete/Converter.hs	40;"	v
@@ -411,10 +410,10 @@ state	./Exploration/UNF/APIStateless.hs	76;"	v
 stateless	./Exploration/UNF/APIStateless.hs	102;"	v
 stats	./Exploration/UNF/APIStateless.hs	149;"	v
 stf	./Util/CmdOpts.hs	64;"	v
-stid	Main.hs	140;"	v
+stid	Main.hs	143;"	v
 stid_mode	./Util/CmdOpts.hs	115;"	v
 strong_update	./Domain/Concrete/Collapse.hs	136;"	v
-strong_update	./Domain/Interval/Collapse.hs	116;"	v
+strong_update	./Domain/Interval/Collapse.hs	118;"	v
 sts	./Domain/Concrete/State.hs	49;"	v
 sub	./Domain/Concrete/Converter.hs	429;"	v
 subIVal	./Domain/Interval/Type.hs	62;"	v
@@ -432,7 +431,7 @@ symt	./Model/GCS.hs	43;"	v
 syst	./Exploration/UNF/APIStateless.hs	142;"	v
 tcnt	./Model/GCS.hs	45;"	v
 tcreate	./Domain/Action.hs	25;"	v
-test	Main.hs	169;"	v
+test	Main.hs	172;"	v
 test_mode	./Util/CmdOpts.hs	127;"	v
 th_states	./Domain/Concrete/State.hs	59;"	v
 th_states	./Domain/Interval/State.hs	43;"	v

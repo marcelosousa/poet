@@ -32,14 +32,14 @@ type Worklist = [(NodeId,EdgeId,NodeId)]
 type ResultList = [(IntState,Pos,Act)]
 
 showResultList :: ResultList -> String
-showResultList l = snd $ foldr (\(s,p,a) (n,r) -> 
+showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) -> 
    let s_a = "CFG Node: " ++ show p ++ "\n"
        s_r = s_a ++ show s
-   in (n+1, s_r ++ r))  (1,"") l
+   in (n+1, s_r ++ r))  (1,"") l)
 
 instance Collapsible IntState Act where
   -- collapse :: System IntState Act -> IntState -> TId -> [(IntState,Pos,Act)]
-  collapse syst@System{..} st tid =
+  collapse b syst@System{..} st tid =
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
@@ -48,22 +48,23 @@ instance Collapsible IntState Act where
         th_cfg = case M.lookup th_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_sym
           Just cfg -> cfg 
-    in gen_collapse tid cfgs symt th_cfg pos st
+    in gen_collapse b tid cfgs symt th_cfg pos st
 
 -- @TODO: Receive other options for widening and state splitting
-gen_collapse :: TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
-gen_collapse tid cfgs symt cfg@Graph{..} pos st =
+gen_collapse :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
+gen_collapse b tid cfgs symt cfg@Graph{..} pos st =
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-  in  worklist tid cfgs symt cfg' wlist [] 
+  in  worklist b tid cfgs symt cfg' wlist [] 
 
-worklist :: TId -> IntGraphs -> SymbolTable -> IntGraph -> Worklist -> ResultList -> ResultList 
-worklist tid cfgs symt cfg@Graph{..} wlist res =
+worklist :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Worklist -> ResultList -> ResultList 
+worklist b tid cfgs symt cfg@Graph{..} wlist res =
   case wlist of
-    -- [] -> res 
-    [] -> M.foldWithKey (\p l r -> map (\(a,b) -> (a,p,b)) l ++ r) [] node_table 
+    [] -> if b 
+          then M.foldWithKey (\p l r -> map (\(a,b) -> (a,p,b)) l ++ r) [] node_table 
+          else res
     ((pre,eId,post):wlst) ->
           -- get the current state in the pre
       let l_st = get_node_info cfg pre
@@ -84,7 +85,7 @@ worklist tid cfgs symt cfg@Graph{..} wlist res =
       -- either add the results to the result list or update
       -- the cfg with them 
       in if isGlobal acts -- || (Exit `elem` edge_tags)
-         then worklist tid cfgs symt cfg wlst $ nub ((st,post,acts):res)
+         then worklist b tid cfgs symt cfg wlst $ nub ((st,post,acts):res)
          else 
            -- depending on the tags of the edge; the behaviour is different
            let (is_fix,node_table') =
@@ -97,7 +98,7 @@ worklist tid cfgs symt cfg@Graph{..} wlist res =
                cfg' = cfg { node_table = node_table' }
                rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
                nwlist = if is_fix then wlst else (wlst ++ rwlst)
-           in worklist tid cfgs symt cfg' nwlist res
+           in worklist b tid cfgs symt cfg' nwlist res
 
 join_update :: Map NodeId [(IntState,Act)] -> NodeId -> (IntState,Act) -> (Bool, Map NodeId [(IntState,Act)])
 join_update node_table node (st,act) =

@@ -78,12 +78,10 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
     let control = controlPart st
         en = M.filter (>= 0) control
     in M.keys en
-  debug_collapse :: System st act -> st -> TId -> Graphs SymId () (st,act)
-  debug_collapse = error "debug_collapse not implemented"
-  collapse :: System st act -> st -> TId -> [(st,Pos,act)]
+  collapse :: Bool -> System st act -> st -> TId -> [(st,Pos,act)]
   dcollapse :: System st act -> st -> (TId,Pos) -> (st,act)
   dcollapse syst st (tid,pos) =
-    let results = collapse syst st tid
+    let results = collapse False syst st tid
         result = filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"

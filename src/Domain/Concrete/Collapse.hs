@@ -32,7 +32,7 @@ type ResultList = [(CState,Pos,Act)]
 
 instance Collapsible CState Act where
   -- collapse :: System CState Act -> CState -> TId -> [(CState,Pos,Act)]
-  collapse syst@System{..} st tid =
+  collapse _ syst@System{..} st tid =
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error "collapse: tid is not represented in the control"

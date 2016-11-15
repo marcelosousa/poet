@@ -1,3 +1,7 @@
+ai:
+	dist/build/poet/poet ai -i benchmarks/basic/ai/$(TEST).c 
+	dot -Tpdf benchmarks/basic/ai/$(TEST).dot > benchmarks/basic/ai/$(TEST).pdf 
+
 poetst:
 	poet stid -i=/home/msousa/steroid/input.ll -s=1
 

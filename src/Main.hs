@@ -23,10 +23,12 @@ import Domain.Interval.Collapse
 import Domain.Interval
 import Exploration.UNF.Unfolder  
 import Language.SimpleC
+import Language.SimpleC.Util
 import qualified Language.SimpleC.Printer as P
 import System.Console.CmdArgs
 import System.FilePath.Posix
 import System.Random
+import System.Process
 import Test.HUnit (runTestTT)
 import Util.CmdOpts
 import Util.Generic
@@ -178,8 +180,15 @@ ai :: FilePath -> IO ()
 ai f = do
   fe <- extract "" f
   let syst = IC.convert fe
-      res = collapse syst (gbst syst) 1
+      res = collapse True syst (gbst syst) 1
+      sym_table = Language.SimpleC.symt fe -- get the symbol table
 --  putStrLn $ show (gbst syst) 
-  writeFile (f ++ ".dot") $ P.pp_dot_graphs $ Language.SimpleC.cfgs fe
+      fname = fst $ splitExtension f
+      dot_name = fname ++ ".dot"
+      pdf_name = fname ++ ".pdf"
+  writeFile dot_name $ P.pp_dot_graphs (Language.SimpleC.cfgs fe) M.empty -- sym_table
+  putStrLn $ show_symt sym_table 
   putStrLn $ showResultList res
+  -- pdf <- readProcess "dot" ["-Tpdf",dot_name] []
+  -- writeFile pdf_name pdf
   putStrLn "explore end"

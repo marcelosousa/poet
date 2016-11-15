@@ -25,6 +25,7 @@ Executable poet
                     , HUnit
                     , random
                     , hashable 
+                    , process 
     Hs-Source-Dirs:   src/
     ghc-options:      -O3 -rtsopts
     Extensions:       DoAndIfThenElse

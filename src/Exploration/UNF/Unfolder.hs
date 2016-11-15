@@ -185,7 +185,7 @@ expandWith e maxevs st th = do
   --  ii. the set of actions performed that enables us to construct
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
-  let new_events = GCS.collapse syst st th -- :: [(st,pos,[act])]
+  let new_events = GCS.collapse False syst st th -- :: [(st,pos,[act])]
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
   nevs <- mapM (\(nst,pos,acts) -> extend e maxevs (th,pos) acts) new_events
