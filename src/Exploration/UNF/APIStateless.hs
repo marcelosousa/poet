@@ -42,8 +42,14 @@ data Event act =
   , disa :: EventsID     -- ^ Disabled events: D
   , alte :: Alternatives -- ^ Valid alternatives: V
   } 
-  deriving (Show,Eq,Ord)
+  deriving (Eq,Ord)
 
+instance Show (Event act) where
+  show (Event name _ pred succ icnf disa alte) = 
+    "E " ++ show name ++ ", pred = " ++ show pred
+    ++ ", succ = " ++ show succ ++ ", icnf = " ++ show icnf 
+    ++ ", disa = " ++ show disa ++ ", alte = " ++ show alte 
+ 
 -- @ Bottom event: a very special event
 botEID :: EventID
 botEID = 0

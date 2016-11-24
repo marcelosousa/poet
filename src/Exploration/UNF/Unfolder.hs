@@ -13,7 +13,7 @@ import qualified Data.Map as M
 import Data.Maybe hiding (catMaybes)
 import qualified Data.Set as S
 import Data.Set (isSubsetOf)
-
+import Language.SimpleC.Util
 import Exploration.UNF.APIStateless
 import Exploration.UNF.Cutoff.McMillan
 -- import Util.Printer (unfToDot)
@@ -23,8 +23,8 @@ import Prelude hiding (pred)
 import Util.Generic
 
 unfolder :: (Hashable st, GCS.Collapsible st act) => Bool -> Bool -> GCS.System st act -> ST s (UnfolderState st act s)
-unfolder statelessMode cutoffMode syst = do
-  is <- i_unf_state statelessMode cutoffMode syst 
+unfolder statelessMode cutoffMode syst = T.trace ("unfolder start:\n" ++ show_symt (GCS.symt syst)) $ do
+  is    <- i_unf_state statelessMode cutoffMode syst 
   (a,s) <- runStateT botExplore is 
   return $! s
 
@@ -59,13 +59,13 @@ separator = "-----------------------------------------\n"
 --    2. ê: The latest event added to c. Necessarily a maximal event of c.
 --    3. d: The set of disabled events
 --    4. alt: Alternative (a corresponding branch in the wake up tree of ODPOR)
-explore :: (Hashable st,GCS.Collapsible st act) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st act s ()
+explore :: (Hashable st, GCS.Collapsible st act) => Configuration st -> EventID -> EventsID -> Alternative -> UnfolderOp st act s ()
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
   T.trace (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
-       ++ show alt ++ ", stack = " ++ show stak++")\nState:"++show state++"\n"++str++"\n"++separator) $ return ()
+       ++ show alt ++ ", stack = " ++ show stak++")\nState:\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) $ return ()
   let k = unsafePerformIO $ getChar
   -- @ configuration is maximal?
   -- if null enevs 
