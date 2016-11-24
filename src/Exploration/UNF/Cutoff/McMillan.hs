@@ -3,11 +3,12 @@ module Exploration.UNF.Cutoff.McMillan where
 
 import Control.Monad.State.Strict
 import qualified Data.Map as M
-import Exploration.UNF.APIStateless
+import Exploration.UNF.API
+import Exploration.UNF.State
 import qualified Model.GCS as GCS
 
 -- @ Check if st is a cutoff
-cutoff :: GCS.Projection st => st -> Int -> UnfolderOp st act s Bool
+cutoff :: GCS.Projection st => st -> Int -> UnfolderOp st act Bool
 cutoff st si = do
   s@UnfolderState{..} <- get
   let locs = GCS.controlPart st

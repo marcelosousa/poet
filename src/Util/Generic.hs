@@ -10,6 +10,10 @@ import Data.List
 import qualified Data.Maybe as M
 import qualified Data.HashTable.ST.Cuckoo as C
 import Language.SimpleC.AST (SymId)
+import qualified Debug.Trace as T
+
+mytrace True a b = T.trace a b
+mytrace False a b = b
 
 type Var = SymId -- BS.ByteString
 type HashTable s k v = C.HashTable s k v
