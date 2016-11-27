@@ -352,13 +352,13 @@ call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,Act)
 call_transformer_name name args = case name of
   "pthread_create" -> do
     s@IntTState{..} <- get
-    let th_id = get_expr_id $ args !! 1
-        th_sym = get_expr_id $ args !! 3
+    let th_id = get_expr_id $ args !! 0
+        th_sym = get_expr_id $ args !! 2
         th_name = get_symbol_name th_sym sym
         (th_pos,_) = get_entry th_name i_cfgs sym
-        st' = insert_thread st th_id th_pos
+        st' = insert_thread st th_sym th_pos
     set_state st' 
-    return (IntVal [],bot_act) 
+    return (IntVal [],create_thread_act th_sym) 
   "nondet" -> do 
     (lVal,lacts) <- transformer $ args !! 0
     (uVal,uacts) <- transformer $ args !! 1

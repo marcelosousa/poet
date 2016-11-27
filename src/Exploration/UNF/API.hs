@@ -6,11 +6,13 @@ import Control.Monad.State.Strict
 import Data.List
 import Data.Map (Map,fromList,empty)
 import Exploration.UNF.State
+import Language.SimpleC.AST
 import Prelude hiding (succ)
 import Util.Generic
 import qualified Data.HashTable.IO as H
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
+import qualified Debug.Trace as T
 import qualified Model.GCS as GCS
 
 -- | Default values for various types
@@ -20,7 +22,7 @@ botEID = 0
 
 -- The name for bottom
 botName :: EventName
-botName = (GCS.botID, GCS.botID)
+botName = (GCS.botID, GCS.botID, SymId (-1))
 
 -- The initial bottom event
 botEvent :: act -> Event act
@@ -90,7 +92,10 @@ get_name e events = do
   return name
 get_tid e events = do
   ev@Event{..} <- get_event "getAltrs(natives)" e events
-  return $ fst name
+  return $ fst3 name
+get_tid_sym e events = do
+  ev@Event{..} <- get_event "getAltrs(natives)" e events
+  return $ trd3 name
   
 -- SETTERS
 set_event :: EventID -> Event act -> Events act -> IO ()
@@ -279,7 +284,7 @@ filterEvent e events = do
 
 -- | Splits between events that are dependent and independent of
 -- the event name and actions
-partition_dependent :: (Show act, GCS.Action act) => (EventName, act) -> Events act -> (EventsID, EventsID) -> EventsID -> IO (EventsID, EventsID)
+partition_dependent :: (Show act, GCS.Action act) => EventInfo act -> Events act -> (EventsID, EventsID) -> EventsID -> IO (EventsID, EventsID)
 partition_dependent êinfo events (dep,indep) es =
   case es of
     [] -> return (dep,indep)
@@ -295,7 +300,7 @@ is_independent e1 e2 evts =
   then return False
   else do
     ev1 <- get_event "is_independent" e1 evts
-    ev2 <- get_event "is_independent" e1 evts
+    ev2 <- get_event "is_independent" e2 evts
     return $ not $ is_dependent (name ev1, acts ev1) (name ev2, acts ev2) 
 
 -- | Checks if two event names are dependent
@@ -305,12 +310,14 @@ is_independent e1 e2 evts =
 -- in their actions (by for example considering Writes to 
 -- the PC variable) but this would be more expensive.
 is_dependent :: (Show act, GCS.Action act) => EventInfo act -> EventInfo act -> Bool
-is_dependent a@((pid,_),acts) b@((pid',_),acts') =
---  T.trace ("checking dependency between " ++ show (a,b)) $
--- Missing to check if there is an action which is a create of a pid
-  let c1 = GCS.isCreateOf pid' acts  
-      c2 = GCS.isCreateOf pid acts' 
-  in c1 || c2 || pid == GCS.botID || pid' == GCS.botID || pid == pid' || GCS.interferes acts acts'
+is_dependent a@((pid,_,tid),acts) b@((pid',_,tid'),acts') = 
+  let c1 = pid == GCS.botID || pid' == GCS.botID
+      c2 = pid == pid' 
+      c3 = GCS.interferes acts acts'
+      c4 = GCS.isCreateOf tid acts' 
+      c5 = GCS.isCreateOf tid' acts
+      r  =  or [c1,c2,c3,c4,c5] 
+  in T.trace ("is_dependent = " ++ show r ++ ":\n\t" ++ show a ++ "\n\t" ++ show b) $ r
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event

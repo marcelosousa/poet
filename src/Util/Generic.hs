@@ -26,6 +26,15 @@ allM f (x:xs) = do
   then allM f xs
   else return False 
 
+fst3 :: (a,b,c) -> a
+fst3 (a,b,c) = a
+
+snd3 :: (a,b,c) -> b
+snd3 (a,b,c) = b
+
+trd3 :: (a,b,c) -> c
+trd3 (a,b,c) = c
+
 fst4 :: (a,b,c,d) -> a
 fst4 (a,b,c,d) = a
 

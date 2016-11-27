@@ -52,7 +52,8 @@ instance Show IntState where
               then "Empty Heap"
               else "Heap\n" ++ showIntHeap h
         s_s = "Thread States\n" ++ showThStates s
-    in h_s ++ "\n" ++ s_s
+        t_s = "Number of threads " ++ show nt 
+    in h_s ++ "\n" ++ s_s ++ "\n" ++ t_s ++ "\n"
 
 showIntHeap s = M.foldWithKey (\k m r -> show k ++ " := " ++ show m ++ "\n" ++ r) "" s
 
@@ -68,14 +69,23 @@ data ThState =
   } 
   deriving (Show,Eq,Ord)
 
+update_pc :: IntState -> TId -> Pos -> IntState
+update_pc i@IntState{..} tid post = 
+  let th_st = M.update (\(ThState _ i l) -> Just $ ThState post i l) tid th_states
+  in i { th_states = th_st }
+
 showThStates s = 
   M.foldWithKey (\k t r -> "Thread " ++ show k ++ "\n" ++ showThState t ++ "\n" ++ r) "" s
 
-showThState (ThState _ _ s ) = showIntHeap s
+showThState (ThState p i s ) = 
+  let p_s = "Position: " ++ show p
+      i_s = "Identifier: " ++ show i
+      l_s = showIntHeap s
+  in unlines [p_s,i_s,l_s]
 
 -- | Initial state which is not bottom
 empty_state :: IntState 
-empty_state = IntState M.empty M.empty 0 False 
+empty_state = IntState M.empty M.empty 1 False 
 
 -- | Set the position in the cfg of a thread
 set_pos :: IntState -> TId -> SymId -> Pos -> IntState 
@@ -142,7 +152,10 @@ instance Projection IntState where
   controlPart st@IntState{..} = M.map pos th_states
   subsumes a b = subsumes_interval a b
   isBottom = is_bot 
-
+  toThSym st@IntState{..} tid = case M.lookup tid th_states of
+    Nothing -> error $ "toTySym: invalid tid " ++ show tid
+    Just t@ThState{..} -> id 
+  
 join_intstate :: IntState -> IntState -> IntState
 join_intstate s1 s2 = case (is_bot s1, is_bot s2) of
   (True,_) -> s2

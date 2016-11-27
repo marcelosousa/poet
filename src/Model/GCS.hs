@@ -17,7 +17,7 @@ import Data.Map hiding (foldr, filter, map, (\\), null)
 import Language.SimpleC.AST 
 import Language.SimpleC.Flow
 import Language.SimpleC.Converter
-import Language.SimpleC.Util
+import Language.SimpleC.Util hiding (cfgs)
 import Util.Generic
 
 -- A System is a collection of CFGs together with
@@ -76,18 +76,22 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
   enabled syst st =
     let control = controlPart st
-        en = M.filter (>= 0) control
+        en = M.filterWithKey (\tid pos ->
+          let tid_sym = toThSym st tid
+          in case M.lookup tid_sym (cfgs syst) of 
+            Nothing  -> error $ "enabled fatal: tid " ++ show tid ++ " not found in cfgs"
+            Just cfg -> not $ null $ succs cfg pos) control
     in M.keys en
   collapse :: Bool -> System st act -> st -> TId -> [(st,Pos,act)]
-  dcollapse :: System st act -> st -> (TId,Pos) -> (st,act)
-  dcollapse syst st (tid,pos) =
+  dcollapse :: System st act -> st -> (TId,Pos,SymId) -> (st,act)
+  dcollapse syst st (tid,pos,_) =
     let results = collapse False syst st tid
         result = filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"
       [(st,_,act)] -> (st,act)
       _ -> error "dcollapse: collapse produced several dataflow facts for desired location"
-  simple_run :: System st act -> st -> (TId,Pos) -> st
+  simple_run :: System st act -> st -> (TId,Pos,SymId) -> st
   simple_run sys st name = fst $ dcollapse sys st name
  
 class (Eq act) => Action act where
@@ -98,7 +102,7 @@ class (Eq act) => Action act where
   -- by a1.
   isUnlockOf :: act -> act -> Bool 
   isLockOf :: act -> act -> Bool
-  isCreateOf :: TId -> act -> Bool 
+  isCreateOf :: SymId -> act -> Bool 
   -- Two sets of actions are independent
   interferes :: act -> act -> Bool
   isGlobal :: act -> Bool

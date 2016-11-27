@@ -86,10 +86,10 @@ instance Action Act where
   isGlobal act@Act{..} =
     let acts = act_addrs act
     in is_global acts || not (all is_mem_addrs_bot [locks,unlocks,tcreate,tjoin])
-  isCreateOf tid a1@Act{..} =
+  isCreateOf tid_sym a1@Act{..} =
     case tcreate of
       MemAddrTop -> True
-      MemAddrs at -> any (\a -> a == MemAddr (SymId tid) Global) at 
+      MemAddrs at -> any (\a -> a == MemAddr tid_sym Global) at 
 
 is_global :: MemAddrs -> Bool
 is_global maddr = case maddr of

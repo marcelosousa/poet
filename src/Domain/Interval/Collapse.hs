@@ -25,6 +25,7 @@ import Model.GCS
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Debug.Trace as T
+import Prelude hiding (id)
 
 type IntGraph = Graph SymId () (IntState,Act) 
 type IntGraphs = Graphs SymId () (IntState,Act)
@@ -53,16 +54,19 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
    in (n+1, s_r ++ r))  (1,"") l)
 
 instance Collapsible IntState Act where
-  collapse b syst@System{..} st tid =
+  collapse b syst@System{..} st tid = 
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
           Just p  -> p
-        th_sym = SymId tid
+        th_sym = case M.lookup tid (th_states st) of
+          Nothing -> error $ "collpase: cant find thread in the state " ++ show tid
+          Just th_st -> id th_st 
         th_cfg = case M.lookup th_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_sym
           Just cfg -> cfg 
-    in fixpt b tid cfgs symt th_cfg pos st
+    in T.trace ("collapse with thread " ++ show tid ++ ", position = " ++ show pos) $ 
+       fixpt b tid cfgs symt th_cfg pos st
 
 -- @TODO: Receive other options for widening and state splitting
 fixpt :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
@@ -87,6 +91,11 @@ update_node_table node_table' = do
   put fs { fs_cfg = cfg }
   return cfg
 
+up_pc :: IntTState -> TId -> Pos -> IntTState
+up_pc i@IntTState{..} t p =
+  let st' = update_pc st t p
+  in i {st = st'} 
+
 handle_mark :: WItem -> FixOp (IntState,Pos,Act)
 handle_mark (pre,eId,post) = do
   fs@FixState{..} <- get
@@ -98,10 +107,11 @@ handle_mark (pre,eId,post) = do
       -- construct the transformer state
       tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
       -- decide based on the type of edge which transformer to call
-      (acts,ns@IntTState{..}) = case edge_code of
+      (acts,_ns) = case edge_code of
         -- execute the transformer
         D decl -> runState (transformer_decl decl) tr_st 
         E expr -> runState (transformer_expr expr) tr_st
+      ns@IntTState{..} = up_pc _ns fs_tid post 
       (is_fix,node_table') =
          if is_join edge_tags
          -- join point: join the info in the cfg 
@@ -129,7 +139,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: Worklist -> FixOp ResultList 
-worklist _wlist = do
+worklist _wlist = T.trace ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -151,7 +161,7 @@ worklist _wlist = do
       -- either add the results to the result list or update
       -- the cfg with them 
       if isGlobal acts || (Exit `elem` edge_tags)
-      then do
+      then T.trace ("is a global operation") $ do
         add_mark it
         worklist wlist
       else do 

@@ -12,13 +12,14 @@ import Data.List
 import Data.Map (Map,fromList,empty)
 import qualified Data.HashTable.IO as H
 import qualified Model.GCS as GCS
+import Language.SimpleC.AST
 
 type Counter = Int
 
 -- @ Various type definitions related to Events 
 type EventID = Int
 type EventsID = [EventID]
-type EventName = (GCS.TId, GCS.Pos)
+type EventName = (GCS.TId, GCS.Pos, SymId)
 type EventInfo act = (EventName, act) 
 
 -- @ Value of the main HashTable
