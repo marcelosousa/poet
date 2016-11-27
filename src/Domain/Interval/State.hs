@@ -10,22 +10,18 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.State where
 
-import Prelude hiding (id)
-
 import Data.Hashable
-import Data.List
-import qualified Data.Map as M
-import Data.Map (Map)
 import Data.IntMap (IntMap)
-import qualified Data.IntMap as IM
-import Model.GCS
-import Util.Generic hiding (safeLookup)
+import Data.List
+import Data.Map (Map)
+import Domain.Interval.Value
+import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Util
-
-import Domain.Util
-import Domain.Interval.Value
-
+import Model.GCS
+import Util.Generic hiding (safeLookup)
+import qualified Data.IntMap as IM
+import qualified Data.Map as M
 
 -- | Interval Memory Cell
 type IntMCell = MemCell SymId () IntValue
@@ -63,39 +59,41 @@ type Locals = Map SymId IntValue
 data ThState =
   ThState
   { 
-    pos :: Pos
-  , id :: SymId 
-  , locals :: Locals 
+    th_pos    :: Pos
+  , th_id     :: SymId
+  , th_cfg_id :: SymId 
+  , th_locals :: Locals 
   } 
   deriving (Show,Eq,Ord)
-
-update_pc :: IntState -> TId -> Pos -> IntState
-update_pc i@IntState{..} tid post = 
-  let th_st = M.update (\(ThState _ i l) -> Just $ ThState post i l) tid th_states
-  in i { th_states = th_st }
 
 showThStates s = 
   M.foldWithKey (\k t r -> "Thread " ++ show k ++ "\n" ++ showThState t ++ "\n" ++ r) "" s
 
-showThState (ThState p i s ) = 
+showThState (ThState p i c s) = 
   let p_s = "Position: " ++ show p
       i_s = "Identifier: " ++ show i
+      c_s = "CFG Identifier: " ++ show c
       l_s = showIntHeap s
-  in unlines [p_s,i_s,l_s]
+  in unlines [p_s,i_s,c_s,l_s]
 
 -- | Initial state which is not bottom
 empty_state :: IntState 
 empty_state = IntState M.empty M.empty 1 False 
 
 -- | Set the position in the cfg of a thread
-set_pos :: IntState -> TId -> SymId -> Pos -> IntState 
-set_pos st@IntState{..} tid sym npos = 
+update_pc :: IntState -> TId -> Pos -> IntState
+update_pc i@IntState{..} tid pos = 
+  let th_st = M.update (\(ThState _ i c l) -> Just $ ThState pos i c l) tid th_states
+  in i { th_states = th_st }
+
+-- | Set the position in the cfg of a thread
+--   This can also initialize the state of a thread
+set_pos :: IntState -> TId -> SymId -> SymId -> Pos -> IntState 
+set_pos st@IntState{..} tid sym cfg_sym npos = 
   let th_st' =
         case M.lookup tid th_states of
-          Nothing -> ThState npos sym M.empty 
-          Just t@ThState{..} ->
-            let pos' = npos
-            in t { pos = pos' }
+          Nothing -> ThState npos sym cfg_sym M.empty 
+          Just t@ThState{..} -> t { th_pos = npos }
       th_states' = M.insert tid th_st' th_states 
   in st { th_states = th_states' }
 
@@ -126,13 +124,13 @@ subsumes_interval st1 st2 =
           then Just True
           else Nothing
    check_threads tid th2 sts1 =
-     case M.lookup tid sts1 of
-       Nothing -> False
-       Just th1 ->
-         let lcs1 = locals th1
-         in if pos th1 == pos th2
-            then M.foldrWithKey' (\sym vals b -> check_locals sym vals lcs1 && b) True (locals th2)  
-            else False
+    case M.lookup tid sts1 of
+      Nothing -> False
+      Just th1 ->
+       let lcs1 = th_locals th1
+       in if th_pos th1 == th_pos th2
+          then M.foldrWithKey' (\sym v b -> check_locals sym v lcs1 && b) True (th_locals th2) 
+          else False
    check_locals :: SymId -> IntValue -> Map SymId IntValue -> Bool 
    check_locals sym val2 lcs1 =
      case M.lookup sym lcs1 of
@@ -149,12 +147,15 @@ subsumes_interval st1 st2 =
          in r && val2 <= val1
  
 instance Projection IntState where
-  controlPart st@IntState{..} = M.map pos th_states
+  controlPart st@IntState{..} = M.map th_pos th_states
   subsumes a b = subsumes_interval a b
   isBottom = is_bot 
   toThSym st@IntState{..} tid = case M.lookup tid th_states of
-    Nothing -> error $ "toTySym: invalid tid " ++ show tid
-    Just t@ThState{..} -> id 
+    Nothing -> error $ "toThSym: invalid tid " ++ show tid
+    Just t@ThState{..} -> th_id 
+  toThCFGSym st@IntState{..} tid = case M.lookup tid th_states of
+    Nothing -> error $ "toThCFGSym: invalid tid " ++ show tid
+    Just t@ThState{..} -> th_cfg_id 
   
 join_intstate :: IntState -> IntState -> IntState
 join_intstate s1 s2 = case (is_bot s1, is_bot s2) of
@@ -174,12 +175,18 @@ join_intheap m1 m2 = M.unionWith join_intmcell m1 m2
 join_intthsts :: ThStates -> ThStates -> ThStates
 join_intthsts = M.unionWith join_intthst 
 
+ite :: Eq a => String -> a -> a -> a
+ite e_str a b
+  | a == b = a
+  | otherwise = error e_str
+
 join_intthst :: ThState -> ThState -> ThState
 join_intthst t1 t2 =
-  let _pos = if (pos t1) == (pos t2) then pos t1 else error "join_intthst: diff pos" 
-      _id =  if (id t1) == (id t2) then id t1 else error "join_intthst: diff id" 
-      _locals = M.unionWith iJoin (locals t1) (locals t2) 
-  in ThState _pos _id _locals
+  let _pos    = ite "join_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
+      _id     = ite "join_intthst: diff th_id"     (th_id     t1) (th_id     t2) 
+      _cfg_id = ite "join_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
+      _locals = M.unionWith iJoin (th_locals t1) (th_locals t2) 
+  in ThState _pos _id _cfg_id _locals
 
 join_intmcell :: IntMCell -> IntMCell -> IntMCell
 join_intmcell m1 m2 =
@@ -209,8 +216,8 @@ insert_local st@IntState{..} tid sym val =
  case M.lookup tid th_states of
     Nothing -> error "insert_local: tid not found in th_states"
     Just s@ThState{..} ->
-      let locals' = M.insert sym val locals
-          s' = s { locals = locals' }
+      let locals' = M.insert sym val th_locals
+          s' = s { th_locals = locals' }
           th_states' = M.insert tid s' th_states
       in st { th_states = th_states' }
 
@@ -233,21 +240,20 @@ modify_state scope st addrs vals =
            Local i -> insert_local st i base conval 
        Just _ -> modify_heap st base conval  
 
-bot_th_state :: Pos -> SymId -> ThState
-bot_th_state pos id = ThState pos id M.empty
+bot_th_state :: Pos -> SymId -> SymId -> ThState
+bot_th_state pos id cfg_id = ThState pos id cfg_id M.empty
 
-inc_num_th :: IntState -> (Int,IntState)
+inc_num_th :: IntState -> (Int, IntState)
 inc_num_th s@IntState{..} =
   let n = num_th + 1
   in (n,s { num_th = n })
 
-insert_thread :: IntState -> SymId -> Pos -> IntState 
-insert_thread s sym pos =
+insert_thread :: IntState -> SymId -> SymId -> Pos -> IntState 
+insert_thread s sym cfg_sym pos =
   let (tid,s'@IntState{..}) = inc_num_th s
-      th = bot_th_state pos sym
+      th = bot_th_state pos sym cfg_sym
       th_states' = M.insert tid th th_states
   in s' { th_states = th_states' }
-
 
 instance Hashable IntState where
   hash s@IntState{..} = hash (heap,th_states,num_th,is_bot) 
@@ -262,8 +268,8 @@ instance Hashable ThStates where
   hashWithSalt s th = hashWithSalt s $ M.toList th
 
 instance Hashable ThState where
-  hash th@ThState{..} = hash (pos,id,locals)
-  hashWithSalt s th@ThState{..} = hashWithSalt s (pos,id,locals)
+  hash th@ThState{..} = hash (th_pos,th_id,th_cfg_id,th_locals)
+  hashWithSalt s th@ThState{..} = hashWithSalt s (th_pos,th_id,th_cfg_id,th_locals)
 
 instance Hashable Locals where
   hash = hash . M.toList

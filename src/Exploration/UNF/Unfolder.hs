@@ -197,7 +197,7 @@ extend e maxevs st th = do
 -- *e* as an immediate predecessor and returns the event with history h0.
 ext :: (Show act, GCS.Collapsible st act) => EventID -> EventsID -> st -> (GCS.TId, GCS.Pos) -> act -> UnfolderOp st act EventsID
 ext e maxevs st (tid,pos) êacts = do 
-  let tid_sym = GCS.toThSym st tid 
+  let tid_sym = GCS.toThCFGSym st tid 
       êname = (tid,pos,tid_sym)
   lift $ putStrLn $ "extending the prefix " ++ show (e,êname,êacts)  
   s@UnfolderState{..} <- get

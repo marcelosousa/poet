@@ -25,7 +25,6 @@ import Model.GCS
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Debug.Trace as T
-import Prelude hiding (id)
 
 type IntGraph = Graph SymId () (IntState,Act) 
 type IntGraphs = Graphs SymId () (IntState,Act)
@@ -59,11 +58,11 @@ instance Collapsible IntState Act where
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
           Just p  -> p
-        th_sym = case M.lookup tid (th_states st) of
+        th_cfg_sym = case M.lookup tid (th_states st) of
           Nothing -> error $ "collpase: cant find thread in the state " ++ show tid
-          Just th_st -> id th_st 
-        th_cfg = case M.lookup th_sym cfgs of
-          Nothing -> error $ "collapse: cant find thread " ++ show th_sym
+          Just th_st -> th_cfg_id th_st 
+        th_cfg = case M.lookup th_cfg_sym cfgs of
+          Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
     in T.trace ("collapse with thread " ++ show tid ++ ", position = " ++ show pos) $ 
        fixpt b tid cfgs symt th_cfg pos st

@@ -1,12 +1,12 @@
 Act	./Domain/Action.hs	19;"	t
 Act	./Domain/Action.hs	20;"	d
-Action	./Model/GCS.hs	97;"	t
+Action	./Model/GCS.hs	98;"	t
 Ai	./Util/CmdOpts.hs	68;"	d
 Alternative	./Exploration/UNF/State.hs	62;"	t
 Alternatives	./Exploration/UNF/State.hs	63;"	t
 CState	./Domain/Concrete/State.hs	49;"	d
 CState	./Domain/Concrete/State.hs	49;"	t
-Collapsible	./Model/GCS.hs	75;"	t
+Collapsible	./Model/GCS.hs	76;"	t
 ConArr	./Domain/Concrete/State.hs	36;"	d
 ConGraph	./Domain/Concrete/Collapse.hs	28;"	t
 ConGraphs	./Domain/Concrete/Collapse.hs	29;"	t
@@ -35,9 +35,9 @@ Events	./Exploration/UNF/State.hs	42;"	t
 EventsID	./Exploration/UNF/State.hs	21;"	t
 Execute	./Util/CmdOpts.hs	62;"	d
 Explore	./Util/CmdOpts.hs	64;"	d
-FixOp	./Domain/Interval/Collapse.hs	48;"	t
-FixState	./Domain/Interval/Collapse.hs	37;"	t
-FixState	./Domain/Interval/Collapse.hs	38;"	d
+FixOp	./Domain/Interval/Collapse.hs	47;"	t
+FixState	./Domain/Interval/Collapse.hs	36;"	t
+FixState	./Domain/Interval/Collapse.hs	37;"	d
 Frontend	./Util/CmdOpts.hs	61;"	d
 Frontier	./Model/GCS.hs	50;"	t
 Global	./Domain/Util.hs	25;"	d
@@ -47,13 +47,13 @@ History	./Exploration/UNF/State.hs	57;"	t
 I	./Domain/Interval/Type.hs	15;"	d
 IntArr	./Domain/Interval/Value.hs	32;"	d
 IntBot	./Domain/Interval/Value.hs	25;"	d
-IntGraph	./Domain/Interval/Collapse.hs	30;"	t
-IntGraphs	./Domain/Interval/Collapse.hs	31;"	t
-IntHeap	./Domain/Interval/State.hs	34;"	t
-IntMCell	./Domain/Interval/State.hs	31;"	t
+IntGraph	./Domain/Interval/Collapse.hs	29;"	t
+IntGraphs	./Domain/Interval/Collapse.hs	30;"	t
+IntHeap	./Domain/Interval/State.hs	30;"	t
+IntMCell	./Domain/Interval/State.hs	27;"	t
 IntMemAddr	./Domain/Interval/Value.hs	29;"	d
-IntState	./Domain/Interval/State.hs	39;"	t
-IntState	./Domain/Interval/State.hs	40;"	d
+IntState	./Domain/Interval/State.hs	35;"	t
+IntState	./Domain/Interval/State.hs	36;"	d
 IntTOp	./Domain/Interval/Converter.hs	51;"	t
 IntTState	./Domain/Interval/Converter.hs	40;"	t
 IntTState	./Domain/Interval/Converter.hs	41;"	d
@@ -66,21 +66,21 @@ Interpret	./Util/CmdOpts.hs	63;"	d
 Interval	./Util/CmdOpts.hs	54;"	d
 Local	./Domain/Util.hs	25;"	d
 Locals	./Domain/Concrete/State.hs	67;"	t
-Locals	./Domain/Interval/State.hs	62;"	t
+Locals	./Domain/Interval/State.hs	58;"	t
 MemAddr	./Domain/Util.hs	37;"	t
 MemAddr	./Domain/Util.hs	38;"	d
 MemAddrTop	./Domain/Util.hs	44;"	d
 MemAddrs	./Domain/Util.hs	43;"	t
 MemAddrs	./Domain/Util.hs	45;"	d
 MinusInf	./Domain/Interval/Type.hs	15;"	d
-NodeTable	./Domain/Interval/Collapse.hs	35;"	t
+NodeTable	./Domain/Interval/Collapse.hs	34;"	t
 Option	./Util/CmdOpts.hs	60;"	t
 PlusInf	./Domain/Interval/Type.hs	15;"	d
 Pos	./Model/GCS.hs	52;"	t
 Prime	./Util/CmdOpts.hs	65;"	d
 Projection	./Model/GCS.hs	69;"	t
 ResultList	./Domain/Concrete/Collapse.hs	31;"	t
-ResultList	./Domain/Interval/Collapse.hs	34;"	t
+ResultList	./Domain/Interval/Collapse.hs	33;"	t
 Scope	./Domain/Util.hs	25;"	t
 Sigma	./Domain/Concrete/State.hs	55;"	t
 Sigma	./Domain/Concrete/State.hs	56;"	d
@@ -92,10 +92,10 @@ TId	./Model/GCS.hs	54;"	t
 Test	./Util/CmdOpts.hs	69;"	d
 ThState	./Domain/Concrete/State.hs	68;"	t
 ThState	./Domain/Concrete/State.hs	69;"	d
-ThState	./Domain/Interval/State.hs	63;"	t
-ThState	./Domain/Interval/State.hs	64;"	d
+ThState	./Domain/Interval/State.hs	59;"	t
+ThState	./Domain/Interval/State.hs	60;"	d
 ThStates	./Domain/Concrete/State.hs	66;"	t
-ThStates	./Domain/Interval/State.hs	61;"	t
+ThStates	./Domain/Interval/State.hs	57;"	t
 UnfOpts	./Exploration/UNF/State.hs	72;"	d
 UnfStats	./Exploration/UNF/State.hs	81;"	d
 UnfolderOp	./Exploration/UNF/State.hs	106;"	t
@@ -104,9 +104,9 @@ UnfolderState	./Exploration/UNF/State.hs	92;"	t
 UnfolderState	./Exploration/UNF/State.hs	93;"	d
 UnfolderStats	./Exploration/UNF/State.hs	80;"	t
 Var	./Util/Generic.hs	18;"	t
-WItem	./Domain/Interval/Collapse.hs	32;"	t
+WItem	./Domain/Interval/Collapse.hs	31;"	t
 Worklist	./Domain/Concrete/Collapse.hs	30;"	t
-Worklist	./Domain/Interval/Collapse.hs	33;"	t
+Worklist	./Domain/Interval/Collapse.hs	32;"	t
 _help	./Util/CmdOpts.hs	19;"	v
 _helpAi	./Util/CmdOpts.hs	52;"	v
 _helpDebug	./Util/CmdOpts.hs	47;"	v
@@ -125,15 +125,15 @@ add	./Domain/Concrete/Converter.hs	428;"	v
 add_alte	./Exploration/UNF/API.hs	173;"	v
 add_conval	./Domain/Concrete/State.hs	275;"	v
 add_disa	./Exploration/UNF/API.hs	156;"	v
-add_event	./Exploration/UNF/Unfolder.hs	422;"	v	file:
+add_event	./Exploration/UNF/Unfolder.hs	417;"	v	file:
 add_icnf	./Exploration/UNF/API.hs	138;"	v
-add_mark	./Domain/Interval/Collapse.hs	82;"	v
+add_mark	./Domain/Interval/Collapse.hs	81;"	v
 add_succ	./Exploration/UNF/API.hs	119;"	v
 add_writes	./Domain/Action.hs	49;"	v
 ai	Main.hs	197;"	v
 ai_mode	./Util/CmdOpts.hs	122;"	v
 allM	./Util/Generic.hs	22;"	v
-alt2	./Exploration/UNF/Unfolder.hs	608;"	v	file:
+alt2	./Exploration/UNF/Unfolder.hs	603;"	v	file:
 alte	./Exploration/UNF/State.hs	36;"	v
 apply_logic	./Domain/Interval/Converter.hs	191;"	v
 assign_transformer	./Domain/Concrete/Converter.hs	248;"	v
@@ -152,7 +152,7 @@ bot_maddrs	./Domain/Util.hs	60;"	v
 bot_sigma	./Domain/Concrete/State.hs	81;"	v
 bot_state	./Domain/Concrete/State.hs	84;"	v
 bot_th_state	./Domain/Concrete/State.hs	78;"	v
-bot_th_state	./Domain/Interval/State.hs	237;"	v
+bot_th_state	./Domain/Interval/State.hs	244;"	v
 call_transformer	./Domain/Concrete/Converter.hs	313;"	v
 call_transformer	./Domain/Interval/Converter.hs	343;"	v
 call_transformer_name	./Domain/Concrete/Converter.hs	322;"	v
@@ -163,8 +163,8 @@ cfgs	./Model/GCS.hs	42;"	v
 cfgst	./Domain/Concrete/Converter.hs	43;"	v
 checkBoolVals	./Domain/Concrete/State.hs	257;"	v
 cntr	./Exploration/UNF/State.hs	99;"	v
-collapse	./Model/GCS.hs	85;"	v
-compute_conflicts	./Exploration/UNF/Unfolder.hs	513;"	v	file:
+collapse	./Model/GCS.hs	86;"	v
+compute_conflicts	./Exploration/UNF/Unfolder.hs	508;"	v	file:
 cond	./Domain/Concrete/Converter.hs	44;"	v
 cond	./Domain/Interval/Converter.hs	47;"	v
 cond_transformer	./Domain/Concrete/Converter.hs	343;"	v
@@ -174,14 +174,14 @@ const_transformer	./Domain/Interval/Converter.hs	420;"	v
 controlPart	./Model/GCS.hs	70;"	v
 convert	./Domain/Concrete/Converter.hs	72;"	v
 convert	./Domain/Interval/Converter.hs	67;"	v
-core	./Exploration/UNF/Unfolder.hs	646;"	v	file:
+core	./Exploration/UNF/Unfolder.hs	641;"	v	file:
 create_thread_act	./Domain/Action.hs	35;"	v
 cst	./Domain/Concrete/Converter.hs	41;"	v
 cut	./Util/CmdOpts.hs	64;"	v
 cutoff	./Exploration/UNF/Cutoff/McMillan.hs	12;"	v
 cutoffCheck	./Exploration/UNF/Cutoff/McMillan.hs	22;"	v
 cutoffs	./Exploration/UNF/State.hs	75;"	v
-dcollapse	./Model/GCS.hs	86;"	v
+dcollapse	./Model/GCS.hs	87;"	v
 debug	Main.hs	175;"	v
 debug_mode	./Util/CmdOpts.hs	92;"	v
 dec_evs_prefix	./Exploration/UNF/API.hs	250;"	v
@@ -198,8 +198,8 @@ divs	./Domain/Concrete/Converter.hs	431;"	v
 divs_conval	./Domain/Concrete/State.hs	284;"	v
 dom	./Util/CmdOpts.hs	62;"	v
 empty_state	./Domain/Concrete/State.hs	88;"	v
-empty_state	./Domain/Interval/State.hs	88;"	v
-enabled	./Model/GCS.hs	76;"	v
+empty_state	./Domain/Interval/State.hs	81;"	v
+enabled	./Model/GCS.hs	77;"	v
 enevs	./Exploration/UNF/State.hs	50;"	v
 eq	./Domain/Concrete/Converter.hs	438;"	v
 eq_conval	./Domain/Concrete/State.hs	310;"	v
@@ -210,23 +210,23 @@ exit	./Domain/Concrete/Converter.hs	45;"	v
 explore	./Exploration/UNF/Unfolder.hs	62;"	v	file:
 explore	Main.hs	109;"	v
 explore_mode	./Util/CmdOpts.hs	99;"	v
-ext	./Exploration/UNF/Unfolder.hs	204;"	v	file:
-extend	./Exploration/UNF/Unfolder.hs	185;"	v	file:
+ext	./Exploration/UNF/Unfolder.hs	199;"	v	file:
+extend	./Exploration/UNF/Unfolder.hs	180;"	v	file:
 filterEvent	./Exploration/UNF/API.hs	279;"	v
 filterEvents	./Exploration/UNF/API.hs	275;"	v
-fixpt	./Domain/Interval/Collapse.hs	73;"	v
-fixpt_result	./Domain/Interval/Collapse.hs	129;"	v
+fixpt	./Domain/Interval/Collapse.hs	72;"	v
+fixpt_result	./Domain/Interval/Collapse.hs	128;"	v
 frd4	./Util/Generic.hs	48;"	v
 freshCounter	./Exploration/UNF/API.hs	212;"	v
 fromBool	./Util/Generic.hs	84;"	v
 frontend	Main.hs	66;"	v
 frontend_mode	./Util/CmdOpts.hs	74;"	v
-fs_cfg	./Domain/Interval/Collapse.hs	44;"	v
-fs_cfgs	./Domain/Interval/Collapse.hs	42;"	v
-fs_mark	./Domain/Interval/Collapse.hs	45;"	v
-fs_mode	./Domain/Interval/Collapse.hs	40;"	v
-fs_symt	./Domain/Interval/Collapse.hs	43;"	v
-fs_tid	./Domain/Interval/Collapse.hs	41;"	v
+fs_cfg	./Domain/Interval/Collapse.hs	43;"	v
+fs_cfgs	./Domain/Interval/Collapse.hs	41;"	v
+fs_mark	./Domain/Interval/Collapse.hs	44;"	v
+fs_mode	./Domain/Interval/Collapse.hs	39;"	v
+fs_symt	./Domain/Interval/Collapse.hs	42;"	v
+fs_tid	./Domain/Interval/Collapse.hs	40;"	v
 fst3	./Util/Generic.hs	30;"	v
 fst4	./Util/Generic.hs	39;"	v
 gbac	./Model/GCS.hs	41;"	v
@@ -253,12 +253,12 @@ get_tid	./Exploration/UNF/API.hs	93;"	v
 get_tid_sym	./Exploration/UNF/API.hs	96;"	v
 gr	./Domain/Concrete/Converter.hs	435;"	v
 gr_conval	./Domain/Concrete/State.hs	301;"	v
-handle_mark	./Domain/Interval/Collapse.hs	100;"	v
+handle_mark	./Domain/Interval/Collapse.hs	99;"	v
 heap	./Domain/Concrete/State.hs	58;"	v
-heap	./Domain/Interval/State.hs	42;"	v
-histories	./Exploration/UNF/Unfolder.hs	280;"	v	file:
-histories_lock	./Exploration/UNF/Unfolder.hs	331;"	v	file:
-history	./Exploration/UNF/Unfolder.hs	243;"	v	file:
+heap	./Domain/Interval/State.hs	38;"	v
+histories	./Exploration/UNF/Unfolder.hs	275;"	v	file:
+histories_lock	./Exploration/UNF/Unfolder.hs	326;"	v	file:
+history	./Exploration/UNF/Unfolder.hs	238;"	v	file:
 i	./Domain/Interval/Value.hs	49;"	v
 iDivide	./Domain/Interval/Value.hs	134;"	v
 iJoin	./Domain/Interval/Value.hs	53;"	v
@@ -267,25 +267,24 @@ i_cfgs	./Domain/Interval/Converter.hs	46;"	v
 i_unf_state	./Exploration/UNF/API.hs	46;"	v
 icnf	./Exploration/UNF/State.hs	34;"	v
 id	./Domain/Concrete/State.hs	72;"	v
-id	./Domain/Interval/State.hs	67;"	v
 inc_cutoffs	./Exploration/UNF/API.hs	235;"	v
 inc_evs_per_name	./Exploration/UNF/API.hs	262;"	v
 inc_evs_prefix	./Exploration/UNF/API.hs	248;"	v
 inc_max_conf	./Exploration/UNF/API.hs	228;"	v
 inc_num_th	./Domain/Concrete/State.hs	107;"	v
-inc_num_th	./Domain/Interval/State.hs	240;"	v
+inc_num_th	./Domain/Interval/State.hs	247;"	v
 inc_sum_size_max_conf	./Exploration/UNF/API.hs	254;"	v
 initial_ext	./Exploration/UNF/Unfolder.hs	40;"	v	file:
 inp	./Util/CmdOpts.hs	61;"	v
 insert_heap	./Domain/Concrete/State.hs	184;"	v
-insert_heap	./Domain/Interval/State.hs	193;"	v
+insert_heap	./Domain/Interval/State.hs	200;"	v
 insert_heap_sigma	./Domain/Concrete/State.hs	191;"	v
 insert_local	./Domain/Concrete/State.hs	206;"	v
-insert_local	./Domain/Interval/State.hs	208;"	v
+insert_local	./Domain/Interval/State.hs	215;"	v
 insert_local_sigma	./Domain/Concrete/State.hs	213;"	v
 insert_thread	./Domain/Concrete/State.hs	249;"	v
-insert_thread	./Domain/Interval/State.hs	245;"	v
-interferes	./Model/GCS.hs	107;"	v
+insert_thread	./Domain/Interval/State.hs	252;"	v
+interferes	./Model/GCS.hs	108;"	v
 interpret	Main.hs	96;"	v
 interpret_mode	./Util/CmdOpts.hs	86;"	v
 interval_diff	./Domain/Interval/Value.hs	166;"	v
@@ -293,16 +292,16 @@ interval_diff'	./Domain/Interval/Value.hs	172;"	v
 interval_diff_eq	./Domain/Interval/Value.hs	169;"	v
 interval_div	./Domain/Interval/Value.hs	147;"	v
 interval_leq	./Domain/Interval/Converter.hs	251;"	v
-isBlocking	./Model/GCS.hs	98;"	v
+isBlocking	./Model/GCS.hs	99;"	v
 isBottom	./Model/GCS.hs	72;"	v
-isCreateOf	./Model/GCS.hs	105;"	v
+isCreateOf	./Model/GCS.hs	106;"	v
 isFalse	./Domain/Concrete/State.hs	267;"	v
-isGlobal	./Model/GCS.hs	108;"	v
-isLockOf	./Model/GCS.hs	104;"	v
+isGlobal	./Model/GCS.hs	109;"	v
+isLockOf	./Model/GCS.hs	105;"	v
 isTrue	./Domain/Concrete/State.hs	260;"	v
-isUnlockOf	./Model/GCS.hs	103;"	v
+isUnlockOf	./Model/GCS.hs	104;"	v
 is_bot	./Domain/Concrete/State.hs	61;"	v
-is_bot	./Domain/Interval/State.hs	45;"	v
+is_bot	./Domain/Interval/State.hs	41;"	v
 is_causally_closed	./Exploration/UNF/API.hs	368;"	v
 is_configuration	./Exploration/UNF/API.hs	362;"	v
 is_dependent	./Exploration/UNF/API.hs	313;"	v
@@ -310,18 +309,19 @@ is_global	./Domain/Action.hs	95;"	v
 is_independent	./Exploration/UNF/API.hs	298;"	v
 is_maddrs_bot	./Domain/Util.hs	63;"	v
 is_mem_addrs_bot	./Domain/Util.hs	49;"	v
+ite	./Domain/Interval/State.hs	179;"	v
 join_act	./Domain/Action.hs	39;"	v
 join_cstate	./Domain/Concrete/State.hs	53;"	v
-join_intheap	./Domain/Interval/State.hs	172;"	v
-join_intmcell	./Domain/Interval/State.hs	185;"	v
-join_intstate	./Domain/Interval/State.hs	160;"	v
-join_intthst	./Domain/Interval/State.hs	178;"	v
-join_intthsts	./Domain/Interval/State.hs	175;"	v
+join_intheap	./Domain/Interval/State.hs	173;"	v
+join_intmcell	./Domain/Interval/State.hs	192;"	v
+join_intstate	./Domain/Interval/State.hs	161;"	v
+join_intthst	./Domain/Interval/State.hs	184;"	v
+join_intthsts	./Domain/Interval/State.hs	176;"	v
 join_maddrs	./Domain/Util.hs	77;"	v
 join_state	./Domain/Concrete/Converter.hs	57;"	v
 join_state	./Domain/Interval/Converter.hs	59;"	v
 join_update	./Domain/Concrete/Collapse.hs	122;"	v
-join_update	./Domain/Interval/Collapse.hs	182;"	v
+join_update	./Domain/Interval/Collapse.hs	181;"	v
 land	./Domain/Concrete/Converter.hs	440;"	v
 land_conval	./Domain/Concrete/State.hs	316;"	v
 le	./Domain/Concrete/Converter.hs	434;"	v
@@ -331,7 +331,6 @@ leq_conval	./Domain/Concrete/State.hs	304;"	v
 level	./Domain/Util.hs	40;"	v
 list	./Util/Generic.hs	51;"	v
 locals	./Domain/Concrete/State.hs	73;"	v
-locals	./Domain/Interval/State.hs	68;"	v
 locks	./Domain/Action.hs	23;"	v
 lor	./Domain/Concrete/Converter.hs	441;"	v
 lor_conval	./Domain/Concrete/State.hs	319;"	v
@@ -343,10 +342,10 @@ meet_maddrs	./Domain/Util.hs	69;"	v
 minus	./Domain/Concrete/Converter.hs	445;"	v
 minus_conval	./Domain/Concrete/State.hs	290;"	v
 modify_heap	./Domain/Concrete/State.hs	197;"	v
-modify_heap	./Domain/Interval/State.hs	199;"	v
+modify_heap	./Domain/Interval/State.hs	206;"	v
 modify_local_sigma	./Domain/Concrete/State.hs	238;"	v
 modify_state	./Domain/Concrete/State.hs	225;"	v
-modify_state	./Domain/Interval/State.hs	220;"	v
+modify_state	./Domain/Interval/State.hs	227;"	v
 mulIVal	./Domain/Interval/Type.hs	48;"	v
 mult	./Domain/Concrete/Converter.hs	430;"	v
 multValue	./Domain/Interval/Value.hs	100;"	v
@@ -366,7 +365,7 @@ nr_evs_per_name	./Exploration/UNF/State.hs	87;"	v
 nr_evs_prefix	./Exploration/UNF/State.hs	85;"	v
 nr_max_conf	./Exploration/UNF/State.hs	83;"	v
 num_th	./Domain/Concrete/State.hs	60;"	v
-num_th	./Domain/Interval/State.hs	44;"	v
+num_th	./Domain/Interval/State.hs	40;"	v
 op_evs_prefix	./Exploration/UNF/API.hs	242;"	v
 opts	./Exploration/UNF/State.hs	101;"	v
 partition_dependent	./Exploration/UNF/API.hs	288;"	v
@@ -375,8 +374,7 @@ plusIVal	./Domain/Interval/Type.hs	40;"	v
 plusValue	./Domain/Interval/Value.hs	89;"	v
 pop	./Exploration/UNF/API.hs	205;"	v
 pos	./Domain/Concrete/State.hs	71;"	v
-pos	./Domain/Interval/State.hs	66;"	v
-possible_altes	./Exploration/UNF/Unfolder.hs	549;"	v	file:
+possible_altes	./Exploration/UNF/Unfolder.hs	544;"	v	file:
 pred	./Exploration/UNF/State.hs	32;"	v
 predecessorWith	./Exploration/UNF/API.hs	376;"	v
 predecessors	./Exploration/UNF/API.hs	326;"	v
@@ -384,8 +382,8 @@ prime	Main.hs	144;"	v
 prime_mode	./Util/CmdOpts.hs	107;"	v
 print_stats	./Exploration/UNF/State.hs	128;"	v
 prog_modes	./Util/CmdOpts.hs	130;"	v
-prune	./Exploration/UNF/Unfolder.hs	655;"	v	file:
-prune_config	./Exploration/UNF/Unfolder.hs	637;"	v	file:
+prune	./Exploration/UNF/Unfolder.hs	650;"	v	file:
+prune_config	./Exploration/UNF/Unfolder.hs	632;"	v	file:
 push	./Exploration/UNF/API.hs	198;"	v
 rds	./Domain/Action.hs	21;"	v
 reset_alte	./Exploration/UNF/API.hs	182;"	v
@@ -409,12 +407,12 @@ set_single_state	./Domain/Concrete/Converter.hs	65;"	v
 set_state	./Domain/Concrete/Converter.hs	52;"	v
 set_state	./Domain/Interval/Converter.hs	54;"	v
 showEvents	./Exploration/UNF/State.hs	121;"	v
-showIntHeap	./Domain/Interval/State.hs	58;"	v
-showResultList	./Domain/Interval/Collapse.hs	51;"	v
-showThState	./Domain/Interval/State.hs	80;"	v
-showThStates	./Domain/Interval/State.hs	77;"	v
+showIntHeap	./Domain/Interval/State.hs	54;"	v
+showResultList	./Domain/Interval/Collapse.hs	50;"	v
+showThState	./Domain/Interval/State.hs	72;"	v
+showThStates	./Domain/Interval/State.hs	69;"	v
 signumIVal	./Domain/Interval/Type.hs	76;"	v
-simple_run	./Model/GCS.hs	94;"	v
+simple_run	./Model/GCS.hs	95;"	v
 single_edge	./Domain/Concrete/Collapse.hs	59;"	v
 snd3	./Util/Generic.hs	33;"	v
 snd4	./Util/Generic.hs	42;"	v
@@ -429,7 +427,7 @@ stf	./Util/CmdOpts.hs	64;"	v
 stid	Main.hs	160;"	v
 stid_mode	./Util/CmdOpts.hs	115;"	v
 strong_update	./Domain/Concrete/Collapse.hs	136;"	v
-strong_update	./Domain/Interval/Collapse.hs	196;"	v
+strong_update	./Domain/Interval/Collapse.hs	195;"	v
 sts	./Domain/Concrete/State.hs	49;"	v
 sub	./Domain/Concrete/Converter.hs	429;"	v
 subIVal	./Domain/Interval/Type.hs	62;"	v
@@ -437,7 +435,7 @@ subValue	./Domain/Interval/Value.hs	116;"	v
 sub_conval	./Domain/Concrete/State.hs	278;"	v
 subsumes	./Model/GCS.hs	71;"	v
 subsumes_concrete	./Domain/Concrete/State.hs	118;"	v
-subsumes_interval	./Domain/Interval/State.hs	109;"	v
+subsumes_interval	./Domain/Interval/State.hs	107;"	v
 succ	./Exploration/UNF/State.hs	33;"	v
 successors	./Exploration/UNF/API.hs	335;"	v
 sum_size_max_conf	./Exploration/UNF/State.hs	86;"	v
@@ -449,11 +447,16 @@ tcnt	./Model/GCS.hs	45;"	v
 tcreate	./Domain/Action.hs	25;"	v
 test	Main.hs	189;"	v
 test_mode	./Util/CmdOpts.hs	127;"	v
+th_cfg_id	./Domain/Interval/State.hs	64;"	v
+th_id	./Domain/Interval/State.hs	63;"	v
+th_locals	./Domain/Interval/State.hs	65;"	v
+th_pos	./Domain/Interval/State.hs	62;"	v
 th_states	./Domain/Concrete/State.hs	59;"	v
-th_states	./Domain/Interval/State.hs	43;"	v
+th_states	./Domain/Interval/State.hs	39;"	v
 thds	./Model/GCS.hs	44;"	v
 tjoin	./Domain/Action.hs	26;"	v
 toBool	./Util/Generic.hs	79;"	v
+toThCFGSym	./Model/GCS.hs	74;"	v
 toThSym	./Model/GCS.hs	73;"	v
 top_interval	./Domain/Interval/Value.hs	46;"	v
 transformer	./Domain/Concrete/Converter.hs	214;"	v
@@ -473,15 +476,15 @@ unfolder	./Exploration/UNF/Unfolder.hs	22;"	v
 unlocks	./Domain/Action.hs	24;"	v
 unop_transformer	./Domain/Concrete/Converter.hs	369;"	v
 unop_transformer	./Domain/Interval/Converter.hs	427;"	v
-up_pc	./Domain/Interval/Collapse.hs	95;"	v
+up_pc	./Domain/Interval/Collapse.hs	94;"	v
 update_conmcell	./Domain/Concrete/State.hs	202;"	v
-update_conmcell	./Domain/Interval/State.hs	204;"	v
-update_node_table	./Domain/Interval/Collapse.hs	88;"	v
-update_pc	./Domain/Interval/State.hs	73;"	v
+update_conmcell	./Domain/Interval/State.hs	211;"	v
+update_node_table	./Domain/Interval/Collapse.hs	87;"	v
+update_pc	./Domain/Interval/State.hs	85;"	v
 upperBound	./Domain/Interval/Value.hs	187;"	v
 var_transformer	./Domain/Concrete/Converter.hs	387;"	v
 var_transformer	./Domain/Interval/Converter.hs	444;"	v
 widening	./Domain/Interval/Value.hs	198;"	v
-worklist	./Domain/Interval/Collapse.hs	142;"	v
+worklist	./Domain/Interval/Collapse.hs	141;"	v
 worklist_fix	./Domain/Concrete/Collapse.hs	82;"	v
 wrs	./Domain/Action.hs	22;"	v

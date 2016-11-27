@@ -71,14 +71,15 @@ class Projection st where
   subsumes :: st -> st -> Bool
   isBottom :: st -> Bool
   toThSym :: st -> TId -> SymId
+  toThCFGSym :: st -> TId -> SymId
 
 class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   enabled :: System st act -> st -> [TId]
   enabled syst st =
     let control = controlPart st
         en = M.filterWithKey (\tid pos ->
-          let tid_sym = toThSym st tid
-          in case M.lookup tid_sym (cfgs syst) of 
+          let tid_cfg_sym = toThCFGSym st tid
+          in case M.lookup tid_cfg_sym (cfgs syst) of 
             Nothing  -> error $ "enabled fatal: tid " ++ show tid ++ " not found in cfgs"
             Just cfg -> not $ null $ succs cfg pos) control
     in M.keys en

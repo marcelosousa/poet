@@ -68,7 +68,7 @@ convert fe =
   let (pos_main,sym_main) = get_entry "main" (cfgs fe) (symt fe)
       init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
       (acts,s@IntTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
-      st' = set_pos st (symId sym_main) sym_main pos_main  
+      st' = set_pos st (symId sym_main) sym_main sym_main pos_main  
   in trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
@@ -356,7 +356,7 @@ call_transformer_name name args = case name of
         th_sym = get_expr_id $ args !! 2
         th_name = get_symbol_name th_sym sym
         (th_pos,_) = get_entry th_name i_cfgs sym
-        st' = insert_thread st th_sym th_pos
+        st' = insert_thread st th_id th_sym th_pos
     set_state st' 
     return (IntVal [],create_thread_act th_sym) 
   "nondet" -> do 
@@ -451,8 +451,8 @@ var_transformer sym_id = do
         Global -> error "var_transformer: id is not the heap and scope is global"
         Local i -> case M.lookup i (th_states st) of
           Nothing -> error "var_transformer: scope does not match the state"
-          Just ths@ThState{..} -> case M.lookup sym_id locals of
-            Nothing -> error $ "var_transformer: id " ++ show sym_id ++ " is not in the local state of thread " ++ show locals
+          Just ths@ThState{..} -> case M.lookup sym_id th_locals of
+            Nothing -> error $ "var_transformer: id " ++ show sym_id ++ " is not in the local state of thread " ++ show th_locals
             Just v  -> do
               let reds = Act (MemAddrs [MemAddr sym_id scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
               return (v,reds)
