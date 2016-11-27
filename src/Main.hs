@@ -64,8 +64,15 @@ runOption opt = case opt of
 
 frontend :: FilePath -> IO ()
 frontend f = do
-  prog@FrontEnd{..} <- extract "" f
-  print ast 
+  fe <- extract "" f
+  print $ ast fe 
+  let syst = IC.convert fe
+      sym_table = Language.SimpleC.symt fe -- get the symbol table
+      fname = fst $ splitExtension f
+      dot_name = fname ++ ".dot"
+  writeFile dot_name $ P.pp_dot_graphs (Language.SimpleC.cfgs fe) M.empty 
+  putStrLn $ show_symt sym_table 
+  putStrLn "frontend end"
 
 execute :: FilePath -> Domain -> Int -> IO ()
 execute = error "v2: working in progress"

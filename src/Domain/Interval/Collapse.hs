@@ -11,25 +11,40 @@
 module Domain.Interval.Collapse where
 
 import Control.Monad.State.Lazy
-
-import qualified Data.Map as M
+import Data.List
 import Data.Map (Map)
-
+import Data.Set (Set)
+import Domain.Action
 import Domain.Interval.Converter
 import Domain.Interval.State
-import Domain.Action
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
 import Model.GCS
-import Data.List
+import qualified Data.Map as M
+import qualified Data.Set as S
 import qualified Debug.Trace as T
 
 type IntGraph = Graph SymId () (IntState,Act) 
-type IntGraphs = Graphs SymId () (IntState,Act) 
-type Worklist = [(NodeId,EdgeId,NodeId)]
+type IntGraphs = Graphs SymId () (IntState,Act)
+type WItem = (NodeId,EdgeId,NodeId)
+type Worklist = [WItem]
 type ResultList = [(IntState,Pos,Act)]
+type NodeTable = Map NodeId [(IntState,Act)]
+
+data FixState =
+  FixState
+  {
+    fs_mode :: Bool
+  , fs_tid  :: TId 
+  , fs_cfgs :: IntGraphs
+  , fs_symt :: SymbolTable 
+  , fs_cfg  :: IntGraph
+  , fs_mark :: Set WItem -- The final worklist: every edge in this worklist is a global action 
+  }
+
+type FixOp val = State FixState val
 
 showResultList :: ResultList -> String
 showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) -> 
@@ -38,7 +53,6 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
    in (n+1, s_r ++ r))  (1,"") l)
 
 instance Collapsible IntState Act where
-  -- collapse :: System IntState Act -> IntState -> TId -> [(IntState,Pos,Act)]
   collapse b syst@System{..} st tid =
     let control = controlPart st
         pos = case M.lookup tid control of
@@ -48,59 +62,113 @@ instance Collapsible IntState Act where
         th_cfg = case M.lookup th_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_sym
           Just cfg -> cfg 
-    in gen_collapse b tid cfgs symt th_cfg pos st
+    in fixpt b tid cfgs symt th_cfg pos st
 
 -- @TODO: Receive other options for widening and state splitting
-gen_collapse :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
-gen_collapse b tid cfgs symt cfg@Graph{..} pos st =
+fixpt :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
+fixpt b tid cfgs symt cfg@Graph{..} pos st =
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-  in  worklist b tid cfgs symt cfg' wlist [] 
+      i_fix_st = FixState b tid cfgs symt cfg' S.empty
+  in  evalState (worklist wlist) i_fix_st 
 
-worklist :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Worklist -> ResultList -> ResultList 
-worklist b tid cfgs symt cfg@Graph{..} wlist res =
-  case wlist of
-    [] -> if b 
-          then M.foldWithKey (\p l r -> map (\(a,b) -> (a,p,b)) l ++ r) [] node_table 
-          else res
-    ((pre,eId,post):wlst) ->
-          -- get the current state in the pre
-      let l_st = get_node_info cfg pre
-          node_st = case l_st of
-                 [] -> error "worklist_fix: bottom state not supposed to happen"
-                 [s] -> s
-                 _ -> error "worklist_fix: more than one abstract state in the node" 
+add_mark :: WItem -> FixOp ()
+add_mark i = do 
+  fs@FixState{..} <- get
+  let fs_mark' = S.insert i fs_mark
+  put fs { fs_mark = fs_mark' }
+
+update_node_table :: NodeTable -> FixOp IntGraph
+update_node_table node_table' = do 
+  fs@FixState{..} <- get
+  let cfg = fs_cfg { node_table = node_table' }
+  put fs { fs_cfg = cfg }
+  return cfg
+
+handle_mark :: WItem -> FixOp (IntState,Pos,Act)
+handle_mark (pre,eId,post) = do
+  fs@FixState{..} <- get
+  let node_st = case get_node_info fs_cfg pre of
+        [s] -> fst s
+        l   -> error $ "handle_mark invalid pre states: " ++ show l
+      -- get the edge info
+      e@EdgeInfo{..} = get_edge_info fs_cfg eId
+      -- construct the transformer state
+      tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
+      -- decide based on the type of edge which transformer to call
+      (acts,ns@IntTState{..}) = case edge_code of
+        -- execute the transformer
+        D decl -> runState (transformer_decl decl) tr_st 
+        E expr -> runState (transformer_expr expr) tr_st
+      (is_fix,node_table') =
+         if is_join edge_tags
+         -- join point: join the info in the cfg 
+         then join_update (node_table fs_cfg) post (st,acts) 
+         -- considering everything else the standard one: just replace 
+         -- the information in the cfg and add the succs of post to the worklist
+         else strong_update (node_table fs_cfg) post (st,acts) 
+  cfg' <- update_node_table node_table'
+  -- find the final result of the post
+  case M.lookup post $ node_table cfg' of
+    Just [(res_st,res_act)] -> return (res_st,post,res_act)
+    _ -> error "handle_mark: unexcepted value in the final node_table"
+
+fixpt_result :: FixOp ResultList
+fixpt_result = do
+  fs@FixState{..} <- get
+  let marks = S.toList fs_mark
+  res <- mapM handle_mark marks
+  if fs_mode
+  then do 
+    fs@FixState{..} <- get
+    return $ M.foldWithKey (\p l r -> map (\(a,b) -> (a,p,b)) l ++ r) [] $ node_table fs_cfg 
+  else return $ res 
+
+-- standard worklist algorithm
+--  we have reached a fixpoint when the worklist is empty
+worklist :: Worklist -> FixOp ResultList 
+worklist _wlist = do
+  fs@FixState{..} <- get
+  case _wlist of
+    [] -> fixpt_result 
+    (it@(pre,eId,post):wlist) -> do
+      -- get the current state in the pre
+      let node_st = case get_node_info fs_cfg pre of
+            [s] -> fst s
+            l   -> error $ "worklist invalid pre states: " ++ show l
           -- get the edge info
-          e@EdgeInfo{..} = get_edge_info cfg eId
+          e@EdgeInfo{..} = get_edge_info fs_cfg eId
           -- construct the transformer state
-          tr_st = IntTState (Local tid) (fst node_st) symt cfgs (is_cond edge_tags)
+          tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
           -- decide based on the type of edge which transformer to call
           (acts,ns@IntTState{..}) = case edge_code of
-              D decl -> runState (transformer_decl decl) tr_st 
-                -- execute the transformer
-              E expr -> runState (transformer_expr expr) tr_st
+            -- execute the transformer
+            D decl -> runState (transformer_decl decl) tr_st 
+            E expr -> runState (transformer_expr expr) tr_st
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
-      in if isGlobal acts -- || (Exit `elem` edge_tags)
-         then worklist b tid cfgs symt cfg wlst $ nub ((st,post,acts):res)
-         else 
-           -- depending on the tags of the edge; the behaviour is different
-           let (is_fix,node_table') =
-                if is_join edge_tags
-                -- join point: join the info in the cfg 
-                then join_update node_table post (st,acts) 
-                -- considering everything else the standard one: just replace 
-                -- the information in the cfg and add the succs of post to the worklist
-                else strong_update node_table post (st,acts) 
-               cfg' = cfg { node_table = node_table' }
-               rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
-               nwlist = if is_fix then wlst else (wlst ++ rwlst)
-           in worklist b tid cfgs symt cfg' nwlist res
+      if isGlobal acts || (Exit `elem` edge_tags)
+      then do
+        add_mark it
+        worklist wlist
+      else do 
+        -- depending on the tags of the edge; the behaviour is different
+        let (is_fix,node_table') =
+             if is_join edge_tags
+             -- join point: join the info in the cfg 
+             then join_update (node_table fs_cfg) post (st,acts) 
+             -- considering everything else the standard one: just replace 
+             -- the information in the cfg and add the succs of post to the worklist
+             else strong_update (node_table fs_cfg) post (st,acts) 
+        cfg' <- update_node_table node_table'
+        let rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
+            nwlist = if is_fix then wlist else (wlist ++ rwlst)
+        worklist nwlist
 
-join_update :: Map NodeId [(IntState,Act)] -> NodeId -> (IntState,Act) -> (Bool, Map NodeId [(IntState,Act)])
+join_update :: NodeTable -> NodeId -> (IntState, Act) -> (Bool, NodeTable)
 join_update node_table node (st,act) =
   case M.lookup node node_table of
     Nothing -> (False, M.insert node [(st,act)] node_table)
@@ -114,7 +182,7 @@ join_update node_table node (st,act) =
            else (False, M.insert node [(nst,nact)] node_table)
       _ -> error "join_update: more than one state in the list"
  
-strong_update :: Map NodeId [(IntState,Act)] -> NodeId -> (IntState,Act) -> (Bool, Map NodeId [(IntState,Act)])
+strong_update :: NodeTable -> NodeId -> (IntState,Act) -> (Bool, NodeTable)
 strong_update node_table node (st,act) =
   case M.lookup node node_table of
     Nothing -> (False, M.insert node [(st,act)] node_table) 

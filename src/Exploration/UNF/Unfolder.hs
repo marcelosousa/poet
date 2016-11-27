@@ -2,29 +2,24 @@
 {-#LANGUAGE FlexibleContexts #-}
 module Exploration.UNF.Unfolder (unfolder) where
 
-import System.IO.Unsafe
-import qualified Debug.Trace as T
-
-import Control.Monad.State.Strict
-import Control.Monad.ST
-import Data.Hashable
-import Data.List
-import qualified Data.Map as M
-import Data.Maybe hiding (catMaybes)
-import qualified Data.Set as S
-import Data.Set (isSubsetOf)
-import Language.SimpleC.Util
-import Exploration.UNF.API
-import Exploration.UNF.State
-import Exploration.UNF.Cutoff.McMillan
 -- import Util.Printer (unfToDot)
-import qualified Model.GCS as GCS
-
+import Control.Monad.State.Strict
+import Data.List
+import Data.Maybe hiding (catMaybes)
+import Data.Set (isSubsetOf)
+import Exploration.UNF.API
+import Exploration.UNF.Cutoff.McMillan
+import Exploration.UNF.State
+import Language.SimpleC.Util
 import Prelude hiding (pred)
 import Util.Generic
+import qualified Data.Map as M
+import qualified Data.Set as S
+import qualified Model.GCS as GCS
 
 unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
-unfolder stl cut syst = T.trace ("unfolder start:\n" ++ show_symt (GCS.symt syst)) $ do
+unfolder stl cut syst = do 
+  putStrLn $ "unfolder start:\n" ++ show_symt (GCS.symt syst) 
   is    <- i_unf_state stl cut syst 
   (a,s) <- runStateT bot_explore is 
   return $! s
@@ -47,6 +42,7 @@ initial_ext = do
       cevs = [e]
       st = GCS.gbst syst
       trs = GCS.enabled syst st
+  lift $ putStrLn ("initial_ext: enabled threads " ++ show trs)
   enevs <- foldM (\en tr -> extend e cevs st tr >>= \es -> return $! (es++en)) [] trs
   s@UnfolderState{..} <- get 
   let iConf = Conf st cevs enevs []
@@ -54,6 +50,7 @@ initial_ext = do
   return $! iConf
 
 separator = "-----------------------------------------\n"
+
 -- | explore: the main exploration function
 --  Input: 
 --    1. c: Current configuration
@@ -179,9 +176,9 @@ unfold conf@Conf{..} e = do
 --   an immediate predecessor.
 -- expandWith returns per thread/transition, the event with the largest history
 -- and necessarily an extension of the current configuration.
--- @CRITICAL
 extend :: GCS.Collapsible st act => EventID -> EventsID -> st -> GCS.TId -> UnfolderOp st act EventsID
 extend e maxevs st th = do
+  lift $ putStrLn ("extend: e = " ++ show e ++ ", maxevs = " ++ show maxevs ++ ", th = " ++ show th)
   s@UnfolderState{..} <- get
   -- @ call the execution engine (e.g. collapse) to retrieve
   --  i. the name of the new events
@@ -189,6 +186,7 @@ extend e maxevs st th = do
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
   let new_events = GCS.collapse False syst st th -- :: [(st,pos,[act])]
+  lift $ putStrLn ("extend: collapse result\n" ++ show new_events)
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
   nevs <- mapM (\(nst,pos,acts) -> ext e maxevs (th,pos) acts) new_events

@@ -83,9 +83,9 @@ instance Action Act where
     let a1_addrs = act_addrs a1
         a2_addrs = act_addrs a2
     in not $ is_maddrs_bot $ meet_maddrs a1_addrs a2_addrs
-  isGlobal act =
+  isGlobal act@Act{..} =
     let acts = act_addrs act
-    in is_global acts
+    in is_global acts || not (all is_mem_addrs_bot [locks,unlocks,tcreate,tjoin])
   isCreateOf tid a1@Act{..} =
     case tcreate of
       MemAddrTop -> True
@@ -98,4 +98,5 @@ is_global maddr = case maddr of
 
 act_addrs :: Act -> MemAddrs
 act_addrs a@Act{..} =
-  rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` unlocks `join_maddrs` tcreate `join_maddrs` tjoin 
+  rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` 
+  unlocks `join_maddrs` tcreate `join_maddrs` tjoin 

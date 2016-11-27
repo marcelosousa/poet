@@ -36,9 +36,10 @@ import qualified Model.GCS as GCS
 import Util.Generic hiding (safeLookup)
 import qualified Debug.Trace as T
 
--- | State of the concrete transformer
+-- | State of the abstract transformer
 data IntTState 
- = IntTState {
+ = IntTState 
+ {
    scope :: Scope
  , st :: IntState          -- the state
  , sym :: Map SymId Symbol
