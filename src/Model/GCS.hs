@@ -32,7 +32,7 @@ import Util.Generic
 -- compute an independence relation on the fly.
 -- AbsSystem denotes an abstract system that 
 -- receives as type parameters: a representation 
--- for the state and a represetation for the actions.
+-- for the state and a representation for the actions.
 data System st act = 
   System 
   { 
@@ -74,14 +74,11 @@ class Projection st where
   toThCFGSym :: st -> TId -> SymId
 
 class (Show act, Action act, Show st, Projection st) => Collapsible st act where
+  is_enabled :: System st act -> st -> TId -> Bool
   enabled :: System st act -> st -> [TId]
   enabled syst st =
     let control = controlPart st
-        en = M.filterWithKey (\tid pos ->
-          let tid_cfg_sym = toThCFGSym st tid
-          in case M.lookup tid_cfg_sym (cfgs syst) of 
-            Nothing  -> error $ "enabled fatal: tid " ++ show tid ++ " not found in cfgs"
-            Just cfg -> not $ null $ succs cfg pos) control
+        en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
     in M.keys en
   collapse :: Bool -> System st act -> st -> TId -> [(st,Pos,act)]
   dcollapse :: System st act -> st -> (TId,Pos,SymId) -> (st,act)

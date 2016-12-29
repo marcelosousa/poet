@@ -146,7 +146,7 @@ transformer_init id ty minit = do
                   Global -> insert_heap cst id ty val
                   Local i -> insert_local cst i id val 
           id_addrs = get_addrs_id cst scope id
-          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
       join_state st'
       return acts
     Just i  ->
@@ -397,10 +397,10 @@ var_transformer symId = do
           Just ths@ThState{..} -> case M.lookup symId locals of
             Nothing -> error $ "var_transformer: " ++ show symId ++ " is not in the local state of thread\nheap: " ++ show (heap cst) 
             Just v  -> do
-              let reds = Act (MemAddrs [MemAddr symId scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
+              let reds = read_act symId scope
               return ([v],reds)
     Just cell@MCell{..} -> do
-      let reds = Act (MemAddrs [MemAddr symId Global]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
+      let reds = read_act symId Global 
       return ([val],reds)
   
 -- | get the addresses of an identifier

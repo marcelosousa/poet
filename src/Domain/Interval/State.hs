@@ -49,7 +49,8 @@ instance Show IntState where
               else "Heap\n" ++ showIntHeap h
         s_s = "Thread States\n" ++ showThStates s
         t_s = "Number of threads " ++ show nt 
-    in h_s ++ "\n" ++ s_s ++ "\n" ++ t_s ++ "\n"
+    in s_s ++ t_s ++ "\n"
+    --in h_s ++ "\n" ++ s_s ++ "\n" ++ t_s ++ "\n"
 
 showIntHeap s = M.foldWithKey (\k m r -> show k ++ " := " ++ show m ++ "\n" ++ r) "" s
 
@@ -66,8 +67,22 @@ data ThState =
   } 
   deriving (Show,Eq,Ord)
 
+get_tid :: IntState -> SExpression -> TId
+get_tid st@IntState{..} expr =
+  let th_id = get_expr_id expr
+  in get_tid_aux th_id $ M.toList th_states 
+ where
+   get_tid_aux th_id [] = error $ "get_tid: couldnt find thread for symbol " ++ show th_id
+   get_tid_aux th_id ((tid,th):ts) = 
+     if is_thread th_id th
+     then tid
+     else get_tid_aux th_id ts
+
+is_thread :: SymId -> ThState -> Bool
+is_thread sym t@ThState{..} = sym == th_id
+
 showThStates s = 
-  M.foldWithKey (\k t r -> "Thread " ++ show k ++ "\n" ++ showThState t ++ "\n" ++ r) "" s
+  M.foldWithKey (\k t r -> "Thread " ++ show k ++ "\n" ++ showThState t ++ r) "" s
 
 showThState (ThState p i c s) = 
   let p_s = "Position: " ++ show p

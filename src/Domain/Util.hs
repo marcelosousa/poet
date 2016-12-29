@@ -45,10 +45,6 @@ data MemAddrs
   | MemAddrs [MemAddr]
   deriving (Show,Eq)
 
-is_mem_addrs_bot :: MemAddrs -> Bool
-is_mem_addrs_bot MemAddrTop = False
-is_mem_addrs_bot (MemAddrs l) = null l
-
 instance Ord MemAddrs where
   m1 <= m2 = case (m1,m2) of 
     (_,MemAddrTop) -> True

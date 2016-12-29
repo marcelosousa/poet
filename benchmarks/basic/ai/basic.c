@@ -15,7 +15,7 @@ int main(){
   pthread_create(&p_t, NULL, p, NULL);
   
   /* wait for the threads to finish */
-  // pthread_join(p_t, NULL);
+  pthread_join(p_t, NULL);
  
   return 0;
 }

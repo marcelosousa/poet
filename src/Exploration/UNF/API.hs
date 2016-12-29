@@ -316,7 +316,7 @@ is_dependent a@((pid,_,tid),acts) b@((pid',_,tid'),acts') =
       c3 = GCS.interferes acts acts'
       c4 = GCS.isCreateOf tid acts' 
       c5 = GCS.isCreateOf tid' acts
-      r  =  or [c1,c2,c3,c4,c5] 
+      r  = or [c1,c2,c3,c4,c5] 
   in T.trace ("is_dependent = " ++ show r ++ ":\n\t" ++ show a ++ "\n\t" ++ show b) $ r
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!

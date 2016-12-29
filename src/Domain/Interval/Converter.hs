@@ -128,7 +128,7 @@ transformer_init id ty minit = do
                   Global -> insert_heap st id ty val
                   Local i -> insert_local st i id val 
           id_addrs = get_addrs_id st scope id
-          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
       set_state st'
       return acts
     Just i  ->
@@ -358,7 +358,11 @@ call_transformer_name name args = case name of
         (th_pos,_) = get_entry th_name i_cfgs sym
         st' = insert_thread st th_id th_sym th_pos
     set_state st' 
-    return (IntVal [],create_thread_act th_sym) 
+    return (IntVal [], create_thread_act th_sym) 
+  "pthread_join" -> do
+    -- this transformer is only called if it is enabled 
+    let th_id = get_expr_id $ args !! 0
+    return (IntVal [], join_thread_act th_id) 
   "nondet" -> do 
     (lVal,lacts) <- transformer $ args !! 0
     (uVal,uacts) <- transformer $ args !! 1
@@ -454,10 +458,10 @@ var_transformer sym_id = do
           Just ths@ThState{..} -> case M.lookup sym_id th_locals of
             Nothing -> error $ "var_transformer: id " ++ show sym_id ++ " is not in the local state of thread " ++ show th_locals
             Just v  -> do
-              let reds = Act (MemAddrs [MemAddr sym_id scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
+              let reds = read_act sym_id scope 
               return (v,reds)
     Just cell@MCell{..} -> do
-      let reds = Act (MemAddrs [MemAddr sym_id Global]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs 
+      let reds = read_act sym_id Global 
       return (val,reds)
   
 -- negates logical expression using De Morgan Laws

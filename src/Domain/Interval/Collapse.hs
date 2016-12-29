@@ -5,8 +5,6 @@
 -- Copyright :  (c) 2016 Marcelo Sousa
 --
 -- Collapse for interval semantics 
---  For simplicity, a thread is enabled if the control
---  state is non-negative. 
 -------------------------------------------------------------------------------
 module Domain.Interval.Collapse where
 
@@ -17,10 +15,12 @@ import Data.Set (Set)
 import Domain.Action
 import Domain.Interval.Converter
 import Domain.Interval.State
+import Domain.Interval.Value
 import Domain.Util
 import Language.SimpleC.AST
+import Language.SimpleC.Converter (get_symbol_name)
 import Language.SimpleC.Flow
-import Language.SimpleC.Util
+import Language.SimpleC.Util hiding (cfgs,symt)
 import Model.GCS
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -52,7 +52,40 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
        s_r = s_a ++ show s
    in (n+1, s_r ++ r))  (1,"") l)
 
+is_locked :: System IntState Act -> SExpression -> IntState -> Bool
+is_locked syst expr st = 
+  let lk_ident = get_expr_id expr 
+  in case M.lookup lk_ident (heap st) of
+       Nothing -> error $ "is_locked fatal: cant find info for lock " ++ show lk_ident
+       Just (MCell _ val) -> case val of
+         IntVal [VInt i] -> i == 1  
+         _ -> error $ "is_locked fatal: lock has unsupported values " ++ show val 
+
+is_live :: System IntState Act -> EdgeId -> IntGraph -> IntState -> Bool
+is_live syst eId cfg st =
+  let EdgeInfo tags code = get_edge_info cfg eId 
+  in case code of
+    E (Call fname args _) -> case fname of
+      Var ident -> case get_symbol_name ident (symt syst) of
+        "pthread_join" -> 
+          let tid = get_tid st (args!!0) 
+          in not $ is_enabled syst st tid 
+        "pthread_mutex_lock" -> not $ is_locked syst (args!!0) st 
+        _ -> True 
+      _ -> True
+    _ -> True
+ 
 instance Collapsible IntState Act where
+  is_enabled syst st tid =
+    let control = controlPart st
+        tid_cfg_sym = toThCFGSym st tid
+    in case M.lookup tid control of
+         Nothing  -> False
+         Just pos -> case M.lookup tid_cfg_sym (cfgs syst) of 
+           Nothing  -> error $ "is_enabled fatal: tid " ++ show tid ++ " not found in cfgs"
+           Just cfg -> case succs cfg pos of
+             [] -> False
+             s  -> all (\(eId,nId) -> is_live syst eId cfg st) s
   collapse b syst@System{..} st tid = 
     let control = controlPart st
         pos = case M.lookup tid control of
@@ -113,7 +146,7 @@ handle_mark (pre,eId,post) = do
       ns@IntTState{..} = up_pc _ns fs_tid post 
       (is_fix,node_table') =
          if is_join edge_tags
-         -- join point: join the info in the cfg 
+         -- join point: join the info in the cfg
          then join_update (node_table fs_cfg) post (st,acts) 
          -- considering everything else the standard one: just replace 
          -- the information in the cfg and add the succs of post to the worklist

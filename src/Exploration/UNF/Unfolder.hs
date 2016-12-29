@@ -136,10 +136,12 @@ unfold conf@Conf{..} e = do
   -- - get the tid of these independent events
   itrs <- lift $ mapM (\e -> get_tid e evts) senevs 
   -- - compute the set of enabled threads at the new state
+  lift $ putStrLn ("\nComputing enabled transitions at state\n" ++ show nstc)
   let entrs = GCS.enabled syst nstc 
   -- - filter the enabled threads that are dependent with h(e); 
       netrs = entrs \\ itrs 
   lift $ putStrLn ("\nunfold set of enabled threads " ++ show entrs ++ ", ind en evs " ++ show senevs ++ ", new events of threads = " ++ show netrs)
+  _ <- lift $ getChar
   nnevs <- mapM (extend e nmaxevs nstc) netrs >>= return . concat  
   -- @ compute all the events of the configuration 
   let confEvs = e:stak
