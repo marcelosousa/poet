@@ -12,25 +12,36 @@ module Domain.Interval.Value where
 
 import Data.Hashable
 import Data.List
+import Domain.Interval.Type
+import Domain.Util
+import Domain.Action
+import Domain.MemAddr
+import Language.SimpleC.Util
 import Util.Generic hiding (safeLookup)
 import qualified Data.Set as S
 
-import Language.SimpleC.Util
-import Domain.Util
-import Domain.Interval.Type
+-- | Interval Action
+type IntAct = Act IntValue
+
+-- | Interval Memory Addr
+type IntMAddr = MemAddr IntValue
+type IntMAddrs = MemAddrs IntValue
 
 -- | Value for the interval semantics
 data IntValue
   = IntTop              -- Top value 
   | IntBot              -- Bot value
   | IntVal [Value]      -- Intcrete list of values
-  | InterVal (InterVal,InterVal)  
+  | InterVal (InterVal, InterVal)  
   -- Memory address value: set of addresses
-  | IntMemAddr MemAddrs 
+  | IntMemAddr IntMAddrs 
   -- Array value
   -- Memory address for the positions and the size
   | IntArr [IntValue] Int Bool -- IsTop 
   deriving (Show,Eq)
+
+zero :: IntValue
+zero = IntVal [VInt 0]
 
 instance Ord IntValue where
   (<=) (IntVal i) (IntVal j) = (S.fromList i) `S.isSubsetOf` (S.fromList j)

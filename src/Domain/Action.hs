@@ -9,6 +9,7 @@
 module Domain.Action where
 
 import Language.SimpleC.AST
+import Domain.MemAddr
 import Domain.Util
 import Model.GCS
 
@@ -16,45 +17,48 @@ import Model.GCS
 -- Action using read write sets
 -- over the memory addresses 
 -- accessed.
-data Act
+data Act v
   = Act
-  { rds     :: MemAddrs -- read
-  , wrs     :: MemAddrs -- write
-  , locks   :: MemAddrs -- locks
-  , unlocks :: MemAddrs -- unlocks
-  , tcreate :: MemAddrs -- phtread_create 
-  , tjoin   :: MemAddrs -- phtread_join
-  , texit   :: MemAddrs -- phtread_exit
+  { rds     :: MemAddrs v -- read
+  , wrs     :: MemAddrs v -- write
+  , locks   :: MemAddrs v -- locks
+  , unlocks :: MemAddrs v -- unlocks
+  , tcreate :: MemAddrs v -- phtread_create 
+  , tjoin   :: MemAddrs v -- phtread_join
+  , texit   :: MemAddrs v -- phtread_exit
   }
   deriving (Eq,Ord)
 
-instance Show Act where
+instance Show v => Show (Act v) where
   show (Act r w l u c j e) = 
     "Act { r = " ++ show r ++ ", w = " ++ show w ++ ", lk = " ++ show l ++ ", ulk = " ++ show u ++ ", c = " ++ show c ++ ", j = " ++ show j ++ ", e = " ++ show e
  
-bot_act :: Act
+bot_act :: Act v
 bot_act =
   Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
-read_act :: SymId -> Scope -> Act
-read_act sym scope = Act (MemAddrs [MemAddr sym scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+read_act :: SymId -> v -> Scope -> Act v
+read_act sym offset scope = Act (MemAddrs [MemAddr sym offset scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
-write_act :: SymId -> Scope -> Act
-write_act sym scope = Act bot_maddrs (MemAddrs [MemAddr sym scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+write_act :: SymId -> v -> Scope -> Act v
+write_act sym offset scope = Act bot_maddrs (MemAddrs [MemAddr sym offset scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
-create_thread_act :: SymId -> Act
-create_thread_act tid = 
-  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid Global]) bot_maddrs bot_maddrs
+write_act_addr :: MemAddrs v -> Act v
+write_act_addr addr = Act bot_maddrs addr bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
-join_thread_act :: SymId -> Act
-join_thread_act tid = 
-  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid Global]) bot_maddrs 
+create_thread_act :: SymId -> v -> Act v
+create_thread_act tid offset = 
+  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid offset Global]) bot_maddrs bot_maddrs
 
-exit_thread_act :: SymId -> Act
-exit_thread_act tid = 
-  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid Global]) 
+join_thread_act :: SymId -> v -> Act v
+join_thread_act tid offset = 
+  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid offset Global]) bot_maddrs 
+
+exit_thread_act :: SymId -> v -> Act v
+exit_thread_act tid offset = 
+  Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid offset Global]) 
  
-join_act :: Act -> Act -> Act
+join_act :: Eq v => Act v -> Act v -> Act v
 join_act a1 a2 =
   let r = rds a1 `join_maddrs` rds a2 
       w = wrs a1 `join_maddrs` wrs a2 
@@ -65,22 +69,12 @@ join_act a1 a2 =
       e = texit a1 `join_maddrs` texit a2
   in Act r w l u c j e 
 
-add_writes :: MemAddrs -> Act -> Act
+add_writes :: Eq v => MemAddrs v -> Act v -> Act v
 add_writes ws act@Act{..} =
   let wrs' = ws `join_maddrs` wrs
   in act { wrs = wrs' }
   
-{-
-instance Show Act where
-  show act@Act{..} =
-    let rs = "reads: " ++ show rds
-        wrds = "writes: " ++ show wrs
-        lks = "locks: " ++ show locks
-        ulks = "unlocks: " ++ show unlocks
-    in rs++"\n"++wrds++"\n"++lks++"\n"++ulks
--}
-
-instance Action Act where
+instance Eq v => Action (Act v) where
   isBlocking act@Act{..} = 
     not (is_maddrs_bot locks && is_maddrs_bot unlocks)
   isJoin act@Act{..} = 
@@ -111,14 +105,11 @@ instance Action Act where
   isCreateOf tid_sym a1@Act{..} =
     case tcreate of
       MemAddrTop -> True
-      MemAddrs at -> any (\a -> a == MemAddr tid_sym Global) at 
+      MemAddrs at -> any (\a -> case a of 
+         MemAddr tid_sym _ Global -> True
+         _ -> False) at 
 
-is_global :: MemAddrs -> Bool
-is_global maddr = case maddr of
-  MemAddrTop -> True
-  MemAddrs l -> any (\a@MemAddr{..} -> level == Global) l
-
-act_addrs :: Act -> MemAddrs
+act_addrs :: Eq v => Act v -> MemAddrs v
 act_addrs a@Act{..} =
   rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` 
   unlocks `join_maddrs` tcreate `join_maddrs` tjoin  `join_maddrs` texit

@@ -11,11 +11,10 @@
 module Domain.Util where
 
 import Data.Hashable
-import Data.List
 import Model.GCS
 import Language.SimpleC.AST
 import Language.SimpleC.Util
-
+ 
 -- | Scope (of a transformer)
 --   It can either be global (if we processing
 --   for example global declarations and so we need
@@ -25,63 +24,6 @@ import Language.SimpleC.Util
 data Scope = Global | Local TId
   deriving (Show,Eq,Ord)
 
--- | Concrete Memory address contains of a base + offset
--- data MemAddr
---   = MemAddr 
---   { base :: ConValue
---   , offset :: ConValue
---   }
---   deriving (Show,Eq,Ord)
--- Simplification
--- @Add Scope to MemAddr!
-data MemAddr
-  = MemAddr 
-  { base :: SymId
-  , level :: Scope }
-  deriving (Show,Eq,Ord)
-
-data MemAddrs
-  = MemAddrTop
-  | MemAddrs [MemAddr]
-  deriving (Eq)
-
-instance Show MemAddrs where
-  show a = case a of
-    MemAddrTop -> "MemAddrTop"
-    MemAddrs l -> show l
-
-instance Ord MemAddrs where
-  m1 <= m2 = case (m1,m2) of 
-    (_,MemAddrTop) -> True
-    (MemAddrTop,MemAddrs l) -> False 
-    (MemAddrs l1,MemAddrs l2) ->
-      all (\a -> a `elem` l2) l1 
-
-bot_maddrs :: MemAddrs
-bot_maddrs = MemAddrs []
-
-is_maddrs_bot :: MemAddrs -> Bool
-is_maddrs_bot maddr =
-  case maddr of
-    MemAddrTop -> False
-    MemAddrs l -> null l
-  
-meet_maddrs :: MemAddrs -> MemAddrs -> MemAddrs
-meet_maddrs a1 a2 =
-  case (a1,a2) of
-    (MemAddrTop,_) -> a2
-    (_,MemAddrTop) -> a1
-    (MemAddrs l1, MemAddrs l2) -> 
-      MemAddrs (l1 `intersect` l2)
-
-join_maddrs :: MemAddrs -> MemAddrs -> MemAddrs
-join_maddrs a1 a2 =
-  case (a1,a2) of
-    (MemAddrTop,_) -> a1
-    (_,MemAddrTop) -> a2
-    (MemAddrs l1, MemAddrs l2) ->
-      MemAddrs (nub $ l1 ++ l2)
- 
 instance Hashable SymId where
   hash (SymId i) = hash i
   hashWithSalt s (SymId i) = hashWithSalt s i
@@ -106,23 +48,3 @@ instance Hashable Value where
     VChar   i -> hashWithSalt s i 
     VString i -> hashWithSalt s i 
 
-instance Hashable MemAddrs where
-  hash m = case m of
-    MemAddrTop -> hash (0::Int)
-    MemAddrs l -> hash l
-  hashWithSalt s m = case m of
-    MemAddrTop -> hashWithSalt s (0::Int)
-    MemAddrs l -> hashWithSalt s l
-
-instance Hashable MemAddr where
-  hash m@MemAddr{..} = hash base
-  hashWithSalt s m@MemAddr{..} = hashWithSalt s base
-
-{- 
--- State equality: because I'm using a hashtable I need to stay within the ST monad
-isEqual :: Sigma s -> Sigma s -> ST s Bool
-isEqual s1 s2 = do
-  l1 <- H.toList s1
-  l2 <- H.toList s2
-  return $ isEqual' l1 l2  
--}

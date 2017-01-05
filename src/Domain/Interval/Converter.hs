@@ -23,7 +23,9 @@ import qualified Data.Set as S
 import Domain.Interval.State
 import Domain.Interval.Value
 import Domain.Interval.Type
+import Domain.Interval.API
 import Domain.Action
+import Domain.MemAddr
 import Domain.Util
 
 import Language.C.Syntax.Ops 
@@ -43,7 +45,7 @@ data IntTState
    scope :: Scope
  , st :: IntState          -- the state
  , sym :: Map SymId Symbol
- , i_cfgs :: Graphs SymId () (IntState,Act)
+ , i_cfgs :: Graphs SymId () (IntState, IntAct)
  , cond :: Bool            -- is a condition? 
  }
 
@@ -63,7 +65,7 @@ join_state nst = do
 
 -- | converts the front end into a system
 -- @REVISED: July'16
-convert :: FrontEnd () (IntState,Act) -> GCS.System IntState Act
+convert :: FrontEnd () (IntState,IntAct) -> GCS.System IntState IntAct
 convert fe = 
   let (pos_main,sym_main) = get_entry "main" (cfgs fe) (symt fe)
       init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
@@ -72,7 +74,7 @@ convert fe =
   in trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
-get_entry :: String -> Graphs SymId () (IntState, Act) -> Map SymId Symbol -> (GCS.Pos, SymId)
+get_entry :: String -> Graphs SymId () (IntState, IntAct) -> Map SymId Symbol -> (GCS.Pos, SymId)
 get_entry fnname graphs symt = 
   case M.foldrWithKey aux_get_entry Nothing graphs of
     Nothing -> error $ "get_entry: cant get entry for " ++ fnname
@@ -89,15 +91,15 @@ get_entry fnname graphs symt =
                       else Nothing 
 
 -- | processes a list of declarations 
-transformer_decls :: [SDeclaration] -> IntTOp Act
+transformer_decls :: [SDeclaration] -> IntTOp IntAct
 transformer_decls =
   foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
 
 -- | transformer for a declaration:
-transformer_decl :: SDeclaration -> IntTOp Act
+transformer_decl :: SDeclaration -> IntTOp IntAct
 transformer_decl decl = trace ("transformer_decl: " ++ show decl) $ do
   case decl of
-    TypeDecl ty -> error "convert_decl: not supported yet"
+    TypeDecl ty -> error "trannsformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
       case declarator of
         Nothing -> 
@@ -118,34 +120,28 @@ transformer_decl decl = trace ("transformer_decl: " ++ show decl) $ do
 --   so any lookup would fail.
 --   This function needs to receive a state and can 
 --   potentially create several states. 
-transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> IntTOp Act
+transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> IntTOp IntAct
 transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " with init " ++ show minit) $ do
   case minit of
     Nothing -> do
       s@IntTState{..} <- get
       let val = default_value ty
-          st' = case scope of 
-                  Global -> insert_heap st id ty val
-                  Local i -> insert_local st i id val 
-          id_addrs = get_addrs_id st scope id
-          acts = Act bot_maddrs id_addrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+          id_addr = MemAddr id 0 scope
+          st' = write_memory_addr st id_addr val  
+          acts = write_act_addr $ MemAddrs [id_addr]
       set_state st'
       return acts
-    Just i  ->
-      case i of
-        InitExpr expr -> do
-          -- for each state, we need to apply the transformer
-          s@IntTState{..} <- get
-          (val,acts) <- transformer expr
-          let st' = case scope of
-                      Global -> insert_heap st id ty val
-                      Local i -> insert_local st i id val 
-              id_addrs = get_addrs_id st scope id
-              -- this is wrong because id_addrs can be shared among threads
-              acts' = add_writes id_addrs acts
-          set_state st'
-          return acts'
-        InitList list -> error "initializer list is not supported"
+    Just i  -> case i of
+      InitExpr expr -> do
+        -- for each state, we need to apply the transformer
+        s@IntTState{..} <- get
+        (val, acts) <- transformer expr
+        let id_addr = MemAddr id 0 scope
+            st' = write_memory_addr st id_addr val 
+            acts' = add_writes (MemAddrs [id_addr]) acts
+        set_state st'
+        return acts'
+      InitList list -> error "transformer_init: initializer list is not supported"
 
 -- | Default value of a type
 --   If we are given a base type, then we
@@ -164,7 +160,7 @@ default_value ty = --  [ ConVal $ init_value ty ]
 -- | Transformers for interval semantics 
 -- Given an initial state and an expression
 -- return the updated state.
-transformer_expr :: SExpression -> IntTOp Act
+transformer_expr :: SExpression -> IntTOp IntAct
 transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
@@ -177,7 +173,7 @@ transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
 -- we are going to be conservative;
 -- all the variables in this expression
 -- are going to be considered written
-bool_transformer_expr :: SExpression -> IntTOp Act
+bool_transformer_expr :: SExpression -> IntTOp IntAct
 bool_transformer_expr expr = trace ("bool_transformer") $ case expr of
   Binary op lhs rhs -> do 
     (val,act) <- apply_logic op lhs rhs
@@ -187,7 +183,7 @@ bool_transformer_expr expr = trace ("bool_transformer") $ case expr of
     in bool_transformer_expr rhs' 
   _ -> error $ "bool_transformer_expr: not supported " ++ show expr
 
-apply_logic :: BinaryOp -> SExpression -> SExpression -> IntTOp (IntValue,Act)
+apply_logic :: BinaryOp -> SExpression -> SExpression -> IntTOp (IntValue,IntAct)
 apply_logic op lhs rhs =
   let one = Const $ IntConst $ CInteger 1 DecRepr $ Flags 0 
   in case op of
@@ -225,7 +221,7 @@ apply_logic op lhs rhs =
 -- Logical Operations
 -- Less than (CLeOp)
 -- Need to update the variables
-interval_leq :: SExpression -> SExpression -> IntTOp (IntValue,Act)
+interval_leq :: SExpression -> SExpression -> IntTOp (IntValue,IntAct)
 {-
 interval_leq (Ident x_i) rhs =
   let v' = lowerBound $ eval rhs s
@@ -254,7 +250,7 @@ interval_leq lhs rhs = do
   return (lhs_val `iMeet` rhs_val, lhs_act `join_act` rhs_act)
 
 -- | Transformer for an expression with a single state
-transformer :: SExpression -> IntTOp (IntValue,Act)
+transformer :: SExpression -> IntTOp (IntValue,IntAct)
 transformer e = trace ("transformer: " ++ show e) $
   case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
@@ -281,7 +277,7 @@ transformer e = trace ("transformer: " ++ show e) $
     ComplexImag expr -> error "transformer: complex op not supported" 
 
 -- | Transformer for an assignment expression.
-assign_transformer :: AssignOp -> SExpression -> SExpression -> IntTOp (IntValue,Act)
+assign_transformer :: AssignOp -> SExpression -> SExpression -> IntTOp (IntValue,IntAct)
 assign_transformer op lhs rhs = do
   -- process the lhs (get the new state, values and actions)
   (lhs_vals,lhs_acts) <- transformer lhs
@@ -303,13 +299,13 @@ assign_transformer op lhs rhs = do
       res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
   -- modify the state of the addresses with
   -- the result values 
-  let res_st = modify_state scope st lhs_id res_vals
+  let res_st = write_memory st lhs_id res_vals
   set_state res_st 
-  return (res_vals,res_acts) 
+  return (res_vals, res_acts) 
 
 -- | Transformer for binary operations.
 --   These transformers do not change the state;
-binop_transformer :: BinaryOp -> SExpression -> SExpression -> IntTOp (IntValue,Act)
+binop_transformer :: BinaryOp -> SExpression -> SExpression -> IntTOp (IntValue,IntAct)
 binop_transformer binOp lhs rhs = do
   s@IntTState{..} <- get
   -- process the lhs (get the new state, values and actions)
@@ -329,7 +325,7 @@ binop_transformer binOp lhs rhs = do
         CXorOp -> error "binop_transformer: CXorOp not supported" 
         CLndOp -> error "binop_transformer: CLndOp not supported" 
         CLorOp -> error "binop_transformer: CLorOp not supported"
-        _ -> error "binop_transtranformer: not completed for intervals" -- apply_logic binOp lhs rhs
+        _ -> error "binop_transtranformer: not completed" -- apply_logic binOp lhs rhs
       res_acts = lhs_acts `join_act` rhs_acts
   return (res_vals,res_acts)
 
@@ -339,7 +335,7 @@ binop_transformer binOp lhs rhs = do
 --   pthread_join
 --   lock
 --   unlock  
-call_transformer :: SExpression -> [SExpression] -> IntTOp (IntValue,Act)
+call_transformer :: SExpression -> [SExpression] -> IntTOp (IntValue,IntAct)
 call_transformer fn args =
   case fn of
     Var ident -> do
@@ -348,7 +344,7 @@ call_transformer fn args =
       call_transformer_name n args 
     _ -> error "call_transformer: not supported" 
 
-call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,Act)
+call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,IntAct)
 call_transformer_name name args = case name of
   "pthread_create" -> do
     s@IntTState{..} <- get
@@ -356,22 +352,21 @@ call_transformer_name name args = case name of
         -- pthread_t, the pid of the new thread
     let (tid,s') = inc_num_th st
         th_id = get_addrs s' scope (args !! 0) 
-        s'' = modify_state scope s' th_id (IntVal [VInt tid]) 
+        s'' = write_memory s' th_id (IntVal [VInt tid]) 
         -- retrieve the entry point of the thread code 
         th_sym = get_expr_id $ args !! 2
         th_name = get_symbol_name th_sym sym
         (th_pos,_) = get_entry th_name i_cfgs sym
         --
         i_th_st = bot_th_state th_pos th_sym
-        th_states' = M.insert tid i_th_st (th_states s'')
-        res_st = s'' { th_states = th_states' } 
+        res_st = insert_thread s'' tid i_th_st 
     set_state res_st 
-    return (IntVal [], create_thread_act (SymId tid)) 
+    return (IntVal [], create_thread_act (SymId tid) zero) 
   "pthread_join" -> do
     s@IntTState{..} <- get
     -- this transformer is only called if it is enabled 
     let tid = get_tid_expr scope st (args !! 0)
-    return (IntVal [], join_thread_act (SymId tid)) 
+    return (IntVal [], join_thread_act (SymId tid) zero) 
   "nondet" -> do 
     (lVal,lacts) <- transformer $ args !! 0
     (uVal,uacts) <- transformer $ args !! 1
@@ -386,7 +381,7 @@ call_transformer_name name args = case name of
 -- for the cond + then expression
 -- for the not cond + else expression
 -- and join both states
-cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> IntTOp (IntValue,Act)
+cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> IntTOp (IntValue,IntAct)
 cond_transformer cond mThen else_e = error "cond_transformer not supported"
 {- do
   s <- get
@@ -413,30 +408,30 @@ do
   (vals,acts) <- transformer cond
   -- vals is both false and true 
   let (isTrue,isFalse) = checkBoolVals vals
-  (tVal,tAct) <-
+  (tVal,tIntAct) <-
     if isTrue
     then case mThen of
            Nothing -> error "cond_transformer: cond is true and there is not then"
            Just e -> transformer e
     else return ([],bot_act)
-  (eVal,eAct) <-
+  (eVal,eIntAct) <-
     if isFalse
     then transformer else_e
     else return ([],bot_act)
   let res_vals = tVal ++ eVal
-      res_acts = acts `join_act` tAct `join_act` eAct
+      res_acts = acts `join_act` tIntAct `join_act` eIntAct
   return (res_vals,res_acts) 
 -}
 
 -- | Transformer for constants.
-const_transformer :: Constant -> IntTOp (IntValue,Act)
+const_transformer :: Constant -> IntTOp (IntValue,IntAct)
 const_transformer const =
   case toValue const of
     VInt i -> return (InterVal (I i, I i), bot_act)
     _ -> error "const_transformer: not supported non-int constants"
 
 -- | Transformer for unary operations.
-unop_transformer :: UnaryOp -> SExpression -> IntTOp (IntValue,Act)
+unop_transformer :: UnaryOp -> SExpression -> IntTOp (IntValue,IntAct)
 unop_transformer unOp expr = do 
   case unOp of
     CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
@@ -453,25 +448,13 @@ unop_transformer unOp expr = do
     CNegOp     -> transformer $ negExp expr 
 
 -- | Transformer for var expressions.
-var_transformer :: SymId -> IntTOp (IntValue,Act)
+var_transformer :: SymId -> IntTOp (IntValue, IntAct)
 var_transformer sym_id = do
   s@IntTState{..} <- get
-  -- First search in the heap
-  case M.lookup sym_id (heap st) of
-    Nothing -> 
-      -- If not in the heap, search in the thread
-      case scope of
-        Global -> error "var_transformer: id is not the heap and scope is global"
-        Local i -> case M.lookup i (th_states st) of
-          Nothing -> error "var_transformer: scope does not match the state"
-          Just ths@ThState{..} -> case M.lookup sym_id th_locals of
-            Nothing -> error $ "var_transformer: id " ++ show sym_id ++ " is not in the local state of thread " ++ show th_locals
-            Just v  -> do
-              let reds = read_act sym_id scope 
-              return (v,reds)
-    Just cell@MCell{..} -> do
-      let reds = read_act sym_id Global 
-      return (val,reds)
+  let id_addr = MemAddr sym_id zero scope
+      val = read_memory_addr st id_addr
+      acts = read_act sym_id zero scope
+  return (val, acts)
   
 -- negates logical expression using De Morgan Laws
 negExp :: SExpression -> SExpression

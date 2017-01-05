@@ -17,8 +17,8 @@ import Model.GCS
 --import Unfolderful
 import Control.Monad.ST
 import Domain.Action
-import Domain.Concrete
-import Domain.Concrete.State
+-- import Domain.Concrete
+-- import Domain.Concrete.State
 import Domain.Interval.Collapse
 import Domain.Interval
 import Exploration.UNF.Unfolder  
@@ -34,7 +34,7 @@ import Util.CmdOpts
 import Util.Generic
 -- import Util.Printer
 import qualified Data.Map as M
-import qualified Domain.Concrete.Converter as CC
+-- import qualified Domain.Concrete.Converter as CC
 import qualified Domain.Interval.Converter as IC
 import qualified Exploration.UNF.API as US
 import qualified Exploration.UNF.State as US
@@ -108,16 +108,16 @@ interpret f dom = do
 explore :: FilePath -> Domain -> Bool -> Bool -> IO ()
 explore f dom stl cut = do
   case dom of
-    Concrete -> do
-      fe <- extract "" f
-      let syst = CC.convert fe 
-      ust <- unfolder stl cut syst
-      let (cntr, stats) = (US.cntr ust, US.stats ust)
-      -- putStrLn $ show syst 
-      putStrLn $ show (cntr, stats)
+--    Concrete -> do
+--      fe <- extract "" f
+--      let syst = CC.convert fe 
+--      ust <- unfolder stl cut syst
+--      let (cntr, stats) = (US.cntr ust, US.stats ust)
+--      -- putStrLn $ show syst 
+--      putStrLn $ show (cntr, stats)
 --      (_,_,_,dots) <- unfToDot ust 
 --      writeFile (replaceExtension f ".dot") dots
-      putStrLn "explore end"
+--      putStrLn "explore end"
     Interval -> do 
       fe <- extract "" f
       let syst = IC.convert fe

@@ -1,4 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Interval.Collapse
@@ -16,6 +18,7 @@ import Domain.Action
 import Domain.Interval.Converter
 import Domain.Interval.State
 import Domain.Interval.Value
+import Domain.Interval.API
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Converter (get_symbol_name)
@@ -26,12 +29,12 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Debug.Trace as T
 
-type IntGraph = Graph SymId () (IntState,Act) 
-type IntGraphs = Graphs SymId () (IntState,Act)
+type IntGraph = Graph SymId () (IntState,IntAct) 
+type IntGraphs = Graphs SymId () (IntState,IntAct)
 type WItem = (NodeId,EdgeId,NodeId)
 type Worklist = [WItem]
-type ResultList = [(IntState,Pos,Act)]
-type NodeTable = Map NodeId [(IntState,Act)]
+type ResultList = [(IntState,Pos,IntAct)]
+type NodeTable = Map NodeId [(IntState,IntAct)]
 
 data FixState =
   FixState
@@ -52,16 +55,17 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
        s_r = s_a ++ show s
    in (n+1, s_r ++ r))  (1,"") l)
 
-is_locked :: System IntState Act -> SExpression -> IntState -> Bool
-is_locked syst expr st = 
-  let lk_ident = get_expr_id expr 
-  in case M.lookup lk_ident (heap st) of
-       Nothing -> error $ "is_locked fatal: cant find info for lock " ++ show lk_ident
-       Just (MCell _ val) -> case val of
-         IntVal [VInt i] -> i == 1  
-         _ -> error $ "is_locked fatal: lock has unsupported values " ++ show val 
+is_locked :: IntState -> Scope -> SExpression -> Bool
+is_locked st scope expr = 
+  let lk_addrs = get_addrs st scope expr 
+  in case read_memory st lk_addrs of
+    []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
+    [val] -> case val of 
+      IntVal [VInt i] -> i == 1  
+      _ -> error $ "is_locked fatal: lock has unsupported values " ++ show val 
+    l -> error $ "is_locked fatal: lock has unsupported values " ++ show l 
 
-is_live :: TId -> System IntState Act -> EdgeId -> IntGraph -> IntState -> Bool
+is_live :: TId -> System IntState IntAct -> EdgeId -> IntGraph -> IntState -> Bool
 is_live tid syst eId cfg st = 
   let EdgeInfo tags code = get_edge_info cfg eId 
   in case code of
@@ -70,12 +74,13 @@ is_live tid syst eId cfg st =
         "pthread_join" ->
           let tid' = get_tid_expr (Local tid) st (args!!0) 
           in not $ is_enabled syst st tid' 
-        "pthread_mutex_lock" -> not $ is_locked syst (args!!0) st 
+         -- assume the mutex is declared globally 
+        "pthread_mutex_lock" -> not $ is_locked st Global (args!!0)
         _ -> True 
       _ -> True
     _ -> True
  
-instance Collapsible IntState Act where
+instance Collapsible IntState IntAct where
   is_enabled syst st tid =
     let control = controlPart st
         tid_cfg_sym = toThCFGSym st tid
@@ -129,7 +134,7 @@ up_pc i@IntTState{..} t p =
   let st' = update_pc st t p
   in i {st = st'} 
 
-handle_mark :: WItem -> FixOp (IntState,Pos,Act)
+handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
 handle_mark (pre,eId,post) = do
   fs@FixState{..} <- get
   let node_st = case get_node_info fs_cfg pre of
@@ -157,7 +162,7 @@ handle_mark (pre,eId,post) = do
   case M.lookup post $ node_table cfg' of
     Just [(res_st,res_act)] -> do
       let rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
-          e_act = exit_thread_act $ SymId fs_tid
+          e_act = exit_thread_act (SymId fs_tid) zero
       if (Exit `elem` edge_tags) || null rwlst
       then return (res_st,post,res_act `join_act` e_act)
       else return (res_st,post,res_act)
@@ -216,7 +221,7 @@ worklist _wlist = mtrace ("worklist: " ++ show _wlist) $ do
         let nwlist = if is_fix then wlist else (wlist ++ rwlst)
         worklist nwlist
 
-join_update :: NodeTable -> NodeId -> (IntState, Act) -> (Bool, NodeTable)
+join_update :: NodeTable -> NodeId -> (IntState, IntAct) -> (Bool, NodeTable)
 join_update node_table node (st,act) =
   case M.lookup node node_table of
     Nothing -> (False, M.insert node [(st,act)] node_table)
@@ -230,7 +235,7 @@ join_update node_table node (st,act) =
            else (False, M.insert node [(nst,nact)] node_table)
       _ -> error "join_update: more than one state in the list"
  
-strong_update :: NodeTable -> NodeId -> (IntState,Act) -> (Bool, NodeTable)
+strong_update :: NodeTable -> NodeId -> (IntState,IntAct) -> (Bool, NodeTable)
 strong_update node_table node (st,act) =
   case M.lookup node node_table of
     Nothing -> (False, M.insert node [(st,act)] node_table) 
