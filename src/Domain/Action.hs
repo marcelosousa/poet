@@ -26,8 +26,12 @@ data Act
   , tjoin   :: MemAddrs -- phtread_join
   , texit   :: MemAddrs -- phtread_exit
   }
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord)
 
+instance Show Act where
+  show (Act r w l u c j e) = 
+    "Act { r = " ++ show r ++ ", w = " ++ show w ++ ", lk = " ++ show l ++ ", ulk = " ++ show u ++ ", c = " ++ show c ++ ", j = " ++ show j ++ ", e = " ++ show e
+ 
 bot_act :: Act
 bot_act =
   Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
@@ -79,6 +83,8 @@ instance Show Act where
 instance Action Act where
   isBlocking act@Act{..} = 
     not (is_maddrs_bot locks && is_maddrs_bot unlocks)
+  isJoin act@Act{..} = 
+    not (is_maddrs_bot tjoin) 
   isUnlockOf a1 a2 =
     let ulks2 = unlocks a2
         f addr = is_maddrs_bot $ meet_maddrs addr ulks2 
@@ -115,4 +121,4 @@ is_global maddr = case maddr of
 act_addrs :: Act -> MemAddrs
 act_addrs a@Act{..} =
   rds `join_maddrs` wrs `join_maddrs` locks `join_maddrs` 
-  unlocks `join_maddrs` tcreate `join_maddrs` tjoin 
+  unlocks `join_maddrs` tcreate `join_maddrs` tjoin  `join_maddrs` texit

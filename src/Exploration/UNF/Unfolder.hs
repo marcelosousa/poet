@@ -17,10 +17,13 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Model.GCS as GCS
 import Language.SimpleC.AST
+import System.Console.ANSI
 
 unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
 unfolder stl cut syst = do 
-  putStrLn $ "unfolder start:\n" ++ show_symt (GCS.symt syst) 
+  putStrLn $ "UNFOLDER BEGIN:\n" ++ show_symt (GCS.symt syst) 
+  getChar
+  clearScreen
   is    <- i_unf_state stl cut syst 
   (a,s) <- runStateT bot_explore is 
   return $! s
@@ -38,6 +41,7 @@ bot_explore = do
 -- the execution of bottom, and contains all extensions from it.
 initial_ext :: GCS.Collapsible st act => UnfolderOp st act (Configuration st)
 initial_ext = do
+  lift $ putStrLn $ "EXTENSIONS FROM BOTTOM BEGIN"  
   s@UnfolderState{..} <- get
   let e = botEID
       cevs = [e]
@@ -48,6 +52,8 @@ initial_ext = do
   s@UnfolderState{..} <- get 
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
+  lift $ putStrLn $ "EXTENSIONS FROM BOTTOM END"  
+  _ <- lift $ getChar
   return $! iConf
 
 separator = "-----------------------------------------\n"
@@ -62,10 +68,11 @@ explore :: GCS.Collapsible st act => Configuration st -> EventID -> EventsID -> 
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
+  lift $ clearScreen
   lift $ putStrLn (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak
-       ++")\nState:\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 
+       ++")\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 
   k <- lift $ getChar
   -- @ configuration is maximal?
   -- if null enevs 
@@ -73,6 +80,7 @@ explore c@Conf{..} ê d alt = do
   then do
     -- @ forall events e in Conf with immediate conflicts compute V(e)
     --   and check if its a valid alternative
+    lift $ putStrLn $ "explore: maximal configuration" 
     possible_altes maevs cfevs
     inc_sum_size_max_conf 
     inc_max_conf 
@@ -95,6 +103,7 @@ explore c@Conf{..} ê d alt = do
       else return c
     -- @ compute the new enabled events and immediate conflicts after adding *e*
     --   return the new configuration c `union` {e}
+    lift $ putStrLn $ "explore: calling unfold(" ++ show e ++ ")" 
     nc <- unfold pruned_conf e
     -- @ recursive call
     push e
@@ -123,24 +132,26 @@ unfold :: GCS.Collapsible st act => Configuration st -> EventID -> UnfolderOp st
 unfold conf@Conf{..} e = do
   s@UnfolderState{..} <- get
   -- @ 1. compute the new state after executing the event e
+  lift $ putStrLn $ "unfold: going to execute(" ++ show e ++ ")"
   nstc <- execute state e
-  lift $ putStrLn ("unfold new state\n" ++ show nstc) 
   -- @ 2. compute the new set of maximal events
   iprede <- lift $ get_pred e evts 
   let nmaxevs = e:(maevs \\ iprede)
   -- @ 3. compute the new set of enabled events
       es = delete e enevs 
   -- - compute the set of events independent with *e*, they will be enabled after *e*
-  lift $ putStrLn ("unfold with event " ++ show e ++ ", es = " ++ show es ++ ", nmaxevs = " ++ show nmaxevs)
+  nstc `seq` lift $ putStrLn ("unfold: event = " ++ show e ++ ", enabled events = " ++ show es ++ ", new maximal evs = " ++ show nmaxevs)
   senevs <- lift $ filterM (\ê -> is_independent e ê evts) es
   -- - get the tid of these independent events
   itrs <- lift $ mapM (\e -> get_tid e evts) senevs 
   -- - compute the set of enabled threads at the new state
-  lift $ putStrLn ("\nComputing enabled transitions at state\n" ++ show nstc)
+  lift $ putStrLn ("unfold: computing enabled threads at state\n" ++ show nstc)
   let entrs = GCS.enabled syst nstc 
   -- - filter the enabled threads that are dependent with h(e); 
       netrs = entrs \\ itrs 
-  lift $ putStrLn ("\nunfold set of enabled threads " ++ show entrs ++ ", ind en evs " ++ show senevs ++ ", new events of threads = " ++ show netrs)
+  lift $ putStrLn $ "unfold: enabled threads = " ++ show entrs
+  lift $ putStrLn $ "unfold: independent enabled events = " ++ show senevs
+  lift $ putStrLn $ "unfold: new events of threads = " ++ show netrs
   _ <- lift $ getChar
   nnevs <- mapM (extend e nmaxevs nstc) netrs >>= return . concat  
   -- @ compute all the events of the configuration 
@@ -168,7 +179,7 @@ unfold conf@Conf{..} e = do
    execute st e = do
      s@UnfolderState{..} <- get
      ev@Event{..} <- lift $ get_event "execute" e evts
-     lift $ putStrLn ("execute event " ++ show e ++ ", name = " ++ show name)
+     lift $ putStrLn $ "execute: going to call dcollapse" ++ show name
      let (nst,nacts) = GCS.dcollapse syst st name
          nev = ev {acts = nacts}
      lift $ set_event e nev evts
@@ -187,10 +198,12 @@ extend e maxevs st th = do
   --  ii. the set of actions performed that enables us to construct
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
+  lift $ putStrLn ("extend: calling collapse")
   let new_events = GCS.collapse False syst st th -- :: [(st,pos,[act])]
-  lift $ putStrLn ("extend: collapse result\n" ++ show (map snd3 new_events))
+  new_events `seq` lift $ putStrLn ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
+  lift $ putStrLn $ "extend: calling ext(" ++ show e ++ ")"
   nevs <- mapM (\(nst,pos,acts) -> ext e maxevs nst (th,pos) acts) new_events
   return $ concat nevs
 
@@ -199,16 +212,19 @@ extend e maxevs st th = do
 -- *e* as an immediate predecessor and returns the event with history h0.
 ext :: (Show act, GCS.Collapsible st act) => EventID -> EventsID -> st -> (GCS.TId, GCS.Pos) -> act -> UnfolderOp st act EventsID
 ext e maxevs st (tid,pos) êacts = do 
+  _ <- lift $ getChar
   let tid_sym = GCS.toThCFGSym st tid 
       êname = (tid,pos,tid_sym)
-  lift $ putStrLn $ "extending the prefix " ++ show (e,êname,êacts)  
+  lift $ putStrLn $ "ext: extensions with name " ++ show êname 
   s@UnfolderState{..} <- get
   -- @ retrieve the immediate successors of e with the same name to avoid duplicates
   succe <- lift $ get_succ e evts 
            >>= mapM (\e -> get_event "ext" e evts >>= \ev -> return (e,ev)) 
            >>= return . filter (\(e,ev) -> name ev == êname)
   -- @ computes h0, the maximal history:
+  lift $ putStrLn $ "ext: calling history to compute the enabled extension (h0)"
   h0 <- history (êname,êacts) maxevs 
+  _ <- lift $ getChar
   if null h0
   then error $ "null h0 at expandWith(e="++show e
              ++",name="++show êname++",maxevs="++show maxevs++")"
@@ -218,14 +234,25 @@ ext e maxevs st (tid,pos) êacts = do
     if e `elem` h0
     then do
       -- @ Compute other histories
-      his <- if GCS.isBlocking êacts 
-             then do
-               -- @ Compute histories related to locks
-               prede <- lift $ predecessors e evts 
-               histories_lock (êname,êacts) e prede (e `delete` h0)
-             else histories (êname,êacts) e [h0] [h0] 
+      lift $ putStrLn $ "ext: computing conflicting extensions"
+      -- @ If the action is a JOIN action, then we dont need to compute conflicting extensions 
+      his <- if GCS.isJoin êacts
+             then return []
+             else  
+               if GCS.isBlocking êacts 
+               then do
+                 -- @ Compute histories related to locks
+                 prede <- lift $ predecessors e evts 
+                 lift $ putStrLn $ "ext: calling histories_lock"
+                 histories_lock (êname,êacts) e prede (e `delete` h0)
+               else do 
+                 lift $ putStrLn $ "ext: calling histories"
+                 histories (êname,êacts) e [h0] [] 
+      lift $ putStrLn $ "ext: conflicting extensions histories = " ++ show his
+      lift $ putStrLn "ext: adding conflicting extensions events"
       mapM (add_event stak succe êname êacts) his
-      lift $ putStrLn "ext: going to add the last event"
+      lift $ putStrLn "ext: finished adding conflicting extensions events"
+      lift $ putStrLn "ext: adding the enabled event"
       add_event stak succe êname êacts h0
     else error "e must always be in h0"  
 
@@ -237,14 +264,21 @@ ext e maxevs st (tid,pos) êacts = do
 -- An history is composed of events of maxevs that are dependent with (name,acts) 
 -- or dependent predecessors of the independent ones that are maximal
 history :: (GCS.Collapsible st act) => EventInfo act -> EventsID -> UnfolderOp st act History
-history einfo maxevs = do
-  lift $ putStrLn ("history: einfo = " ++ show einfo ++ ", maxevs = " ++ show maxevs)
+history einfo@(ename,eacts) maxevs = do
+  lift $ putStrLn ("history: ename = " ++ show ename ++ "\n\t eacts = " ++ show eacts ++ "\n\t maxevs = " ++ show maxevs)
   s@UnfolderState{..} <- get
+  lift $ putStrLn $ "history: calling partition_dependent("++ show maxevs++")"
+  lift $ putStrLn $ "partition_dependent: begin"
   (maxevs_h0,maxevs') <- lift $ partition_dependent einfo evts ([],[]) maxevs 
+  lift $ putStrLn $ "history: partition_dependent result = (deps = "++ show maxevs_h0++", indeps = " ++ show maxevs' ++ ")"
   -- @ going up the causality of maxevs' until all maximal events are dependent with tr
-  h0 <- lift $ pruneConfiguration evts maxevs_h0 maxevs'
+  h0 <- if null maxevs' 
+        then return maxevs_h0
+        else do 
+    lift $ putStrLn $ "history: calling pruneConfiguration("++show maxevs'++")"
+    lift $ pruneConfiguration evts maxevs_h0 maxevs'
   -- @ ASSERT: h0 does not contain repeated elements
-  lift $ putStrLn ("history result: " ++ show h0)
+  lift $ putStrLn ("history: result = " ++ show h0)
   return h0
  where
     -- | pruneConfiguration
@@ -252,16 +286,20 @@ history einfo maxevs = do
     --   go up in the causality to search for the rest of maximal events that are dependent
     pruneConfiguration events pre_his es = do
       -- immd predecessors of es
-      predes <- mapM (\e -> get_pred e events) es >>= return . nub . concat
+      prdes <- mapM (\e -> get_pred e events) es >>= return . nub . concat
       -- filter the predecessors that are not maximal
       -- @ FIXME: Optimise this!
       -- @ NOTE: CRITICAL: THIS NEEDS TO BE CHANGED JUNE 06'16
       mpredes <- filterM (\e -> successors e events >>= 
-                          \succe -> return $ null $ succe `intersect` (pre_his ++ predes)) predes
+                          \succe -> return $ null $ succe `intersect` (pre_his ++ prdes)) prdes
       -- split between dependent and independent 
+      putStrLn $ "pruneConfiguration: calling partition_dependent("++ show mpredes++")"
+      putStrLn $ "partition_dependent: begin"
       (pre_his',es') <- partition_dependent einfo events (pre_his,[]) mpredes
       if null es'
-      then return pre_his' 
+      then do
+        putStrLn "pruneConfiguration: end" 
+        return pre_his' 
       else pruneConfiguration events pre_his' es'
 
 -- | histories : worklist algorithm 
@@ -276,7 +314,10 @@ history einfo maxevs = do
 histories :: (GCS.Collapsible st act) => EventInfo act -> EventID -> Histories -> Histories -> UnfolderOp st act Histories
 histories einfo@(ename,_) e wlist hists =
   case wlist of
-    [] -> return hists
+    [] -> do
+      let hists_res = nub hists
+      lift $ putStrLn $ "histories: result = " ++ show hists_res
+      return hists_res
     (h:hs) -> do
       s@UnfolderState{..} <- get
       -- Removes *e* and all the events from the same thread
@@ -284,14 +325,14 @@ histories einfo@(ename,_) e wlist hists =
       -- considered for pruning 
       let h' = e `delete` h
       hc <- lift $ filterM (\e' -> get_event "computeHistories" e' evts 
-                        >>= \ev@Event{..} -> return $ name /= ename) h' 
+                        >>= \ev@Event{..} -> return $ fst3 name /= fst3 ename) h' 
       -- replace one of the maximal events with the predecessors
       -- and prune the configuration
       hs' <- mapM (next_history h) hc
-      let chs = nub hs' -- remove the repeated in the new histories
+      let chs = nub hs' -- remove the repeated new histories
           wlist' = filter (\h -> not $ h `elem` hs) chs -- filter the ones in the worklist
           nwlist = wlist' ++ hs
-          nhists = filter (\h -> not $ h `elem` hists) chs -- filter the ones in the other set 
+          nhists = chs ++ hists 
       histories einfo e nwlist nhists 
  where
    -- @ next_history 
@@ -308,6 +349,7 @@ histories einfo@(ename,_) e wlist hists =
      -- @ NOTE: CRITICAL: THIS NEEDS TO BE CHANGED JUNE 06'16
      prede' <- lift $ filterM (\e -> successors e evts >>= 
                                \succe -> return $ null $ succe `intersect` h') prede
+     lift $ putStrLn $ "next_history: calling history(" ++ show (h'++prede') ++ ")"
      history einfo (h'++prede')
 
 -- | Going to compute the histories of a lock event.
@@ -418,11 +460,14 @@ histories_lock info@(ne_name,ne_acts) e preds_e hs =
 add_event :: (GCS.Collapsible st act) => EventsID -> [(EventID,Event act)] -> EventName -> act -> History -> UnfolderOp st act EventsID 
 add_event stack dup name acts history = do
   lift $ putStrLn ("add_event: name = " ++ show name ++ ", hist = " ++ show history) 
+  _ <- lift $ getChar
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if not $ null hasDup  
   then if length hasDup > 1
        then error "add_event: the number of duplicates is higher than 1"
-       else return $ map fst hasDup 
+       else do 
+         lift $ putStrLn "add_event: event was already in the prefix" 
+         return $ map fst hasDup 
   else do 
     s@UnfolderState{..} <- get
     -- @  a) Computes the local history of the new event
@@ -441,10 +486,15 @@ add_event stack dup name acts history = do
         isCutoff <- cutoff gstlc sizeLocalHistory
         if isCutoff
         then do 
+          lift $ putStrLn "add_event: is cutoff!"
           inc_cutoffs
           return []
-        else add_ev localHistory evts 
-    else add_ev localHistory evts 
+        else do
+          lift $ putStrLn $ "add_event: calling add_ev("++show localHistory++")"
+          add_ev localHistory evts 
+    else do 
+      lift $ putStrLn $ "add_event: calling add_ev("++show localHistory++")"
+      add_ev localHistory evts 
  where
    add_ev localHistory evts = do
      -- Increment the number of events in the prefix
@@ -465,6 +515,7 @@ add_event stack dup name acts history = do
      -- @ 5. Update all events in the immediate conflicts to include neID as one 
      lift $ mapM (\e -> add_icnf neID e evts) cnfls 
      inc_evs_per_name name 
+     lift $ putStrLn $ "add_ev: event_id = " ++ show neID ++ ", history = " ++ show history ++ ", icfn = " ++ show cnfls
      return $! [neID]
 
    -- | Compute the global state of the local configuration

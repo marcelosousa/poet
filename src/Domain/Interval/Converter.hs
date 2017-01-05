@@ -68,7 +68,7 @@ convert fe =
   let (pos_main,sym_main) = get_entry "main" (cfgs fe) (symt fe)
       init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
       (acts,s@IntTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
-      st' = set_pos st (symId sym_main) sym_main sym_main pos_main  
+      st' = set_pos st (symId sym_main) sym_main pos_main  
   in trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
@@ -95,7 +95,7 @@ transformer_decls =
 
 -- | transformer for a declaration:
 transformer_decl :: SDeclaration -> IntTOp Act
-transformer_decl decl = do
+transformer_decl decl = trace ("transformer_decl: " ++ show decl) $ do
   case decl of
     TypeDecl ty -> error "convert_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
@@ -119,7 +119,7 @@ transformer_decl decl = do
 --   This function needs to receive a state and can 
 --   potentially create several states. 
 transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> IntTOp Act
-transformer_init id ty minit = do
+transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " with init " ++ show minit) $ do
   case minit of
     Nothing -> do
       s@IntTState{..} <- get
@@ -352,17 +352,26 @@ call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,Act)
 call_transformer_name name args = case name of
   "pthread_create" -> do
     s@IntTState{..} <- get
-    let th_id = get_expr_id $ args !! 0
+        -- write in the address of (args !! 0) of type
+        -- pthread_t, the pid of the new thread
+    let (tid,s') = inc_num_th st
+        th_id = get_addrs s' scope (args !! 0) 
+        s'' = modify_state scope s' th_id (IntVal [VInt tid]) 
+        -- retrieve the entry point of the thread code 
         th_sym = get_expr_id $ args !! 2
         th_name = get_symbol_name th_sym sym
         (th_pos,_) = get_entry th_name i_cfgs sym
-        st' = insert_thread st th_id th_sym th_pos
-    set_state st' 
-    return (IntVal [], create_thread_act th_sym) 
+        --
+        i_th_st = bot_th_state th_pos th_sym
+        th_states' = M.insert tid i_th_st (th_states s'')
+        res_st = s'' { th_states = th_states' } 
+    set_state res_st 
+    return (IntVal [], create_thread_act (SymId tid)) 
   "pthread_join" -> do
+    s@IntTState{..} <- get
     -- this transformer is only called if it is enabled 
-    let th_id = get_expr_id $ args !! 0
-    return (IntVal [], join_thread_act th_id) 
+    let tid = get_tid_expr scope st (args !! 0)
+    return (IntVal [], join_thread_act (SymId tid)) 
   "nondet" -> do 
     (lVal,lacts) <- transformer $ args !! 0
     (uVal,uacts) <- transformer $ args !! 1
@@ -490,20 +499,3 @@ applyLogic :: Sigma -> OpCode -> Expression -> Expression -> Maybe Sigma
 applyLogic s op lhs rhs =
 -}
 
--- | get the addresses of an identifier
---   super simple now by assuming not having pointers
-get_addrs_id :: IntState -> Scope -> SymId -> MemAddrs
-get_addrs_id st scope id = 
-  case M.lookup id (heap st) of
-    Nothing -> MemAddrs [MemAddr id scope] 
-    Just i  -> MemAddrs [MemAddr id Global] 
-
--- | get_addrs retrieves the information from the 
---   points to analysis.
---   Simplify to onlu consider the case where the 
---   the expression is a LHS (var or array index).
-get_addrs :: IntState -> Scope -> SExpression -> MemAddrs
-get_addrs st scope expr =
-  case expr of
-    Var id -> get_addrs_id st scope id 
-    _ -> error "get_addrs: not supported"

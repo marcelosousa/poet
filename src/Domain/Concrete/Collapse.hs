@@ -37,9 +37,9 @@ instance Collapsible CState Act where
         pos = case M.lookup tid control of
           Nothing -> error "collapse: tid is not represented in the control"
           Just p  -> p
-        th_sym = toThSym st tid 
+        th_sym = error "obsolete API" -- toThSym st tid 
         th_cfg = case M.lookup th_sym cfgs of
-          Nothing -> error $ "\n\ncollapse: cant find thread " ++ show (th_sym) ++ " in \n " ++ show cfgs
+          Nothing -> error $ "\n\ncollapse: cant find thread " ++ show tid ++ " in \n " ++ show cfgs
           Just cfg -> cfg 
     in gen_collapse tid th_sym cfgs symt th_cfg pos st
 

@@ -26,6 +26,7 @@ Executable poet
                     , random
                     , hashable 
                     , process 
+                    , ansi-terminal 
     Hs-Source-Dirs:   src/
     ghc-options:      -O3 -rtsopts
     Extensions:       DoAndIfThenElse

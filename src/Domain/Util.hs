@@ -43,7 +43,12 @@ data MemAddr
 data MemAddrs
   = MemAddrTop
   | MemAddrs [MemAddr]
-  deriving (Show,Eq)
+  deriving (Eq)
+
+instance Show MemAddrs where
+  show a = case a of
+    MemAddrTop -> "MemAddrTop"
+    MemAddrs l -> show l
 
 instance Ord MemAddrs where
   m1 <= m2 = case (m1,m2) of 

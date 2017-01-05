@@ -19,7 +19,7 @@ type Counter = Int
 -- @ Various type definitions related to Events 
 type EventID = Int
 type EventsID = [EventID]
-type EventName = (GCS.TId, GCS.Pos, SymId)
+type EventName = (GCS.TId, GCS.Pos, SymId) -- SymId does not make sense here!
 type EventInfo act = (EventName, act) 
 
 -- @ Value of the main HashTable

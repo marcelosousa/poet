@@ -16,15 +16,21 @@ import Data.List
 import Data.Map (Map)
 import Domain.Interval.Value
 import Domain.Util
+import Language.C.Syntax.Ops 
 import Language.SimpleC.AST
 import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
+import qualified Debug.Trace as T
 
+mtrace a b = b
 -- | Interval Memory Cell
 type IntMCell = MemCell SymId () IntValue
+
+instance Show IntMCell where
+  show (MCell _ val) = show val
 
 -- | Interval Heap
 type IntHeap = Map SymId IntMCell
@@ -42,17 +48,18 @@ data IntState =
   }
   deriving Eq
 
+h_u = "##############################################\n"
+h_d = "----------------------------------------------\n"
 instance Show IntState where
   show (IntState h s nt b) =
     let h_s = if M.null h 
-              then "Empty Heap"
-              else "Heap\n" ++ showIntHeap h
-        s_s = "Thread States\n" ++ showThStates s
-        t_s = "Number of threads " ++ show nt 
-    in s_s ++ t_s ++ "\n"
-    --in h_s ++ "\n" ++ s_s ++ "\n" ++ t_s ++ "\n"
+              then "\t\tEMPTY HEAP\n" ++ h_d
+              else "\t\tHEAP\n" ++ h_d ++ showIntHeap h ++ h_d
+        s_s = "\t\tTHREADS(" ++ show nt ++ ")\n" ++ h_d ++ showThStates s
+        i_s = h_u ++ "\t\tSTATE\n"++ h_d 
+    in i_s ++ h_s ++ "\n" ++ s_s ++ h_u 
 
-showIntHeap s = M.foldWithKey (\k m r -> show k ++ " := " ++ show m ++ "\n" ++ r) "" s
+showIntHeap s = M.foldWithKey (\k m r -> "    " ++ show k ++ " := " ++ show m ++ "\n" ++ r) "" s
 
 -- | A thread state is a control and local data
 type ThStates = Map TId ThState
@@ -61,35 +68,49 @@ data ThState =
   ThState
   { 
     th_pos    :: Pos
-  , th_id     :: SymId
   , th_cfg_id :: SymId 
   , th_locals :: Locals 
   } 
   deriving (Show,Eq,Ord)
 
-get_tid :: IntState -> SExpression -> TId
-get_tid st@IntState{..} expr =
-  let th_id = get_expr_id expr
-  in get_tid_aux th_id $ M.toList th_states 
- where
-   get_tid_aux th_id [] = error $ "get_tid: couldnt find thread for symbol " ++ show th_id
-   get_tid_aux th_id ((tid,th):ts) = 
-     if is_thread th_id th
-     then tid
-     else get_tid_aux th_id ts
+-- | get the addresses of an identifier
+--   super simple now by assuming not having pointers
+get_addrs_id :: IntState -> Scope -> SymId -> MemAddrs
+get_addrs_id st scope id = 
+  case M.lookup id (heap st) of
+    Nothing -> MemAddrs [MemAddr id scope] 
+    Just i  -> MemAddrs [MemAddr id Global] 
 
-is_thread :: SymId -> ThState -> Bool
-is_thread sym t@ThState{..} = sym == th_id
+-- | get_addrs retrieves the information from the 
+--   points to analysis.
+--   Simplify to only consider the case where the 
+--   the expression is a LHS (var or array index).
+get_addrs :: IntState -> Scope -> SExpression -> MemAddrs
+get_addrs st scope expr = mtrace ("get_addrs: " ++ show expr) $
+  case expr of
+    Var id -> get_addrs_id st scope id 
+    Unary CAdrOp e -> get_addrs st scope e 
+    _ -> error $ "get_addrs: not supported expr " ++ show expr
+
+get_tid_expr :: Scope -> IntState -> SExpression -> TId
+get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
+  -- get the address(es) referenced by expr
+  let th_addrs = get_addrs st scope expr 
+  in case read_memaddrs st th_addrs of
+    [] -> error $ "get_tid: couldnt find thread for expr " ++ show expr 
+    [v] -> case v of
+      IntVal [VInt tid] -> tid
+      _ -> error $ "get_tid: unexpected intvalue " ++ show v 
+    r -> error $ "get_tid: found too many threads for expr " ++ show expr ++ " " ++ show r 
 
 showThStates s = 
-  M.foldWithKey (\k t r -> "Thread " ++ show k ++ "\n" ++ showThState t ++ r) "" s
+  M.foldWithKey (\k t r -> "   Thread: PID = " ++ show k ++ showThState t ++ r) "" s
 
-showThState (ThState p i c s) = 
-  let p_s = "Position: " ++ show p
-      i_s = "Identifier: " ++ show i
-      c_s = "CFG Identifier: " ++ show c
-      l_s = showIntHeap s
-  in unlines [p_s,i_s,c_s,l_s]
+showThState (ThState p c s) = 
+  let p_s = ", LOC = " ++ show p
+      c_s = ", CFG ID = " ++ show c
+      l_s = "\n" ++ showIntHeap s
+  in p_s ++ c_s ++ l_s ++ "\n" ++ h_d 
 
 -- | Initial state which is not bottom
 empty_state :: IntState 
@@ -98,16 +119,16 @@ empty_state = IntState M.empty M.empty 1 False
 -- | Set the position in the cfg of a thread
 update_pc :: IntState -> TId -> Pos -> IntState
 update_pc i@IntState{..} tid pos = 
-  let th_st = M.update (\(ThState _ i c l) -> Just $ ThState pos i c l) tid th_states
+  let th_st = M.update (\(ThState _ c l) -> Just $ ThState pos c l) tid th_states
   in i { th_states = th_st }
 
 -- | Set the position in the cfg of a thread
 --   This can also initialize the state of a thread
-set_pos :: IntState -> TId -> SymId -> SymId -> Pos -> IntState 
-set_pos st@IntState{..} tid sym cfg_sym npos = 
+set_pos :: IntState -> TId -> SymId -> Pos -> IntState 
+set_pos st@IntState{..} tid cfg_sym npos = 
   let th_st' =
         case M.lookup tid th_states of
-          Nothing -> ThState npos sym cfg_sym M.empty 
+          Nothing -> ThState npos cfg_sym M.empty 
           Just t@ThState{..} -> t { th_pos = npos }
       th_states' = M.insert tid th_st' th_states 
   in st { th_states = th_states' }
@@ -165,9 +186,6 @@ instance Projection IntState where
   controlPart st@IntState{..} = M.map th_pos th_states
   subsumes a b = subsumes_interval a b
   isBottom = is_bot 
-  toThSym st@IntState{..} tid = case M.lookup tid th_states of
-    Nothing -> error $ "toThSym: invalid tid " ++ show tid
-    Just t@ThState{..} -> th_id 
   toThCFGSym st@IntState{..} tid = case M.lookup tid th_states of
     Nothing -> error $ "toThCFGSym: invalid tid " ++ show tid
     Just t@ThState{..} -> th_cfg_id 
@@ -198,10 +216,10 @@ ite e_str a b
 join_intthst :: ThState -> ThState -> ThState
 join_intthst t1 t2 =
   let _pos    = ite "join_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
-      _id     = ite "join_intthst: diff th_id"     (th_id     t1) (th_id     t2) 
+  --    _id     = ite "join_intthst: diff th_id"     (th_id     t1) (th_id     t2) 
       _cfg_id = ite "join_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
       _locals = M.unionWith iJoin (th_locals t1) (th_locals t2) 
-  in ThState _pos _id _cfg_id _locals
+  in ThState _pos _cfg_id _locals
 
 join_intmcell :: IntMCell -> IntMCell -> IntMCell
 join_intmcell m1 m2 =
@@ -255,8 +273,27 @@ modify_state scope st addrs vals =
            Local i -> insert_local st i base conval 
        Just _ -> modify_heap st base conval  
 
-bot_th_state :: Pos -> SymId -> SymId -> ThState
-bot_th_state pos id cfg_id = ThState pos id cfg_id M.empty
+-- @TODO: Return a list of a just a intvalue by doing a join over all results?
+read_memaddrs :: IntState -> MemAddrs -> [IntValue]
+read_memaddrs st addrs = mtrace ("read_memaddrs: " ++ show addrs) $  
+  case addrs of 
+    MemAddrTop -> error "read_memaddrs: have not implemented MemAddrTop"
+    MemAddrs l -> map (read_memaddr st) l
+
+read_memaddr :: IntState -> MemAddr -> IntValue
+read_memaddr st addr = mtrace ("read_memaddr " ++ show addr) $
+  case level addr of
+    Global -> case M.lookup (base addr) (heap st) of 
+      Nothing   -> error $ "read_memaddr: " ++ show addr 
+      Just cell -> val cell
+    Local tid -> case M.lookup tid (th_states st) of   
+      Nothing -> error $ "read_memaddr: tid " ++ show tid ++ " not found with addr " ++ show addr
+      Just th -> case M.lookup (base addr) (th_locals th) of
+        Nothing -> error $ "read_memaddr: " ++ show addr
+        Just value -> value 
+ 
+bot_th_state :: Pos -> SymId -> ThState
+bot_th_state pos cfg_id = ThState pos cfg_id M.empty
 
 inc_num_th :: IntState -> (Int, IntState)
 inc_num_th s@IntState{..} =
@@ -266,7 +303,7 @@ inc_num_th s@IntState{..} =
 insert_thread :: IntState -> SymId -> SymId -> Pos -> IntState 
 insert_thread s sym cfg_sym pos =
   let (tid,s'@IntState{..}) = inc_num_th s
-      th = bot_th_state pos sym cfg_sym
+      th = bot_th_state pos cfg_sym
       th_states' = M.insert tid th th_states
   in s' { th_states = th_states' }
 
@@ -283,8 +320,8 @@ instance Hashable ThStates where
   hashWithSalt s th = hashWithSalt s $ M.toList th
 
 instance Hashable ThState where
-  hash th@ThState{..} = hash (th_pos,th_id,th_cfg_id,th_locals)
-  hashWithSalt s th@ThState{..} = hashWithSalt s (th_pos,th_id,th_cfg_id,th_locals)
+  hash th@ThState{..} = hash (th_pos,th_cfg_id,th_locals)
+  hashWithSalt s th@ThState{..} = hashWithSalt s (th_pos,th_cfg_id,th_locals)
 
 instance Hashable Locals where
   hash = hash . M.toList

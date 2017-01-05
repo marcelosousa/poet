@@ -39,6 +39,9 @@ data ConValue
 -- | Concrete Memory Cell
 type ConMCell = MemCell SymId () ConValue
 
+instance Show ConMCell where
+  show (MCell ty val) = show val
+
 -- | Concrete Heap
 type ConHeap = Map SymId ConMCell
 
@@ -160,10 +163,10 @@ instance Projection Sigma where
   controlPart st@Sigma{..} = M.map pos th_states
   subsumes a b = subsumes_concrete a b
   isBottom = is_bot 
-  toThSym st@Sigma{..} tid =
-    case M.lookup tid th_states of
-      Nothing -> error "toThSym sigma failed"
-      Just s@ThState{..} -> id
+--  toThSym st@Sigma{..} tid =
+--    case M.lookup tid th_states of
+--      Nothing -> error "toThSym sigma failed"
+--      Just s@ThState{..} -> id
 
 instance Projection CState where
   controlPart (CState a) =
@@ -175,7 +178,7 @@ instance Projection CState where
             else S.elemAt 0 s
   subsumes (CState a) (CState b) = S.isSubsetOf b a
   isBottom (CState a) = S.null a
-  toThSym (CState a) tid = toThSym (S.elemAt 0 a) tid
+ -- toThSym (CState a) tid = toThSym (S.elemAt 0 a) tid
  
 -- | API for modifying the state
 

@@ -285,12 +285,18 @@ filterEvent e events = do
 -- | Splits between events that are dependent and independent of
 -- the event name and actions
 partition_dependent :: (Show act, GCS.Action act) => EventInfo act -> Events act -> (EventsID, EventsID) -> EventsID -> IO (EventsID, EventsID)
-partition_dependent êinfo events (dep,indep) es =
+partition_dependent êinfo events (dep,indep) es = do
   case es of
-    [] -> return (dep,indep)
+    [] -> do
+      putStrLn "partition_dependent: end" 
+      return (dep,indep)
     (e:r) -> do
       ev@Event{..} <- get_event "partition_dependent" e events
-      if is_dependent êinfo (name,acts)
+      let is_dep = is_dependent êinfo (name,acts)
+      putStrLn $ "\t e = " ++ show e ++ ", result = " ++ show is_dep  
+      putStrLn $ "\t name = " ++ show name 
+      putStrLn $ "\t acts = " ++ show acts 
+      if is_dep 
       then partition_dependent êinfo events (e:dep,indep) r
       else partition_dependent êinfo events (dep,e:indep) r
 
@@ -314,10 +320,10 @@ is_dependent a@((pid,_,tid),acts) b@((pid',_,tid'),acts') =
   let c1 = pid == GCS.botID || pid' == GCS.botID
       c2 = pid == pid' 
       c3 = GCS.interferes acts acts'
-      c4 = GCS.isCreateOf tid acts' 
-      c5 = GCS.isCreateOf tid' acts
+      c4 = GCS.isCreateOf (SymId pid) acts' 
+      c5 = GCS.isCreateOf (SymId pid') acts
       r  = or [c1,c2,c3,c4,c5] 
-  in T.trace ("is_dependent = " ++ show r ++ ":\n\t" ++ show a ++ "\n\t" ++ show b) $ r
+  in r
 
 -- "UBER" EXPENSIVE OPERATIONS THAT SHOULD BE AVOIDED!
 -- predecessors (local configuration) and sucessors of an event

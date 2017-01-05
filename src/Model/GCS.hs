@@ -52,6 +52,7 @@ type Frontier = [NodeId]
 type Pos = NodeId
 -- Thread/Transition ID
 type TId = Int
+type SymAddr = Int
 
 -- | main_tid 0 is the tid for main
 main_tid :: TId
@@ -70,7 +71,7 @@ class Projection st where
   controlPart :: st -> Control 
   subsumes :: st -> st -> Bool
   isBottom :: st -> Bool
-  toThSym :: st -> TId -> SymId
+--  toThSym :: st -> TId -> SymId
   toThCFGSym :: st -> TId -> SymId
 
 class (Show act, Action act, Show st, Projection st) => Collapsible st act where
@@ -94,6 +95,7 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
  
 class (Eq act) => Action act where
   isBlocking :: act -> Bool
+  isJoin :: act -> Bool
   -- Given two sets of actions a1 and a2,
   -- check if there exists in a2 an unlock 
   -- or lock with an address that is touched

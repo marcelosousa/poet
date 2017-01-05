@@ -322,7 +322,7 @@ call_transformer_name :: String -> [SExpression] -> ConTOp (ConValues,Act)
 call_transformer_name name args = case name of
   "pthread_create" -> do --Debug.Trace.trace ("pthread_create transformer: " ++ show args) $ do
     s <- get
-    let th_id = get_expr_id $ args !! 0
+    let -- th_id = get_expr_id $ args !! 0
         th_sym = get_expr_id $ args !! 2
         th_name = get_symbol_name th_sym (sym s)
         th_pos = get_entry th_name (cfgst s) (sym s)

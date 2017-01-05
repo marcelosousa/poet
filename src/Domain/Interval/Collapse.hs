@@ -61,15 +61,15 @@ is_locked syst expr st =
          IntVal [VInt i] -> i == 1  
          _ -> error $ "is_locked fatal: lock has unsupported values " ++ show val 
 
-is_live :: System IntState Act -> EdgeId -> IntGraph -> IntState -> Bool
-is_live syst eId cfg st =
+is_live :: TId -> System IntState Act -> EdgeId -> IntGraph -> IntState -> Bool
+is_live tid syst eId cfg st = 
   let EdgeInfo tags code = get_edge_info cfg eId 
   in case code of
     E (Call fname args _) -> case fname of
       Var ident -> case get_symbol_name ident (symt syst) of
-        "pthread_join" -> 
-          let tid = get_tid st (args!!0) 
-          in not $ is_enabled syst st tid 
+        "pthread_join" ->
+          let tid' = get_tid_expr (Local tid) st (args!!0) 
+          in not $ is_enabled syst st tid' 
         "pthread_mutex_lock" -> not $ is_locked syst (args!!0) st 
         _ -> True 
       _ -> True
@@ -85,20 +85,21 @@ instance Collapsible IntState Act where
            Nothing  -> error $ "is_enabled fatal: tid " ++ show tid ++ " not found in cfgs"
            Just cfg -> case succs cfg pos of
              [] -> False
-             s  -> all (\(eId,nId) -> is_live syst eId cfg st) s
+             s  -> all (\(eId,nId) -> is_live tid syst eId cfg st) s
   collapse b syst@System{..} st tid = 
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
           Just p  -> p
         th_cfg_sym = case M.lookup tid (th_states st) of
-          Nothing -> error $ "collpase: cant find thread in the state " ++ show tid
+          Nothing -> error $ "collapse: cant find thread in the state " ++ show tid
           Just th_st -> th_cfg_id th_st 
         th_cfg = case M.lookup th_cfg_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
-    in T.trace ("collapse with thread " ++ show tid ++ ", position = " ++ show pos) $ 
-       fixpt b tid cfgs symt th_cfg pos st
+    in T.trace ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos) $ 
+       let res = fixpt b tid cfgs symt th_cfg pos st
+       in res `seq` (mtrace "collapse: end" $ res)
 
 -- @TODO: Receive other options for widening and state splitting
 fixpt :: Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
@@ -154,7 +155,12 @@ handle_mark (pre,eId,post) = do
   cfg' <- update_node_table node_table'
   -- find the final result of the post
   case M.lookup post $ node_table cfg' of
-    Just [(res_st,res_act)] -> return (res_st,post,res_act)
+    Just [(res_st,res_act)] -> do
+      let rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
+          e_act = exit_thread_act $ SymId fs_tid
+      if (Exit `elem` edge_tags) || null rwlst
+      then return (res_st,post,res_act `join_act` e_act)
+      else return (res_st,post,res_act)
     _ -> error "handle_mark: unexcepted value in the final node_table"
 
 fixpt_result :: FixOp ResultList
@@ -171,7 +177,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: Worklist -> FixOp ResultList 
-worklist _wlist = T.trace ("worklist: " ++ show _wlist) $ do
+worklist _wlist = mtrace ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -189,11 +195,12 @@ worklist _wlist = T.trace ("worklist: " ++ show _wlist) $ do
             -- execute the transformer
             D decl -> runState (transformer_decl decl) tr_st 
             E expr -> runState (transformer_expr expr) tr_st
+          rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
-      if isGlobal acts || (Exit `elem` edge_tags)
-      then T.trace ("is a global operation") $ do
+      if isGlobal acts || (Exit `elem` edge_tags) || null rwlst
+      then mtrace ("is a global operation") $ do
         add_mark it
         worklist wlist
       else do 
@@ -206,8 +213,7 @@ worklist _wlist = T.trace ("worklist: " ++ show _wlist) $ do
              -- the information in the cfg and add the succs of post to the worklist
              else strong_update (node_table fs_cfg) post (st,acts) 
         cfg' <- update_node_table node_table'
-        let rwlst = map (\(a,b) -> (post,a,b)) $ succs cfg' post
-            nwlist = if is_fix then wlist else (wlist ++ rwlst)
+        let nwlist = if is_fix then wlist else (wlist ++ rwlst)
         worklist nwlist
 
 join_update :: NodeTable -> NodeId -> (IntState, Act) -> (Bool, NodeTable)
