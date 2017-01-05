@@ -1,0 +1,173 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards #-}
+-------------------------------------------------------------------------------
+-- Module    :  Domain.Interval.API
+-- Copyright :  (c) 2017 Marcelo Sousa
+--
+-- This module defines the API functions
+-- to manipulate interval values and states 
+-------------------------------------------------------------------------------
+module Domain.Interval.API where
+
+import Data.IntMap (IntMap)
+import Data.List
+import Data.Map (Map)
+import Domain.Interval.State
+import Domain.Interval.Value
+import Domain.MemAddr
+import Domain.Util
+import Language.C.Syntax.Ops 
+import Language.SimpleC.AST
+import Language.SimpleC.Util
+import Model.GCS
+import Util.Generic hiding (safeLookup)
+import qualified Data.Map as M
+
+mtrace a b = b
+
+-- | API FOR INTERVAL STATE
+
+-- | Increment the thread counter
+inc_num_th :: IntState -> (Int, IntState)
+inc_num_th s@IntState{..} =
+  let n = num_th + 1
+  in (n,s { num_th = n })
+
+-- | Insert a thread into the state
+insert_thread :: IntState -> TId -> ThState -> IntState 
+insert_thread s@IntState{..} tid th =
+  let th_states' = M.insert tid th th_states
+  in s { th_states = th_states' }
+
+-- | Write to memory: receives a IntMAddrs and a
+--   IntValue and assigns the IntValue to the MemAddrs
+write_memory :: IntState -> IntMAddrs -> IntValue -> IntState
+write_memory st addrs vals =
+  case addrs of
+    MemAddrTop -> error "write_memory: top addrs, need to traverse everything"
+    MemAddrs l -> foldr (\a s -> write_memory_addr s a vals) st l
+
+-- | Write to memory of one address
+write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
+write_memory_addr st@IntState{..} addr@MemAddr{..} conval =
+  case level of
+    Global -> modify_heap st addr conval 
+    Local i -> insert_local st i addr conval 
+
+-- @TODO: Return a list of a just a intvalue by doing a join over all results?
+read_memory :: IntState -> IntMAddrs -> [IntValue]
+read_memory st addrs = mtrace ("read_memory: " ++ show addrs) $  
+  case addrs of 
+    MemAddrTop -> error "read_memory: have not implemented MemAddrTop"
+    MemAddrs l -> map (read_memory_addr st) l
+
+read_memory_addr :: IntState -> IntMAddr -> IntValue
+read_memory_addr st addr = mtrace ("read_memaddr " ++ show addr) $
+  case level addr of
+    Global -> case M.lookup addr (heap st) of 
+      Nothing   -> error $ "read_memory_addr: " ++ show addr 
+      Just cell -> val cell
+    Local tid -> case M.lookup tid (th_states st) of   
+      Nothing -> error $ "read_memaddr: tid " ++ show tid ++ " not found, addr " ++ show addr
+      Just th -> case M.lookup addr (th_locals th) of
+        Nothing -> error $ "read_memory_addr: " ++ show addr
+        Just value -> value 
+ 
+-- | Checks if an address is initialized in some part of the memory
+is_present :: Map IntMAddr a -> IntMAddr -> Bool
+is_present m k = case M.lookup k m of
+   Nothing -> False
+   Just i  -> True
+
+-- | API FOR HEAP
+-- | insert_heap: inserts an element to the heap
+insert_heap :: IntState -> IntMAddr -> STy -> IntValue -> IntState
+insert_heap st@IntState{..} addr ty val =
+  let cell = MCell ty val 
+      heap' = M.insert addr cell heap
+  in st {heap = heap'}  
+
+modify_heap :: IntState -> IntMAddr -> IntValue -> IntState
+modify_heap st@IntState{..} addr val = 
+  let heap' = M.update (update_conmcell val) addr heap
+  in st {heap = heap'}
+ where
+   update_conmcell :: IntValue -> IntMCell -> Maybe IntMCell
+   update_conmcell nval c@MCell{..} = Just $ c { val = nval } 
+
+-- | API FOR THREAD STATE
+-- | insert_local: inserts an element to local state 
+insert_local :: IntState -> TId -> IntMAddr -> IntValue -> IntState
+insert_local st@IntState{..} tid addr val = 
+ case M.lookup tid th_states of
+    Nothing -> error "insert_local: tid not found in th_states"
+    Just s@ThState{..} ->
+      let locals' = M.insert addr val th_locals
+          s' = s { th_locals = locals' }
+          th_states' = M.insert tid s' th_states
+      in st { th_states = th_states' }
+
+-- | Set the position in the cfg of a thread
+update_pc :: IntState -> TId -> Pos -> IntState
+update_pc i@IntState{..} tid pos = 
+  let th_st = M.update (\(ThState _ c l) -> Just $ ThState pos c l) tid th_states
+  in i { th_states = th_st }
+
+-- | Set the position in the cfg of a thread
+--   This can also initialize the state of a thread
+set_pos :: IntState -> TId -> SymId -> Pos -> IntState 
+set_pos st@IntState{..} tid cfg_sym npos = 
+  let th_st' =
+        case M.lookup tid th_states of
+          Nothing -> ThState npos cfg_sym M.empty 
+          Just t@ThState{..} -> t { th_pos = npos }
+      th_states' = M.insert tid th_st' th_states 
+  in st { th_states = th_states' }
+
+-- | Get the tid associated with an expression
+--   This is typically to be used in the pthread_{create, join}
+get_tid_expr :: Scope -> IntState -> SExpression -> TId
+get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
+  -- get the address(es) referenced by expr
+  let th_addrs = get_addrs st scope expr 
+  in case read_memory st th_addrs of
+    [] -> error $ "get_tid: couldnt find thread for expr " ++ show expr 
+    [v] -> case v of
+      IntVal [VInt tid] -> tid
+      _ -> error $ "get_tid: unexpected intvalue " ++ show v 
+    r -> error $ "get_tid: found too many threads for expr " ++ show expr ++ " " ++ show r 
+
+-- | get_addrs retrieves the information from the 
+--   points to analysis.
+--   Simplify to only consider the case where the 
+--   the expression is a LHS (var or array index).
+get_addrs :: IntState -> Scope -> SExpression -> IntMAddrs 
+get_addrs st scope expr = mtrace ("get_addrs: " ++ show expr) $
+  case expr of
+    Var id -> get_addrs_id st scope id 
+    Unary CAdrOp e -> get_addrs st scope e 
+    Index lhs rhs  -> error $ "get_addrs: index operation " ++ show (lhs, rhs)
+    _ -> error $ "get_addrs: not supported expr " ++ show expr
+
+-- | get the addresses of an identifier
+--   Because of variable shadowing the scope is necessary
+--   to check if the variable is also defined in the local
+--   scope of the thread.
+get_addrs_id :: IntState -> Scope -> SymId -> IntMAddrs 
+get_addrs_id st scope id = 
+  let addr = MemAddr id 0 scope
+  in case scope of
+    Local i -> 
+      case M.lookup i (th_states st) of
+        Nothing -> get_addrs_id st Global id  
+        Just th -> 
+          if is_present (th_locals th) addr
+          then MemAddrs [addr]
+          else get_addrs_id st Global id 
+    Global  -> 
+      if is_present (heap st) addr
+      then MemAddrs [addr]
+      else error "get_addrs_id: the symbol is not the heap" 
+
