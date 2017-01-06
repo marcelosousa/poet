@@ -18,6 +18,7 @@ import qualified Data.Set as S
 import qualified Model.GCS as GCS
 import Language.SimpleC.AST
 import System.Console.ANSI
+import qualified Debug.Trace as T
 
 getCharDebug = return ()
 clearScreenDebug = return ()
@@ -239,19 +240,19 @@ ext e maxevs st (tid,pos) êacts = do
       -- @ Compute other histories
       lift $ putStrLn $ "ext: computing conflicting extensions"
       -- @ If the action is a JOIN action, then we dont need to compute conflicting extensions 
-      his <- if GCS.isJoin êacts
+      his <- if GCS.isJoin êacts || GCS.isUnlock êacts
              then return []
              else  
-               if GCS.isBlocking êacts 
+               if GCS.isLock êacts 
                then do
                  -- @ Compute histories related to locks
-                 prede <- lift $ predecessors e evts 
                  lift $ putStrLn $ "ext: calling histories_lock"
-                 histories_lock (êname,êacts) e prede (e `delete` h0)
+                 histories_lock (êname,êacts) h0 
                else do 
                  lift $ putStrLn $ "ext: calling histories"
                  histories (êname,êacts) e [h0] [] 
       lift $ putStrLn $ "ext: conflicting extensions histories = " ++ show his
+      _ <- lift getCharDebug
       lift $ putStrLn "ext: adding conflicting extensions events"
       mapM (add_event stak succe êname êacts) his
       lift $ putStrLn "ext: finished adding conflicting extensions events"
@@ -356,100 +357,45 @@ histories einfo@(ename,_) e wlist hists =
      history einfo (h'++prede')
 
 -- | Going to compute the histories of a lock event.
---   Even though we define a blocking event to be both
---   a lock and a unlock event, since an unlock event
---   always has one immediate predecessor, by removing it 
---   histories_lock will always be called with
---   hs = []. 
 --   This history can be composed of at most two events
 --   one to enable this transition in the thread and 
 --   an unlock from another thread.
---   If the event e is in the thread, then we know
---   that e' must be a blocking event. 
---   If the event e is not in the thread, then we
---   know that it is a blocking event and so there
---   is no other history. 
-histories_lock :: (GCS.Collapsible st act) => EventInfo act -> EventID -> EventsID -> EventsID -> UnfolderOp st act Histories
-histories_lock info@(ne_name,ne_acts) e preds_e hs = 
+histories_lock :: (GCS.Collapsible st act) => EventInfo act -> EventsID -> UnfolderOp st act Histories
+histories_lock info@(ne_name,ne_acts) hs = do
+  lift $ putStrLn $ "histories_lock: ne_name = " ++ show ne_name ++ "\n\t ne_acts = " ++ show ne_acts ++ "\n\t hs = " ++ show hs
+  _ <- lift getCharDebug
   case hs of
-    [] -> return []
-    [e'] -> do 
-      -- @ Necessarily a lock event (see function header comment)
+    [e] -> return []
+    [e,e'] -> do 
       s@UnfolderState{..} <- get
-      ev <- lift $ get_event "histories_lock" e evts
-      if fst3 (name ev) == fst3 ne_name 
-      then do
-        -- @ proc(e) == proc(new_event)
-        --   Hence e' must be a blocking event, namely an unlock
-        ev' <- lift $ get_event "histories_lock" e' evts
-        let acte' = acts ev'
-        -- @ Check that indeed e' is an unlock.
-        -- @NOTE: Remove this check in production
-        if GCS.isUnlockOf ne_acts acte' 
-        then do
-          me'' <- prev_unlock info preds_e e'
-          case me'' of
-            -- @ [e] is not a valid history 
-            Nothing -> return []
-            -- @ [e] is a valid history
-            Just [] -> return [[e]]
-            -- @ [e,e''] is a valid history
-            --   and by construction e'' is unlock
-            Just [e''] -> do
-              let hN = [e,e'']
-              rest <- histories_lock info e preds_e [e'']
-              return $ hN:rest
-        else error $ "histories_lock: can't happen! " ++ show ne_acts ++ " " ++ show acte'
-      else return [] -- @ proc(e) != tr
-    _ -> error $ "histories_lock fatal :" ++ show (info,e,preds_e,hs)
- where
-   -- | finds the previous unlock in the causality chain of
-   --   an event that was an unlock.
-   --   Input:
-   --   einfo: meta information about the new event
-   --   preds_e: set of predecessors of the *event e*
-   --   e': the unlock event that we are going to remove
-   --       and find the previous in the causality chain
-   --   Returns the previous unlock it exists
-   prev_unlock einfo@(ename,eacts) preds_e e' = do
-     s@UnfolderState{..} <- get
-     iprede' <- lift $ get_pred e' evts
-     (es_done,es) <- lift $ partition_dependent einfo evts ([],[]) iprede' 
-     -- @ es_done is either empty or has one event
-     case es_done of
-       -- @ none of the immediate predecessors 
-       --   is dependent with the actions of the new event 
-       [] -> do
-         lres <- mapM (prev_unlock einfo preds_e) es >>= return . catMaybes
-         case lres of
-           Nothing -> return Nothing
-           Just [] -> return $ Just []
-           Just [x] -> return $ Just x
-           _ -> error "findPrevUnlock: not sure what happens here!"
-       [e] -> do
-         -- @ one of the immediate predecessors 
-         --   is a lock or an unlock 
-         ev@Event{..} <- lift $ get_event "findPrevUnlock" e evts
-         -- @ NOTE: Optimise this check; no need to traverse twice
-         if GCS.isLockOf eacts acts
-         -- @ it is a lock, check if it maximal
-         then if e `elem` preds_e                 
-              then return Nothing                 
-              else prev_unlock einfo preds_e e
-         -- @ it not a lock, must be an unlock?
-         --   check if it is maximal (found it if maximal!) 
-         else if GCS.isUnlockOf eacts acts
-              then if e `elem` preds_e 
-                   then return $ Just []
-                   else return $ Just [e]
-              else do
-                -- @ ASSERT: IS THIS CODE EVERY REACHABLE?
-                error "prev_unlock: an interferring event with a lock is not a lock or unlock"
-                -- let iacts = GCS.initialActs syst
-                -- if any (\a -> (GCS.Lock (GCS.varOf a)) `elem` iacts) act
-                -- then return Nothing
-                -- else return $ Just []
-       _ -> error "prev_unlock: two events are dependent and that can't happen"
+      ev  <- lift $ get_event "histories_lock" e evts
+      ev' <- lift $ get_event "histories_lock" e' evts
+      let acte = acts ev
+          acte' = acts ev'
+          (e_unlk, e_en) =
+            if GCS.isUnlockOf ne_acts acte
+            then 
+               T.trace ("histories_lock: e is an unlock " ++ show e) $
+               if GCS.isUnlockOf ne_acts acte'
+               then error $ "histories_lock: both events in the history are unlocks"
+               else (e, e') 
+            else if GCS.isUnlockOf ne_acts acte'
+                 then (e', e)
+                 else error $ "histories_lock: none of the events in the history is an unlock"
+      lift $ putStrLn $ "histories_lock: the event " ++ show e_unlk ++ " is an unlock"
+      -- Get the local configuration of both e_en and e_unlk
+      pred_e_en <- lift $ predecessors e_en evts
+      pred_e_unlk <- lift $ predecessors e_unlk evts
+      -- @TODO: Check if this is the intersecting the configurations properly?
+      let c_e_unlks = pred_e_unlk \\ (e_en:pred_e_en)
+      lift $ putStrLn $ "histories_lock: candidate unlocks = " ++ show c_e_unlks
+      e_unlks <- filterM (\c_e_unlk -> do 
+          c_ev_unlk <- lift $ get_event "histories_lock" c_e_unlk evts  
+          return $ GCS.isUnlockOf ne_acts (acts c_ev_unlk)) c_e_unlks 
+      if null e_unlks
+      then return [[e_en]]
+      else return $ map (\e -> [e,e_en]) e_unlks
+    _ -> error $ "histories_lock: too many events in the history " ++ show hs 
 
 -- @ add_event: Given a transition id and the history
 --   adds the correspondent event.

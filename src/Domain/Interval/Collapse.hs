@@ -60,9 +60,7 @@ is_locked st scope expr =
   let lk_addrs = get_addrs st scope expr 
   in case read_memory st lk_addrs of
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
-    [val] -> case val of 
-      IntVal [VInt i] -> i == 1  
-      _ -> error $ "is_locked fatal: lock has unsupported values " ++ show val 
+    [val] -> val == one 
     l -> error $ "is_locked fatal: lock has unsupported values " ++ show l 
 
 
@@ -79,12 +77,25 @@ is_live tid syst eId cfg st =
       Var ident -> case get_symbol_name ident (symt syst) of
         "pthread_join" ->
           let tid' = get_tid_expr (Local tid) st (args!!0) 
-          in not $ is_enabled syst st tid' 
+           -- not exited
+          -- in not $ is_enabled syst st tid' 
+          in has_exited syst st tid' 
          -- assume the mutex is declared globally 
         "pthread_mutex_lock" -> not $ is_locked st Global (args!!0)
         _ -> True 
       _ -> True
     _ -> True
+
+has_exited syst st tid = 
+  let control = controlPart st
+      tid_cfg_sym = toThCFGSym st tid
+  in case M.lookup tid control of
+       Nothing  -> False
+       Just pos -> case M.lookup tid_cfg_sym (cfgs syst) of 
+         Nothing  -> error $ "has_exited fatal: tid " ++ show tid ++ " not found in cfgs"
+         Just cfg -> case succs cfg pos of
+           [] -> True
+           _ -> False 
  
 instance Collapsible IntState IntAct where
   is_enabled syst st tid =

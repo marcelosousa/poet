@@ -43,6 +43,12 @@ data IntValue
 zero :: IntValue
 zero = InterVal (I 0,I 0) 
 
+k :: Int -> IntValue
+k n = InterVal (I n, I n)
+
+one :: IntValue
+one = InterVal (I 1, I 1)
+
 join_intval_list :: [IntValue] -> IntValue
 join_intval_list [] = error "join_intval_list: empty list"
 join_intval_list [x] = x

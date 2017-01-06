@@ -50,6 +50,12 @@ write_act sym offset scope = Act bot_maddrs (MemAddrs [MemAddr sym offset scope]
 write_act_addr :: MemAddrs v -> Act v
 write_act_addr addr = Act bot_maddrs addr bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
+lock_act_addr :: MemAddrs v -> Act v
+lock_act_addr addr = Act bot_maddrs bot_maddrs addr bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+
+unlock_act_addr :: MemAddrs v -> Act v
+unlock_act_addr addr = Act bot_maddrs bot_maddrs bot_maddrs addr bot_maddrs bot_maddrs bot_maddrs
+
 create_thread_act :: SymId -> v -> Act v
 create_thread_act tid offset = 
   Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid offset Global]) bot_maddrs bot_maddrs
@@ -79,18 +85,16 @@ add_writes ws act@Act{..} =
   in act { wrs = wrs' }
   
 instance Eq v => Action (Act v) where
-  isBlocking act@Act{..} = 
-    not (is_maddrs_bot locks && is_maddrs_bot unlocks)
+  isUnlock act@Act{..} = 
+    not $ is_maddrs_bot unlocks
+  isLock act@Act{..} = 
+    not $ is_maddrs_bot locks 
   isJoin act@Act{..} = 
-    not (is_maddrs_bot tjoin) 
+    not $ is_maddrs_bot tjoin
   isUnlockOf a1 a2 =
     let ulks2 = unlocks a2
-        f addr = is_maddrs_bot $ meet_maddrs addr ulks2 
-        r = f $ rds a1
-        w = f $ wrs a1
-        l = f $ locks a1 
-        u = f $ unlocks a1
-    in l && w && r && u 
+        lks1 = locks a1
+    in not $ is_maddrs_bot $ meet_maddrs lks1 ulks2 
   isLockOf a1 a2 = 
     let lks2 = locks a2
         f addr = is_maddrs_bot $ meet_maddrs addr lks2 

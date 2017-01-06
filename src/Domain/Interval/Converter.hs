@@ -178,24 +178,24 @@ transformer_decl decl = trace ("transformer_decl: " ++ show decl) $ do
 --   This function needs to receive a state and can 
 --   potentially create several states. 
 transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> IntTOp IntAct
-transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " with init " ++ show minit) $ do
+transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " with init " ++ show minit ++ ", ty = " ++ show ty) $ do
   case minit of
     Nothing -> do
       s@IntTState{..} <- get
-      let val = default_value ty
-          id_addr = MemAddr id 0 scope
+      (vals, i_acts) <- default_value ty
+      let id_addrs_vals = map (\(off,val) -> (MemAddr id (k off) scope, val)) $ zip [0..] vals 
           st' = case scope of 
-            Global -> insert_heap st id_addr ty val 
-            Local i -> write_memory_addr st id_addr val 
-          acts = write_act_addr $ MemAddrs [id_addr]
+            Global -> foldr (\(addr,val) _st -> insert_heap _st addr ty val) st id_addrs_vals 
+            Local i->foldr (\(addr,val) _st -> write_memory_addr st addr val) st id_addrs_vals 
+          acts = write_act_addr $ MemAddrs $ fst $ unzip id_addrs_vals 
       set_state st'
-      return acts
+      return $ acts `join_act` i_acts
     Just i  -> case i of
       InitExpr expr -> do
         -- for each state, we need to apply the transformer
         s@IntTState{..} <- get
         (val, acts) <- transformer expr
-        let id_addr = MemAddr id 0 scope
+        let id_addr = MemAddr id zero scope
             st' = case scope of 
               Global -> insert_heap st id_addr ty val 
               Local i -> write_memory_addr st id_addr val 
@@ -214,9 +214,18 @@ transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " wi
 --   generate a VPtr 0 (denoting NULL).
 --   If it is an array type ?
 --   If it is a struct type ? 
-default_value :: Ty SymId () -> IntValue 
-default_value ty = --  [ ConVal $ init_value ty ]
-  InterVal (I 0, I 0)
+default_value :: Ty SymId () -> IntTOp ([IntValue], IntAct)
+default_value (Ty declarators ty) =
+  case declarators of
+   [ArrDeclr t (ArrSize b size_expr)] -> do
+     (val, act) <- transformer size_expr
+     case val of
+       InterVal (I n, I m) ->
+         if n == m
+         then return (replicate n zero, bot_act) 
+         else error "default_value: unsupported interval for size expression" 
+       _ -> error "default_value: unsupported value for size expression"  
+   _ -> return ([zero], bot_act)
 
 -- | Transformers for interval semantics 
 -- Given an initial state and an expression
@@ -438,10 +447,36 @@ call_transformer_name name args = case name of
     set_state res_st
     mtrace ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (IntVal [], create_thread_act (SymId tid) zero) 
   "pthread_join" -> do
-    s@IntTState{..} <- get
     -- this transformer is only called if it is enabled 
+    s@IntTState{..} <- get
     let tid = get_tid_expr scope st (args !! 0)
     return (IntVal [], join_thread_act (SymId tid) zero) 
+  "pthread_exit" -> do
+    s@IntTState{..} <- get
+    case scope of
+      Global    -> error $ "pthread_exit: scope = Global"  
+      Local tid -> return (IntVal [], exit_thread_act (SymId tid) zero)
+  "pthread_mutex_lock" -> do
+    -- this transformer is only called if it is enabled 
+    s@IntTState{..} <- get
+    let mutex_addr = get_addrs st scope (args !! 0)
+        res_st = write_memory st mutex_addr one 
+    set_state res_st
+    return (one, lock_act_addr mutex_addr) 
+  "pthread_mutex_unlock" -> do
+    -- this transformer is only called if it is enabled 
+    s@IntTState{..} <- get
+    let mutex_addr = get_addrs st scope (args !! 0)
+        res_st = write_memory st mutex_addr zero 
+    set_state res_st
+    return (zero, unlock_act_addr mutex_addr) 
+  "pthread_mutex_init" -> do
+    -- this transformer is only called if it is enabled 
+    s@IntTState{..} <- get
+    let mutex_addr = get_addrs st scope (args !! 0)
+        res_st = write_memory st mutex_addr zero 
+    set_state res_st
+    return (zero, write_act_addr mutex_addr) 
   "nondet" -> do 
     (lVal,lacts) <- transformer $ args !! 0
     (uVal,uacts) <- transformer $ args !! 1

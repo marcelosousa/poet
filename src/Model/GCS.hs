@@ -94,7 +94,8 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   simple_run sys st name = fst $ dcollapse sys st name
  
 class (Eq act) => Action act where
-  isBlocking :: act -> Bool
+  isLock :: act -> Bool
+  isUnlock :: act -> Bool
   isJoin :: act -> Bool
   -- Given two sets of actions a1 and a2,
   -- check if there exists in a2 an unlock 
