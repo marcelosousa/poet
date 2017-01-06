@@ -12,6 +12,7 @@ import Language.SimpleC.AST
 import Domain.MemAddr
 import Domain.Util
 import Model.GCS
+import qualified Debug.Trace as T
 
 -- Default implementation of an
 -- Action using read write sets
@@ -40,6 +41,9 @@ bot_act =
 read_act :: SymId -> v -> Scope -> Act v
 read_act sym offset scope = Act (MemAddrs [MemAddr sym offset scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
+read_act_addr :: MemAddrs v -> Act v
+read_act_addr addr = Act addr bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
+
 write_act :: SymId -> v -> Scope -> Act v
 write_act sym offset scope = Act bot_maddrs (MemAddrs [MemAddr sym offset scope]) bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs
 
@@ -58,7 +62,7 @@ exit_thread_act :: SymId -> v -> Act v
 exit_thread_act tid offset = 
   Act bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs bot_maddrs (MemAddrs [MemAddr tid offset Global]) 
  
-join_act :: Eq v => Act v -> Act v -> Act v
+join_act :: (Eq v, Show v) => Act v -> Act v -> Act v
 join_act a1 a2 =
   let r = rds a1 `join_maddrs` rds a2 
       w = wrs a1 `join_maddrs` wrs a2 
@@ -106,7 +110,7 @@ instance Eq v => Action (Act v) where
     case tcreate of
       MemAddrTop -> True
       MemAddrs at -> any (\a -> case a of 
-         MemAddr tid_sym _ Global -> True
+         MemAddr tid_sym' _ Global -> tid_sym == tid_sym' 
          _ -> False) at 
 
 act_addrs :: Eq v => Act v -> MemAddrs v

@@ -11,6 +11,7 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.API where
 
+import Control.Monad.State.Lazy
 import Data.IntMap (IntMap)
 import Data.List
 import Data.Map (Map)
@@ -24,6 +25,7 @@ import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.Map as M
+import qualified Debug.Trace as T
 
 mtrace a b = b
 
@@ -52,6 +54,7 @@ write_memory st addrs vals =
 -- | Write to memory of one address
 write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
 write_memory_addr st@IntState{..} addr@MemAddr{..} conval =
+  T.trace ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show conval) $
   case level of
     Global -> modify_heap st addr conval 
     Local i -> insert_local st i addr conval 
@@ -64,7 +67,7 @@ read_memory st addrs = mtrace ("read_memory: " ++ show addrs) $
     MemAddrs l -> map (read_memory_addr st) l
 
 read_memory_addr :: IntState -> IntMAddr -> IntValue
-read_memory_addr st addr = mtrace ("read_memaddr " ++ show addr) $
+read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ++ "\n" ++ show st) $
   case level addr of
     Global -> case M.lookup addr (heap st) of 
       Nothing   -> error $ "read_memory_addr: " ++ show addr 
@@ -76,7 +79,7 @@ read_memory_addr st addr = mtrace ("read_memaddr " ++ show addr) $
         Just value -> value 
  
 -- | Checks if an address is initialized in some part of the memory
-is_present :: Map IntMAddr a -> IntMAddr -> Bool
+is_present :: Show a => Map IntMAddr a -> IntMAddr -> Bool
 is_present m k = case M.lookup k m of
    Nothing -> False
    Just i  -> True
@@ -125,49 +128,3 @@ set_pos st@IntState{..} tid cfg_sym npos =
           Just t@ThState{..} -> t { th_pos = npos }
       th_states' = M.insert tid th_st' th_states 
   in st { th_states = th_states' }
-
--- | Get the tid associated with an expression
---   This is typically to be used in the pthread_{create, join}
-get_tid_expr :: Scope -> IntState -> SExpression -> TId
-get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
-  -- get the address(es) referenced by expr
-  let th_addrs = get_addrs st scope expr 
-  in case read_memory st th_addrs of
-    [] -> error $ "get_tid: couldnt find thread for expr " ++ show expr 
-    [v] -> case v of
-      IntVal [VInt tid] -> tid
-      _ -> error $ "get_tid: unexpected intvalue " ++ show v 
-    r -> error $ "get_tid: found too many threads for expr " ++ show expr ++ " " ++ show r 
-
--- | get_addrs retrieves the information from the 
---   points to analysis.
---   Simplify to only consider the case where the 
---   the expression is a LHS (var or array index).
-get_addrs :: IntState -> Scope -> SExpression -> IntMAddrs 
-get_addrs st scope expr = mtrace ("get_addrs: " ++ show expr) $
-  case expr of
-    Var id -> get_addrs_id st scope id 
-    Unary CAdrOp e -> get_addrs st scope e 
-    Index lhs rhs  -> error $ "get_addrs: index operation " ++ show (lhs, rhs)
-    _ -> error $ "get_addrs: not supported expr " ++ show expr
-
--- | get the addresses of an identifier
---   Because of variable shadowing the scope is necessary
---   to check if the variable is also defined in the local
---   scope of the thread.
-get_addrs_id :: IntState -> Scope -> SymId -> IntMAddrs 
-get_addrs_id st scope id = 
-  let addr = MemAddr id 0 scope
-  in case scope of
-    Local i -> 
-      case M.lookup i (th_states st) of
-        Nothing -> get_addrs_id st Global id  
-        Just th -> 
-          if is_present (th_locals th) addr
-          then MemAddrs [addr]
-          else get_addrs_id st Global id 
-    Global  -> 
-      if is_present (heap st) addr
-      then MemAddrs [addr]
-      else error "get_addrs_id: the symbol is not the heap" 
-

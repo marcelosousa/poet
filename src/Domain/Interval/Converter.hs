@@ -28,6 +28,7 @@ import Domain.Action
 import Domain.MemAddr
 import Domain.Util
 
+import qualified Model.GCS as GCS
 import Language.C.Syntax.Ops 
 import Language.C.Syntax.Constants
 import Language.SimpleC.AST hiding (Value)
@@ -63,6 +64,62 @@ join_state nst = do
   let fst = nst `join_intstate` st
   put s { st = fst }
 
+-- | API for accessing the memory
+
+-- | Get the tid associated with an expression
+--   This is typically to be used in the pthread_{create, join}
+get_tid_expr :: Scope -> IntState -> SExpression -> GCS.TId
+get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
+  -- get the address(es) referenced by expr
+  let th_addrs = get_addrs st scope expr 
+  in case read_memory st th_addrs of
+    [] -> error $ "get_tid: couldnt find thread for expr " ++ show expr 
+    [v] -> case v of
+      IntVal [VInt tid] -> tid
+      _ -> error $ "get_tid: unexpected intvalue " ++ show v 
+    r -> error $ "get_tid: found too many threads for expr " ++ show expr ++ " " ++ show r 
+
+-- | get_addrs retrieves the information from the 
+--   points to analysis.
+--   Simplify to only consider the case where the 
+--   the expression is a LHS (var or array index).
+get_addrs :: IntState -> Scope -> SExpression -> IntMAddrs 
+get_addrs st scope expr = mtrace ("get_addrs: " ++ show expr) $
+  case expr of
+    Var id -> get_addrs_id st scope id 
+    Unary CAdrOp e -> get_addrs st scope e 
+    Index lhs rhs  -> 
+      case get_addrs st scope lhs of
+        MemAddrTop -> error $ "get_addrs: lhs of index operation points to MemAddrTop"
+        MemAddrs l ->
+          let error_msg = error "get_addrs: called the transformer with missing information"
+              tr_st = IntTState scope st error_msg error_msg False
+              (val,_) = evalState (transformer rhs) tr_st
+              l' = map (flip set_offset val) l 
+          in MemAddrs l'
+    _ -> error $ "get_addrs: not supported expr " ++ show expr
+
+-- | get the addresses of an identifier
+--   Because of variable shadowing the scope is necessary
+--   to check if the variable is also defined in the local
+--   scope of the thread.
+get_addrs_id :: IntState -> Scope -> SymId -> IntMAddrs 
+get_addrs_id st scope id = trace ("get_addrs_id: id = " ++ show id ++ ", scope = " ++ show scope ++ "\n" ++ show st) $   
+  let addr = MemAddr id 0 scope
+  in case scope of
+    Local i -> 
+      case M.lookup i (th_states st) of
+        Nothing -> get_addrs_id st Global id  
+        Just th -> 
+          if trace ("get_addrs_id: addr = " ++ show addr) $ is_present (th_locals th) addr
+          then MemAddrs [addr]
+          else get_addrs_id st Global id 
+    Global  -> 
+      if is_present (heap st) addr
+      then MemAddrs [addr]
+      else error "get_addrs_id: the symbol is not the heap" 
+
+
 -- | converts the front end into a system
 -- @REVISED: July'16
 convert :: FrontEnd () (IntState,IntAct) -> GCS.System IntState IntAct
@@ -71,7 +128,7 @@ convert fe =
       init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
       (acts,s@IntTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
       st' = set_pos st (symId sym_main) sym_main pos_main  
-  in trace ("convert: " ++ show (cfgs fe)) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
+  in trace ("convert: initial state = " ++ show st) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
 
 -- | retrieves the entry node of the cfg of a function
 get_entry :: String -> Graphs SymId () (IntState, IntAct) -> Map SymId Symbol -> (GCS.Pos, SymId)
@@ -92,14 +149,14 @@ get_entry fnname graphs symt =
 
 -- | processes a list of declarations 
 transformer_decls :: [SDeclaration] -> IntTOp IntAct
-transformer_decls =
+transformer_decls = trace ("transformer_decls!!!!") $
   foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
 
 -- | transformer for a declaration:
 transformer_decl :: SDeclaration -> IntTOp IntAct
 transformer_decl decl = trace ("transformer_decl: " ++ show decl) $ do
   case decl of
-    TypeDecl ty -> error "trannsformer_decl: not supported yet"
+    TypeDecl ty -> error "transformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
       case declarator of
         Nothing -> 
@@ -127,7 +184,9 @@ transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " wi
       s@IntTState{..} <- get
       let val = default_value ty
           id_addr = MemAddr id 0 scope
-          st' = write_memory_addr st id_addr val  
+          st' = case scope of 
+            Global -> insert_heap st id_addr ty val 
+            Local i -> write_memory_addr st id_addr val 
           acts = write_act_addr $ MemAddrs [id_addr]
       set_state st'
       return acts
@@ -137,10 +196,12 @@ transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " wi
         s@IntTState{..} <- get
         (val, acts) <- transformer expr
         let id_addr = MemAddr id 0 scope
-            st' = write_memory_addr st id_addr val 
+            st' = case scope of 
+              Global -> insert_heap st id_addr ty val 
+              Local i -> write_memory_addr st id_addr val 
             acts' = add_writes (MemAddrs [id_addr]) acts
         set_state st'
-        return acts'
+        trace ("transformer_init: setting state = " ++ show st') $ return acts'
       InitList list -> error "transformer_init: initializer list is not supported"
 
 -- | Default value of a type
@@ -264,7 +325,7 @@ transformer e = trace ("transformer: " ++ show e) $
     CompoundLit decl initList -> error "transforemr: compound literal not supported" 
     Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
     Const const -> const_transformer const 
-    Index arr_expr index_expr -> error "transformer: index not supported"
+    Index arr_expr index_expr -> index_transformer arr_expr index_expr 
     LabAddrExpr ident -> error "transformer: labaddr not supported"
     Member expr ident bool -> error "transformer: member not supported"
     SizeofExpr expr -> error "transformer: sizeof expression not supported" 
@@ -275,6 +336,20 @@ transformer e = trace ("transformer: " ++ show e) $
     Var ident -> trace ("calling var_trans" ++ show ident) $ var_transformer ident 
     ComplexReal expr -> error "transformer: complex op not supported" 
     ComplexImag expr -> error "transformer: complex op not supported" 
+
+index_transformer :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
+index_transformer lhs rhs = do 
+  s@IntTState{..} <- get
+  case get_addrs st scope lhs of
+    MemAddrTop -> error $ "index_transformer: lhs of index operation points to MemAddrTop"
+    MemAddrs l -> do
+      (rhs_vals, rhs_acts) <- transformer rhs
+      let l' = map (flip set_offset val) l 
+          addrs = MemAddrs l'
+          vals = read_memory st addrs 
+          val = join_intval_list vals
+          res_acts = read_act_addr addrs `join_act` rhs_acts 
+      return (val, res_acts)    
 
 -- | Transformer for an assignment expression.
 assign_transformer :: AssignOp -> SExpression -> SExpression -> IntTOp (IntValue,IntAct)
@@ -346,7 +421,7 @@ call_transformer fn args =
 
 call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,IntAct)
 call_transformer_name name args = case name of
-  "pthread_create" -> do
+  "pthread_create" -> mtrace ("call_transformer: pthread_create" ++ show args) $ do
     s@IntTState{..} <- get
         -- write in the address of (args !! 0) of type
         -- pthread_t, the pid of the new thread
@@ -360,8 +435,8 @@ call_transformer_name name args = case name of
         --
         i_th_st = bot_th_state th_pos th_sym
         res_st = insert_thread s'' tid i_th_st 
-    set_state res_st 
-    return (IntVal [], create_thread_act (SymId tid) zero) 
+    set_state res_st
+    mtrace ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (IntVal [], create_thread_act (SymId tid) zero) 
   "pthread_join" -> do
     s@IntTState{..} <- get
     -- this transformer is only called if it is enabled 
@@ -436,7 +511,7 @@ unop_transformer unOp expr = do
   case unOp of
     CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
     CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
-    CPostIncOp -> error "unop_transformer: CPostIncOp not supported"   
+    CPostIncOp -> transformer $ Assign CAssignOp expr (Const const_one)  
     CPostDecOp -> error "unop_transformer: CPostDecOp not supported"   
     CAdrOp     -> error "unop_transformer: CAdrOp     not supported"    
     CIndOp     -> error "unop_transformer: CIndOp     not supported" 
@@ -449,7 +524,7 @@ unop_transformer unOp expr = do
 
 -- | Transformer for var expressions.
 var_transformer :: SymId -> IntTOp (IntValue, IntAct)
-var_transformer sym_id = do
+var_transformer sym_id = trace ("var_transformer: sym_id = " ++ show sym_id) $ do
   s@IntTState{..} <- get
   let id_addr = MemAddr sym_id zero scope
       val = read_memory_addr st id_addr

@@ -110,9 +110,11 @@ type UnfolderOp st act a = StateT (UnfolderState st act) IO a
 instance Show (UnfolderState st act) where
     show (u@UnfolderState{..}) = show stats 
 
-instance Show (Event act) where
-  show (Event name _ pred succ icnf disa alte) = 
-    "E " ++ show name ++ ", pred = " ++ show pred
+instance Show act => Show (Event act) where
+  show (Event name acts pred succ icnf disa alte) = 
+    "E " ++ show name 
+    -- ++ ", acts = " ++ show acts 
+    ++ ", pred = " ++ show pred
     ++ ", succ = " ++ show succ ++ ", icnf = " ++ show icnf 
     ++ ", disa = " ++ show disa ++ ", alte = " ++ show alte 
  

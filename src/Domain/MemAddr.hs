@@ -26,6 +26,9 @@ data MemAddr v
   }
   deriving (Show,Eq,Ord)
 
+set_offset :: MemAddr v -> v -> MemAddr v
+set_offset m offset_ = m { offset = offset_ }
+
 -- | Powerset domain of Memory Addresses
 data MemAddrs v
   = MemAddrTop

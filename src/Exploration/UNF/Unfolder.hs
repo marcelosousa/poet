@@ -19,11 +19,14 @@ import qualified Model.GCS as GCS
 import Language.SimpleC.AST
 import System.Console.ANSI
 
+getCharDebug = return ()
+clearScreenDebug = return ()
+
 unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
 unfolder stl cut syst = do 
   putStrLn $ "UNFOLDER BEGIN:\n" ++ show_symt (GCS.symt syst) 
-  getChar
-  clearScreen
+  getCharDebug
+  clearScreenDebug
   is    <- i_unf_state stl cut syst 
   (a,s) <- runStateT bot_explore is 
   return $! s
@@ -53,7 +56,7 @@ initial_ext = do
   let iConf = Conf st cevs enevs []
   put s{ pcnf = iConf }
   lift $ putStrLn $ "EXTENSIONS FROM BOTTOM END"  
-  _ <- lift $ getChar
+  _ <- lift $ getCharDebug
   return $! iConf
 
 separator = "-----------------------------------------\n"
@@ -68,12 +71,12 @@ explore :: GCS.Collapsible st act => Configuration st -> EventID -> EventsID -> 
 explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
-  lift $ clearScreen
+  lift $ clearScreenDebug
   lift $ putStrLn (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak
        ++")\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 
-  k <- lift $ getChar
+  k <- lift $ getCharDebug
   -- @ configuration is maximal?
   -- if null enevs 
   if null enevs 
@@ -152,7 +155,7 @@ unfold conf@Conf{..} e = do
   lift $ putStrLn $ "unfold: enabled threads = " ++ show entrs
   lift $ putStrLn $ "unfold: independent enabled events = " ++ show senevs
   lift $ putStrLn $ "unfold: new events of threads = " ++ show netrs
-  _ <- lift $ getChar
+  _ <- lift $ getCharDebug
   nnevs <- mapM (extend e nmaxevs nstc) netrs >>= return . concat  
   -- @ compute all the events of the configuration 
   let confEvs = e:stak
@@ -212,7 +215,7 @@ extend e maxevs st th = do
 -- *e* as an immediate predecessor and returns the event with history h0.
 ext :: (Show act, GCS.Collapsible st act) => EventID -> EventsID -> st -> (GCS.TId, GCS.Pos) -> act -> UnfolderOp st act EventsID
 ext e maxevs st (tid,pos) êacts = do 
-  _ <- lift $ getChar
+  _ <- lift $ getCharDebug
   let tid_sym = GCS.toThCFGSym st tid 
       êname = (tid,pos,tid_sym)
   lift $ putStrLn $ "ext: extensions with name " ++ show êname 
@@ -224,7 +227,7 @@ ext e maxevs st (tid,pos) êacts = do
   -- @ computes h0, the maximal history:
   lift $ putStrLn $ "ext: calling history to compute the enabled extension (h0)"
   h0 <- history (êname,êacts) maxevs 
-  _ <- lift $ getChar
+  _ <- lift $ getCharDebug
   if null h0
   then error $ "null h0 at expandWith(e="++show e
              ++",name="++show êname++",maxevs="++show maxevs++")"
@@ -460,7 +463,7 @@ histories_lock info@(ne_name,ne_acts) e preds_e hs =
 add_event :: (GCS.Collapsible st act) => EventsID -> [(EventID,Event act)] -> EventName -> act -> History -> UnfolderOp st act EventsID 
 add_event stack dup name acts history = do
   lift $ putStrLn ("add_event: name = " ++ show name ++ ", hist = " ++ show history) 
-  _ <- lift $ getChar
+  _ <- lift $ getCharDebug
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
   if not $ null hasDup  
   then if length hasDup > 1
@@ -507,6 +510,7 @@ add_event stack dup name acts history = do
                               \es -> return $ es ++ a) [] localHistory >>= return . nub 
      -- @  c) Compute the immediate conflicts
      cnfls <- lift $ compute_conflicts (name,acts) localHistory lhCnfls evts >>= return . nub
+     lift $ putStrLn $ "add_ev: compute_conflicts result = " ++ show cnfls
      -- @ 3. Insert the new event in the hash table
      let e = Event name acts history [] cnfls [] [] -- gstlc sizeLocalHistory
      lift $ set_event neID e evts 
@@ -516,6 +520,7 @@ add_event stack dup name acts history = do
      lift $ mapM (\e -> add_icnf neID e evts) cnfls 
      inc_evs_per_name name 
      lift $ putStrLn $ "add_ev: event_id = " ++ show neID ++ ", history = " ++ show history ++ ", icfn = " ++ show cnfls
+     _ <- lift $ getCharDebug
      return $! [neID]
 
    -- | Compute the global state of the local configuration
@@ -559,6 +564,8 @@ add_event stack dup name acts history = do
 --  Changed for a worklist
 compute_conflicts :: (Show act, GCS.Action act) => EventInfo act -> EventsID -> EventsID -> Events act -> IO EventsID
 compute_conflicts einfo lh lhCnfls events = do 
+  putStrLn $ "compute_conflicts: einfo = " ++ show einfo  
+  putStrLn $ "compute_conflicts: local history = " ++ show lh 
   ev@Event{..} <- get_event "compute_conflicts" botEID events
   compute_conflict [] succ []
   where

@@ -38,20 +38,25 @@ data IntValue
   -- Array value
   -- Memory address for the positions and the size
   | IntArr [IntValue] Int Bool -- IsTop 
-  deriving (Show,Eq)
+  deriving (Show,Ord,Eq)
 
 zero :: IntValue
-zero = IntVal [VInt 0]
+zero = InterVal (I 0,I 0) 
 
-instance Ord IntValue where
-  (<=) (IntVal i) (IntVal j) = (S.fromList i) `S.isSubsetOf` (S.fromList j)
-  (<=) (InterVal (a,b)) (InterVal (c,d)) = a >= c && b <= d
-  (<=) (IntArr i n _) (IntArr j m _) = n <= m && i <= j  
-  (<=) IntBot (InterVal _) = True
-  (<=) IntTop IntTop = True
-  (<=) IntTop (InterVal i) = i == (MinusInf, PlusInf) 
-  (<=) (InterVal i) IntTop = i == (MinusInf, PlusInf) 
-  (<=) _ _ = False
+join_intval_list :: [IntValue] -> IntValue
+join_intval_list [] = error "join_intval_list: empty list"
+join_intval_list [x] = x
+join_intval_list (x:xs) = x `iJoin` (join_intval_list xs)  
+
+-- instance Ord IntValue where
+--   (<=) (IntVal i) (IntVal j) = (S.fromList i) `S.isSubsetOf` (S.fromList j)
+--   (<=) (InterVal (a,b)) (InterVal (c,d)) = a >= c && b <= d
+--   (<=) (IntArr i n _) (IntArr j m _) = n <= m && i <= j  
+--   (<=) IntBot (InterVal _) = True
+--   (<=) IntTop IntTop = True
+--   (<=) IntTop (InterVal i) = i == (MinusInf, PlusInf) 
+--   (<=) (InterVal i) IntTop = i == (MinusInf, PlusInf) 
+--   (<=) _ _ = False
 
 top_interval :: IntValue
 top_interval = InterVal (MinusInf, PlusInf)

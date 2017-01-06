@@ -84,7 +84,7 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   collapse :: Bool -> System st act -> st -> TId -> [(st,Pos,act)]
   dcollapse :: System st act -> st -> (TId,Pos,SymId) -> (st,act)
   dcollapse syst st (tid,pos,_) =
-    let results = collapse False syst st tid
+    let results = collapse True syst st tid
         result = filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"

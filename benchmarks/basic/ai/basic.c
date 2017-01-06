@@ -3,22 +3,25 @@
 int x = 0;
 
 void *p(void* arg){
-  int y = 1;
+  x = 1;
 }
 
 
 int main(){
   /* references to the threads */
   pthread_t p_t[2];
-  
+  int i = 0; 
   /* create the threads and execute */
-  pthread_create(&p_t[0], NULL, p, NULL);
-  pthread_create(&p_t[1], NULL, p, NULL);
-  
+  pthread_create(&p_t[i], NULL, p, NULL);
+  i++;
+  pthread_create(&p_t[i], NULL, p, NULL);
+  i = 0;
+   
+  x=2;
   /* wait for the threads to finish */
-  pthread_join(&p_t[1], NULL);
-  pthread_join(&p_t[0], NULL);
- 
+  pthread_join(&p_t[i], NULL);
+  i++;
+  pthread_join(&p_t[i], NULL);
   return 0;
 }
 
