@@ -84,7 +84,7 @@ get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
 --   Simplify to only consider the case where the 
 --   the expression is a LHS (var or array index).
 get_addrs :: IntState -> Scope -> SExpression -> IntMAddrs 
-get_addrs st scope expr = mtrace ("get_addrs: " ++ show expr) $
+get_addrs st scope expr = T.trace ("get_addrs: scope = " ++ show scope ++ ", expr = " ++ show expr) $
   case expr of
     Var id -> get_addrs_id st scope id 
     Unary CAdrOp e -> get_addrs st scope e 
@@ -485,6 +485,7 @@ call_transformer_name name args = case name of
        return (InterVal (I l, I u),lacts `join_act` uacts)
       (l, u) -> 
        return (l `iJoin` u,lacts `join_act` uacts)
+  "poet_error" -> error "poet_error: assertion is violated" 
   _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
 
 -- Need to apply the cut over the state
@@ -546,7 +547,7 @@ unop_transformer unOp expr = do
   case unOp of
     CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
     CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
-    CPostIncOp -> transformer $ Assign CAssignOp expr (Const const_one)  
+    CPostIncOp -> transformer $ Assign CAddAssOp expr (Const const_one)  
     CPostDecOp -> error "unop_transformer: CPostDecOp not supported"   
     CAdrOp     -> error "unop_transformer: CAdrOp     not supported"    
     CIndOp     -> error "unop_transformer: CIndOp     not supported" 
