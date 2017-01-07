@@ -291,21 +291,21 @@ apply_logic op lhs rhs =
           rhs' = Binary CLeqOp rhs (Binary CSubOp lhs one)
       in apply_logic CLorOp lhs' rhs'
     CLndOp -> do
-      error "CLndOp: needs to be checked!"
---      lhs_act <- bool_transformer_expr lhs 
---      rhs_act <- bool_transformer_expr rhs
---      return $ (error "CLndOp",lhs_act `join_act` rhs_act)
+      (lhs_val, lhs_act) <- bool_transformer_expr lhs 
+      (rhs_val, rhs_act) <- bool_transformer_expr rhs
+      let acts = lhs_act `join_act` rhs_act
+      if lhs_val /= IntBot && rhs_val /= IntBot
+      then return (lhs_val, acts)
+      else return (IntBot, acts)
     CLorOp -> do
-      error "CLorOp: needs to be checked!"
-{-
-      lhs_act <- bool_transformer_expr lhs
-      s@IntTState{..} <- get
-      if is_bot st
-      then do
-        rhs_act <- bool_transformer_expr rhs
-        return $ (error "CLorOp",lhs_act `join_act` rhs_act)
-      else return (error "CLorOp",lhs_act) 
--}
+      (lhs_val, lhs_act) <- bool_transformer_expr lhs 
+      (rhs_val, rhs_act) <- bool_transformer_expr rhs
+      let res_val = if lhs_val /= IntBot 
+                    then lhs_val
+                    else if rhs_val /= IntBot
+                         then rhs_val
+                         else IntBot
+      return (res_val, lhs_act `join_act` rhs_act)
 
 -- Logical Operations
 -- Need to update the variables
