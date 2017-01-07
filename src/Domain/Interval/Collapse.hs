@@ -57,7 +57,7 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
 
 is_locked :: IntState -> Scope -> SExpression -> Bool
 is_locked st scope expr = 
-  let lk_addrs = get_addrs st scope expr 
+  let lk_addrs = get_addrs_just st scope expr 
   in case read_memory st lk_addrs of
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
     [val] -> val == one 
@@ -202,7 +202,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = trace ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -225,29 +225,31 @@ worklist syst _wlist = trace ("worklist: " ++ show _wlist) $ do
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
-      if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
-      then mtrace ("is a global operation") $ do
-        add_mark it
-        worklist syst wlist
-      else trace ("worklist: pre_acts = " ++ show pre_acts ++ ", post_acts = " ++ show post_acts) $ do 
-        -- depending on the tags of the edge; the behaviour is different
-        let (is_fix,node_table') =
-             if is_join edge_tags
-             -- join point: join the info in the cfg 
-             then join_update (node_table fs_cfg) post (st,acts) 
-             -- considering everything else the standard one: just replace 
-             -- the information in the cfg and add the succs of post to the worklist
-             else strong_update (node_table fs_cfg) post (st,acts) 
-        cfg' <- update_node_table node_table'
-        let nwlist = if is_fix then wlist else (wlist ++ rwlst)
-        disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
-        -- @NOTE: If one the sucessors is not enabled then
-        -- simply mark it as a final node
-        if not $ null disabled_rwlst
-        then T.trace ("worklist: non-global event!") $ do
-          add_mark it
-          worklist syst wlist
-        else worklist syst nwlist
+      if is_bot st
+      then T.trace ("worklist: current edge returns bottom") $ worklist syst wlist
+      else if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
+           then mtrace ("is a global operation") $ do
+             add_mark it
+             worklist syst wlist
+           else do 
+             -- depending on the tags of the edge; the behaviour is different
+             let (is_fix,node_table') =
+                  if is_join edge_tags
+                  -- join point: join the info in the cfg 
+                  then join_update (node_table fs_cfg) post (st,acts) 
+                  -- considering everything else the standard one: just replace 
+                  -- the information in the cfg and add the succs of post to the worklist
+                  else strong_update (node_table fs_cfg) post (st,acts) 
+             cfg' <- update_node_table node_table'
+             let nwlist = if is_fix then wlist else (wlist ++ rwlst)
+             disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
+             -- @NOTE: If one the sucessors is not enabled then
+             -- simply mark it as a final node
+             if not $ null disabled_rwlst
+             then T.trace ("worklist: non-global event!") $ do
+               add_mark it
+               worklist syst wlist
+             else worklist syst nwlist
 
 -- | Returns true if the current edge is disabled
 check_enabledness_succ :: System IntState IntAct -> (NodeId, EdgeId, NodeId) -> FixOp Bool 

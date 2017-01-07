@@ -206,13 +206,23 @@ interval_diff' i (InterVal (I a,I b)) (InterVal (I a', I b'))
 interval_diff' i a b = error $ "interval_diff: unsupported " ++ show (i,a,b)
 
 upperBound :: IntValue -> InterVal
-upperBound IntBot = error "upperBound"
+upperBound IntBot = error "upperBound: IntBot"
 upperBound (InterVal (a,b)) = b
+upperBound IntTop = PlusInf
+upperBound (IntVal vals) =
+  case maximum vals of
+    VInt n -> I n
+    _ -> error $ "upperBound: unsupported IntVal " ++ show vals 
 upperBound _ = error "upperBound: unsupported"
 
 lowerBound :: IntValue -> InterVal
 lowerBound IntBot = error "lowerBound"
+lowerBound IntTop = MinusInf
 lowerBound (InterVal (a,b)) = a
+lowerBound (IntVal vals) =
+  case minimum vals of
+    VInt n -> I n
+    _ -> error $ "lowerBound: unsupported IntVal " ++ show vals 
 lowerBound _ = error "lowerBound: unsupported"
 
 -- widening

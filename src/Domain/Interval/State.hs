@@ -61,6 +61,9 @@ data IntState =
   }
   deriving Eq
 
+set_int_state_bot :: IntState -> IntState
+set_int_state_bot i = i { is_bot = True }
+
 h_u = "##############################################\n"
 h_d = "----------------------------------------------\n"
 instance Show IntState where
@@ -69,7 +72,7 @@ instance Show IntState where
               then "\t\tEMPTY HEAP\n" ++ h_d
               else "\t\tHEAP\n" ++ h_d ++ showMem h ++ h_d
         s_s = "\t\tTHREADS(" ++ show nt ++ ")\n" ++ h_d ++ showThStates s
-        i_s = h_u ++ "\t\tSTATE\n"++ h_d 
+        i_s = h_u ++ "\t\tSTATE IS BOTTOM = " ++ show b ++ "\n"++ h_d 
     in i_s ++ h_s ++ "\n" ++ s_s ++ h_u 
 
 showMem s = M.foldWithKey (\k m r -> "    " ++ show k ++ " := " ++ show m ++ "\n" ++ r) "" s
