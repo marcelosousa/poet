@@ -29,7 +29,10 @@
  */
 #undef KLIBC_ATEXIT_CALLBACKS
 
-/*
+/* define this to get a buffering implementation of the streams library
+ * (fopen(3) and friends), the original one present in klibc; undef it to get a
+ * very simple, non-buffering implementation that simply reads or writes to the
+ * underlying file descriptor whenever fread(3) or fwrite(3) are called
  */
 #undef KLIBC_STREAMS_ORIG
 
