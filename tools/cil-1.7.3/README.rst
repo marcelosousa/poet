@@ -17,6 +17,7 @@ Compilation
 -----------
 
 ::
+
  ./configure
  make
 
@@ -33,7 +34,7 @@ Make sure that the following command produces at least one line of output::
 Extracting full program sources
 -------------------------------
 
-All you have to do is to redefine the ``make`` variable ``CC`` as follows::
+Go to your project's ``Makefile`` and redefine the variable ``CC`` as follows::
 
  CC=cilly --merge --out=full.c
 
@@ -46,7 +47,7 @@ program code into ``full.c``.
 Full program extraction + poet preprocessing
 --------------------------------------------
 
-Just add the option ``--dopoet`` to the command provided in the previous
+Simply add the option ``--dopoet`` to the command provided in the previous
 section::
 
  CC=cilly --merge --out=full.c --dopoet
