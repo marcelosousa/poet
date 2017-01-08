@@ -4,41 +4,38 @@
 #include "pthread.h"
 // #include <assert.h>
 
-pthread_mutex_t m[2];
+pthread_mutex_t m;
 int x=0;
-// int y=0;
 
 void* incx()
 {
-  pthread_mutex_lock(&m[0]); 
+  pthread_mutex_lock(&m); 
     x++;
-  pthread_mutex_unlock(&m[0]);
-  pthread_exit(NULL); 
-}
-
-void* incy()
-{
-  pthread_mutex_lock(&m[1]); 
-    x = 2;
-  pthread_mutex_unlock(&m[1]);
+  pthread_mutex_unlock(&m);
   pthread_exit(NULL); 
 }
 
 int main(int argc, char **argv) 
 {
+  int a = 0, b = 5;
 
-  pthread_mutex_init(&m[0], NULL);
-  pthread_mutex_init(&m[1], NULL);
+  for (int i = 0; i <= b; i++) {
+    a = i;
+  }
 
-  pthread_t ptr[2];
+  pthread_mutex_init(&m, NULL);
+  pthread_t ptr;
 
-  pthread_create(&ptr[0], NULL, incx, NULL);
-  pthread_create(&ptr[1], NULL, incy, NULL);
+  pthread_create(&ptr, NULL, incx, NULL);
+  pthread_mutex_lock(&m); 
+  x = a;
+  pthread_mutex_unlock(&m);
+ 
+  pthread_join(ptr, NULL);
 
-  pthread_join(ptr[0], NULL);
-  pthread_join(ptr[1], NULL);
-  x++; 
-  // assert (x == num);
+  if (x > a+1) {
+    poet_error();
+  }
  
   return 0;
 }   

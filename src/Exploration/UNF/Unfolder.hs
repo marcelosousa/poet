@@ -247,11 +247,11 @@ ext e maxevs st (tid,pos) êacts = do
                then do
                  -- @ Compute histories related to locks
                  lift $ putStrLn $ "ext: calling histories_lock"
-                 histories_lock (êname,êacts) h0 
+                 histories_lock (êname,êacts) e h0 
                else do 
                  lift $ putStrLn $ "ext: calling histories"
                  histories (êname,êacts) e [h0] [] 
-      lift $ putStrLn $ "ext: conflicting extensions histories = " ++ show his
+      his `seq` lift $ putStrLn $ "ext: conflicting extensions histories = " ++ show his
       _ <- lift getCharDebug
       lift $ putStrLn "ext: adding conflicting extensions events"
       mapM (add_event stak succe êname êacts) his
@@ -327,13 +327,15 @@ histories einfo@(ename,_) e wlist hists =
       -- Removes *e* and all the events from the same thread
       -- of the new event from set of events that will be 
       -- considered for pruning 
+      -- and the event that creates the thread
+      -- if that is the case, then it cannot be removed
       let h' = e `delete` h
       hc <- lift $ filterM (\e' -> get_event "computeHistories" e' evts 
-                        >>= \ev@Event{..} -> return $ fst3 name /= fst3 ename) h' 
+                        >>= \ev@Event{..} -> return $ (fst3 name /= fst3 ename && not (GCS.isCreateOf (SymId $ fst3 ename) acts))) h' 
       -- replace one of the maximal events with the predecessors
       -- and prune the configuration
       hs' <- mapM (next_history h) hc
-      let chs = nub hs' -- remove the repeated new histories
+      let chs = nub hs'                                 -- remove the repeated new histories
           wlist' = filter (\h -> not $ h `elem` hs) chs -- filter the ones in the worklist
           nwlist = wlist' ++ hs
           nhists = chs ++ hists 
@@ -343,6 +345,7 @@ histories einfo@(ename,_) e wlist hists =
    --   build a candidate history out of replacing a maximal
    --   event e' with its immediate predecessors
    next_history h e' = do
+     lift $ putStrLn $ "next_history: from history = " ++ show h
      s@UnfolderState{..} <- get
      -- we want to replace e' by its predecessors
      let h' = e' `delete` h
@@ -360,8 +363,8 @@ histories einfo@(ename,_) e wlist hists =
 --   This history can be composed of at most two events
 --   one to enable this transition in the thread and 
 --   an unlock from another thread.
-histories_lock :: (GCS.Collapsible st act) => EventInfo act -> EventsID -> UnfolderOp st act Histories
-histories_lock info@(ne_name,ne_acts) hs = do
+histories_lock :: (GCS.Collapsible st act) => EventInfo act -> EventID -> EventsID -> UnfolderOp st act Histories
+histories_lock info@(ne_name,ne_acts) s_e hs = do
   lift $ putStrLn $ "histories_lock: ne_name = " ++ show ne_name ++ "\n\t ne_acts = " ++ show ne_acts ++ "\n\t hs = " ++ show hs
   _ <- lift getCharDebug
   case hs of
@@ -382,19 +385,24 @@ histories_lock info@(ne_name,ne_acts) hs = do
             else if GCS.isUnlockOf ne_acts acte'
                  then (e', e)
                  else error $ "histories_lock: none of the events in the history is an unlock"
-      lift $ putStrLn $ "histories_lock: the event " ++ show e_unlk ++ " is an unlock"
-      -- Get the local configuration of both e_en and e_unlk
-      pred_e_en <- lift $ predecessors e_en evts
-      pred_e_unlk <- lift $ predecessors e_unlk evts
-      -- @TODO: Check if this is the intersecting the configurations properly?
-      let c_e_unlks = pred_e_unlk \\ (e_en:pred_e_en)
-      lift $ putStrLn $ "histories_lock: candidate unlocks = " ++ show c_e_unlks
-      e_unlks <- filterM (\c_e_unlk -> do 
-          c_ev_unlk <- lift $ get_event "histories_lock" c_e_unlk evts  
-          return $ GCS.isUnlockOf ne_acts (acts c_ev_unlk)) c_e_unlks 
-      if null e_unlks
-      then return [[e_en]]
-      else return $ map (\e -> [e,e_en]) e_unlks
+      if e_unlk == s_e
+      then do
+        lift $ putStrLn $ "histories_lock: the last event is the unlock (skipping)"
+        return [] 
+      else do
+        lift $ putStrLn $ "histories_lock: the event " ++ show e_unlk ++ " is an unlock"
+        -- Get the local configuration of both e_en and e_unlk
+        pred_e_en <- lift $ predecessors e_en evts
+        pred_e_unlk <- lift $ predecessors e_unlk evts
+        -- @TODO: Check if this is the intersecting the configurations properly?
+        let c_e_unlks = pred_e_unlk \\ (e_en:pred_e_en)
+        lift $ putStrLn $ "histories_lock: candidate unlocks = " ++ show c_e_unlks
+        e_unlks <- filterM (\c_e_unlk -> do 
+            c_ev_unlk <- lift $ get_event "histories_lock" c_e_unlk evts  
+            return $ GCS.isUnlockOf ne_acts (acts c_ev_unlk)) c_e_unlks 
+        if null e_unlks
+        then return [[e_en]]
+        else return $ map (\e -> [e,e_en]) e_unlks
     _ -> error $ "histories_lock: too many events in the history " ++ show hs 
 
 -- @ add_event: Given a transition id and the history
@@ -512,6 +520,7 @@ compute_conflicts :: (Show act, GCS.Action act) => EventInfo act -> EventsID -> 
 compute_conflicts einfo lh lhCnfls events = do 
   putStrLn $ "compute_conflicts: einfo = " ++ show einfo  
   putStrLn $ "compute_conflicts: local history = " ++ show lh 
+  putStrLn $ "compute_conflicts: local history conflicts = " ++ show lhCnfls 
   ev@Event{..} <- get_event "compute_conflicts" botEID events
   compute_conflict [] succ []
   where
@@ -526,14 +535,14 @@ compute_conflicts einfo lh lhCnfls events = do
            then compute_conflict (e:seen) rest cfls 
            else do
              ev@Event{..} <- get_event "computeConflict" e events
-             -- if e is not in the local history and his dependent with the event
+             -- if e is not in the local history and is dependent with the event
              if not (e `elem` lh) && is_dependent einfo (name,acts) 
              then do
                -- check if there is any immediate conflict in the local configuration
                -- with a predecessor of e, i.e. check if there is a conflict between
                -- e and the new event already  
                lhe <- predecessors e events
-               if any (\e -> elem e lhe) lhCnfls 
+               if any (\e -> elem e lhe) (lhCnfls ++ cfls) 
                then compute_conflict (e:seen) rest cfls
                else compute_conflict (e:seen) rest (e:cfls) 
              else compute_conflict (e:seen) (nub $ rest ++ succ) cfls

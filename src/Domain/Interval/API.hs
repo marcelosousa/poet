@@ -75,7 +75,10 @@ read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ++ "\n" 
     Local tid -> case M.lookup tid (th_states st) of   
       Nothing -> error $ "read_memaddr: tid " ++ show tid ++ " not found, addr " ++ show addr
       Just th -> case M.lookup addr (th_locals th) of
-        Nothing -> error $ "read_memory_addr: " ++ show addr
+        Nothing -> 
+         -- The variable might be in the heap
+         let addr' = addr { level = Global }
+         in read_memory_addr st addr'
         Just value -> value 
  
 -- | Checks if an address is initialized in some part of the memory

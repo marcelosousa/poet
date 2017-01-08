@@ -71,7 +71,7 @@ join_state nst = do
 get_tid_expr :: Scope -> IntState -> SExpression -> GCS.TId
 get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
   -- get the address(es) referenced by expr
-  let th_addrs = get_addrs st scope expr 
+  let th_addrs = get_addrs_just st scope expr 
   in case read_memory st th_addrs of
     [] -> error $ "get_tid: couldnt find thread for expr " ++ show expr 
     [v] -> case v of
@@ -83,21 +83,27 @@ get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
 --   points to analysis.
 --   Simplify to only consider the case where the 
 --   the expression is a LHS (var or array index).
-get_addrs :: IntState -> Scope -> SExpression -> IntMAddrs 
-get_addrs st scope expr = mtrace ("get_addrs: " ++ show expr) $
+get_addrs :: IntState -> Scope -> SExpression -> Maybe IntMAddrs 
+get_addrs st scope expr = T.trace ("get_addrs: scope = " ++ show scope ++ ", expr = " ++ show expr) $
   case expr of
-    Var id -> get_addrs_id st scope id 
+    Var id -> Just $ get_addrs_id st scope id 
     Unary CAdrOp e -> get_addrs st scope e 
     Index lhs rhs  -> 
-      case get_addrs st scope lhs of
+      case get_addrs_just st scope lhs of
         MemAddrTop -> error $ "get_addrs: lhs of index operation points to MemAddrTop"
         MemAddrs l ->
           let error_msg = error "get_addrs: called the transformer with missing information"
               tr_st = IntTState scope st error_msg error_msg False
               (val,_) = evalState (transformer rhs) tr_st
               l' = map (flip set_offset val) l 
-          in MemAddrs l'
-    _ -> error $ "get_addrs: not supported expr " ++ show expr
+          in Just $ MemAddrs l'
+    _ -> Nothing 
+
+get_addrs_just :: IntState -> Scope -> SExpression -> IntMAddrs 
+get_addrs_just st scope expr = 
+  case get_addrs st scope expr of
+    Just addr -> addr
+    Nothing -> error $ "get_addrs_just: not supported expr " ++ show expr
 
 -- | get the addresses of an identifier
 --   Because of variable shadowing the scope is necessary
@@ -234,7 +240,14 @@ transformer_expr :: SExpression -> IntTOp IntAct
 transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
-  then bool_transformer_expr expr
+  then T.trace ("transformer_expr: conditional " ++ show expr) $ do 
+    (val, act) <- bool_transformer_expr expr
+    s@IntTState{..} <- get
+    let res_st = case val of
+          IntBot -> set_int_state_bot st
+          _ -> st
+    set_state res_st 
+    T.trace ("bool_transformer: result = " ++ show val) $ return act
   else do
     (vals,act) <- transformer expr
     return act 
@@ -242,12 +255,14 @@ transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
 -- eval logical expressions
 -- we are going to be conservative;
 -- all the variables in this expression
--- are going to be considered written
-bool_transformer_expr :: SExpression -> IntTOp IntAct
-bool_transformer_expr expr = trace ("bool_transformer") $ case expr of
-  Binary op lhs rhs -> do 
-    (val,act) <- apply_logic op lhs rhs
-    return act
+-- are going to be considered written.
+-- We follow the implementation described
+-- in https://www.di.ens.fr/~rival/semverif-2016/sem-11-ai.pdf
+-- starting from page 28.
+-- Only <=, \/ and /\ will be implemented.
+bool_transformer_expr :: SExpression -> IntTOp (IntValue, IntAct)
+bool_transformer_expr expr = case expr of
+  Binary op lhs rhs -> apply_logic op lhs rhs
   Unary CNegOp rhs ->
     let rhs' = negExp rhs
     in bool_transformer_expr rhs' 
@@ -276,48 +291,49 @@ apply_logic op lhs rhs =
           rhs' = Binary CLeqOp rhs (Binary CSubOp lhs one)
       in apply_logic CLorOp lhs' rhs'
     CLndOp -> do
-      lhs_act <- bool_transformer_expr lhs 
-      rhs_act <- bool_transformer_expr rhs
-      return $ (error "CLndOp",lhs_act `join_act` rhs_act)
+      (lhs_val, lhs_act) <- bool_transformer_expr lhs 
+      (rhs_val, rhs_act) <- bool_transformer_expr rhs
+      let acts = lhs_act `join_act` rhs_act
+      if lhs_val /= IntBot && rhs_val /= IntBot
+      then return (lhs_val, acts)
+      else return (IntBot, acts)
     CLorOp -> do
-      lhs_act <- bool_transformer_expr lhs
-      s@IntTState{..} <- get
-      if is_bot st
-      then do
-        rhs_act <- bool_transformer_expr rhs
-        return $ (error "CLorOp",lhs_act `join_act` rhs_act)
-      else return (error "CLorOp",lhs_act) 
+      (lhs_val, lhs_act) <- bool_transformer_expr lhs 
+      (rhs_val, rhs_act) <- bool_transformer_expr rhs
+      let res_val = if lhs_val /= IntBot 
+                    then lhs_val
+                    else if rhs_val /= IntBot
+                         then rhs_val
+                         else IntBot
+      return (res_val, lhs_act `join_act` rhs_act)
 
 -- Logical Operations
--- Less than (CLeOp)
 -- Need to update the variables
-interval_leq :: SExpression -> SExpression -> IntTOp (IntValue,IntAct)
-{-
-interval_leq (Ident x_i) rhs =
-  let v' = lowerBound $ eval rhs s
-      x = BS.pack x_i
-      x_val = safeLookup "interval_leq" s x
-  in case x_val of
-    Bot -> Nothing
-    Interval (a,b) ->
-      if a <= v'
-      then Just $ insert x (i a (min b v')) s
-      else Nothing
-    _ -> error "interval_leq"
-interval_leq s lhs (Ident x_i) =
-  let lhs_val = eval lhs s
-      x = BS.pack x_i
-      x_val = safeLookup "interval_leq" s x
-      aux = i (upperBound lhs_val) PlusInf
-      res = aux `iMeet` x_val
-  in case res of
-    Bot -> Nothing
-    _ -> Just $ insert x res s
--}
-interval_leq lhs rhs = do
-  (lhs_val,lhs_act) <- transformer lhs 
-  (rhs_val,rhs_act) <- transformer rhs 
-  return (lhs_val `iMeet` rhs_val, lhs_act `join_act` rhs_act)
+interval_leq :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
+interval_leq lhs rhs = T.trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do
+  (lhs_val, lhs_act) <- transformer lhs 
+  (rhs_val, rhs_act) <- transformer rhs 
+  let acts = lhs_act `join_act` rhs_act
+      (a,b) = (lowerBound lhs_val, upperBound lhs_val)
+      (c,d) = (lowerBound rhs_val, upperBound rhs_val)
+  if lhs_val == IntBot || rhs_val == IntBot || a > d
+  then return (IntBot, acts)
+  else do
+    s@IntTState{..} <- get
+    -- Update the variables if we can 
+    let lhs_nval = InterVal (a, min b d)
+        rhs_nval = InterVal (max a c, d) 
+        (lhs_st, lhs_nact) = 
+          case get_addrs st scope lhs of
+            Nothing -> (st, bot_act)
+            Just lhs_addr -> (write_memory st lhs_addr lhs_nval, write_act_addr lhs_addr)
+        (rhs_st, rhs_nact) = 
+          case get_addrs lhs_st scope rhs of
+            Nothing -> (lhs_st, bot_act)
+            Just rhs_addr -> (write_memory lhs_st rhs_addr rhs_nval, write_act_addr rhs_addr)
+        final_acts = acts `join_act` lhs_nact `join_act` rhs_nact
+    set_state rhs_st
+    T.trace ("interval_leq: lhs_val = " ++ show lhs_val ++ ", rhs_val = " ++ show rhs_val ++ ", lhs_nval = " ++ show lhs_nval ++ ", rhs_nval = " ++ show rhs_nval) $ return (lhs_nval, final_acts)
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,IntAct)
@@ -349,7 +365,7 @@ transformer e = trace ("transformer: " ++ show e) $
 index_transformer :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
 index_transformer lhs rhs = do 
   s@IntTState{..} <- get
-  case get_addrs st scope lhs of
+  case get_addrs_just st scope lhs of
     MemAddrTop -> error $ "index_transformer: lhs of index operation points to MemAddrTop"
     MemAddrs l -> do
       (rhs_vals, rhs_acts) <- transformer rhs
@@ -379,7 +395,7 @@ assign_transformer op lhs rhs = do
         _ -> error "assign_transformer: not supported" 
   -- get the addresses of the left hand side
   s@IntTState{..} <- get
-  let lhs_id = get_addrs st scope lhs
+  let lhs_id = get_addrs_just st scope lhs
       res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
   -- modify the state of the addresses with
   -- the result values 
@@ -435,7 +451,7 @@ call_transformer_name name args = case name of
         -- write in the address of (args !! 0) of type
         -- pthread_t, the pid of the new thread
     let (tid,s') = inc_num_th st
-        th_id = get_addrs s' scope (args !! 0) 
+        th_id = get_addrs_just s' scope (args !! 0) 
         s'' = write_memory s' th_id (IntVal [VInt tid]) 
         -- retrieve the entry point of the thread code 
         th_sym = get_expr_id $ args !! 2
@@ -459,21 +475,21 @@ call_transformer_name name args = case name of
   "pthread_mutex_lock" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get
-    let mutex_addr = get_addrs st scope (args !! 0)
+    let mutex_addr = get_addrs_just st scope (args !! 0)
         res_st = write_memory st mutex_addr one 
     set_state res_st
     return (one, lock_act_addr mutex_addr) 
   "pthread_mutex_unlock" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get
-    let mutex_addr = get_addrs st scope (args !! 0)
+    let mutex_addr = get_addrs_just st scope (args !! 0)
         res_st = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, unlock_act_addr mutex_addr) 
   "pthread_mutex_init" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get
-    let mutex_addr = get_addrs st scope (args !! 0)
+    let mutex_addr = get_addrs_just st scope (args !! 0)
         res_st = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, write_act_addr mutex_addr) 
@@ -485,6 +501,7 @@ call_transformer_name name args = case name of
        return (InterVal (I l, I u),lacts `join_act` uacts)
       (l, u) -> 
        return (l `iJoin` u,lacts `join_act` uacts)
+  "poet_error" -> error "poet_error: assertion is violated" 
   _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
 
 -- Need to apply the cut over the state
@@ -546,7 +563,7 @@ unop_transformer unOp expr = do
   case unOp of
     CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
     CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
-    CPostIncOp -> transformer $ Assign CAssignOp expr (Const const_one)  
+    CPostIncOp -> transformer $ Assign CAddAssOp expr (Const const_one)  
     CPostDecOp -> error "unop_transformer: CPostDecOp not supported"   
     CAdrOp     -> error "unop_transformer: CAdrOp     not supported"    
     CIndOp     -> error "unop_transformer: CIndOp     not supported" 
