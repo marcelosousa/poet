@@ -140,6 +140,10 @@ subsumes_interval st1 st2 =
              val2 = val cell2
          in r && val2 <= val1
  
+-- | Widening operation
+widening_intstate :: IntState -> IntState -> IntState
+widening_intstate s1 s2 = error "widening_intstate: TODO" 
+
 -- | Join operation
 join_intstate :: IntState -> IntState -> IntState
 join_intstate s1 s2 = case (is_bot s1, is_bot s2) of

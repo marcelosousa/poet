@@ -44,10 +44,28 @@ data FixState =
   , fs_cfgs :: IntGraphs
   , fs_symt :: SymbolTable 
   , fs_cfg  :: IntGraph
-  , fs_mark :: Set WItem -- The final worklist: every edge in this worklist is a global action 
+  -- The final worklist: every edge in this worklist is a global action 
+  , fs_mark :: Set WItem 
+  -- Map from loop heads to counter of traversals.  
+  , fs_wide :: Map NodeId Int
   }
 
 type FixOp val = State FixState val
+
+inc_wide_node :: NodeId -> FixOp ()
+inc_wide_node node_id = do
+  fs@FixState{..} <- get
+  let fs_wide' = case M.lookup node_id fs_wide of
+        Nothing -> M.insert node_id 1 fs_wide
+        Just n  -> M.insert node_id (n+1) fs_wide
+  put fs { fs_wide = fs_wide' } 
+
+get_wide_node :: NodeId -> FixOp Int
+get_wide_node node_id = do
+  fs@FixState{..} <- get
+  case M.lookup node_id fs_wide of
+    Nothing -> return 0
+    Just n  -> return n 
 
 showResultList :: ResultList -> String
 showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) -> 
@@ -62,7 +80,6 @@ is_locked st scope expr =
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
     [val] -> val == one 
     l -> error $ "is_locked fatal: lock has unsupported values " ++ show l 
-
 
 -- | Instead of just looking at the immediate edge, one needs to potentially
 --   traverse the graph until reaching a global action. Only at those leafs
@@ -130,7 +147,7 @@ fixpt syst b tid cfgs symt cfg@Graph{..} pos st =
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-      i_fix_st = FixState b tid cfgs symt cfg' S.empty
+      i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty
   in  evalState (worklist syst wlist) i_fix_st 
 
 add_mark :: WItem -> FixOp ()
@@ -168,13 +185,14 @@ handle_mark (pre,eId,post) = do
         E expr -> runState (transformer_expr expr) tr_st
       acts = pre_acts `join_act` post_acts
       ns@IntTState{..} = up_pc _ns fs_tid post 
-      (is_fix,node_table') =
-         if is_join edge_tags
-         -- join point: join the info in the cfg
-         then join_update (node_table fs_cfg) post (st,acts) 
-         -- considering everything else the standard one: just replace 
-         -- the information in the cfg and add the succs of post to the worklist
-         else strong_update (node_table fs_cfg) post (st,acts) 
+  (is_fix,node_table') <- case edge_tags of
+    -- loop head point 
+    [LoopHead] -> loop_head_update (node_table fs_cfg) post (st,acts)
+    -- join point: join the info in the cfg 
+    [IfJoin] -> return $ join_update (node_table fs_cfg) post (st,acts) 
+    -- considering everything else the standard one: just replace 
+    -- the information in the cfg and add the succs of post to the worklist
+    _ -> return $ strong_update (node_table fs_cfg) post (st,acts) 
   cfg' <- update_node_table node_table'
   -- find the final result of the post
   case M.lookup post $ node_table cfg' of
@@ -194,7 +212,8 @@ fixpt_result = do
   if fs_mode
   then do 
     fs@FixState{..} <- get
-    let nodes = M.filterWithKey (\k _ -> not $ any (\(_,p,_) -> p == k) res) $ node_table fs_cfg 
+    let table = node_table fs_cfg
+        nodes = M.filterWithKey (\k _ -> not $ any (\(_,p,_) -> p == k) res) table
         nodes_res = M.foldWithKey (\p l r -> map (\(a,b) -> (a,p,b)) l ++ r) [] nodes 
     return $ res ++ nodes_res 
   else return $ res 
@@ -233,13 +252,15 @@ worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
              worklist syst wlist
            else do 
              -- depending on the tags of the edge; the behaviour is different
-             let (is_fix,node_table') =
-                  if is_join edge_tags
-                  -- join point: join the info in the cfg 
-                  then join_update (node_table fs_cfg) post (st,acts) 
-                  -- considering everything else the standard one: just replace 
-                  -- the information in the cfg and add the succs of post to the worklist
-                  else strong_update (node_table fs_cfg) post (st,acts) 
+             (is_fix,node_table') <-
+                  case edge_tags of
+                    -- loop head point 
+                    [LoopHead] -> loop_head_update (node_table fs_cfg) post (st,acts)
+                    -- join point: join the info in the cfg 
+                    [IfJoin] -> return $ join_update (node_table fs_cfg) post (st,acts) 
+                    -- considering everything else the standard one: just replace 
+                    -- the information in the cfg and add the succs of post to the worklist
+                    _ -> return $ strong_update (node_table fs_cfg) post (st,acts) 
              cfg' <- update_node_table node_table'
              let nwlist = if is_fix then wlist else (wlist ++ rwlst)
              disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
@@ -259,6 +280,26 @@ check_enabledness_succ syst (pre,eId,post) = do
         [s] -> s
         l   -> error $ "check_enabledness_succ: invalid pre states = " ++ show l
   return $ not $ is_live fs_tid syst eId fs_cfg node_st
+
+loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, NodeTable)
+loop_head_update node_table node (st,act) = do
+  c <- get_wide_node node
+  inc_wide_node node
+  if c >= 5
+  then T.trace ("loop_head_update: going to apply widening") $ do 
+    case M.lookup node node_table of
+      Nothing -> error "loop_head_update: widening between a state and empty?" 
+      Just lst -> case lst of
+        [] -> error "loop_head_update: widening between a state and empty?" 
+        [(st',act')] ->
+          let nst = st `widening_intstate` st'
+              nact = act `join_act` act'
+          in if nst == st'
+             then return $ (True, node_table)
+             else return $ (False, M.insert node [(nst,nact)] node_table)
+        _ -> error "loop_head_update: widening between a state and several states?" 
+  else do
+    return $ join_update node_table node (st,act) 
 
 join_update :: NodeTable -> NodeId -> (IntState, IntAct) -> (Bool, NodeTable)
 join_update node_table node (st,act) =
