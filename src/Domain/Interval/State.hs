@@ -23,6 +23,7 @@ import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
+import qualified Debug.Trace as T
 
 -- | Interval Memory Cell
 type IntMCell = MemCell SymId () IntValue
@@ -141,8 +142,35 @@ subsumes_interval st1 st2 =
          in r && val2 <= val1
  
 -- | Widening operation
-widening_intstate :: IntState -> IntState -> IntState
-widening_intstate s1 s2 = error "widening_intstate: TODO" 
+-- It doesn't take care of the case where the interval states might be bottom
+widen_intstate :: IntState -> IntState -> IntState
+widen_intstate s1 s2 = 
+  if s1 == s2 
+  then s1
+  else let _heap = (heap s1) `widen_intheap` (heap s2)
+           _th_states = th_states s1 `widen_intthsts` th_states s2
+           _num_th = M.size _th_states 
+           _is_bot = False
+       in IntState _heap _th_states _num_th _is_bot
+
+widen_intheap :: IntHeap -> IntHeap -> IntHeap
+widen_intheap m1 m2 = M.unionWith widen_intmcell m1 m2 
+
+widen_intthsts :: ThStates -> ThStates -> ThStates
+widen_intthsts = M.unionWith widen_intthst 
+
+widen_intthst :: ThState -> ThState -> ThState
+widen_intthst t1 t2 =
+  let _pos    = ite "widen_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
+      _cfg_id = ite "widen_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
+      _locals = M.unionWith iWiden (th_locals t1) (th_locals t2) 
+  in ThState _pos _cfg_id _locals
+
+widen_intmcell :: IntMCell -> IntMCell -> IntMCell
+widen_intmcell m1 m2 =
+  let _ty = ty m1
+      _val = (val m1) `iWiden` (val m2)
+  in MCell _ty _val
 
 -- | Join operation
 join_intstate :: IntState -> IntState -> IntState
@@ -152,8 +180,7 @@ join_intstate s1 s2 = case (is_bot s1, is_bot s2) of
   -- They are not bot
   _ -> let _heap = (heap s1) `join_intheap` (heap s2)
            _th_states = th_states s1 `join_intthsts` th_states s2
-           -- This is not correct in general
-           _num_th = max (num_th s1) (num_th s2) 
+           _num_th = M.size _th_states 
            _is_bot = False
        in IntState _heap _th_states _num_th _is_bot
 
@@ -171,7 +198,6 @@ ite e_str a b
 join_intthst :: ThState -> ThState -> ThState
 join_intthst t1 t2 =
   let _pos    = ite "join_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
-  --    _id     = ite "join_intthst: diff th_id"     (th_id     t1) (th_id     t2) 
       _cfg_id = ite "join_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
       _locals = M.unionWith iJoin (th_locals t1) (th_locals t2) 
   in ThState _pos _cfg_id _locals

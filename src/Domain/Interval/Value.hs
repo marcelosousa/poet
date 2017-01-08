@@ -70,6 +70,18 @@ top_interval = InterVal (MinusInf, PlusInf)
 i :: InterVal -> InterVal -> IntValue
 i a b = InterVal (a, b)
 
+-- widening
+iWiden :: IntValue -> IntValue -> IntValue
+iWiden v1 v2 = 
+  if v1 == v2
+  then v1
+  else case (v1, v2) of
+    (InterVal (a,b), InterVal (c,d)) ->
+      let e = if c < a then MinusInf else a
+          f = if d > b then PlusInf else b
+      in InterVal (e,f)
+    (_,_) -> error $ "iWiden: not supported IntVals = " ++ show (v1, v2)
+
 -- [a,b] `join` [c,d] = [min(a,c), max(b,d)]
 iJoin :: IntValue -> IntValue -> IntValue
 iJoin v1 v2 = case (v1,v2) of
@@ -224,13 +236,6 @@ lowerBound (IntVal vals) =
     VInt n -> I n
     _ -> error $ "lowerBound: unsupported IntVal " ++ show vals 
 lowerBound _ = error "lowerBound: unsupported"
-
--- widening
-widening :: (InterVal, InterVal) -> (InterVal, InterVal) -> (InterVal, InterVal)
-widening (a,b) (c,d) =
-  let e = if c < a then MinusInf else a
-      f = if d > b then PlusInf else b
-  in (e,f)
 
 instance Hashable IntValue where
   hash v = case v of

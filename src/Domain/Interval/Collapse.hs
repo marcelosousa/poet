@@ -282,17 +282,17 @@ check_enabledness_succ syst (pre,eId,post) = do
   return $ not $ is_live fs_tid syst eId fs_cfg node_st
 
 loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, NodeTable)
-loop_head_update node_table node (st,act) = do
+loop_head_update node_table node (st,act) = T.trace ("loop_head_update: BEGIN") $ do
   c <- get_wide_node node
   inc_wide_node node
-  if c >= 5
+  if c >= 3
   then T.trace ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       Nothing -> error "loop_head_update: widening between a state and empty?" 
       Just lst -> case lst of
         [] -> error "loop_head_update: widening between a state and empty?" 
         [(st',act')] ->
-          let nst = st `widening_intstate` st'
+          let nst = st' `widen_intstate` st
               nact = act `join_act` act'
           in if nst == st'
              then return $ (True, node_table)
