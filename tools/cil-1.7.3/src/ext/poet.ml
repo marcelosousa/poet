@@ -14,6 +14,7 @@ module IH = Inthash
 module E = Errormsg
 
 let do_poet = ref false
+let do_prepoet = ref false
 let do_cesar = ref false
 let do_rmunreach = ref false
 
@@ -452,7 +453,7 @@ let inline_all (f: file) (maxnr: int) : unit =
    end
 ;;
 
-let doit1 (f: file) = 
+let doit_full_inlining (f: file) = 
    E.log "Poet: doit: starting\n";
 
    (* remove unused globals *)
@@ -483,6 +484,42 @@ let doit1 (f: file) =
       E.log "Poet: inliner: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
       E.log "Poet: inliner: iteration %d\n" i;
       E.log "Poet: inliner: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
+      (* inline all functions *)
+      inline_all f 0;
+      (* cleaning unused globals again *)
+      clean_unreachable_globals "main" f;
+      (* call the cleaner *)
+      Cleaner.feature.fd_doit f;
+   done;
+
+   (*
+   print_globals f;
+   Cil.dumpFile Cil.defaultCilPrinter Pervasives.stdout "stdout" f;
+   *)
+
+   let funs, vars = report_globals f in
+   let l0 = List.length f.globals in
+   let l1 = List.length funs in
+   let l2 = List.length vars in
+   let l3 = l0 - l1 - l2 in
+   E.log "Poet: doit: summary: %d globals,\n" l0;
+   E.log "Poet: doit: summary: - Functions  : %d\n" l1;
+   E.log "Poet: doit: summary: - Global vars: %d\n" l2;
+   E.log "Poet: doit: summary: - Others     : %d\n" l3;
+   E.log "Poet: doit: done, returning\n";
+;;
+
+let doit_poet (f: file) = 
+   E.log "Poet: doit: starting\n";
+
+   (* remove unused globals *)
+   clean_unreachable_globals "main" f;
+
+   for i = 0 to 0 do
+      E.log "\n";
+      E.log "Poet: doit: inliner: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
+      E.log "Poet: doit: inliner: iteration %d\n" i;
+      E.log "Poet: doit: inliner: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
       (* inline all functions *)
       inline_all f 0;
       (* cleaning unused globals again *)
@@ -614,11 +651,11 @@ let doit_rmunreach f =
 ;;
 
 let feature1 : featureDescr = 
-  { fd_name = "poet";
+  { fd_name = "fullinline";
     fd_enabled = do_poet;
-    fd_description = "inlining pass for POET action :)";
+    fd_description = "full inlining pass";
     fd_extraopt = [];
-    fd_doit = doit1;
+    fd_doit = doit_full_inlining;
     fd_post_check = true;
   }
 
@@ -643,6 +680,16 @@ let feature3 : featureDescr =
     fd_doit = doit_rmunreach;
     fd_post_check = true;
   }
+
+let feature4 : featureDescr = 
+  { fd_name = "poet";
+    fd_enabled = do_prepoet;
+    fd_description = "Preprocessing transformations for POET action :)";
+    fd_extraopt = [];
+    fd_doit = doit_poet;
+    fd_post_check = true;
+  }
+
 
 (*
  * - remove unused code

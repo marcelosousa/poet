@@ -97,7 +97,8 @@ let features : C.featureDescr list =
     Heapify.feature1;
     Heapify.feature2;
     Oneret.feature;
-    Poet.feature1; (* poet *)
+    (* Poet.feature1; poet *)
+    Poet.feature4; (* poet *)
     Cleaner.feature; (* ** *)
     makeCFGFeature; (* ww: make CFG *must* come before Partial *) 
     Partial.feature; (* ** *)

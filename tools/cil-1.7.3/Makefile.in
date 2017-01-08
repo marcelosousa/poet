@@ -17,9 +17,8 @@ out : out.c
 	gcc -Wall -D_GNUCC -o out out.c
 
 run :
-	#bin/cilly -fno-builtin -g --dopoet --out=out.c cunf.c 2>&1 | tee err
+	bin/cilly -fno-builtin -g --dopoet --out=out.c cunf.c 2>&1 | tee err
 	#dot -T pdf aha.dot > aha.pdf; cat aha.dot
-	#bin/cilly -fno-builtin -g --dopoet --docleaner --out=out.c cunf.c -o out --check 2>&1 | tee err
 
 # Now add the defines for the CIL features
 include Makefile.features

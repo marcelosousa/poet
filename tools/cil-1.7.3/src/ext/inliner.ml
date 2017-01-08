@@ -55,7 +55,7 @@ module IH = Inthash
 module A = Alpha
 
 let doInline = ref false
-let debug = false
+let debug = true
 
 let loc2s (l : location) : string =
   l.file ^ ":" ^ (if l.line == -1 then "?" else (string_of_int l.line))
