@@ -3,26 +3,28 @@ CIL Frontend for POET
 =====================
 
 This is a modified version of CIL based on v.1.7.3 (as downloaded from the
-github repository). The modifications intend to add a new option ``--dopoet`` to
-the commandline tool ``cilly`` which do a preprocessing pass necessary to feed
-code to poet.
+github repository).  The modifications add a new option ``--dopoet`` to the
+commandline tool ``cilly``.  This option does a preprocessing pass necessary to
+feed code to poet.
 
 Prerequisites
 -------------
 
 - Standard Ocaml packages ??
-- Package ``libc6-dev-i386``
+- Package ``libc6-dev-i386`` if you are in a 64 bit machine.
 
-Compilation
------------
+Installation
+------------
 
 ::
 
  ./configure
  make
 
-Now edit ``setup.sh`` and update variable ``D`` so that ``$D/bin`` points
-somewhere in your ``$PATH``. Then execute::
+The tool ``cilly`` is now available in the ``./bin/`` folder, and can be used
+from there. If you wish to install it, then edit ``setup.sh`` and update
+variable ``D`` so that ``$D/bin`` points somewhere in your ``$PATH``.
+Now execute::
  
  ./setup.sh
 
