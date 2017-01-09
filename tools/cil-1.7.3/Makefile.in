@@ -17,7 +17,7 @@ out : out.c
 	gcc -Wall -D_GNUCC -o out out.c
 
 run :
-	bin/cilly -fno-builtin -g --dopoet --out=out.c cunf.c 2>&1 | tee err
+	#bin/cilly -fno-builtin -g --dopoet --out=out.c cunf.c 2>&1 | tee err
 	#dot -T pdf aha.dot > aha.pdf; cat aha.dot
 
 # Now add the defines for the CIL features

@@ -415,7 +415,12 @@ let inline_all (f: file) (maxnr: int) : unit =
 
       (* a maping giving the body that should replace each function call *)
       let inline_what (vi: varinfo) : fundec option =
-         try Some (H.find !tab vi) with Not_found -> None
+         (* we never inline __VERIFIER_* functions *)
+         let len = min (String.length vi.vname) 11 in
+         if String.sub vi.vname 0 len = "__VERIFIER_" then
+            None
+         else
+            try Some (H.find !tab vi) with Not_found -> None
       in
 
       (* inlines the function identified by "vi" *)

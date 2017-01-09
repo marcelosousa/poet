@@ -1,18 +1,6 @@
 C Intermediate Language (CIL)
 ============================
 
-
-Note
-----
-
-This is a modified version of CIL for Poet, based on v.1.7.3 (as downloaded from
-the github repository).
-
-- the target `install' from make is broken, I added setup.sh
-
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-
 CIL is a front-end for the C programming language that facilitates
 program analysis and transformation. CIL will parse and typecheck a
 program, and compile it into a simplified subset of C.
