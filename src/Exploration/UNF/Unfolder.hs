@@ -4,6 +4,7 @@ module Exploration.UNF.Unfolder (unfolder) where
 
 -- import Util.Printer (unfToDot)
 import Control.Monad.State.Strict
+import Control.DeepSeq
 import Data.List
 import Data.Maybe hiding (catMaybes)
 import Data.Set (isSubsetOf)
@@ -20,7 +21,7 @@ import Language.SimpleC.AST
 import System.Console.ANSI
 import qualified Debug.Trace as T
 
-getCharDebug = return ()
+getCharDebug = getChar -- return ()
 clearScreenDebug = return ()
 
 unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)

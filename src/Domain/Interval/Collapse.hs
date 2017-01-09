@@ -136,9 +136,9 @@ instance Collapsible IntState IntAct where
         th_cfg = case M.lookup th_cfg_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
-    in T.trace ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos) $ 
+    in T.trace ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
        let res = fixpt syst b tid cfgs symt th_cfg pos st
-       in res `seq` (mtrace "collapse: end" $ res)
+       in T.trace "collapse: end" res
 
 -- @TODO: Receive other options for widening and state splitting
 fixpt :: System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
@@ -169,7 +169,7 @@ up_pc i@IntTState{..} t p =
   in i {st = st'} 
 
 handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
-handle_mark (pre,eId,post) = do
+handle_mark (pre,eId,post) = T.trace ("handle_mark: " ++ show (pre,eId,post)) $ do
   fs@FixState{..} <- get
   let (node_st, pre_acts) = case get_node_info fs_cfg pre of
         [s] -> s
@@ -179,12 +179,12 @@ handle_mark (pre,eId,post) = do
       -- construct the transformer state
       tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
       -- decide based on the type of edge which transformer to call
-      (post_acts,_ns) = trace ("handle_mark: state = " ++ show node_st) $ case edge_code of
+      (post_acts,_ns) = case edge_code of
         -- execute the transformer
         D decl -> runState (transformer_decl decl) tr_st 
         E expr -> runState (transformer_expr expr) tr_st
-      acts = pre_acts `join_act` post_acts
       ns@IntTState{..} = up_pc _ns fs_tid post 
+      acts = pre_acts `join_act` post_acts
   (is_fix,node_table') <- case edge_tags of
     -- loop head point 
     [LoopHead] -> loop_head_update (node_table fs_cfg) post (st,acts)
@@ -208,7 +208,7 @@ fixpt_result :: FixOp ResultList
 fixpt_result = do
   fs@FixState{..} <- get
   let marks = S.toList fs_mark
-  res <- trace ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
+  res <- T.trace ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
   if fs_mode
   then do 
     fs@FixState{..} <- get
@@ -240,6 +240,7 @@ worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
             D decl -> runState (transformer_decl decl) tr_st 
             E expr -> runState (transformer_expr expr) tr_st
           rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
+          -- join the actions of the predecessors with the actions of the current edge
           acts = pre_acts `join_act` post_acts
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
@@ -282,7 +283,7 @@ check_enabledness_succ syst (pre,eId,post) = do
   return $ not $ is_live fs_tid syst eId fs_cfg node_st
 
 loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, NodeTable)
-loop_head_update node_table node (st,act) = T.trace ("loop_head_update: BEGIN") $ do
+loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
   if c >= 3
@@ -317,7 +318,6 @@ join_update node_table node (st,act) =
  
 strong_update :: NodeTable -> NodeId -> (IntState,IntAct) -> (Bool, NodeTable)
 strong_update node_table node (st,act) =
-  trace ("strong_update: node = " ++ show node ++ ", acts = " ++ show act ++ ", state = " ++ show st) $ 
   case M.lookup node node_table of
     Nothing -> (False, M.insert node [(st,act)] node_table) 
     Just lst -> case lst of

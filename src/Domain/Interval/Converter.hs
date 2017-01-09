@@ -100,7 +100,7 @@ get_addrs st scope expr = T.trace ("get_addrs: scope = " ++ show scope ++ ", exp
     _ -> Nothing 
 
 get_addrs_just :: IntState -> Scope -> SExpression -> IntMAddrs 
-get_addrs_just st scope expr = 
+get_addrs_just st scope expr = T.trace ("get_addrs_just = " ++ show scope ++ ", expr = " ++ show expr) $ 
   case get_addrs st scope expr of
     Just addr -> addr
     Nothing -> error $ "get_addrs_just: not supported expr " ++ show expr
@@ -110,17 +110,17 @@ get_addrs_just st scope expr =
 --   to check if the variable is also defined in the local
 --   scope of the thread.
 get_addrs_id :: IntState -> Scope -> SymId -> IntMAddrs 
-get_addrs_id st scope id = trace ("get_addrs_id: id = " ++ show id ++ ", scope = " ++ show scope ++ "\n" ++ show st) $   
-  let addr = MemAddr id 0 scope
+get_addrs_id st scope id = T.trace ("get_addrs_id: id = " ++ show id ++ ", scope = " ++ show scope) $   
+  let addr = MemAddr id zero scope
   in case scope of
     Local i -> 
       case M.lookup i (th_states st) of
         Nothing -> get_addrs_id st Global id  
         Just th -> 
-          if trace ("get_addrs_id: addr = " ++ show addr) $ is_present (th_locals th) addr
+          if T.trace ("get_addrs_id: addr = " ++ show addr) $ is_present (th_locals th) addr
           then MemAddrs [addr]
           else get_addrs_id st Global id 
-    Global  -> 
+    Global  -> T.trace ("get_addrs_id: addr = " ++ show addr) $ 
       if is_present (heap st) addr
       then MemAddrs [addr]
       else error "get_addrs_id: the symbol is not the heap" 
@@ -237,7 +237,7 @@ default_value (Ty declarators ty) =
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp IntAct
-transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
+transformer_expr expr = T.trace ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
   then T.trace ("transformer_expr: conditional " ++ show expr) $ do 
@@ -337,7 +337,7 @@ interval_leq lhs rhs = T.trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,IntAct)
-transformer e = trace ("transformer: " ++ show e) $
+transformer e = T.trace ("transformer: " ++ show e) $
   case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
@@ -363,18 +363,18 @@ transformer e = trace ("transformer: " ++ show e) $
     ComplexImag expr -> error "transformer: complex op not supported" 
 
 index_transformer :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
-index_transformer lhs rhs = do 
+index_transformer lhs rhs = T.trace ("index_transformer: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do 
   s@IntTState{..} <- get
   case get_addrs_just st scope lhs of
     MemAddrTop -> error $ "index_transformer: lhs of index operation points to MemAddrTop"
     MemAddrs l -> do
       (rhs_vals, rhs_acts) <- transformer rhs
-      let l' = map (flip set_offset val) l 
+      let l' = map (flip set_offset rhs_vals) l 
           addrs = MemAddrs l'
           vals = read_memory st addrs 
           val = join_intval_list vals
           res_acts = read_act_addr addrs `join_act` rhs_acts 
-      return (val, res_acts)    
+      T.trace ("index_transformer: res_acts = " ++ show res_acts) $ return (val, res_acts)    
 
 -- | Transformer for an assignment expression.
 assign_transformer :: AssignOp -> SExpression -> SExpression -> IntTOp (IntValue,IntAct)
@@ -502,7 +502,8 @@ call_transformer_name name args = case name of
       (l, u) -> 
        return (l `iJoin` u,lacts `join_act` uacts)
   "poet_error" -> error "poet_error: assertion is violated" 
-  _ -> error $ "call_transformer_name: calls to " ++ name ++ " not supported" 
+  _ -> T.trace ("call_transformer_name: calls to " ++ name ++ " being ignored") $
+     return (zero, bot_act) 
 
 -- Need to apply the cut over the state
 -- for the cond + then expression
