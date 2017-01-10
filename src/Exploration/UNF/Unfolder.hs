@@ -185,16 +185,8 @@ unfold conf@Conf{..} e = do
      s@UnfolderState{..} <- get
      ev@Event{..} <- lift $ get_event "execute" e evts
      lift $ putStrLn $ "execute: going to call dcollapse" ++ show name
-     let (_st, nacts) = GCS.dcollapse syst widen st name
+     let (nst, nacts) = GCS.dcollapse syst M.empty st name
          nev = ev {acts = nacts}
-     nst <- case M.lookup name ewide of
-           Nothing -> _st
-           Just n  -> if n > 3
-                      -- widen the state w.r.t thread state + heap 
-                      -- and using the last state with the same name
-                      then do
-                        undefined
-                      else return _st
      lift $ set_event e nev evts
      return nst 
 

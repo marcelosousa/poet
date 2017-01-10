@@ -151,7 +151,8 @@ widen_intstate s1 s2 =
            _th_states = th_states s1 `widen_intthsts` th_states s2
            _num_th = M.size _th_states 
            _is_bot = False
-       in IntState _heap _th_states _num_th _is_bot
+           _st = IntState _heap _th_states _num_th _is_bot
+       in T.trace ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2 ++ "\n" ++ show _st) $ _st
 
 widen_intheap :: IntHeap -> IntHeap -> IntHeap
 widen_intheap m1 m2 = M.unionWith widen_intmcell m1 m2 
