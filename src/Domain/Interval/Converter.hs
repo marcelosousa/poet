@@ -84,7 +84,7 @@ get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
 --   Simplify to only consider the case where the 
 --   the expression is a LHS (var or array index).
 get_addrs :: IntState -> Scope -> SExpression -> Maybe IntMAddrs 
-get_addrs st scope expr = T.trace ("get_addrs: scope = " ++ show scope ++ ", expr = " ++ show expr) $
+get_addrs st scope expr = trace ("get_addrs: scope = " ++ show scope ++ ", expr = " ++ show expr) $
   case expr of
     Var id -> Just $ get_addrs_id st scope id 
     Unary CAdrOp e -> get_addrs st scope e 
@@ -100,7 +100,7 @@ get_addrs st scope expr = T.trace ("get_addrs: scope = " ++ show scope ++ ", exp
     _ -> Nothing 
 
 get_addrs_just :: IntState -> Scope -> SExpression -> IntMAddrs 
-get_addrs_just st scope expr = T.trace ("get_addrs_just = " ++ show scope ++ ", expr = " ++ show expr) $ 
+get_addrs_just st scope expr = trace ("get_addrs_just = " ++ show scope ++ ", expr = " ++ show expr) $ 
   case get_addrs st scope expr of
     Just addr -> addr
     Nothing -> error $ "get_addrs_just: not supported expr " ++ show expr
@@ -110,17 +110,17 @@ get_addrs_just st scope expr = T.trace ("get_addrs_just = " ++ show scope ++ ", 
 --   to check if the variable is also defined in the local
 --   scope of the thread.
 get_addrs_id :: IntState -> Scope -> SymId -> IntMAddrs 
-get_addrs_id st scope id = T.trace ("get_addrs_id: id = " ++ show id ++ ", scope = " ++ show scope) $   
+get_addrs_id st scope id = trace ("get_addrs_id: id = " ++ show id ++ ", scope = " ++ show scope) $   
   let addr = MemAddr id zero scope
   in case scope of
     Local i -> 
       case M.lookup i (th_states st) of
         Nothing -> get_addrs_id st Global id  
         Just th -> 
-          if T.trace ("get_addrs_id: addr = " ++ show addr) $ is_present (th_locals th) addr
+          if trace ("get_addrs_id: addr = " ++ show addr) $ is_present (th_locals th) addr
           then MemAddrs [addr]
           else get_addrs_id st Global id 
-    Global  -> T.trace ("get_addrs_id: addr = " ++ show addr) $ 
+    Global  -> trace ("get_addrs_id: addr = " ++ show addr) $ 
       if is_present (heap st) addr
       then MemAddrs [addr]
       else error "get_addrs_id: the symbol is not the heap" 
@@ -237,17 +237,17 @@ default_value (Ty declarators ty) =
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp IntAct
-transformer_expr expr = T.trace ("transformer_expr: " ++ show expr) $ do
+transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
-  then T.trace ("transformer_expr: conditional " ++ show expr) $ do 
+  then trace ("transformer_expr: conditional " ++ show expr) $ do 
     (val, act) <- bool_transformer_expr expr
     s@IntTState{..} <- get
     let res_st = case val of
           IntBot -> set_int_state_bot st
           _ -> st
     set_state res_st 
-    T.trace ("bool_transformer: result = " ++ show val) $ return act
+    trace ("bool_transformer: result = " ++ show val) $ return act
   else do
     (vals,act) <- transformer expr
     return act 
@@ -310,7 +310,7 @@ apply_logic op lhs rhs =
 -- Logical Operations
 -- Need to update the variables
 interval_leq :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
-interval_leq lhs rhs = T.trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do
+interval_leq lhs rhs = trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do
   (lhs_val, lhs_act) <- transformer lhs 
   (rhs_val, rhs_act) <- transformer rhs 
   let acts = lhs_act `join_act` rhs_act
@@ -333,11 +333,11 @@ interval_leq lhs rhs = T.trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++
             Just rhs_addr -> (write_memory lhs_st rhs_addr rhs_nval, write_act_addr rhs_addr)
         final_acts = acts `join_act` lhs_nact `join_act` rhs_nact
     set_state rhs_st
-    T.trace ("interval_leq: lhs_val = " ++ show lhs_val ++ ", rhs_val = " ++ show rhs_val ++ ", lhs_nval = " ++ show lhs_nval ++ ", rhs_nval = " ++ show rhs_nval) $ return (lhs_nval, final_acts)
+    trace ("interval_leq: lhs_val = " ++ show lhs_val ++ ", rhs_val = " ++ show rhs_val ++ ", lhs_nval = " ++ show lhs_nval ++ ", rhs_nval = " ++ show rhs_nval) $ return (lhs_nval, final_acts)
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,IntAct)
-transformer e = T.trace ("transformer: " ++ show e) $
+transformer e = trace ("transformer: " ++ show e) $
   case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
@@ -363,7 +363,7 @@ transformer e = T.trace ("transformer: " ++ show e) $
     ComplexImag expr -> error "transformer: complex op not supported" 
 
 index_transformer :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
-index_transformer lhs rhs = T.trace ("index_transformer: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do 
+index_transformer lhs rhs = trace ("index_transformer: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do 
   s@IntTState{..} <- get
   case get_addrs_just st scope lhs of
     MemAddrTop -> error $ "index_transformer: lhs of index operation points to MemAddrTop"
@@ -374,7 +374,7 @@ index_transformer lhs rhs = T.trace ("index_transformer: lhs = " ++ show lhs ++ 
           vals = read_memory st addrs 
           val = join_intval_list vals
           res_acts = read_act_addr addrs `join_act` rhs_acts 
-      T.trace ("index_transformer: res_acts = " ++ show res_acts) $ return (val, res_acts)    
+      trace ("index_transformer: res_acts = " ++ show res_acts) $ return (val, res_acts)    
 
 -- | Transformer for an assignment expression.
 assign_transformer :: AssignOp -> SExpression -> SExpression -> IntTOp (IntValue,IntAct)
@@ -400,7 +400,7 @@ assign_transformer op lhs rhs = do
   -- modify the state of the addresses with
   -- the result values 
   let res_st = write_memory st lhs_id res_vals
-  set_state res_st 
+  trace ("assign_transformer: new state \n " ++ show res_st ) $ set_state res_st 
   return (res_vals, res_acts) 
 
 -- | Transformer for binary operations.
@@ -580,7 +580,7 @@ var_transformer :: SymId -> IntTOp (IntValue, IntAct)
 var_transformer sym_id = trace ("var_transformer: sym_id = " ++ show sym_id) $ do
   s@IntTState{..} <- get
   let id_addr = MemAddr sym_id zero scope
-      val = read_memory_addr st id_addr
+      val = read_memory_addr_just st id_addr
       acts = read_act sym_id zero scope
   return (val, acts)
   

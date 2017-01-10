@@ -197,7 +197,7 @@ ai :: FilePath -> IO ()
 ai f = do
   fe <- extract "" f
   let syst = IC.convert fe
-      res = collapse True syst (gbst syst) 1
+      (_,res) = collapse True syst M.empty (gbst syst) 1
       sym_table = Language.SimpleC.symt fe -- get the symbol table
 --  putStrLn $ show (gbst syst) 
       fname = fst $ splitExtension f

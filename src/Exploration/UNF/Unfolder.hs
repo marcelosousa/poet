@@ -21,8 +21,8 @@ import Language.SimpleC.AST
 import System.Console.ANSI
 import qualified Debug.Trace as T
 
-getCharDebug = getChar -- return ()
-clearScreenDebug = return ()
+getCharDebug = return ()
+clearScreenDebug = clearScreen -- return ()
 
 unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
 unfolder stl cut syst = do 
@@ -78,7 +78,7 @@ explore c@Conf{..} ê d alt = do
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak
        ++")\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 
-  k <- lift $ getCharDebug
+  k <- lift $ getChar
   -- @ configuration is maximal?
   -- if null enevs 
   if null enevs 
@@ -185,8 +185,16 @@ unfold conf@Conf{..} e = do
      s@UnfolderState{..} <- get
      ev@Event{..} <- lift $ get_event "execute" e evts
      lift $ putStrLn $ "execute: going to call dcollapse" ++ show name
-     let (nst,nacts) = GCS.dcollapse syst st name
+     let (_st, nacts) = GCS.dcollapse syst widen st name
          nev = ev {acts = nacts}
+     nst <- case M.lookup name ewide of
+           Nothing -> _st
+           Just n  -> if n > 3
+                      -- widen the state w.r.t thread state + heap 
+                      -- and using the last state with the same name
+                      then do
+                        undefined
+                      else return _st
      lift $ set_event e nev evts
      return nst 
 
@@ -203,9 +211,11 @@ extend e maxevs st th = do
   --  ii. the set of actions performed that enables us to construct
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
-  lift $ putStrLn ("extend: calling collapse")
-  let new_events = GCS.collapse False syst st th -- :: [(st,pos,[act])]
-  new_events `seq` lift $ putStrLn ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
+  lift $ putStrLn "extend: calling collapse"
+  let (nwiden, new_events) = GCS.collapse False syst widen st th 
+  set_widen_map nwiden
+  new_events `seq` lift $ putStrLn $ "extend: new widening map = " ++ show nwiden 
+  lift $ putStrLn ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
   lift $ putStrLn $ "extend: calling ext(" ++ show e ++ ")"
@@ -255,10 +265,10 @@ ext e maxevs st (tid,pos) êacts = do
       his `seq` lift $ putStrLn $ "ext: conflicting extensions histories = " ++ show his
       _ <- lift getCharDebug
       lift $ putStrLn "ext: adding conflicting extensions events"
-      mapM (add_event stak succe êname êacts) his
+      mapM (add_event False stak succe êname êacts) his
       lift $ putStrLn "ext: finished adding conflicting extensions events"
       lift $ putStrLn "ext: adding the enabled event"
-      add_event stak succe êname êacts h0
+      add_event True stak succe êname êacts h0
     else error "e must always be in h0"  
 
 -- | history computes the largest history of an event which we call h0 
@@ -415,8 +425,8 @@ histories_lock info@(ne_name,ne_acts) s_e hs = do
 --     3. Insert the new event in the hashtable
 --     4. Update all events in the history to include neID as their successor
 --     5. Update all events in the immediate conflicts to include neID as one
-add_event :: (GCS.Collapsible st act) => EventsID -> [(EventID,Event act)] -> EventName -> act -> History -> UnfolderOp st act EventsID 
-add_event stack dup name acts history = do
+add_event :: (GCS.Collapsible st act) => Bool -> EventsID -> [(EventID,Event act)] -> EventName -> act -> History -> UnfolderOp st act EventsID 
+add_event is_in_conf stack dup name acts history = do
   lift $ putStrLn ("add_event: name = " ++ show name ++ ", hist = " ++ show history) 
   _ <- lift $ getCharDebug
   let hasDup = filter (\(e,ev) -> S.fromList (pred ev) == S.fromList history) dup
@@ -426,8 +436,13 @@ add_event stack dup name acts history = do
        else do 
          lift $ putStrLn "add_event: event was already in the prefix" 
          return $ map fst hasDup 
-  else do 
-    s@UnfolderState{..} <- get
+  else do
+    s@UnfolderState{..} <- 
+      if is_in_conf 
+      then do
+        inc_widen_map name 
+        get 
+      else get
     -- @  a) Computes the local history of the new event
     -- @NOTE: @CRITICAL OPTIMISE THIS
     prede <- lift $ mapM (\e -> predecessors e evts) history  
@@ -480,11 +495,11 @@ add_event stack dup name acts history = do
 
    -- | Compute the global state of the local configuration
    --   by doing a topological sorting
-   st_local_conf ::(GCS.Collapsible st act) => st -> EventName -> History -> UnfolderOp st act st
+   st_local_conf :: (GCS.Collapsible st act) => st -> EventName -> History -> UnfolderOp st act st
    st_local_conf st ename econf = do
      s@UnfolderState{..} <- get
      st' <- st_history st [0] [] econf 
-     return $ GCS.simple_run syst st' ename 
+     return $ GCS.simple_run syst widen st' ename 
 
    -- | Actually computes the state of a local configuration
    st_history :: (GCS.Collapsible st act) => st -> EventsID -> EventsID -> History -> UnfolderOp st act st
@@ -508,7 +523,7 @@ add_event stack dup name acts history = do
          ename <- lift $ get_name e evts
          let nst = if e == 0 
                    then st
-                   else GCS.simple_run syst st ename
+                   else GCS.simple_run syst widen st ename
          st_history nst wlist' seen' hist 
 
 -- | Compute conflicts 

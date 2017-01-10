@@ -125,7 +125,7 @@ instance Collapsible IntState IntAct where
            Just cfg -> case succs cfg pos of
              [] -> False
              s  -> all (\(eId,nId) -> is_live tid syst eId cfg st) s
-  collapse b syst@System{..} st tid = 
+  collapse b syst@System{..} wmap st tid = 
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
@@ -137,18 +137,18 @@ instance Collapsible IntState IntAct where
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
     in T.trace ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
-       let res = fixpt syst b tid cfgs symt th_cfg pos st
-       in T.trace "collapse: end" res
+       let res = fixpt syst wmap b tid cfgs symt th_cfg pos st
+       in trace "collapse: end" res
 
--- @TODO: Receive other options for widening and state splitting
-fixpt :: System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList 
-fixpt syst b tid cfgs symt cfg@Graph{..} pos st =
+fixpt :: System IntState IntAct -> Map NodeId Int -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> (Map NodeId Int, ResultList) 
+fixpt syst wmap b tid cfgs symt cfg@Graph{..} pos st =
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-      i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty
-  in  evalState (worklist syst wlist) i_fix_st 
+      i_fix_st = FixState b tid cfgs symt cfg' S.empty wmap 
+      (res, f_fix_st) = runState (worklist syst wlist) i_fix_st 
+  in (fs_wide f_fix_st, res) 
 
 add_mark :: WItem -> FixOp ()
 add_mark i = do 
@@ -169,7 +169,7 @@ up_pc i@IntTState{..} t p =
   in i {st = st'} 
 
 handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
-handle_mark (pre,eId,post) = T.trace ("handle_mark: " ++ show (pre,eId,post)) $ do
+handle_mark (pre,eId,post) = trace ("handle_mark: " ++ show (pre,eId,post)) $ do
   fs@FixState{..} <- get
   let (node_st, pre_acts) = case get_node_info fs_cfg pre of
         [s] -> s
@@ -208,7 +208,7 @@ fixpt_result :: FixOp ResultList
 fixpt_result = do
   fs@FixState{..} <- get
   let marks = S.toList fs_mark
-  res <- T.trace ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
+  res <- trace ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
   if fs_mode
   then do 
     fs@FixState{..} <- get
@@ -221,7 +221,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = trace ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -246,7 +246,7 @@ worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
       -- either add the results to the result list or update
       -- the cfg with them 
       if is_bot st
-      then T.trace ("worklist: current edge returns bottom") $ worklist syst wlist
+      then trace ("worklist: current edge returns bottom") $ worklist syst wlist
       else if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
            then mtrace ("is a global operation") $ do
              add_mark it
@@ -268,7 +268,7 @@ worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
              -- @NOTE: If one the sucessors is not enabled then
              -- simply mark it as a final node
              if not $ null disabled_rwlst
-             then T.trace ("worklist: non-global event!") $ do
+             then trace ("worklist: non-global event!") $ do
                add_mark it
                worklist syst wlist
              else worklist syst nwlist
@@ -287,7 +287,7 @@ loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
   if c >= 3
-  then T.trace ("loop_head_update: going to apply widening") $ do 
+  then trace ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       Nothing -> error "loop_head_update: widening between a state and empty?" 
       Just lst -> case lst of

@@ -46,7 +46,7 @@ insert_thread s@IntState{..} tid th =
 -- | Write to memory: receives a IntMAddrs and a
 --   IntValue and assigns the IntValue to the MemAddrs
 write_memory :: IntState -> IntMAddrs -> IntValue -> IntState
-write_memory st addrs vals =
+write_memory st addrs vals = mtrace ("write_memory: addrs = " ++ show addrs) $ 
   case addrs of
     MemAddrTop -> error "write_memory: top addrs, need to traverse everything"
     MemAddrs l -> foldr (\a s -> write_memory_addr s a vals) st l
@@ -54,33 +54,64 @@ write_memory st addrs vals =
 -- | Write to memory of one address
 write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
 write_memory_addr st@IntState{..} addr@MemAddr{..} conval =
-  T.trace ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show conval) $
-  case level of
+  mtrace ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show conval) $
+  if range offset == 1
+  then case level of
     Global -> modify_heap st addr conval 
     Local i -> insert_local st i addr conval 
+  else
+    let addrs = concretize_addr addr
+    in write_memory st addrs conval 
 
 -- @TODO: Return a list of a just a intvalue by doing a join over all results?
 read_memory :: IntState -> IntMAddrs -> [IntValue]
 read_memory st addrs = mtrace ("read_memory: " ++ show addrs) $  
   case addrs of 
     MemAddrTop -> error "read_memory: have not implemented MemAddrTop"
-    MemAddrs l -> map (read_memory_addr st) l
+    MemAddrs l -> map (read_memory_addr_just st) l
 
-read_memory_addr :: IntState -> IntMAddr -> IntValue
-read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ++ "\n" ++ show st) $
+read_memory_addr_just :: IntState -> IntMAddr -> IntValue
+read_memory_addr_just st addr =
+  case read_memory_addr st addr of
+    Nothing -> error $ "read_memory_addr: " ++ show addr ++ " not found"  
+    Just v  -> v
+
+read_memory_addr :: IntState -> IntMAddr -> Maybe IntValue
+read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ) $
   case level addr of
     Global -> case M.lookup addr (heap st) of 
-      Nothing   -> error $ "read_memory_addr: " ++ show addr 
-      Just cell -> val cell
+      Nothing   ->  
+        -- Check if we can concretize the addrs
+        if range (offset addr) == 1
+        then error $ "read_memaddr: " ++ show addr ++ " not found"
+        else 
+          let addrs = concretize_addr addr
+              vals = read_memory st addrs
+          in Just $ join_intval_list vals
+      Just cell -> Just $ val cell
     Local tid -> case M.lookup tid (th_states st) of   
       Nothing -> error $ "read_memaddr: tid " ++ show tid ++ " not found, addr " ++ show addr
       Just th -> case M.lookup addr (th_locals th) of
         Nothing -> 
-         -- The variable might be in the heap
-         let addr' = addr { level = Global }
-         in read_memory_addr st addr'
-        Just value -> value 
- 
+          -- Check if the variable is in the heap
+          let addr' = addr { level = Global }
+          in case read_memory_addr st addr' of
+            Nothing -> 
+              -- Check if we can concretize the addrs
+              if range (offset addr) == 1
+              then error $ "read_memaddr: " ++ show addr ++ " not found"
+              else 
+                let addrs = concretize_addr addr
+                    vals = read_memory st addrs
+                in Just $ join_intval_list vals
+            Just vals -> Just vals
+        Just value -> Just $ value 
+
+concretize_addr :: IntMAddr -> IntMAddrs
+concretize_addr a@MemAddr{..} =
+  let offsets = concretize_interval offset
+  in MemAddrs $ map (set_offset a) offsets
+
 -- | Checks if an address is initialized in some part of the memory
 is_present :: Show a => Map IntMAddr a -> IntMAddr -> Bool
 is_present m k = case M.lookup k m of

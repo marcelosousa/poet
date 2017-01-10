@@ -15,6 +15,11 @@ import Util.Generic hiding (safeLookup)
 data InterVal = I Int | PlusInf | MinusInf
   deriving (Show,Eq)
 
+toInt :: InterVal -> Int
+toInt i = case i of
+  I n -> n
+  _ -> error "toInt: can't convert PlusInf or MinusInf to int"
+
 -- a <= b for intervals
 --instance Ord (InterVal, InterVal) where
 --  (<=) (a,b) (c,d) = a >= c && b <= d

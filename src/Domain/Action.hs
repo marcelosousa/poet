@@ -109,7 +109,9 @@ instance Eq v => Action (Act v) where
     in not $ is_maddrs_bot $ meet_maddrs a1_addrs a2_addrs
   isGlobal act@Act{..} =
     let acts = act_addrs act
-    in is_global acts || not (all is_maddrs_bot [locks,unlocks,tcreate,tjoin])
+    -- version where any access to the heap is considered a global action
+    -- in is_global acts || not (all is_maddrs_bot [locks,unlocks,tcreate,tjoin])
+    in not (all is_maddrs_bot [locks,unlocks,tcreate,tjoin])
   isCreateOf tid_sym a1@Act{..} =
     case tcreate of
       MemAddrTop -> True

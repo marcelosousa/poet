@@ -81,17 +81,17 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
     let control = controlPart st
         en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
     in M.keys en
-  collapse :: Bool -> System st act -> st -> TId -> [(st,Pos,act)]
-  dcollapse :: System st act -> st -> (TId,Pos,SymId) -> (st,act)
-  dcollapse syst st (tid,pos,_) =
-    let results = collapse True syst st tid
+  collapse :: Bool -> System st act -> Map NodeId Int -> st -> TId -> (Map NodeId Int, [(st,Pos,act)])
+  dcollapse :: System st act -> Map NodeId Int -> st -> (TId,Pos,SymId) -> (st,act)
+  dcollapse syst wmap st (tid,pos,_) =
+    let (_,results) = collapse True syst wmap st tid
         result = filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"
       [(st,_,act)] -> (st,act)
       _ -> error "dcollapse: collapse produced several dataflow facts for desired location"
-  simple_run :: System st act -> st -> (TId,Pos,SymId) -> st
-  simple_run sys st name = fst $ dcollapse sys st name
+  simple_run :: System st act -> Map NodeId Int -> st -> (TId,Pos,SymId) -> st
+  simple_run sys wmap st name = fst $ dcollapse sys wmap st name
  
 class (Eq act) => Action act where
   isLock :: act -> Bool

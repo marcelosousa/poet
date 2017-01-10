@@ -40,6 +40,21 @@ data IntValue
   | IntArr [IntValue] Int Bool -- IsTop 
   deriving (Show,Ord,Eq)
 
+concretize_interval :: IntValue -> [IntValue]
+concretize_interval i = case i of
+  InterVal (l, u) -> 
+    let lb = toInt l
+        ub = toInt u
+    in map k [lb..ub] 
+  _ -> error $ "concretize_interval: not supported " ++ show i
+
+range :: IntValue -> Int
+range i = case i of
+  IntBot -> 0
+  IntVal l -> length l
+  InterVal (l, u) -> (toInt u - toInt l) + 1
+  _ -> error $ "range: " ++ show i ++ " not supported"
+
 zero :: IntValue
 zero = InterVal (I 0,I 0) 
 
