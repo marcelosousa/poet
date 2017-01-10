@@ -46,7 +46,7 @@ insert_thread s@IntState{..} tid th =
 -- | Write to memory: receives a IntMAddrs and a
 --   IntValue and assigns the IntValue to the MemAddrs
 write_memory :: IntState -> IntMAddrs -> IntValue -> IntState
-write_memory st addrs vals = mtrace ("write_memory: addrs = " ++ show addrs) $ 
+write_memory st addrs vals = T.trace ("write_memory: addrs = " ++ show addrs) $ 
   case addrs of
     MemAddrTop -> error "write_memory: top addrs, need to traverse everything"
     MemAddrs l -> foldr (\a s -> write_memory_addr s a vals) st l
@@ -54,8 +54,8 @@ write_memory st addrs vals = mtrace ("write_memory: addrs = " ++ show addrs) $
 -- | Write to memory of one address
 write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
 write_memory_addr st@IntState{..} addr@MemAddr{..} conval =
-  mtrace ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show conval) $
-  if range offset == 1
+  T.trace ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show conval) $
+  if not $ is_interval offset 
   then case level of
     Global -> modify_heap st addr conval 
     Local i -> insert_local st i addr conval 
@@ -82,7 +82,7 @@ read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ) $
     Global -> case M.lookup addr (heap st) of 
       Nothing   ->  
         -- Check if we can concretize the addrs
-        if range (offset addr) == 1
+        if not $ is_interval (offset addr) 
         then error $ "read_memaddr: " ++ show addr ++ " not found"
         else 
           let addrs = concretize_addr addr
@@ -98,7 +98,7 @@ read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ) $
           in case read_memory_addr st addr' of
             Nothing -> 
               -- Check if we can concretize the addrs
-              if range (offset addr) == 1
+              if not $ is_interval (offset addr) 
               then error $ "read_memaddr: " ++ show addr ++ " not found"
               else 
                 let addrs = concretize_addr addr
@@ -108,7 +108,7 @@ read_memory_addr st addr = mtrace ("read_memaddr: addr = " ++ show addr ) $
         Just value -> Just $ value 
 
 concretize_addr :: IntMAddr -> IntMAddrs
-concretize_addr a@MemAddr{..} =
+concretize_addr a@MemAddr{..} = T.trace ("concretize_addr: addr = " ++ show a) $
   let offsets = concretize_interval offset
   in MemAddrs $ map (set_offset a) offsets
 
@@ -137,7 +137,7 @@ modify_heap st@IntState{..} addr val =
 -- | API FOR THREAD STATE
 -- | insert_local: inserts an element to local state 
 insert_local :: IntState -> TId -> IntMAddr -> IntValue -> IntState
-insert_local st@IntState{..} tid addr val = 
+insert_local st@IntState{..} tid addr val = T.trace ("insert_local: tid = " ++ show tid ++ ", addr = " ++ show addr) $  
  case M.lookup tid th_states of
     Nothing -> error "insert_local: tid not found in th_states"
     Just s@ThState{..} ->

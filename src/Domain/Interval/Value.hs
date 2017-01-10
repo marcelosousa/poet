@@ -48,11 +48,14 @@ concretize_interval i = case i of
     in map k [lb..ub] 
   _ -> error $ "concretize_interval: not supported " ++ show i
 
-range :: IntValue -> Int
-range i = case i of
-  IntBot -> 0
-  IntVal l -> length l
-  InterVal (l, u) -> (toInt u - toInt l) + 1
+is_interval :: IntValue -> Bool 
+is_interval i = case i of
+  IntBot -> True 
+  IntVal l -> length l /= 1
+  InterVal (l, u) ->
+    case (l, u) of 
+      (I lb, I ub) -> ub /= lb
+      _ -> True
   _ -> error $ "range: " ++ show i ++ " not supported"
 
 zero :: IntValue
@@ -104,7 +107,7 @@ iJoin v1 v2 = case (v1,v2) of
   (a,IntBot) -> a
   (IntTop,a) -> IntTop
   (a,IntTop) -> IntTop
-  (IntVal i,IntVal j) -> IntVal $ i ++ j 
+  (IntVal i,IntVal j) -> IntVal $ nub $ i ++ j 
   (IntMemAddr m1,IntMemAddr m2) -> IntMemAddr $ m1 `join_maddrs` m2 
   (InterVal (a,b),InterVal (c,d)) -> InterVal (min a c, max b d)
   _ -> error $ "iJoin unsupported: " ++ show (v1,v2)

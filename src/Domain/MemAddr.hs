@@ -26,6 +26,16 @@ data MemAddr v
   }
   deriving (Show,Eq,Ord)
 
+data MemAddrBase
+  = MemAddrBase
+  { _base :: SymId
+  , _level :: Scope
+  }
+  deriving (Show,Eq,Ord)
+
+decompose_addr :: MemAddr v -> (MemAddrBase, v)
+decompose_addr a@MemAddr{..} = (MemAddrBase base level, offset)
+
 set_offset :: MemAddr v -> v -> MemAddr v
 set_offset m offset_ = m { offset = offset_ }
 

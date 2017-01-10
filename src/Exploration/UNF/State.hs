@@ -101,8 +101,6 @@ data UnfolderState st act =
   , stas :: States st         -- ^ Hash Table for cutoffs
   , opts :: UnfolderOpts      -- ^ Options
   , stats :: UnfolderStats    -- ^ Statistics 
-  , widen :: Map NodeId Int   -- ^ Widening counters per CFG node
-  , ewide :: Map EventName Int -- ^ Widening counters per EventName
 }
 
 -- @ Abbreviation of the type of an operation of the unfolder

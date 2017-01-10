@@ -160,7 +160,7 @@ transformer_decls = trace ("transformer_decls!!!!") $
 
 -- | transformer for a declaration:
 transformer_decl :: SDeclaration -> IntTOp IntAct
-transformer_decl decl = trace ("transformer_decl: " ++ show decl) $ do
+transformer_decl decl = T.trace ("transformer_decl: " ++ show decl) $ do
   case decl of
     TypeDecl ty -> error "transformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
@@ -237,7 +237,7 @@ default_value (Ty declarators ty) =
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp IntAct
-transformer_expr expr = trace ("transformer_expr: " ++ show expr) $ do
+transformer_expr expr = T.trace ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
   then trace ("transformer_expr: conditional " ++ show expr) $ do 

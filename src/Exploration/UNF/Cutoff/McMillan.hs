@@ -8,9 +8,10 @@ import Exploration.UNF.State
 import qualified Model.GCS as GCS
 
 -- @ Check if st is a cutoff
-cutoff :: GCS.Projection st => st -> Int -> UnfolderOp st act Bool
+cutoff :: Show st => GCS.Projection st => st -> Int -> UnfolderOp st act Bool
 cutoff st si = do
   s@UnfolderState{..} <- get
+--  lift $ putStrLn $ "checking cutoff of state with size = " ++ show si ++ "\n" ++ show st
   let locs = GCS.controlPart st
       stas' = M.insertWith (++) locs [(st,si)] stas
   set_cutoff_table stas'

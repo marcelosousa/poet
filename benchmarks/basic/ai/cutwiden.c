@@ -17,7 +17,6 @@ void *queue_insert (void * arg)
    qsiz = MAX_QUEUE;
    while (done == 0)
    {
-      i++;
       pthread_mutex_lock (&mq);
       if (qsiz < MAX_QUEUE)
       {

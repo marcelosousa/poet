@@ -144,7 +144,7 @@ subsumes_interval st1 st2 =
 -- | Widening operation
 -- It doesn't take care of the case where the interval states might be bottom
 widen_intstate :: IntState -> IntState -> IntState
-widen_intstate s1 s2 = 
+widen_intstate s1 s2 = T.trace ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2) $
   if s1 == s2 
   then s1
   else let _heap = (heap s1) `widen_intheap` (heap s2)
@@ -152,7 +152,7 @@ widen_intstate s1 s2 =
            _num_th = M.size _th_states 
            _is_bot = False
            _st = IntState _heap _th_states _num_th _is_bot
-       in T.trace ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2 ++ "\n" ++ show _st) $ _st
+       in _st
 
 widen_intheap :: IntHeap -> IntHeap -> IntHeap
 widen_intheap m1 m2 = M.unionWith widen_intmcell m1 m2 

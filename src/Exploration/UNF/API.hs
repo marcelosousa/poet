@@ -56,7 +56,7 @@ i_unf_state stl cut syst = do
       stak = [botEID]
       cntr = 1
       opts = UnfOpts stl cut 
-  return $ UnfolderState syst evts pcnf stak cntr stas opts default_unf_stats MA.empty MA.empty 
+  return $ UnfolderState syst evts pcnf stak cntr stas opts default_unf_stats 
 
 -- API
 -- GETTERS 
@@ -270,6 +270,7 @@ inc_evs_per_name name = do
       stats' = stats { nr_evs_per_name = n_evs_per_name }
   put s{ stats = stats' }
 
+{-
 inc_widen_map :: EventName -> UnfolderOp st act ()
 inc_widen_map ename = do 
   s@UnfolderState{..} <- get
@@ -282,7 +283,8 @@ set_widen_map :: Map NodeId Int -> UnfolderOp st act ()
 set_widen_map wmap = do 
   s@UnfolderState{..} <- get
   put s{ widen = wmap }
- 
+-}
+
 -- | Utility functions
 -- | Filters a list of events ids that are still in the prefix 
 filterEvents :: EventsID -> Events act -> IO EventsID

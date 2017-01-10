@@ -125,7 +125,7 @@ instance Collapsible IntState IntAct where
            Just cfg -> case succs cfg pos of
              [] -> False
              s  -> all (\(eId,nId) -> is_live tid syst eId cfg st) s
-  collapse b syst@System{..} wmap st tid = 
+  collapse b syst@System{..} st tid = 
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
@@ -137,18 +137,19 @@ instance Collapsible IntState IntAct where
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
     in T.trace ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
-       let res = fixpt syst wmap b tid cfgs symt th_cfg pos st
+       let res = fixpt syst b tid cfgs symt th_cfg pos st
        in trace "collapse: end" res
 
-fixpt :: System IntState IntAct -> Map NodeId Int -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> (Map NodeId Int, ResultList) 
-fixpt syst wmap b tid cfgs symt cfg@Graph{..} pos st =
+fixpt :: System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList
+fixpt syst b tid cfgs symt cfg@Graph{..} pos st =
+  T.trace ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-      i_fix_st = FixState b tid cfgs symt cfg' S.empty wmap 
-      (res, f_fix_st) = runState (worklist syst wlist) i_fix_st 
-  in (fs_wide f_fix_st, res) 
+      i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty 
+      res = T.trace ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist syst wlist) i_fix_st
+  in res 
 
 add_mark :: WItem -> FixOp ()
 add_mark i = do 
@@ -169,13 +170,13 @@ up_pc i@IntTState{..} t p =
   in i {st = st'} 
 
 handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
-handle_mark (pre,eId,post) = trace ("handle_mark: " ++ show (pre,eId,post)) $ do
+handle_mark (pre,eId,post) = T.trace ("handle_mark: " ++ show (pre,eId,post)) $ do
   fs@FixState{..} <- get
   let (node_st, pre_acts) = case get_node_info fs_cfg pre of
         [s] -> s
         l   -> error $ "handle_mark invalid pre states: " ++ show l
       -- get the edge info
-      e@EdgeInfo{..} = get_edge_info fs_cfg eId
+      e@EdgeInfo{..} = T.trace ("handle_mark: " ++ show node_st) $ get_edge_info fs_cfg eId
       -- construct the transformer state
       tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
       -- decide based on the type of edge which transformer to call
@@ -221,7 +222,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = trace ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -251,7 +252,7 @@ worklist syst _wlist = trace ("worklist: " ++ show _wlist) $ do
            then mtrace ("is a global operation") $ do
              add_mark it
              worklist syst wlist
-           else do 
+           else T.trace ("worklist: returned state\n" ++ show st) $ do 
              -- depending on the tags of the edge; the behaviour is different
              (is_fix,node_table') <-
                   case edge_tags of
@@ -289,7 +290,8 @@ loop_head_update node_table node (st,act) =  do
   if c >= 3
   then trace ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
-      Nothing -> error "loop_head_update: widening between a state and empty?" 
+      -- error "loop_head_update: widening between a state and empty?" 
+      Nothing ->  return $ (False, M.insert node [(st,act)] node_table)
       Just lst -> case lst of
         [] -> error "loop_head_update: widening between a state and empty?" 
         [(st',act')] ->

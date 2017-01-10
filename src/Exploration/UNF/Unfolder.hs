@@ -185,7 +185,7 @@ unfold conf@Conf{..} e = do
      s@UnfolderState{..} <- get
      ev@Event{..} <- lift $ get_event "execute" e evts
      lift $ putStrLn $ "execute: going to call dcollapse" ++ show name
-     let (nst, nacts) = GCS.dcollapse syst M.empty st name
+     let (nst, nacts) = GCS.dcollapse syst st name
          nev = ev {acts = nacts}
      lift $ set_event e nev evts
      return nst 
@@ -204,10 +204,8 @@ extend e maxevs st th = do
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
   lift $ putStrLn "extend: calling collapse"
-  let (nwiden, new_events) = GCS.collapse False syst widen st th 
-  set_widen_map nwiden
-  new_events `seq` lift $ putStrLn $ "extend: new widening map = " ++ show nwiden 
-  lift $ putStrLn ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
+  let new_events = GCS.collapse False syst st th 
+  new_events `seq` lift $ putStrLn ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
   lift $ putStrLn $ "extend: calling ext(" ++ show e ++ ")"
@@ -429,12 +427,7 @@ add_event is_in_conf stack dup name acts history = do
          lift $ putStrLn "add_event: event was already in the prefix" 
          return $ map fst hasDup 
   else do
-    s@UnfolderState{..} <- 
-      if is_in_conf 
-      then do
-        inc_widen_map name 
-        get 
-      else get
+    s@UnfolderState{..} <- get 
     -- @  a) Computes the local history of the new event
     -- @NOTE: @CRITICAL OPTIMISE THIS
     prede <- lift $ mapM (\e -> predecessors e evts) history  
@@ -491,7 +484,7 @@ add_event is_in_conf stack dup name acts history = do
    st_local_conf st ename econf = do
      s@UnfolderState{..} <- get
      st' <- st_history st [0] [] econf 
-     return $ GCS.simple_run syst widen st' ename 
+     return $ GCS.simple_run syst st' ename 
 
    -- | Actually computes the state of a local configuration
    st_history :: (GCS.Collapsible st act) => st -> EventsID -> EventsID -> History -> UnfolderOp st act st
@@ -515,7 +508,7 @@ add_event is_in_conf stack dup name acts history = do
          ename <- lift $ get_name e evts
          let nst = if e == 0 
                    then st
-                   else GCS.simple_run syst widen st ename
+                   else GCS.simple_run syst st ename
          st_history nst wlist' seen' hist 
 
 -- | Compute conflicts 
