@@ -69,7 +69,7 @@ get_tid_expr scope st expr = mytrace False ("get_tid_expr: " ++ show expr) $
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,IntAct)
-transformer e = mytrace False ("transformer: " ++ show e) $
+transformer e = mytrace True ("transformer: " ++ show e) $
   case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"

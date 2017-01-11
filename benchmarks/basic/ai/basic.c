@@ -1,6 +1,10 @@
+// #include "pthread.h"
 #include <pthread.h>
 
-int arr[5];
+struct Foo {
+  int a;
+  int b;
+};
 
 void* incx()
 {
@@ -10,7 +14,9 @@ void* incx()
 int main(int argc, char **argv) 
 {
   int i = nondet(1,3);
-  arr[i] = 5;
+  struct Foo f;
+  f.a = i;
+  f.b = i;
 
   pthread_t ptr;
 
