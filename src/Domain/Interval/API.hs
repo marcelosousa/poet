@@ -9,7 +9,7 @@
 -- This module defines the API functions
 -- to manipulate interval values and states 
 -------------------------------------------------------------------------------
-module Domain.Interval.API (inc_num_th, insert_thread, get_addrs, read_memory, write_memory, write_memory_addr, set_pos) where
+module Domain.Interval.API (inc_num_th, insert_thread, get_addrs, read_memory, write_memory, write_memory_addr, set_pos, update_pc) where
 
 import Control.Monad.State.Lazy
 import Data.IntMap (IntMap)
@@ -23,10 +23,8 @@ import Language.SimpleC.AST (SymId)
 import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.Map as M
-import qualified Debug.Trace as T
 
 -- | API FOR INTERVAL STATE
-
 -- | Increment the thread counter
 inc_num_th :: IntState -> (Int, IntState)
 inc_num_th s@IntState{..} =
@@ -68,95 +66,65 @@ read_memory st addrs = mytrace False ("read_memory: " ++ show addrs) $
     MemAddrTop -> error "read_memory: have not implemented MemAddrTop"
     MemAddrs l -> map (read_memory_addr st) l
 
+-- LOW LEVEL API TO READ THE CONTENTS OF THE MEMORY 
 read_memory_addr :: IntState -> IntMAddr -> IntValue
-read_memory_addr st addr = mytrace False ("read_memaddr: addr = " ++ show addr ) $ undefined
-{-
-  case level addr of
-    Global -> case M.lookup addr (heap st) of 
-      Nothing   ->  
-        -- Check if we can concretize the addrs
-        if not $ is_interval (offset addr) 
-        then error $ "read_memaddr: " ++ show addr ++ " not found"
-        else 
-          let addrs = concretize_addr addr
-              vals = read_memory st addrs
-          in Just $ join_intval_list vals
-      Just cell -> Just $ val cell
+read_memory_addr st addr = mytrace False ("read_memaddr: addr = " ++ show addr ) $
+  let (base_addr, off) = from_addr addr 
+  in case _level base_addr of
+    Global -> case read_addr_from_region (heap st) base_addr off of 
+      Nothing  -> error $ "read_memory_addr: " ++ show addr ++ " not found"
+      Just val -> val 
     Local tid -> case M.lookup tid (th_states st) of   
-      Nothing -> error $ "read_memaddr: tid " ++ show tid ++ " not found, addr " ++ show addr
-      Just th -> case M.lookup addr (th_locals th) of
+      Nothing -> error $ "read_memory_addr: tid " ++ show tid ++ " not found, addr " ++ show addr
+      Just th -> case read_addr_from_region (th_locals th) base_addr off of
         Nothing -> 
           -- Check if the variable is in the heap
           let addr' = addr { level = Global }
-          in case read_memory_addr st addr' of
-            Nothing -> 
-              -- Check if we can concretize the addrs
-              if not $ is_interval (offset addr) 
-              then error $ "read_memaddr: " ++ show addr ++ " not found"
-              else 
-                let addrs = concretize_addr addr
-                    vals = read_memory st addrs
-                in Just $ join_intval_list vals
-            Just vals -> Just vals
-        Just value -> Just $ value 
--}
+          in read_memory_addr st addr' 
+        Just val -> val
+
+read_addr_from_region :: IntMemory -> MemAddrBase -> IntValue -> Maybe IntValue
+read_addr_from_region mem addr off = do
+  offs <- M.lookup addr mem
+  case M.lookup off offs of
+    Just val -> Just val 
+    Nothing  ->
+      case M.elems $ M.filterWithKey (\k _ -> iMeet k off /= IntBot) offs of
+        [] -> Nothing
+        v  -> Just $ join_intval_list v 
 
 -- | API TO WRITE TO MEMORY
 -- | Write to memory: receives a IntMAddrs and a
 --   IntValue and assigns the IntValue to the MemAddrs
 write_memory :: IntState -> IntMAddrs -> IntValue -> IntState
-write_memory st addrs vals = T.trace ("write_memory: addrs = " ++ show addrs) $ 
+write_memory st addrs vals = mytrace False ("write_memory: addrs = " ++ show addrs) $ 
   case addrs of
     MemAddrTop -> error "write_memory: top addrs, need to traverse everything"
     MemAddrs l -> foldr (\a s -> write_memory_addr s a vals) st l
 
 -- | Write to memory of one address
 write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
-write_memory_addr st@IntState{..} addr@MemAddr{..} conval = undefined
-{-
-  T.trace ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show conval) $
-  if not $ is_interval offset 
-  then case level of
-    Global -> modify_heap st addr conval 
-    Local i -> insert_local st i addr conval 
-  else
-    let addrs = concretize_addr addr
-    in write_memory st addrs conval 
--}
+write_memory_addr st addr val = 
+  mytrace False ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show val) $
+  let (base_addr, off) = from_addr addr 
+  in case _level base_addr of
+    Global -> let _heap = write_region_addr (heap st) base_addr off val 
+              in st { heap = _heap }
+    Local i -> case M.lookup i (th_states st) of
+       Nothing -> error $ "write_memory_addr: tid = " ++ show i ++ " not found in th_states"
+       Just th -> let _locals = write_region_addr (th_locals th) base_addr off val 
+                      _th = th { th_locals = _locals }
+                      _th_states = M.insert i _th (th_states st)
+                  in st { th_states = _th_states }
 
--- | API FOR HEAP
--- | insert_heap: inserts an element to the heap
--- insert_heap :: IntState -> IntMAddr -> STy -> IntValue -> IntState
-insert_heap st@IntState{..} addr ty val = undefined
-{-
-  let cell = MCell ty val 
-      heap' = M.insert addr cell heap
-  in st {heap = heap'}  
--}
+write_region_addr :: IntMemory -> MemAddrBase -> IntValue -> IntValue -> IntMemory 
+write_region_addr mem addr off val =
+  let n_offs = [(off, val)]
+  in case M.lookup addr mem of
+    Nothing   -> M.insert addr (M.fromList n_offs) mem 
+    Just offs -> M.insert addr (M.fromList $ gen_intval_list const n_offs (M.toList offs)) mem  
 
-modify_heap :: IntState -> IntMAddr -> IntValue -> IntState
-modify_heap st@IntState{..} addr val = undefined
-{- 
-  let heap' = M.update (update_conmcell val) addr heap
-  in st {heap = heap'}
- where
-   update_conmcell :: IntValue -> IntMCell -> Maybe IntMCell
-   update_conmcell nval c@MCell{..} = Just $ c { val = nval } 
--}
-
--- | API FOR THREAD STATE
--- | insert_local: inserts an element to local state 
-insert_local :: IntState -> TId -> IntMAddr -> IntValue -> IntState
-insert_local st@IntState{..} tid addr val = T.trace ("insert_local: tid = " ++ show tid ++ ", addr = " ++ show addr) $ undefined
-{- 
- case M.lookup tid th_states of
-    Nothing -> error "insert_local: tid not found in th_states"
-    Just s@ThState{..} ->
-      let locals' = M.insert addr val th_locals
-          s' = s { th_locals = locals' }
-          th_states' = M.insert tid s' th_states
-      in st { th_states = th_states' }
--}
+-- | AUXILIARY FUNCTIONS
 -- | Set the position in the cfg of a thread
 update_pc :: IntState -> TId -> Pos -> IntState
 update_pc i@IntState{..} tid pos = 

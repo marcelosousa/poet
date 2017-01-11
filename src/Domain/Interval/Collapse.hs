@@ -15,19 +15,22 @@ import Data.List
 import Data.Map (Map)
 import Data.Set (Set)
 import Domain.Action
---import Domain.Interval.Converter
+import Domain.Interval.API (update_pc, read_memory)
 import Domain.Interval.State
+import Domain.Interval.Transformers.Declaration (transformer_decl)
+import Domain.Interval.Transformers.Expression (transformer_expr)
+import Domain.Interval.Transformers.State
+import Domain.Interval.Transformers.Statement (get_addrs_expr, get_tid_expr)
 import Domain.Interval.Value
--- import Domain.Interval.API
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Converter (get_symbol_name)
-import Language.SimpleC.Flow
+import Language.SimpleC.Flow hiding (trace)
 import Language.SimpleC.Util hiding (cfgs,symt)
 import Model.GCS
+import Util.Generic 
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Debug.Trace as T
 
 type IntGraph = Graph SymId () (IntState,IntAct) 
 type IntGraphs = Graphs SymId () (IntState,IntAct)
@@ -138,19 +141,19 @@ instance Collapsible IntState IntAct where
         th_cfg = case M.lookup th_cfg_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
-    in T.trace ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
+    in mytrace False ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
        let res = fixpt syst b tid cfgs symt th_cfg pos st
-       in trace "collapse: end" res
+       in mytrace False "collapse: end" res
 
 fixpt :: System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList
 fixpt syst b tid cfgs symt cfg@Graph{..} pos st =
-  T.trace ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
+  mytrace False ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
       i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty 
-      res = T.trace ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist syst wlist) i_fix_st
+      res = mytrace False ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist syst wlist) i_fix_st
   in res 
 
 add_mark :: WItem -> FixOp ()
@@ -172,13 +175,13 @@ up_pc i@IntTState{..} t p =
   in i {st = st'} 
 
 handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
-handle_mark (pre,eId,post) = T.trace ("handle_mark: " ++ show (pre,eId,post)) $ do
+handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,post)) $ do
   fs@FixState{..} <- get
   let (node_st, pre_acts) = case get_node_info fs_cfg pre of
         [s] -> s
         l   -> error $ "handle_mark invalid pre states: " ++ show l
       -- get the edge info
-      e@EdgeInfo{..} = T.trace ("handle_mark: " ++ show node_st) $ get_edge_info fs_cfg eId
+      e@EdgeInfo{..} = mytrace False ("handle_mark: " ++ show node_st) $ get_edge_info fs_cfg eId
       -- construct the transformer state
       tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
       -- decide based on the type of edge which transformer to call
@@ -211,7 +214,7 @@ fixpt_result :: FixOp ResultList
 fixpt_result = do
   fs@FixState{..} <- get
   let marks = S.toList fs_mark
-  res <- trace ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
+  res <- mytrace False ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
   if fs_mode
   then do 
     fs@FixState{..} <- get
@@ -224,7 +227,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -249,12 +252,12 @@ worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
       -- either add the results to the result list or update
       -- the cfg with them 
       if is_bot st
-      then trace ("worklist: current edge returns bottom") $ worklist syst wlist
+      then mytrace False ("worklist: current edge returns bottom") $ worklist syst wlist
       else if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
-           then mtrace ("is a global operation") $ do
+           then mytrace False ("is a global operation") $ do
              add_mark it
              worklist syst wlist
-           else T.trace ("worklist: returned state\n" ++ show st) $ do 
+           else mytrace False ("worklist: returned state\n" ++ show st) $ do 
              -- depending on the tags of the edge; the behaviour is different
              (is_fix,node_table') <-
                   case edge_tags of
@@ -271,7 +274,7 @@ worklist syst _wlist = T.trace ("worklist: " ++ show _wlist) $ do
              -- @NOTE: If one the sucessors is not enabled then
              -- simply mark it as a final node
              if not $ null disabled_rwlst
-             then trace ("worklist: non-global event!") $ do
+             then mytrace False ("worklist: non-global event!") $ do
                add_mark it
                worklist syst wlist
              else worklist syst nwlist
@@ -290,7 +293,7 @@ loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
   if c >= 3
-  then trace ("loop_head_update: going to apply widening") $ do 
+  then mytrace False ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       -- error "loop_head_update: widening between a state and empty?" 
       Nothing ->  return $ (False, M.insert node [(st,act)] node_table)

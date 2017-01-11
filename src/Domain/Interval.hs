@@ -7,6 +7,8 @@
 module Domain.Interval where
 
 import Domain.Interval.Collapse
-import Domain.Interval.Converter
+import Domain.Interval.Transformers.State
+import Domain.Interval.Transformers.Declaration
+import Domain.Interval.Transformers.Expression
 import Domain.Interval.State
 import Domain.Interval.Value

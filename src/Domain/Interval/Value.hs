@@ -42,24 +42,6 @@ data IntValue
   | IntArr [IntValue] Int Bool -- IsTop 
   deriving (Show,Ord,Eq)
 
-concretize_interval :: IntValue -> [IntValue]
-concretize_interval i = case i of
-  InterVal (l, u) -> 
-    let lb = toInt l
-        ub = toInt u
-    in map k [lb..ub] 
-  _ -> error $ "concretize_interval: not supported " ++ show i
-
-is_interval :: IntValue -> Bool 
-is_interval i = case i of
-  IntBot -> True 
-  IntVal l -> length l /= 1
-  InterVal (l, u) ->
-    case (l, u) of 
-      (I lb, I ub) -> ub /= lb
-      _ -> True
-  _ -> error $ "range: " ++ show i ++ " not supported"
-
 zero :: IntValue
 zero = InterVal (I 0,I 0) 
 
@@ -115,7 +97,6 @@ diff_intval (InterVal (_,u)) (InterVal (_,l)) = InterVal (l+1,u)
 
 -- Generic function that matches 
 -- the offset intervals and applies a function over its values
-
 gen_intval_list :: (IntValue -> IntValue -> IntValue) -> IntOffsList -> IntOffsList -> IntOffsList
 gen_intval_list fn _x1 _x2 = 
   case (_x1, _x2) of

@@ -35,7 +35,7 @@ import Util.Generic
 -- import Util.Printer
 import qualified Data.Map as M
 -- import qualified Domain.Concrete.Converter as CC
-import qualified Domain.Interval.Converter as IC
+import qualified Domain.Interval.Transformers.System as IC
 import qualified Exploration.UNF.API as US
 import qualified Exploration.UNF.State as US
 -- Newer version for stid
