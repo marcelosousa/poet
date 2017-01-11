@@ -141,7 +141,7 @@ instance Collapsible IntState IntAct where
         th_cfg = case M.lookup th_cfg_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
-    in mytrace False ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
+    in mytrace True ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
        let res = fixpt syst b tid cfgs symt th_cfg pos st
        in mytrace False "collapse: end" res
 

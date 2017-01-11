@@ -9,6 +9,7 @@
 module Domain.Interval.Transformers.Statement (transformer, get_addrs_expr, get_tid_expr) where
 
 import Control.Monad.State.Lazy 
+import Data.List
 import Data.Map (Map)  
 import Data.Maybe
 import Domain.Action
@@ -28,10 +29,16 @@ import Util.Generic hiding (safeLookup)
 import qualified Model.GCS as GCS
 
 -- | API for accessing the memory
--- | get_addrs retrieves the information from the points to analysis.
+-- | get_addrs computes the address of the an expression 
+--   @NOTE: This is not the address in the state but the
+--   symbolic address represented by the expression.
+--   For example: It is entirely possible that the 
+--   expr represents the address %X Global [1,5] but
+--   in the state we only have information regarding %X 
+--   for the offset interval [0,2].
 get_addrs_expr :: IntState -> Scope -> SExpression -> IntMAddrs 
 get_addrs_expr st scope expr = 
-  mytrace False ("get_addrs_expr: scope = " ++ show scope ++ ", expr = " ++ show expr) $
+  mytrace True ("get_addrs_expr: scope = " ++ show scope ++ ", expr = " ++ show expr) $
   case expr of
     Var id -> get_addrs st $ MemAddrBase id scope 
     Unary CAdrOp e -> get_addrs_expr st scope e 
@@ -43,8 +50,8 @@ get_addrs_expr st scope expr =
           -- need to filter from the lhs_addrs the interval given by val
           addrs = case lhs_addrs of 
             MemAddrTop -> MemAddrTop
-            MemAddrs l -> MemAddrs $ map (flip set_offset val) l 
-      in addrs
+            MemAddrs l -> MemAddrs $ nub $ map (flip set_offset val) l 
+      in mytrace True ("get_addrs_expr: result = " ++ show addrs) $ addrs
     _ -> error $ "get_addrs_expr: expr = " ++ show expr ++ " not supported" 
 
 -- | Get the tid associated with an expression
@@ -95,7 +102,7 @@ index_transformer lhs rhs = mytrace False ("index_transformer: lhs = " ++ show l
     MemAddrTop -> error $ "index_transformer: lhs of index operation points to MemAddrTop"
     MemAddrs l -> do
       (rhs_vals, rhs_acts) <- transformer rhs
-      let l' = map (flip set_offset rhs_vals) l 
+      let l' = nub $ map (flip set_offset rhs_vals) l 
           addrs = MemAddrs l'
           vals = read_memory st addrs 
           val = join_intval_list vals
@@ -121,11 +128,11 @@ assign_transformer op lhs rhs = do
         _ -> error "assign_transformer: not supported" 
   -- get the addresses of the left hand side
   s@IntTState{..} <- get
-  let lhs_id = get_addrs_expr st scope lhs
-      res_acts = add_writes lhs_id (rhs_acts `join_act` lhs_acts)
+  let lhs_addrs = get_addrs_expr st scope lhs
+      res_acts = add_writes lhs_addrs (rhs_acts `join_act` lhs_acts)
   -- modify the state of the addresses with
   -- the result values 
-  let res_st = write_memory st lhs_id res_vals
+  let res_st = write_memory st lhs_addrs res_vals
   mytrace False ("assign_transformer: new state \n " ++ show res_st ) $ set_state res_st 
   return (res_vals, res_acts) 
 

@@ -102,7 +102,7 @@ gen_intval_list fn _x1 _x2 =
   case (_x1, _x2) of
     ([], _) -> _x2 
     (_, []) -> _x1
-    ((a,v):x1, (b,u):x2) ->
+    ((a,v):x1, (b,u):x2) -> mytrace False ("gen_intval_list: " ++ show (a,b)) $
       case (a, b) of
         (InterVal (a1,a2), InterVal (b1,b2)) ->
           case compare a1 b1 of
@@ -117,7 +117,7 @@ gen_intval_list fn _x1 _x2 =
                -- iii. a2 > b2
               GT -> 
                 let a' = InterVal (b2 + 1, a2)
-                in (b,v `fn` u):(gen_intval_list fn ((a',v):x1) _x2)
+                in (b,v `fn` u):(gen_intval_list fn ((a',v):x1) x2)
             -- 2. a1 < b1
             LT -> case compare a2 b2 of
               -- i. a2 == b2
@@ -148,7 +148,7 @@ gen_intval_list fn _x1 _x2 =
               -- ii. b2 < a2
               LT -> case compare b2 a1 of
                 -- a. b2 < a1
-                LT -> (b,v):(gen_intval_list fn _x1 x2)
+                LT -> (b,u):(gen_intval_list fn _x1 x2)
                 -- b. b2 >= a1
                 _ ->
                   let b' = InterVal (b1, a1 - 1)

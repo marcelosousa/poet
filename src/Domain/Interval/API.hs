@@ -43,21 +43,24 @@ to_mem_addrs :: IntOffs -> MemAddrBase -> IntMAddrs
 to_mem_addrs offs base = MemAddrs $ M.foldrWithKey (\off _ -> (to_addr base off:)) [] offs 
 
 -- | Gets the full memory addresses from a memory region
-get_addrs_memory :: IntMemory -> MemAddrBase -> IntMAddrs
-get_addrs_memory mem base =
-  case M.lookup base mem of
-    Nothing -> error $ "get_addrs_memory: base = " ++ show base ++ " not found" 
-    Just offs -> to_mem_addrs offs base
+get_addrs_memory :: IntMemory -> MemAddrBase -> Maybe IntMAddrs
+get_addrs_memory mem base = do
+  offs <- M.lookup base mem
+  return $ to_mem_addrs offs base
 
 -- | Get the set of (full) memory addresses given an address base from the entire state
 get_addrs :: IntState -> MemAddrBase -> IntMAddrs
-get_addrs st addr =
+get_addrs st addr = mytrace True ("get_addrs: " ++ show addr) $ 
   case _level addr of
     Local i -> 
       case M.lookup i (th_states st) of
-        Nothing -> get_addrs st (set_level addr Global) 
-        Just th -> get_addrs_memory (th_locals th) addr 
-    Global  -> get_addrs_memory (heap st) addr 
+        Nothing -> error $ "get_addrs: tid = " ++ show i ++ " not found"
+        Just th -> case get_addrs_memory (th_locals th) addr of
+           Nothing -> get_addrs st (set_level addr Global) 
+           Just as -> as 
+    Global  -> case get_addrs_memory (heap st) addr of
+      Nothing -> error $ "get_addrs: " ++ show addr
+      Just as -> as 
 
 -- | API TO READ THE CONTENTS OF THE MEMORY
 read_memory :: IntState -> IntMAddrs -> [IntValue]
@@ -97,7 +100,7 @@ read_addr_from_region mem addr off = do
 -- | Write to memory: receives a IntMAddrs and a
 --   IntValue and assigns the IntValue to the MemAddrs
 write_memory :: IntState -> IntMAddrs -> IntValue -> IntState
-write_memory st addrs vals = mytrace False ("write_memory: addrs = " ++ show addrs) $ 
+write_memory st addrs vals = mytrace True ("write_memory: addrs = " ++ show addrs) $ 
   case addrs of
     MemAddrTop -> error "write_memory: top addrs, need to traverse everything"
     MemAddrs l -> foldr (\a s -> write_memory_addr s a vals) st l
@@ -105,7 +108,7 @@ write_memory st addrs vals = mytrace False ("write_memory: addrs = " ++ show add
 -- | Write to memory of one address
 write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
 write_memory_addr st addr val = 
-  mytrace False ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show val) $
+  mytrace True ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show val) $
   let (base_addr, off) = from_addr addr 
   in case _level base_addr of
     Global -> let _heap = write_region_addr (heap st) base_addr off val 
@@ -122,7 +125,9 @@ write_region_addr mem addr off val =
   let n_offs = [(off, val)]
   in case M.lookup addr mem of
     Nothing   -> M.insert addr (M.fromList n_offs) mem 
-    Just offs -> M.insert addr (M.fromList $ gen_intval_list const n_offs (M.toList offs)) mem  
+    Just offs -> let res = gen_intval_list const n_offs (M.toList offs) 
+                 in mytrace False ("write_region_addr: result " ++ show res) $ 
+      M.insert addr (M.fromList res) mem  
 
 -- | AUXILIARY FUNCTIONS
 -- | Set the position in the cfg of a thread
