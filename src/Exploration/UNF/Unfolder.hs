@@ -4,7 +4,6 @@ module Exploration.UNF.Unfolder (unfolder) where
 
 -- import Util.Printer (unfToDot)
 import Control.Monad.State.Strict
-import Control.DeepSeq
 import Data.List
 import Data.Maybe hiding (catMaybes)
 import Data.Set (isSubsetOf)
