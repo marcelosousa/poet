@@ -15,10 +15,10 @@ import Data.List
 import Data.Map (Map)
 import Data.Set (Set)
 import Domain.Action
-import Domain.Interval.Converter
+--import Domain.Interval.Converter
 import Domain.Interval.State
 import Domain.Interval.Value
-import Domain.Interval.API
+-- import Domain.Interval.API
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Converter (get_symbol_name)
@@ -75,7 +75,7 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
 
 is_locked :: IntState -> Scope -> SExpression -> Bool
 is_locked st scope expr = 
-  let lk_addrs = get_addrs_just st scope expr 
+  let lk_addrs = get_addrs_expr st scope expr 
   in case read_memory st lk_addrs of
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
     [val] -> val == one 
@@ -103,6 +103,8 @@ is_live tid syst eId cfg st =
       _ -> True
     _ -> True
 
+-- has_exited makes the assumptions that there is no sucessors of an exit node
+-- wrong for more complex CFGs
 has_exited syst st tid = 
   let control = controlPart st
       tid_cfg_sym = toThCFGSym st tid

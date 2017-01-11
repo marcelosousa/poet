@@ -27,6 +27,8 @@ type IntAct = Act IntValue
 type IntMAddr = MemAddr IntValue
 type IntMAddrs = MemAddrs IntValue
 
+type IntOffsList = [(IntValue, IntValue)]
+
 -- | Value for the interval semantics
 data IntValue
   = IntTop              -- Top value 
@@ -81,6 +83,110 @@ join_intval_list (x:xs) = x `iJoin` (join_intval_list xs)
 --   (<=) IntTop (InterVal i) = i == (MinusInf, PlusInf) 
 --   (<=) (InterVal i) IntTop = i == (MinusInf, PlusInf) 
 --   (<=) _ _ = False
+
+-- Functions over two lists of interval offsets
+--  Subsumption
+--  Join
+--  Widening
+
+-- X1 >= X2
+subsumes_intval_list :: IntOffsList -> IntOffsList -> Bool
+subsumes_intval_list _x1 _x2 =
+  case (_x1, _x2) of
+    ([], []) -> True
+    ([], _) -> False
+    (_, []) -> True
+    ((a1,v1):x1, (b1,u1):x2) ->
+      if v1 < u1
+      then False
+      else if a1 == b1
+           then subsumes_intval_list x1 x2 
+           else if a1 < b1 
+                then subsumes_intval_list x1 ((diff_intval b1 a1,u1):x2)
+                else if a1 > b1
+                     then subsumes_intval_list ((diff_intval a1 b1,v1):x1) x2
+                     else False
+
+-- diff_intval a@[l1, u1] b@[l2, u2] 
+-- pre-condition: a > b
+-- 
+diff_intval :: IntValue -> IntValue -> IntValue
+diff_intval (InterVal (_,u)) (InterVal (_,l)) = InterVal (l+1,u)
+
+-- Generic function that matches 
+-- the offset intervals and applies a function over its values
+
+gen_intval_list :: (IntValue -> IntValue -> IntValue) -> IntOffsList -> IntOffsList -> IntOffsList
+gen_intval_list fn _x1 _x2 = 
+  case (_x1, _x2) of
+    ([], _) -> _x2 
+    (_, []) -> _x1
+    ((a,v):x1, (b,u):x2) ->
+      case (a, b) of
+        (InterVal (a1,a2), InterVal (b1,b2)) ->
+          case compare a1 b1 of
+            -- 1. a1 == b1
+            EQ -> case compare a2 b2 of
+              -- i. a2 == b2 
+              EQ -> (a,v `fn` u):(gen_intval_list fn x1 x2)
+              -- ii. a2 < b2
+              LT -> 
+                let b' = InterVal (a2 + 1, b2)
+                in (a,v `fn` u):(gen_intval_list fn x1 ((b',u):x2))
+               -- iii. a2 > b2
+              GT -> 
+                let a' = InterVal (b2 + 1, a2)
+                in (b,v `fn` u):(gen_intval_list fn ((a',v):x1) _x2)
+            -- 2. a1 < b1
+            LT -> case compare a2 b2 of
+              -- i. a2 == b2
+              EQ ->
+                let a' = InterVal (a1, b1 - 1)
+                in (a',v):(b, v `fn` u):(gen_intval_list fn x1 x2)
+              -- ii. a2 < b2
+              LT -> case compare a2 b1 of
+                -- a. a2 < b1
+                LT -> (a,v):(gen_intval_list fn x1 _x2)
+                -- b. a2 >= b1
+                _ ->
+                  let a' = InterVal (a1, b1 - 1)
+                      ab = InterVal (b1, a2)
+                      b' = InterVal (a2 + 1, b2)
+                  in (a',v):(ab, v `fn` u):(gen_intval_list fn x1 ((b',v):x2))
+              -- iii. a2 > b2
+              GT ->  
+                let ab = InterVal (a1, b1 - 1)
+                    a' = InterVal (b2 + 1, a2)
+                in (ab,v):(b, v `fn` u):(gen_intval_list fn ((a',u):x1) x2)
+            -- 3. b1 < a1
+            GT -> case compare b2 a2 of
+              -- i. b2 == a2
+              EQ ->
+                let b' = InterVal (b1, a1 - 1)
+                in (b',u):(a, v `fn` u):(gen_intval_list fn x1 x2)
+              -- ii. b2 < a2
+              LT -> case compare b2 a1 of
+                -- a. b2 < a1
+                LT -> (b,v):(gen_intval_list fn _x1 x2)
+                -- b. b2 >= a1
+                _ ->
+                  let b' = InterVal (b1, a1 - 1)
+                      ba = InterVal (a1, b2)
+                      a' = InterVal (b2 + 1, a2)
+                  in (b',u):(ba, v `fn` u):(gen_intval_list fn ((a',u):x1) x2)
+              -- iii. b2 > a2
+              GT ->  
+                let ba = InterVal (b1, a1 - 1)
+                    b' = InterVal (a2 + 1, b2)
+                in (ba,u):(a, v `fn` u):(gen_intval_list fn x1 ((b',v):x2))
+
+-- X1 join X2
+join_intval_lists :: IntOffsList -> IntOffsList -> IntOffsList 
+join_intval_lists = gen_intval_list iJoin 
+
+-- X1 widen X2
+widen_intval_lists :: IntOffsList -> IntOffsList -> IntOffsList 
+widen_intval_lists = gen_intval_list iWiden 
 
 top_interval :: IntValue
 top_interval = InterVal (MinusInf, PlusInf)

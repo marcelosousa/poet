@@ -33,8 +33,14 @@ data MemAddrBase
   }
   deriving (Show,Eq,Ord)
 
-decompose_addr :: MemAddr v -> (MemAddrBase, v)
-decompose_addr a@MemAddr{..} = (MemAddrBase base level, offset)
+from_addr :: MemAddr v -> (MemAddrBase, v)
+from_addr a@MemAddr{..} = (MemAddrBase base level, offset)
+
+to_addr :: MemAddrBase -> v -> MemAddr v
+to_addr addr v = MemAddr (_base addr) v (_level addr)
+ 
+set_level :: MemAddrBase -> Scope -> MemAddrBase
+set_level addr scope = MemAddrBase (_base addr) scope
 
 set_offset :: MemAddr v -> v -> MemAddr v
 set_offset m offset_ = m { offset = offset_ }
@@ -108,3 +114,6 @@ instance Hashable v => Hashable (MemAddr v) where
   hash m@MemAddr{..} = hash base
   hashWithSalt s m@MemAddr{..} = hashWithSalt s base
 
+instance Hashable MemAddrBase where
+  hash m@MemAddrBase{..} = hash _base
+  hashWithSalt s m@MemAddrBase{..} = hashWithSalt s _base

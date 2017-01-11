@@ -15,6 +15,7 @@ import Data.IntMap (IntMap)
 import Data.List
 import Data.Map (Map)
 import Domain.Interval.Value
+import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST
@@ -32,17 +33,24 @@ instance Show IntMCell where
   show (MCell _ val) = show val
 
 -- | Interval Heap
-type IntHeap = Map IntMAddr IntMCell
+-- IntOffs represents a mapping from memory offsets to interval values
+type IntOffs = Map IntValue IntValue 
+
+type IntMemoryFn = IntOffsList -> IntOffsList -> IntOffsList
+
+-- Old type
+-- type IntHeap = Map IntMAddr IntMCell
+-- An interval heap is a map from base addresses to a map of offsets to values
+type IntMemory = Map MemAddrBase IntOffs 
 
 -- | A thread state is a control and local data
 type ThStates = Map TId ThState
-type Locals = Map IntMAddr IntValue 
 data ThState =
   ThState
   { 
     th_pos    :: Pos
   , th_cfg_id :: SymId 
-  , th_locals :: Locals 
+  , th_locals :: IntMemory 
   } 
   deriving (Show,Eq,Ord)
 
@@ -55,7 +63,7 @@ bot_th_state pos cfg_id = ThState pos cfg_id M.empty
 data IntState = 
   IntState 
   { 
-    heap :: IntHeap 
+    heap :: IntMemory 
   , th_states :: ThStates
   , num_th  :: Int
   , is_bot  :: Bool 
@@ -98,6 +106,7 @@ empty_state = IntState M.empty M.empty 1 False
 --    is greater or equal
 -- 3. Check the heap
 -- 4. Check the thread states
+-- Returns true if st1 >= st2
 subsumes_interval :: IntState -> IntState -> Bool
 subsumes_interval st1 st2 =
   case check_bottoms (is_bot st1) (is_bot st2) of
@@ -109,7 +118,7 @@ subsumes_interval st1 st2 =
         let sts1 = th_states st1
             hp1 = heap st1
         in if M.foldrWithKey' (\tid th b -> check_threads tid th sts1 && b) True (th_states st2)
-           then M.foldrWithKey' (\mid mcell b -> check_heap mid mcell hp1 && b) True (heap st2)
+           then M.foldrWithKey' (\mid offs b -> check_offsets mid offs hp1 && b) True (heap st2)
            else False 
  where
    check_bottoms b1 b2 =
@@ -124,54 +133,15 @@ subsumes_interval st1 st2 =
       Just th1 ->
        let lcs1 = th_locals th1
        in if th_pos th1 == th_pos th2
-          then M.foldrWithKey' (\sym v b -> check_locals sym v lcs1 && b) True (th_locals th2) 
+          then M.foldrWithKey' (\sym offs b -> check_offsets sym offs lcs1 && b) True (th_locals th2) 
           else False
-   check_locals :: IntMAddr -> IntValue -> Locals -> Bool 
-   check_locals sym val2 lcs1 =
-     case M.lookup sym lcs1 of
-       Nothing -> False
-       Just val1 -> val2 <= val1 
-   check_heap mid cell2 hp1 =
+   check_offsets mid offs2 hp1 =
      case M.lookup mid hp1 of
        Nothing -> False
-       Just cell1 ->
-         let r = ty cell1 == ty cell2
-             vcell al1 = val cell1
-             val1 = val cell1
-             val2 = val cell2
-         in r && val2 <= val1
- 
--- | Widening operation
--- It doesn't take care of the case where the interval states might be bottom
-widen_intstate :: IntState -> IntState -> IntState
-widen_intstate s1 s2 = T.trace ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2) $
-  if s1 == s2 
-  then s1
-  else let _heap = (heap s1) `widen_intheap` (heap s2)
-           _th_states = th_states s1 `widen_intthsts` th_states s2
-           _num_th = M.size _th_states 
-           _is_bot = False
-           _st = IntState _heap _th_states _num_th _is_bot
-       in _st
-
-widen_intheap :: IntHeap -> IntHeap -> IntHeap
-widen_intheap m1 m2 = M.unionWith widen_intmcell m1 m2 
-
-widen_intthsts :: ThStates -> ThStates -> ThStates
-widen_intthsts = M.unionWith widen_intthst 
-
-widen_intthst :: ThState -> ThState -> ThState
-widen_intthst t1 t2 =
-  let _pos    = ite "widen_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
-      _cfg_id = ite "widen_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
-      _locals = M.unionWith iWiden (th_locals t1) (th_locals t2) 
-  in ThState _pos _cfg_id _locals
-
-widen_intmcell :: IntMCell -> IntMCell -> IntMCell
-widen_intmcell m1 m2 =
-  let _ty = ty m1
-      _val = (val m1) `iWiden` (val m2)
-  in MCell _ty _val
+       Just offs1 ->
+         let moffs2 = M.toList offs2
+             moffs1 = M.toList offs1
+         in subsumes_intval_list moffs1 moffs2 
 
 -- | Join operation
 join_intstate :: IntState -> IntState -> IntState
@@ -179,14 +149,21 @@ join_intstate s1 s2 = case (is_bot s1, is_bot s2) of
   (True,_) -> s2
   (_,True) -> s1
   -- They are not bot
-  _ -> let _heap = (heap s1) `join_intheap` (heap s2)
+  _ -> let _heap = (heap s1) `join_intmem` (heap s2)
            _th_states = th_states s1 `join_intthsts` th_states s2
            _num_th = M.size _th_states 
            _is_bot = False
        in IntState _heap _th_states _num_th _is_bot
 
-join_intheap :: IntHeap -> IntHeap -> IntHeap
-join_intheap m1 m2 = M.unionWith join_intmcell m1 m2 
+join_intmem :: IntMemory -> IntMemory -> IntMemory
+join_intmem m1 m2 = M.unionWith join_offset_lists m1 m2 
+
+gen_offset_lists :: IntMemoryFn -> IntOffs -> IntOffs -> IntOffs
+gen_offset_lists fn m1 m2 =
+  M.fromList $ fn (M.toList m1) (M.toList m2) 
+
+join_offset_lists :: IntOffs -> IntOffs -> IntOffs
+join_offset_lists = gen_offset_lists join_intval_lists 
 
 join_intthsts :: ThStates -> ThStates -> ThStates
 join_intthsts = M.unionWith join_intthst 
@@ -200,14 +177,37 @@ join_intthst :: ThState -> ThState -> ThState
 join_intthst t1 t2 =
   let _pos    = ite "join_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
       _cfg_id = ite "join_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
-      _locals = M.unionWith iJoin (th_locals t1) (th_locals t2) 
+      _locals = join_intmem (th_locals t1) (th_locals t2) 
   in ThState _pos _cfg_id _locals
 
-join_intmcell :: IntMCell -> IntMCell -> IntMCell
-join_intmcell m1 m2 =
-  let _ty = ty m1
-      _val = (val m1) `iJoin` (val m2)
-  in MCell _ty _val
+-- | Widening operation
+-- It doesn't take care of the case where the interval states might be bottom
+widen_intstate :: IntState -> IntState -> IntState
+widen_intstate s1 s2 = T.trace ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2) $
+  if s1 == s2 
+  then s1
+  else let _heap = (heap s1) `widen_intmem` (heap s2)
+           _th_states = th_states s1 `widen_intthsts` th_states s2
+           _num_th = M.size _th_states 
+           _is_bot = False
+           _st = IntState _heap _th_states _num_th _is_bot
+       in _st
+
+widen_intmem :: IntMemory -> IntMemory -> IntMemory
+widen_intmem m1 m2 = M.unionWith widen_offset_lists m1 m2 
+
+widen_intthsts :: ThStates -> ThStates -> ThStates
+widen_intthsts = M.unionWith widen_intthst 
+
+widen_intthst :: ThState -> ThState -> ThState
+widen_intthst t1 t2 =
+  let _pos    = ite "widen_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
+      _cfg_id = ite "widen_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
+      _locals = M.unionWith widen_offset_lists (th_locals t1) (th_locals t2) 
+  in ThState _pos _cfg_id _locals
+
+widen_offset_lists :: IntOffs -> IntOffs -> IntOffs 
+widen_offset_lists = gen_offset_lists widen_intval_lists 
 
 -- | Projection instance
 instance Projection IntState where
@@ -224,10 +224,14 @@ instance Hashable IntState where
   hash s@IntState{..} = hash (heap,th_states,num_th,is_bot) 
   hashWithSalt s st@IntState{..} = hashWithSalt s (heap,th_states,num_th,is_bot) 
 
-instance Hashable IntHeap where
+instance Hashable IntMemory where
   hash = hash . M.toList
   hashWithSalt s h = hashWithSalt s $ M.toList h
  
+instance Hashable IntOffs where
+  hash = hash . M.toList
+  hashWithSalt s h = hashWithSalt s $ M.toList h
+
 instance Hashable ThStates where
   hash = hash . M.toList
   hashWithSalt s th = hashWithSalt s $ M.toList th
@@ -235,10 +239,6 @@ instance Hashable ThStates where
 instance Hashable ThState where
   hash th@ThState{..} = hash (th_pos,th_cfg_id,th_locals)
   hashWithSalt s th@ThState{..} = hashWithSalt s (th_pos,th_cfg_id,th_locals)
-
-instance Hashable Locals where
-  hash = hash . M.toList
-  hashWithSalt s h = hashWithSalt s $ M.toList h
 
 instance Hashable IntMCell where
   hash m@MCell{..} = hash val

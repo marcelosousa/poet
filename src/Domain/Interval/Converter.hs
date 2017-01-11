@@ -12,32 +12,26 @@
 module Domain.Interval.Converter where
 
 import Control.Monad.State.Lazy 
-
-import Data.Maybe
-import qualified Data.Map as M
-import Data.Map (Map)  
-import qualified Debug.Trace as T
 import Data.List 
-import qualified Data.Set as S
-
-import Domain.Interval.State
-import Domain.Interval.Value
-import Domain.Interval.Type
-import Domain.Interval.API
+import Data.Map (Map)  
+import Data.Maybe
 import Domain.Action
+import Domain.Interval.API
+import Domain.Interval.State
+import Domain.Interval.Type
+import Domain.Interval.Value
 import Domain.MemAddr
 import Domain.Util
-
-import qualified Model.GCS as GCS
-import Language.C.Syntax.Ops 
 import Language.C.Syntax.Constants
+import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
-import qualified Model.GCS as GCS
 import Util.Generic hiding (safeLookup)
-import qualified Debug.Trace as T
+import qualified Data.Map as M
+import qualified Data.Set as S
+import qualified Model.GCS as GCS
 
 -- | State of the abstract transformer
 data IntTState 
@@ -58,73 +52,36 @@ set_state nst = do
   s@IntTState{..} <- get
   put s { st = nst }
 
-join_state :: IntState -> IntTOp ()
-join_state nst = do
-  s@IntTState{..} <- get
-  let fst = nst `join_intstate` st
-  put s { st = fst }
-
 -- | API for accessing the memory
+-- | get_addrs retrieves the information from the points to analysis.
+get_addrs_expr :: IntState -> Scope -> SExpression -> IntMAddrs 
+get_addrs_expr st scope expr = 
+  mytrace False ("get_addrs_expr: scope = " ++ show scope ++ ", expr = " ++ show expr) $
+  case expr of
+    Var id -> get_addrs st $ MemAddrBase id scope 
+    Unary CAdrOp e -> get_addrs_expr st scope e 
+    Index lhs rhs  -> 
+      let lhs_addrs = get_addrs_expr st scope lhs
+          error_msg = error "get_addrs: called the transformer with missing information"
+          tr_st = IntTState scope st error_msg error_msg False
+          (val,_) = evalState (transformer rhs) tr_st
+          -- need to filter from the lhs_addrs the interval given by val
+          addrs = undefined -- map (flip set_offset val) l 
+      in addrs
+    _ -> error $ "get_addrs_expr: expr = " ++ show expr ++ " not supported" 
 
 -- | Get the tid associated with an expression
 --   This is typically to be used in the pthread_{create, join}
 get_tid_expr :: Scope -> IntState -> SExpression -> GCS.TId
-get_tid_expr scope st expr = mtrace ("get_tid_expr: " ++ show expr) $
+get_tid_expr scope st expr = mytrace False ("get_tid_expr: " ++ show expr) $
   -- get the address(es) referenced by expr
-  let th_addrs = get_addrs_just st scope expr 
+  let th_addrs = get_addrs_expr st scope expr 
   in case read_memory st th_addrs of
     [] -> error $ "get_tid: couldnt find thread for expr " ++ show expr 
     [v] -> case v of
       IntVal [VInt tid] -> tid
       _ -> error $ "get_tid: unexpected intvalue " ++ show v 
     r -> error $ "get_tid: found too many threads for expr " ++ show expr ++ " " ++ show r 
-
--- | get_addrs retrieves the information from the 
---   points to analysis.
---   Simplify to only consider the case where the 
---   the expression is a LHS (var or array index).
-get_addrs :: IntState -> Scope -> SExpression -> Maybe IntMAddrs 
-get_addrs st scope expr = trace ("get_addrs: scope = " ++ show scope ++ ", expr = " ++ show expr) $
-  case expr of
-    Var id -> Just $ get_addrs_id st scope id 
-    Unary CAdrOp e -> get_addrs st scope e 
-    Index lhs rhs  -> 
-      case get_addrs_just st scope lhs of
-        MemAddrTop -> error $ "get_addrs: lhs of index operation points to MemAddrTop"
-        MemAddrs l ->
-          let error_msg = error "get_addrs: called the transformer with missing information"
-              tr_st = IntTState scope st error_msg error_msg False
-              (val,_) = evalState (transformer rhs) tr_st
-              l' = map (flip set_offset val) l 
-          in Just $ MemAddrs l'
-    _ -> Nothing 
-
-get_addrs_just :: IntState -> Scope -> SExpression -> IntMAddrs 
-get_addrs_just st scope expr = trace ("get_addrs_just = " ++ show scope ++ ", expr = " ++ show expr) $ 
-  case get_addrs st scope expr of
-    Just addr -> addr
-    Nothing -> error $ "get_addrs_just: not supported expr " ++ show expr
-
--- | get the addresses of an identifier
---   Because of variable shadowing the scope is necessary
---   to check if the variable is also defined in the local
---   scope of the thread.
-get_addrs_id :: IntState -> Scope -> SymId -> IntMAddrs 
-get_addrs_id st scope id = trace ("get_addrs_id: id = " ++ show id ++ ", scope = " ++ show scope) $   
-  let addr = MemAddr id zero scope
-  in case scope of
-    Local i -> 
-      case M.lookup i (th_states st) of
-        Nothing -> get_addrs_id st Global id  
-        Just th -> 
-          if trace ("get_addrs_id: addr = " ++ show addr) $ is_present (th_locals th) addr
-          then MemAddrs [addr]
-          else get_addrs_id st Global id 
-    Global  -> trace ("get_addrs_id: addr = " ++ show addr) $ 
-      if is_present (heap st) addr
-      then MemAddrs [addr]
-      else error "get_addrs_id: the symbol is not the heap" 
-
 
 -- | converts the front end into a system
 -- @REVISED: July'16
@@ -155,12 +112,12 @@ get_entry fnname graphs symt =
 
 -- | processes a list of declarations 
 transformer_decls :: [SDeclaration] -> IntTOp IntAct
-transformer_decls = trace ("transformer_decls!!!!") $
+transformer_decls = mytrace False ("transformer_decls!!!!") $
   foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
 
 -- | transformer for a declaration:
 transformer_decl :: SDeclaration -> IntTOp IntAct
-transformer_decl decl = T.trace ("transformer_decl: " ++ show decl) $ do
+transformer_decl decl = mytrace False ("transformer_decl: " ++ show decl) $ do
   case decl of
     TypeDecl ty -> error "transformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
@@ -184,7 +141,7 @@ transformer_decl decl = T.trace ("transformer_decl: " ++ show decl) $ do
 --   This function needs to receive a state and can 
 --   potentially create several states. 
 transformer_init :: SymId -> STy -> Maybe (Initializer SymId ()) -> IntTOp IntAct
-transformer_init id ty minit = trace ("transformer_init for " ++ show id ++ " with init " ++ show minit ++ ", ty = " ++ show ty) $ do
+transformer_init id ty minit = mytrace False ("transformer_init for " ++ show id ++ " with init " ++ show minit ++ ", ty = " ++ show ty) $ do
   case minit of
     Nothing -> do
       s@IntTState{..} <- get
@@ -237,7 +194,7 @@ default_value (Ty declarators ty) =
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp IntAct
-transformer_expr expr = T.trace ("transformer_expr: " ++ show expr) $ do
+transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
   then trace ("transformer_expr: conditional " ++ show expr) $ do 
@@ -446,7 +403,7 @@ call_transformer fn args =
 
 call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,IntAct)
 call_transformer_name name args = case name of
-  "pthread_create" -> mtrace ("call_transformer: pthread_create" ++ show args) $ do
+  "pthread_create" -> mytrace False ("call_transformer: pthread_create" ++ show args) $ do
     s@IntTState{..} <- get
         -- write in the address of (args !! 0) of type
         -- pthread_t, the pid of the new thread
@@ -461,7 +418,7 @@ call_transformer_name name args = case name of
         i_th_st = bot_th_state th_pos th_sym
         res_st = insert_thread s'' tid i_th_st 
     set_state res_st
-    mtrace ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (IntVal [], create_thread_act (SymId tid) zero) 
+    mytrace False ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (IntVal [], create_thread_act (SymId tid) zero) 
   "pthread_join" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get
@@ -502,7 +459,7 @@ call_transformer_name name args = case name of
       (l, u) -> 
        return (l `iJoin` u,lacts `join_act` uacts)
   "poet_error" -> error "poet_error: assertion is violated" 
-  _ -> T.trace ("call_transformer_name: calls to " ++ name ++ " being ignored") $
+  _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot_act) 
 
 -- Need to apply the cut over the state
@@ -579,9 +536,11 @@ unop_transformer unOp expr = do
 var_transformer :: SymId -> IntTOp (IntValue, IntAct)
 var_transformer sym_id = trace ("var_transformer: sym_id = " ++ show sym_id) $ do
   s@IntTState{..} <- get
-  let id_addr = MemAddr sym_id zero scope
-      val = read_memory_addr_just st id_addr
-      acts = read_act sym_id zero scope
+  let id_addr_base = MemAddrBase sym_id scope
+      id_addrs = get_full_addrs st id_addr_base 
+      vals = read_memory st id_addrs 
+      val = join_intval_list vals 
+      acts = read_act_addr id_addrs 
   return (val, acts)
   
 -- negates logical expression using De Morgan Laws
