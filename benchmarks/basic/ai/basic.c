@@ -1,10 +1,10 @@
-// #include "pthread.h"
-#include <pthread.h>
+#include "pthread.h"
+// #include <pthread.h>
 
 struct Foo {
   int a;
   int b;
-};
+} foo;
 
 void* incx()
 {
