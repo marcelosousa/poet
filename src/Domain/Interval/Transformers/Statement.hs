@@ -226,7 +226,7 @@ call_transformer_name name args = case name of
         res_st = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, write_act_addr mutex_addr) 
-  "nondet" -> do 
+  "__VERIFIER_nondet_int" -> do 
     (lVal,lacts) <- transformer $ args !! 0
     (uVal,uacts) <- transformer $ args !! 1
     case (lVal,uVal) of 
@@ -234,7 +234,7 @@ call_transformer_name name args = case name of
        return (InterVal (I l, I u),lacts `join_act` uacts)
       (l, u) -> 
        return (l `iJoin` u,lacts `join_act` uacts)
-  "poet_error" -> error "poet_error: assertion is violated" 
+  "__VERIFIER_error" -> error "poet_error: assertion is violated" 
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot_act) 
 
