@@ -35,7 +35,7 @@ import qualified Model.GCS as GCS
 
 -- | transformer for a declaration:
 transformer_decl :: SDeclaration -> IntTOp IntAct
-transformer_decl decl = mytrace True ("transformer_decl: " ++ show decl) $ do
+transformer_decl decl = mytrace False ("transformer_decl: " ++ show decl) $ do
   case decl of
     TypeDecl ty -> return bot_act -- error "transformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->

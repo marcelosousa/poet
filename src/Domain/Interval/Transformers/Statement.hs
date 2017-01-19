@@ -51,7 +51,7 @@ get_addrs_expr st scope expr =
           addrs = case lhs_addrs of 
             MemAddrTop -> MemAddrTop
             MemAddrs l -> MemAddrs $ nub $ map (flip set_offset val) l 
-      in mytrace True ("get_addrs_expr: result = " ++ show addrs) $ addrs
+      in mytrace False ("get_addrs_expr: result = " ++ show addrs) $ addrs
     _ -> error $ "get_addrs_expr: expr = " ++ show expr ++ " not supported" 
 
 -- | Get the tid associated with an expression
@@ -77,7 +77,7 @@ transformer e = mytrace False ("transformer: " ++ show e) $
     Binary binaryOp lhs rhs -> binop_transformer binaryOp lhs rhs 
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
     Call fn args n -> call_transformer fn args  
-    Cast decl expr -> error "transformer: cast not supported"
+    Cast decl expr -> return (IntVal [], bot_act) -- error "transformer: cast not supported"
     Comma exprs -> error "transformer: comma not supported" 
     CompoundLit decl initList -> error "transforemr: compound literal not supported" 
     Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
@@ -298,7 +298,7 @@ unop_transformer unOp expr = do
     CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
     CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
     CPostIncOp -> transformer $ Assign CAddAssOp expr (Const const_one)  
-    CPostDecOp -> error "unop_transformer: CPostDecOp not supported"   
+    CPostDecOp -> transformer $ Assign CSubAssOp expr (Const const_one)
     CAdrOp     -> error "unop_transformer: CAdrOp     not supported"    
     CIndOp     -> error "unop_transformer: CIndOp     not supported" 
     CPlusOp    -> transformer expr 

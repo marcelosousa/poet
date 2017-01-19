@@ -100,7 +100,7 @@ read_addr_from_region mem addr off = do
 -- | Write to memory: receives a IntMAddrs and a
 --   IntValue and assigns the IntValue to the MemAddrs
 write_memory :: IntState -> IntMAddrs -> IntValue -> IntState
-write_memory st addrs vals = mytrace True ("write_memory: addrs = " ++ show addrs) $ 
+write_memory st addrs vals = mytrace False ("write_memory: addrs = " ++ show addrs) $ 
   case addrs of
     MemAddrTop -> error "write_memory: top addrs, need to traverse everything"
     MemAddrs l -> foldr (\a s -> write_memory_addr s a vals) st l

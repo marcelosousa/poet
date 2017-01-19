@@ -141,7 +141,7 @@ instance Collapsible IntState IntAct where
         th_cfg = case M.lookup th_cfg_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
-    in mytrace True ("collapse: fixpoint of thread " ++ show tid ++ ", position = " ++ show pos ++ "\n" ++ show st) $ 
+    in mytrace True ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
        let res = fixpt syst b tid cfgs symt th_cfg pos st
        in mytrace False "collapse: end" res
 
@@ -227,7 +227,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = mytrace True ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 

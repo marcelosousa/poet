@@ -258,7 +258,7 @@ ext e maxevs st (tid,pos) êacts = do
       lift $ putStrLn "ext: finished adding conflicting extensions events"
       lift $ putStrLn "ext: adding the enabled event"
       add_event True stak succe êname êacts h0
-    else error "e must always be in h0"  
+    else return [] -- error "e must always be in h0"  
 
 -- | history computes the largest history of an event which we call h0 
 --   Input: 
@@ -440,6 +440,7 @@ add_event is_in_conf stack dup name acts history = do
       if GCS.isBottom gstlc
       then error "addEvent: the state of the local configuration is bottom"
       else do
+        lift $ putStrLn $ "========== FINISHED COMPUTING THE STATE OF LOCAL CONFIG ======"
         isCutoff <- cutoff gstlc sizeLocalHistory
         if isCutoff
         then do 
@@ -481,6 +482,7 @@ add_event is_in_conf stack dup name acts history = do
    --   by doing a topological sorting
    st_local_conf :: (GCS.Collapsible st act) => st -> EventName -> History -> UnfolderOp st act st
    st_local_conf st ename econf = do
+     lift $ putStrLn $ "st_local_conf: computing the state of " ++ show econf
      s@UnfolderState{..} <- get
      st' <- st_history st [0] [] econf 
      return $ GCS.simple_run syst st' ename 
