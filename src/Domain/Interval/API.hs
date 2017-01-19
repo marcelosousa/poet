@@ -108,7 +108,7 @@ write_memory st addrs vals = mytrace False ("write_memory: addrs = " ++ show add
 -- | Write to memory of one address
 write_memory_addr :: IntState -> IntMAddr -> IntValue -> IntState
 write_memory_addr st addr val = 
-  mytrace True ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show val) $
+  mytrace False ("write_memory_addr: addr = " ++ show addr ++ ", val = " ++ show val) $
   let (base_addr, off) = from_addr addr 
   in case _level base_addr of
     Global -> let _heap = write_region_addr (heap st) base_addr off val 

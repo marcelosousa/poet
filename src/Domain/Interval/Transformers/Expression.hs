@@ -39,17 +39,17 @@ import qualified Model.GCS as GCS
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp IntAct
-transformer_expr expr = mytrace True ("transformer_expr: " ++ show expr) $ do
+transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
-  then mytrace True ("transformer_expr: conditional " ++ show expr) $ do 
+  then mytrace False ("transformer_expr: conditional " ++ show expr) $ do 
     (val, act) <- bool_transformer_expr expr
     s@IntTState{..} <- get
     let res_st = case val of
           IntBot -> set_int_state_bot st
           _ -> st
     set_state res_st 
-    mytrace True ("bool_transformer: result = " ++ show val) $ return act
+    mytrace False ("bool_transformer: result = " ++ show val) $ return act
   else do
     (vals,act) <- transformer expr
     return act 
@@ -112,7 +112,7 @@ apply_logic op lhs rhs =
 -- Logical Operations
 -- Need to update the variables
 interval_leq :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
-interval_leq lhs rhs = trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do
+interval_leq lhs rhs = mytrace False ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do
   (lhs_val, lhs_act) <- transformer lhs 
   (rhs_val, rhs_act) <- transformer rhs 
   let acts = lhs_act `join_act` rhs_act
@@ -133,8 +133,8 @@ interval_leq lhs rhs = trace ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ s
         (rhs_st, rhs_nact) = 
           if can_get_addrs_expr rhs 
           then let rhs_addr = get_addrs_expr st scope rhs
-               in (write_memory st rhs_addr rhs_nval, write_act_addr rhs_addr)
-          else (st, bot_act)
+               in (write_memory lhs_st rhs_addr rhs_nval, write_act_addr rhs_addr)
+          else (lhs_st, bot_act)
         final_acts = acts `join_act` lhs_nact `join_act` rhs_nact
     set_state rhs_st
     trace ("interval_leq: lhs_val = " ++ show lhs_val ++ ", rhs_val = " ++ show rhs_val ++ ", lhs_nval = " ++ show lhs_nval ++ ", rhs_nval = " ++ show rhs_nval) $ return (lhs_nval, final_acts)

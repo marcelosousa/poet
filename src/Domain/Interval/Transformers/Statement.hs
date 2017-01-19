@@ -234,7 +234,9 @@ call_transformer_name name args = case name of
        return (InterVal (I l, I u),lacts `join_act` uacts)
       (l, u) -> 
        return (l `iJoin` u,lacts `join_act` uacts)
-  "__VERIFIER_error" -> error "poet_error: assertion is violated" 
+  "__VERIFIER_error" -> do
+    s@IntTState{..} <- get
+    error $ "poet_error: assertion is violated\n" ++ show st 
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot_act) 
 

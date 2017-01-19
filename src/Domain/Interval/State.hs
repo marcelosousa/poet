@@ -175,7 +175,7 @@ ite e_str a b
 
 join_intthst :: ThState -> ThState -> ThState
 join_intthst t1 t2 =
-  let _pos    = ite "join_intthst: diff th_pos"    (th_pos    t1) (th_pos    t2) 
+  let _pos    = ite ("join_intthst: diff th_pos:\n" ++ show t1 ++ "\n" ++ show t2 )    (th_pos    t1) (th_pos    t2) 
       _cfg_id = ite "join_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
       _locals = join_intmem (th_locals t1) (th_locals t2) 
   in ThState _pos _cfg_id _locals
@@ -183,7 +183,7 @@ join_intthst t1 t2 =
 -- | Widening operation
 -- It doesn't take care of the case where the interval states might be bottom
 widen_intstate :: IntState -> IntState -> IntState
-widen_intstate s1 s2 = T.trace ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2) $
+widen_intstate s1 s2 = mytrace False ("widen_intstate: \n " ++ show s1 ++ " \n " ++ show s2) $
   if s1 == s2 
   then s1
   else let _heap = (heap s1) `widen_intmem` (heap s2)

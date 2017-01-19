@@ -241,7 +241,7 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
           -- construct the transformer state
           tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
           -- decide based on the type of edge which transformer to call
-          (post_acts,ns@IntTState{..}) = case edge_code of
+          (post_acts,ns) = case edge_code of
             -- execute the transformer
             D decl -> runState (transformer_decl decl) tr_st 
             E expr -> runState (transformer_expr expr) tr_st
@@ -251,23 +251,23 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
-      if is_bot st
+      if is_bot (st ns)
       then mytrace False ("worklist: current edge returns bottom") $ worklist syst wlist
       else if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
            then mytrace False ("is a global operation") $ do
              add_mark it
              worklist syst wlist
-           else mytrace False ("worklist: returned state\n" ++ show st) $ do 
+           else mytrace False ("worklist: returned state\n" ++ show (st ns)) $ do 
              -- depending on the tags of the edge; the behaviour is different
              (is_fix,node_table') <-
                   case edge_tags of
                     -- loop head point 
-                    [LoopHead] -> loop_head_update (node_table fs_cfg) post (st,acts)
+                    [LoopHead] -> loop_head_update (node_table fs_cfg) post (st ns,acts)
                     -- join point: join the info in the cfg 
-                    [IfJoin] -> return $ join_update (node_table fs_cfg) post (st,acts) 
+                    [IfJoin] -> return $ join_update (node_table fs_cfg) post (st ns,acts) 
                     -- considering everything else the standard one: just replace 
                     -- the information in the cfg and add the succs of post to the worklist
-                    _ -> return $ strong_update (node_table fs_cfg) post (st,acts) 
+                    _ -> return $ strong_update (node_table fs_cfg) post (st ns,acts) 
              cfg' <- update_node_table node_table'
              let nwlist = if is_fix then wlist else (wlist ++ rwlst)
              disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
@@ -292,7 +292,7 @@ loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, No
 loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
-  if c >= 8
+  if c >= 100 
   then mytrace False ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       -- error "loop_head_update: widening between a state and empty?" 
@@ -307,7 +307,7 @@ loop_head_update node_table node (st,act) =  do
              else return $ (False, M.insert node [(nst,nact)] node_table)
         _ -> error "loop_head_update: widening between a state and several states?" 
   else do
-    return $ join_update node_table node (st,act) 
+    mytrace True ("loop_head_update: not going to apply widening " ++ show c) $ return $ join_update node_table node (st,act) 
 
 join_update :: NodeTable -> NodeId -> (IntState, IntAct) -> (Bool, NodeTable)
 join_update node_table node (st,act) =
@@ -320,11 +320,11 @@ join_update node_table node (st,act) =
             nact = act `join_act` act'
         in if nst == st'
            then (True, node_table)
-           else (False, M.insert node [(nst,nact)] node_table)
+           else mytrace False ("join_update: old state:\n" ++ show st' ++ "join_update: new state\n" ++ show st ++ "join_update:join state\n" ++ show nst) $ (False, M.insert node [(nst,nact)] node_table)
       _ -> error "join_update: more than one state in the list"
  
 strong_update :: NodeTable -> NodeId -> (IntState,IntAct) -> (Bool, NodeTable)
-strong_update node_table node (st,act) =
+strong_update node_table node (st,act) = mytrace False ("strong_update: node = " ++ show node ++ ", state\n" ++ show st) $
   case M.lookup node node_table of
     Nothing -> (False, M.insert node [(st,act)] node_table) 
     Just lst -> case lst of
