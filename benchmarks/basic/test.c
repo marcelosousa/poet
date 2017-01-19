@@ -1,70 +1,45 @@
-typedef unsigned long int pthread_t;
-typedef union {
-            char __size[56]; long int __align;
-        } pthread_attr_t;
-
-int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void*), void *arg);
-int pthread_join(pthread_t thread, void **arg);
-int printf(const char * restrict format, ...);
+#include "pthread.h"
     
 int x=0;
-int y=0;
-int z = 0;
+int y=nondet(0,10);
+int k=nondet(0,3);
+
+//int z=0;
 
 void *p(){
-    x = 1;
-    return NULL;
+    if(k == 0) {
+      x = nondet(0,5);  
+    }  else {
+      x = nondet(1,1);
+    }
+    y = 0;
+    //int i = y;
+    //if(x >= 10) {
+    //  __poet_fail();
+    //}
+    
+//    z = 1;
+//    y = 1;
 }
 
+/*
 void *q(){
-    y = 1;
-    return NULL;
+    k = 2;
+//    z = 2;
+//    x = 2;
 }
-
-void *r(){
-    int m = y;
-    if (m == 0){
-        z = 1;
-    }
-    return NULL;
-}
-
-void *s(){
-    int n = z;
-    int l = y;
-    if (n == 1){
-        if(l == 0){
-            x = 2;
-        }
-    }
-    return NULL;
-}
-
+*/
 int main(){
     /* references to the threads */
     pthread_t p_t;
-    pthread_t q_t;
-    pthread_t r_t;
-    pthread_t s_t;
-
+//    pthread_t q_t;
+    
     /* create the threads and execute */
-    pthread_create(&p_t, NULL, p, NULL);
-    pthread_create(&q_t, NULL, q, NULL);
-    pthread_create(&r_t, NULL, r, NULL);
-    pthread_create(&s_t, NULL, s, NULL);
-
+    pthread_create(p_t, NULL, p, NULL);
+//    pthread_create(q_t, NULL, q, NULL);
+    
     /* wait for the threads to finish */
     pthread_join(p_t, NULL);
-    pthread_join(q_t, NULL);
-    pthread_join(r_t, NULL);
-    pthread_join(s_t, NULL);
-
-
-    /* show the results  */
-    printf("x: %d, y: %d, z: %d\n", x, y, z);
-
-    return 0;
+//    pthread_join(q_t, NULL);
 }
-//int printf(const char * restrict format, ...);
-
-//int main(){printf("Hello world\n");return 0;}
+//[9,8,7,6,4,3,2,1,0]
