@@ -118,6 +118,5 @@ int main ()
    // INLINE consumer (); END
 
    pthread_join (t, NULL);
-
    return 0;
 }

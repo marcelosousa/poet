@@ -227,7 +227,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = mytrace True ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -292,7 +292,7 @@ loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, No
 loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
-  if c >= 3
+  if c >= 8
   then mytrace False ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       -- error "loop_head_update: widening between a state and empty?" 

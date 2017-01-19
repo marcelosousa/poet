@@ -50,7 +50,7 @@ get_addrs_memory mem base = do
 
 -- | Get the set of (full) memory addresses given an address base from the entire state
 get_addrs :: IntState -> MemAddrBase -> IntMAddrs
-get_addrs st addr = mytrace True ("get_addrs: " ++ show addr) $ 
+get_addrs st addr = mytrace False ("get_addrs: " ++ show addr) $ 
   case _level addr of
     Local i -> 
       case M.lookup i (th_states st) of

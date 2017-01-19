@@ -39,17 +39,17 @@ import qualified Model.GCS as GCS
 -- Given an initial state and an expression
 -- return the updated state.
 transformer_expr :: SExpression -> IntTOp IntAct
-transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
+transformer_expr expr = mytrace True ("transformer_expr: " ++ show expr) $ do
   s@IntTState{..} <- get
   if cond
-  then trace ("transformer_expr: conditional " ++ show expr) $ do 
+  then mytrace True ("transformer_expr: conditional " ++ show expr) $ do 
     (val, act) <- bool_transformer_expr expr
     s@IntTState{..} <- get
     let res_st = case val of
           IntBot -> set_int_state_bot st
           _ -> st
     set_state res_st 
-    trace ("bool_transformer: result = " ++ show val) $ return act
+    mytrace True ("bool_transformer: result = " ++ show val) $ return act
   else do
     (vals,act) <- transformer expr
     return act 

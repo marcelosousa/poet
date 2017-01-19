@@ -77,7 +77,7 @@ explore c@Conf{..} ê d alt = do
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak
        ++")\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 
-  k <- lift $ getChar
+  k <- lift $ getCharDebug
   -- @ configuration is maximal?
   -- if null enevs 
   if null enevs 

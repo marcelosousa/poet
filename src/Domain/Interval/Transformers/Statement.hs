@@ -38,7 +38,7 @@ import qualified Model.GCS as GCS
 --   for the offset interval [0,2].
 get_addrs_expr :: IntState -> Scope -> SExpression -> IntMAddrs 
 get_addrs_expr st scope expr = 
-  mytrace True ("get_addrs_expr: scope = " ++ show scope ++ ", expr = " ++ show expr) $
+  mytrace False ("get_addrs_expr: scope = " ++ show scope ++ ", expr = " ++ show expr) $
   case expr of
     Var id -> get_addrs st $ MemAddrBase id scope 
     Unary CAdrOp e -> get_addrs_expr st scope e 
@@ -69,7 +69,7 @@ get_tid_expr scope st expr = mytrace False ("get_tid_expr: " ++ show expr) $
 
 -- | Transformer for an expression with a single state
 transformer :: SExpression -> IntTOp (IntValue,IntAct)
-transformer e = mytrace True ("transformer: " ++ show e) $
+transformer e = mytrace False ("transformer: " ++ show e) $
   case e of 
     AlignofExpr expr -> error "transformer: align_of_expr not supported"  
     AlignofType decl -> error "transformer: align_of_type not supported"
