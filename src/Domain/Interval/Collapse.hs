@@ -175,7 +175,7 @@ up_pc i@IntTState{..} t p =
   in i {st = st'} 
 
 handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
-handle_mark (pre,eId,post) = mytrace True ("handle_mark: " ++ show (pre,eId,post)) $ do
+handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,post)) $ do
   fs@FixState{..} <- get
   let (node_st, pre_acts) = case get_node_info fs_cfg pre of
         [s] -> s
@@ -227,7 +227,7 @@ fixpt_result = do
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
 worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = mytrace True ("worklist: " ++ show _wlist) $ do
+worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
     [] -> fixpt_result 
@@ -318,7 +318,7 @@ join_update node_table node (st,act) =
       [(st',act')] ->
         let nst = st `join_intstate` st'
             nact = act `join_act` act'
-        in mytrace True ("join_update: old state:\n" ++ show st' ++ "join_update: new state\n" ++ show st ++ "join_update:join state\n" ++ show nst) $ if nst == st'
+        in mytrace False ("join_update: old state:\n" ++ show st' ++ "join_update: new state\n" ++ show st ++ "join_update:join state\n" ++ show nst) $ if nst == st'
            then (True, node_table)
            else (False, M.insert node [(nst,nact)] node_table)
       _ -> error "join_update: more than one state in the list"
