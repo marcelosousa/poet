@@ -276,14 +276,15 @@ iDivide v1 v2 = case (v1,v2) of
   (IntTop,_) -> IntTop
   (_,IntTop) -> IntTop
   (IntVal i,IntVal j) -> IntVal [div_value a b | a <- i, b <- j] 
-  (ab,cd) -> 
-          (v1 `interval_div` (v2 `iMeet` (i (I 1) PlusInf))) 
-  `iJoin` 
-          (v1 `interval_div` (v2 `iMeet` (i MinusInf (I (-1)))))
+  (ab,cd) ->
+    let res = (v1 `interval_div` (v2 `iMeet` (i (I 1) PlusInf))) 
+              `iJoin` 
+              (v1 `interval_div` (v2 `iMeet` (i MinusInf (I (-1)))))
+    in mytrace False  ("iDivide: " ++ show v1 ++ " div " ++ show v2 ++ " = " ++ show res) $ res 
 
 -- [a,b] / [c,d] = [a,b] * 1/[c,d]
 interval_div :: IntValue -> IntValue -> IntValue
-interval_div v1 v2 = case (v1,v2) of 
+interval_div v1 v2 = mytrace False ("interval_div: " ++ show v1 ++ " div " ++ show v2) $ case (v1,v2) of 
   (IntBot,_) -> IntBot
   (_,IntBot) -> IntBot
   (IntTop,_) -> IntTop

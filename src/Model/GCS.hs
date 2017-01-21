@@ -19,6 +19,7 @@ import Language.SimpleC.Flow
 import Language.SimpleC.Converter
 import Language.SimpleC.Util hiding (cfgs)
 import Util.Generic
+import Data.List
 
 -- A System is a collection of CFGs together with
 -- a representation of the frontier on the PCs 
@@ -73,7 +74,7 @@ class Projection st where
   isBottom :: st -> Bool
   toThCFGSym :: st -> TId -> SymId
 
-class (Show act, Action act, Show st, Projection st) => Collapsible st act where
+class (Eq act, Eq st, Show act, Action act, Show st, Projection st) => Collapsible st act where
   is_enabled :: System st act -> st -> TId -> Bool
   enabled :: System st act -> st -> [TId]
   enabled syst st =
@@ -84,11 +85,11 @@ class (Show act, Action act, Show st, Projection st) => Collapsible st act where
   dcollapse :: System st act -> st -> (TId,Pos,SymId) -> (st,act)
   dcollapse syst st (tid,pos,_) =
     let results = collapse True syst st tid
-        result = filter (\(s,p,a) -> p == pos) results
+        result = nub $ filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"
       [(st,_,act)] -> (st,act)
-      _ -> error "dcollapse: collapse produced several dataflow facts for desired location"
+      _ -> error $ "dcollapse: collapse produced several dataflow facts for desired location: pos = " ++ show pos ++ "\n" ++ show result
   simple_run :: System st act -> st -> (TId,Pos,SymId) -> st
   simple_run sys st name = fst $ dcollapse sys st name
  

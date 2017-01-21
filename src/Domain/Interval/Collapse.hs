@@ -77,7 +77,7 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
    in (n+1, s_r ++ r))  (1,"") l)
 
 is_locked :: IntState -> Scope -> SExpression -> Bool
-is_locked st scope expr = 
+is_locked st scope expr = mytrace False ("is_locked: scope = " ++ show scope ++ ", expr = " ++ show expr) $ 
   let lk_addrs = get_addrs_expr st scope expr 
   in case read_memory st lk_addrs of
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
@@ -101,7 +101,7 @@ is_live tid syst eId cfg st =
           -- in not $ is_enabled syst st tid' 
           in has_exited syst st tid' 
          -- assume the mutex is declared globally 
-        "pthread_mutex_lock" -> not $ is_locked st Global (args!!0)
+        "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
         _ -> True 
       _ -> True
     _ -> True
@@ -141,7 +141,7 @@ instance Collapsible IntState IntAct where
         th_cfg = case M.lookup th_cfg_sym cfgs of
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
-    in mytrace True ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
+    in mytrace False ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
        let res = fixpt syst b tid cfgs symt th_cfg pos st
        in mytrace False "collapse: end" res
 
@@ -241,13 +241,14 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
           -- construct the transformer state
           tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
           -- decide based on the type of edge which transformer to call
-          (post_acts,ns) = case edge_code of
+          (post_acts,_ns) = case edge_code of
             -- execute the transformer
             D decl -> runState (transformer_decl decl) tr_st 
             E expr -> runState (transformer_expr expr) tr_st
           rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
           -- join the actions of the predecessors with the actions of the current edge
           acts = pre_acts `join_act` post_acts
+          ns = up_pc _ns fs_tid post 
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
@@ -292,7 +293,7 @@ loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, No
 loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
-  if c >= 100 
+  if c >= 10 
   then mytrace False ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       -- error "loop_head_update: widening between a state and empty?" 
@@ -307,7 +308,7 @@ loop_head_update node_table node (st,act) =  do
              else return $ (False, M.insert node [(nst,nact)] node_table)
         _ -> error "loop_head_update: widening between a state and several states?" 
   else do
-    mytrace True ("loop_head_update: not going to apply widening " ++ show c) $ return $ join_update node_table node (st,act) 
+    mytrace False ("loop_head_update: not going to apply widening " ++ show c) $ return $ join_update node_table node (st,act) 
 
 join_update :: NodeTable -> NodeId -> (IntState, IntAct) -> (Bool, NodeTable)
 join_update node_table node (st,act) =

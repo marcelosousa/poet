@@ -97,7 +97,7 @@ apply_logic op lhs rhs =
       (rhs_val, rhs_act) <- bool_transformer_expr rhs
       let acts = lhs_act `join_act` rhs_act
       if lhs_val /= IntBot && rhs_val /= IntBot
-      then return (lhs_val, acts)
+      then return (lhs_val `iJoin` rhs_val, acts)
       else return (IntBot, acts)
     CLorOp -> do
       (lhs_val, lhs_act) <- bool_transformer_expr lhs 

@@ -22,7 +22,6 @@ import qualified Debug.Trace as T
 
 getCharDebug = return ()
 clearScreenDebug = return ()
-showMStr _ = return () 
 
 unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
 unfolder stl cut syst = do 

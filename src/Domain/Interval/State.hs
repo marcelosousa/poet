@@ -175,7 +175,7 @@ ite e_str a b
 
 join_intthst :: ThState -> ThState -> ThState
 join_intthst t1 t2 =
-  let _pos    = th_pos t1 -- ite ("join_intthst: diff th_pos:\n" ++ show t1 ++ "\n" ++ show t2 )    (th_pos    t1) (th_pos    t2) 
+  let _pos    = ite ("join_intthst: diff th_pos:\n" ++ show t1 ++ "\n" ++ show t2 )    (th_pos    t1) (th_pos    t2) 
       _cfg_id = ite "join_intthst: diff th_cfg_id" (th_cfg_id t1) (th_cfg_id t2) 
       _locals = join_intmem (th_locals t1) (th_locals t2) 
   in ThState _pos _cfg_id _locals

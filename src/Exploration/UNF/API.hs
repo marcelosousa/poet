@@ -16,6 +16,9 @@ import qualified Data.Maybe as M
 import qualified Debug.Trace as T
 import qualified Model.GCS as GCS
 
+showMStr _ = return () 
+-- showMStr = putStrLn 
+
 -- | Default values for various types
 -- @ Bottom event: a very special event
 botEID :: EventID
@@ -304,14 +307,14 @@ partition_dependent :: (Show act, GCS.Action act) => EventInfo act -> Events act
 partition_dependent êinfo events (dep,indep) es = do
   case es of
     [] -> do
-      putStrLn "partition_dependent: end" 
+      showMStr "partition_dependent: end" 
       return (dep,indep)
     (e:r) -> do
       ev@Event{..} <- get_event "partition_dependent" e events
       let is_dep = is_dependent êinfo (name,acts)
-      putStrLn $ "\t e = " ++ show e ++ ", result = " ++ show is_dep  
-      putStrLn $ "\t name = " ++ show name 
-      putStrLn $ "\t acts = " ++ show acts 
+      showMStr $ "\t e = " ++ show e ++ ", result = " ++ show is_dep  
+      showMStr $ "\t name = " ++ show name 
+      showMStr $ "\t acts = " ++ show acts 
       if is_dep 
       then partition_dependent êinfo events (e:dep,indep) r
       else partition_dependent êinfo events (dep,e:indep) r

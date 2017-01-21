@@ -89,7 +89,7 @@ negateIVal i = case i of
   MinusInf -> PlusInf
 
 divide :: InterVal -> InterVal -> InterVal
-divide (I 0) _ = error "0 / _"
+divide (I 0) _ = I 0 -- error "0 / _"
 divide _ PlusInf = I 0
 divide _ MinusInf = I 0
 divide PlusInf i = PlusInf * i

@@ -169,7 +169,7 @@ binop_transformer binOp lhs rhs = do
 --   lock
 --   unlock  
 call_transformer :: SExpression -> [SExpression] -> IntTOp (IntValue,IntAct)
-call_transformer fn args =
+call_transformer fn args = mytrace False ("call_transformer: " ++ show fn ++ " " ++ show args) $ 
   case fn of
     Var ident -> do
       s@IntTState{..} <- get
