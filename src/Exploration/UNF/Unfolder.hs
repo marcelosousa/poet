@@ -18,7 +18,6 @@ import qualified Data.Set as S
 import qualified Model.GCS as GCS
 import Language.SimpleC.AST
 import System.Console.ANSI
-import qualified Debug.Trace as T
 
 getCharDebug = return ()
 clearScreenDebug = return ()
@@ -73,7 +72,7 @@ explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
   lift $ clearScreenDebug
-  lift $ putStrLn (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  lift $ showMStr (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak
        ++")\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 
@@ -378,7 +377,7 @@ histories_lock info@(ne_name,ne_acts) s_e hs = do
           (e_unlk, e_en) =
             if GCS.isUnlockOf ne_acts acte
             then 
-               T.trace ("histories_lock: e is an unlock " ++ show e) $
+               mytrace False ("histories_lock: e is an unlock " ++ show e) $
                if GCS.isUnlockOf ne_acts acte'
                then error $ "histories_lock: both events in the history are unlocks"
                else (e, e') 

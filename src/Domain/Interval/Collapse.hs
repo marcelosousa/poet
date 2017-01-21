@@ -183,7 +183,7 @@ handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,pos
       -- get the edge info
       e@EdgeInfo{..} = mytrace False ("handle_mark: " ++ show node_st) $ get_edge_info fs_cfg eId
       -- construct the transformer state
-      tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
+      tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags) pre
       -- decide based on the type of edge which transformer to call
       (post_acts,_ns) = case edge_code of
         -- execute the transformer
@@ -239,7 +239,7 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
           -- get the edge info
           e@EdgeInfo{..} = get_edge_info fs_cfg eId
           -- construct the transformer state
-          tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags)
+          tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags) pre
           -- decide based on the type of edge which transformer to call
           (post_acts,_ns) = case edge_code of
             -- execute the transformer

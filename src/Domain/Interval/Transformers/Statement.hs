@@ -45,7 +45,7 @@ get_addrs_expr st scope expr =
     Index lhs rhs  -> 
       let lhs_addrs = get_addrs_expr st scope lhs
           error_msg = error "get_addrs: called the transformer with missing information"
-          tr_st = IntTState scope st error_msg error_msg False
+          tr_st = IntTState scope st error_msg error_msg False 0
           (val,_) = evalState (transformer rhs) tr_st
           -- need to filter from the lhs_addrs the interval given by val
           addrs = case lhs_addrs of 
@@ -236,7 +236,7 @@ call_transformer_name name args = case name of
        return (l `iJoin` u,lacts `join_act` uacts)
   "__VERIFIER_error" -> do
     s@IntTState{..} <- get
-    error $ "poet_error: assertion is violated\n" ++ show st 
+    mytrace True ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot_act)
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot_act) 
 

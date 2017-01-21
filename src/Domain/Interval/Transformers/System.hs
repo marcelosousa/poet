@@ -38,7 +38,7 @@ import qualified Model.GCS as GCS
 convert :: FrontEnd () (IntState,IntAct) -> GCS.System IntState IntAct
 convert fe = 
   let (pos_main,sym_main) = get_entry "main" (cfgs fe) (symt fe)
-      init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False
+      init_tstate = IntTState Global empty_state (symt fe) (cfgs fe) False 0
       (acts,s@IntTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
       st' = set_pos st (symId sym_main) sym_main pos_main  
   in mytrace False ("convert: initial state = " ++ show st) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1

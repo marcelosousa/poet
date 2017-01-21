@@ -26,6 +26,7 @@ data IntTState
  , sym :: Map SymId Symbol
  , i_cfgs :: Graphs SymId () (IntState, IntAct)
  , cond :: Bool            -- is a condition? 
+ , node_id :: Int 
  }
 
 -- | Transformer operation 
