@@ -33,7 +33,7 @@ botEvent :: act -> Event act
 botEvent acts = Event botName acts [] [] [] [] []
 
 default_unf_opts :: UnfolderOpts
-default_unf_opts = UnfOpts False False
+default_unf_opts = UnfOpts False False 10
 
 default_unf_stats :: UnfolderStats
 default_unf_stats =
@@ -46,8 +46,8 @@ default_unf_stats =
              sum_size_max_conf nr_evs_per_name
 
 -- @ Initial state of the unfolder
-i_unf_state :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
-i_unf_state stl cut syst = do
+i_unf_state :: GCS.Collapsible st a => Bool -> Bool -> Int -> GCS.System st a -> IO (UnfolderState st a)
+i_unf_state stl cut wid syst = do
   evts <- H.new
   H.insert evts botEID $ botEvent $ GCS.gbac syst
   let initialState = GCS.gbst syst
@@ -58,7 +58,7 @@ i_unf_state stl cut syst = do
   let pcnf = Conf undefined [] [] [] -- @NOTE: Check! 
       stak = [botEID]
       cntr = 1
-      opts = UnfOpts stl cut 
+      opts = UnfOpts stl cut wid 
   return $ UnfolderState syst evts pcnf stak cntr stas opts default_unf_stats 
 
 -- API

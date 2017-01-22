@@ -61,7 +61,7 @@ data Option
   = Frontend  {inp :: FilePath}
   | Execute   {inp :: FilePath, dom :: Domain, seed :: Int}
   | Interpret {inp :: FilePath, dom :: Domain}
-  | Explore   {inp :: FilePath, dom :: Domain, stf :: Int, cut :: Int}
+  | Explore   {inp :: FilePath, dom :: Domain, stf :: Int, cut :: Int, wid :: Int}
   | Prime     {inp :: FilePath, dom :: Domain, stf :: Int, cut :: Int}
   | Stid      {inp :: FilePath,                stf :: Int, cut :: Int}
   | Debug     {inp :: FilePath, dom :: Domain,              cut:: Int}
@@ -102,6 +102,7 @@ explore_mode =
   , dom = def
   , stf = def &= help "stf mode (0=False [default], 1=True)"
   , cut = def &= help "cut mode (0=False [default], 1=True)"
+  , wid = 10  &= help "widening"
   } &= help _helpExplore
 
 prime_mode =

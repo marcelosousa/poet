@@ -22,12 +22,12 @@ import System.Console.ANSI
 getCharDebug = return ()
 clearScreenDebug = return ()
 
-unfolder :: GCS.Collapsible st a => Bool -> Bool -> GCS.System st a -> IO (UnfolderState st a)
-unfolder stl cut syst = do 
+unfolder :: GCS.Collapsible st a => Bool -> Bool -> Int -> GCS.System st a -> IO (UnfolderState st a)
+unfolder stl cut wid syst = do 
   showMStr $ "UNFOLDER BEGIN:\n" ++ show_symt (GCS.symt syst) 
   getCharDebug
   clearScreenDebug
-  is    <- i_unf_state stl cut syst 
+  is    <- i_unf_state stl cut wid syst 
   (a,s) <- runStateT bot_explore is 
   return $! s
 
@@ -183,7 +183,7 @@ unfold conf@Conf{..} e = do
      s@UnfolderState{..} <- get
      ev@Event{..} <- lift $ get_event "execute" e evts
      lift $ showMStr $ "execute: going to call dcollapse" ++ show name
-     let (nst, nacts) = GCS.dcollapse syst st name
+     let (nst, nacts) = GCS.dcollapse (widening opts) syst st name
          nev = ev {acts = nacts}
      lift $ set_event e nev evts
      return nst 
@@ -202,7 +202,7 @@ extend e maxevs st th = do
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
   lift $ showMStr "extend: calling collapse"
-  let new_events = GCS.collapse False syst st th 
+  let new_events = GCS.collapse False (widening opts) syst st th 
   new_events `seq` lift $ showMStr ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
@@ -484,7 +484,7 @@ add_event is_in_conf stack dup name acts history = do
      lift $ showMStr $ "st_local_conf: computing the state of " ++ show econf
      s@UnfolderState{..} <- get
      st' <- st_history st [0] [] econf 
-     return $ GCS.simple_run syst st' ename 
+     return $ GCS.simple_run (widening opts) syst st' ename 
 
    -- | Actually computes the state of a local configuration
    st_history :: (GCS.Collapsible st act) => st -> EventsID -> EventsID -> History -> UnfolderOp st act st
@@ -508,7 +508,7 @@ add_event is_in_conf stack dup name acts history = do
          ename <- lift $ get_name e evts
          let nst = if e == 0 
                    then st
-                   else GCS.simple_run syst st ename
+                   else GCS.simple_run (widening opts) syst st ename
          st_history nst wlist' seen' hist 
 
 -- | Compute conflicts 

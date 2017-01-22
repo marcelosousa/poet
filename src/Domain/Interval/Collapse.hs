@@ -51,9 +51,16 @@ data FixState =
   , fs_mark :: Set WItem 
   -- Map from loop heads to counter of traversals.  
   , fs_wide :: Map NodeId Int
+  -- Widening level
+  , fs_wid  :: Int 
   }
 
 type FixOp val = State FixState val
+
+get_widening_level :: FixOp Int
+get_widening_level = do
+  fs@FixState{..} <- get
+  return fs_wid
 
 inc_wide_node :: NodeId -> FixOp ()
 inc_wide_node node_id = do
@@ -130,7 +137,7 @@ instance Collapsible IntState IntAct where
            Just cfg -> case succs cfg pos of
              [] -> False
              s  -> all (\(eId,nId) -> is_live tid syst eId cfg st) s
-  collapse b syst@System{..} st tid = 
+  collapse b wid syst@System{..} st tid = 
     let control = controlPart st
         pos = case M.lookup tid control of
           Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
@@ -142,17 +149,17 @@ instance Collapsible IntState IntAct where
           Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
           Just cfg -> cfg 
     in mytrace False ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
-       let res = fixpt syst b tid cfgs symt th_cfg pos st
+       let res = fixpt wid syst b tid cfgs symt th_cfg pos st
        in mytrace False "collapse: end" res
 
-fixpt :: System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList
-fixpt syst b tid cfgs symt cfg@Graph{..} pos st =
+fixpt :: Int -> System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList
+fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
   mytrace False ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
   -- reset the node table information with the information passed
   let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
-      i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty 
+      i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty wid 
       res = mytrace False ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist syst wlist) i_fix_st
   in res 
 
@@ -293,7 +300,8 @@ loop_head_update :: NodeTable -> NodeId -> (IntState, IntAct) -> FixOp (Bool, No
 loop_head_update node_table node (st,act) =  do
   c <- get_wide_node node
   inc_wide_node node
-  if c >= 10 
+  w <- get_widening_level
+  if c >= w 
   then mytrace False ("loop_head_update: going to apply widening") $ do 
     case M.lookup node node_table of
       -- error "loop_head_update: widening between a state and empty?" 

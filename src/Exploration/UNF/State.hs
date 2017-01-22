@@ -74,6 +74,7 @@ data UnfolderOpts =
   {
     stateless :: Bool 
   , cutoffs   :: Bool
+  , widening  :: Int 
   }
   deriving (Show,Eq,Ord)
 

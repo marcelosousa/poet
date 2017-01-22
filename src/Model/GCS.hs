@@ -81,17 +81,17 @@ class (Eq act, Eq st, Show act, Action act, Show st, Projection st) => Collapsib
     let control = controlPart st
         en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
     in M.keys en
-  collapse :: Bool -> System st act -> st -> TId -> [(st,Pos,act)]
-  dcollapse :: System st act -> st -> (TId,Pos,SymId) -> (st,act)
-  dcollapse syst st (tid,pos,_) =
-    let results = collapse True syst st tid
+  collapse :: Bool -> Int -> System st act -> st -> TId -> [(st,Pos,act)]
+  dcollapse :: Int -> System st act -> st -> (TId,Pos,SymId) -> (st,act)
+  dcollapse wid syst st (tid,pos,_) =
+    let results = collapse True wid syst st tid
         result = nub $ filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"
       [(st,_,act)] -> (st,act)
       _ -> error $ "dcollapse: collapse produced several dataflow facts for desired location: pos = " ++ show pos ++ "\n" ++ show result
-  simple_run :: System st act -> st -> (TId,Pos,SymId) -> st
-  simple_run sys st name = fst $ dcollapse sys st name
+  simple_run :: Int -> System st act -> st -> (TId,Pos,SymId) -> st
+  simple_run wid sys st name = fst $ dcollapse wid sys st name
  
 class (Eq act) => Action act where
   isLock :: act -> Bool

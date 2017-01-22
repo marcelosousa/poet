@@ -55,7 +55,7 @@ runOption opt = case opt of
   Frontend  f             -> frontend  f
   Execute   f dom seed    -> execute   f dom seed 
   Interpret f dom         -> interpret f dom 
-  Explore   f dom stf cut -> explore   f dom (not $ toBool stf) (toBool cut)
+  Explore   f dom stf cut w -> explore f dom (not $ toBool stf) (toBool cut) w
   Prime     f dom stf cut -> prime     f dom (not $ toBool stf) (toBool cut)
   Stid      f     stf cut -> stid      f     (not $ toBool stf) (toBool cut)
   Debug     f dom cut     -> debug     f dom (toBool cut)
@@ -105,8 +105,8 @@ interpret f dom = do
   print res
 -}
 
-explore :: FilePath -> Domain -> Bool -> Bool -> IO ()
-explore f dom stl cut = do
+explore :: FilePath -> Domain -> Bool -> Bool -> Int -> IO ()
+explore f dom stl cut wid = do
   case dom of
 --    Concrete -> do
 --      fe <- extract "" f
@@ -121,7 +121,7 @@ explore f dom stl cut = do
     Interval -> do 
       fe <- extract "" f
       let syst = IC.convert fe
-      ust <- unfolder stl cut syst
+      ust <- unfolder stl cut wid syst
       let (cntr, stats) = (US.cntr ust, US.stats ust)
       -- putStrLn $ show syst 
       putStrLn $ "total number of events of the unfolding: " ++ show cntr 
@@ -197,7 +197,7 @@ ai :: FilePath -> IO ()
 ai f = do
   fe <- extract "" f
   let syst = IC.convert fe
-      res = collapse True syst (gbst syst) 1
+      res = collapse True 10 syst (gbst syst) 1
       sym_table = Language.SimpleC.symt fe -- get the symbol table
 --  putStrLn $ show (gbst syst) 
       fname = fst $ splitExtension f
