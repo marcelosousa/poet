@@ -72,7 +72,7 @@ explore c@Conf{..} ê d alt = do
   is@UnfolderState{..} <- get
   str <- lift $ showEvents evts
   lift $ clearScreenDebug
-  lift $ showMStr (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
+  lift $ showMStr $ (separator ++ "explore(ê = " ++ show ê ++ ", d = " ++ show d 
        ++ ", enevs = " ++ show enevs ++ ", alt = " 
        ++ show alt ++ ", stack = " ++ show stak
        ++")\n"++show state++"\nEvents in the Prefix\n"++str++"\n"++separator) 

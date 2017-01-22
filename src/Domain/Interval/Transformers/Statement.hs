@@ -6,7 +6,7 @@
 --
 -- Transformers for the interval semantics.
 -------------------------------------------------------------------------------
-module Domain.Interval.Transformers.Statement (transformer, get_addrs_expr, get_tid_expr) where
+module Domain.Interval.Transformers.Statement (transformer, get_addrs_expr, get_tid_expr, has_exited, is_locked) where
 
 import Control.Monad.State.Lazy 
 import Data.List
@@ -24,9 +24,11 @@ import Domain.Util
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
+import qualified Language.SimpleC.Flow as F
 import Language.SimpleC.Util
 import Util.Generic hiding (safeLookup)
 import qualified Model.GCS as GCS
+import qualified Data.Map as M 
 
 -- | API for accessing the memory
 -- | get_addrs computes the address of the an expression 
@@ -177,6 +179,28 @@ call_transformer fn args = mytrace False ("call_transformer: " ++ show fn ++ " "
       call_transformer_name n args 
     _ -> error "call_transformer: not supported" 
 
+-- has_exited makes the assumptions that there is no sucessors of an exit node
+-- wrong for more complex CFGs
+has_exited :: F.Graphs SymId () (IntState, IntAct) -> IntState -> GCS.TId -> Bool
+has_exited _cfgs st tid = 
+  let control = GCS.controlPart st
+      tid_cfg_sym = GCS.toThCFGSym st tid
+  in case M.lookup tid control of
+       Nothing  -> False
+       Just pos -> case M.lookup tid_cfg_sym _cfgs of 
+         Nothing  -> error $ "has_exited fatal: tid " ++ show tid ++ " not found in cfgs"
+         Just cfg -> case F.succs cfg pos of
+           [] -> True
+           _ -> False 
+
+is_locked :: IntState -> Scope -> SExpression -> Bool
+is_locked st scope expr = mytrace False ("is_locked: scope = " ++ show scope ++ ", expr = " ++ show expr) $ 
+  let lk_addrs = get_addrs_expr st scope expr 
+  in case read_memory st lk_addrs of
+    []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
+    [val] -> val == one 
+    l -> error $ "is_locked fatal: lock has unsupported values " ++ show l 
+
 call_transformer_name :: String -> [SExpression] -> IntTOp (IntValue,IntAct)
 call_transformer_name name args = case name of
   "pthread_create" -> mytrace False ("call_transformer: pthread_create" ++ show args) $ do
@@ -196,22 +220,31 @@ call_transformer_name name args = case name of
     set_state res_st
     mytrace False ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (IntVal [], create_thread_act (SymId tid) zero) 
   "pthread_join" -> do
-    -- this transformer is only called if it is enabled 
+    -- if the transformer is not enabled it returns the bottom state
     s@IntTState{..} <- get
     let tid = get_tid_expr scope st (args !! 0)
-    return (IntVal [], join_thread_act (SymId tid) zero) 
+    if has_exited i_cfgs st tid
+    then return (IntVal [], join_thread_act (SymId tid) zero) 
+    else do
+      set_state $ set_int_state_bot st
+      return (IntVal [], bot_act) 
   "pthread_exit" -> do
     s@IntTState{..} <- get
     case scope of
       Global    -> error $ "pthread_exit: scope = Global"  
       Local tid -> return (IntVal [], exit_thread_act (SymId tid) zero)
   "pthread_mutex_lock" -> do
-    -- this transformer is only called if it is enabled 
+    -- if the transformer is not enabled it returns the bottom state
     s@IntTState{..} <- get
-    let mutex_addr = get_addrs_expr st scope (args !! 0)
-        res_st = write_memory st mutex_addr one 
-    set_state res_st
-    return (one, lock_act_addr mutex_addr) 
+    if is_locked st scope (args !! 0)
+    then do
+      set_state $ set_int_state_bot st
+      return (IntVal [], bot_act)
+    else do 
+      let mutex_addr = get_addrs_expr st scope (args !! 0)
+          res_st = write_memory st mutex_addr one 
+      set_state res_st
+      return (one, lock_act_addr mutex_addr) 
   "pthread_mutex_unlock" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get

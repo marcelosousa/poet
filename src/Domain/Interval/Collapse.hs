@@ -20,7 +20,7 @@ import Domain.Interval.State
 import Domain.Interval.Transformers.Declaration (transformer_decl)
 import Domain.Interval.Transformers.Expression (transformer_expr)
 import Domain.Interval.Transformers.State
-import Domain.Interval.Transformers.Statement (get_addrs_expr, get_tid_expr)
+import Domain.Interval.Transformers.Statement (get_addrs_expr, get_tid_expr, has_exited, is_locked)
 import Domain.Interval.Value
 import Domain.Util
 import Language.SimpleC.AST
@@ -83,14 +83,6 @@ showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) ->
        s_r = s_a ++ show s
    in (n+1, s_r ++ r))  (1,"") l)
 
-is_locked :: IntState -> Scope -> SExpression -> Bool
-is_locked st scope expr = mytrace False ("is_locked: scope = " ++ show scope ++ ", expr = " ++ show expr) $ 
-  let lk_addrs = get_addrs_expr st scope expr 
-  in case read_memory st lk_addrs of
-    []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
-    [val] -> val == one 
-    l -> error $ "is_locked fatal: lock has unsupported values " ++ show l 
-
 -- | Instead of just looking at the immediate edge, one needs to potentially
 --   traverse the graph until reaching a global action. Only at those leafs
 --   one can compute the right result with respect to enabledness.
@@ -106,25 +98,12 @@ is_live tid syst eId cfg st =
           let tid' = get_tid_expr (Local tid) st (args!!0) 
            -- not exited
           -- in not $ is_enabled syst st tid' 
-          in has_exited syst st tid' 
+          in has_exited (cfgs syst) st tid' 
          -- assume the mutex is declared globally 
         "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
         _ -> True 
       _ -> True
     _ -> True
-
--- has_exited makes the assumptions that there is no sucessors of an exit node
--- wrong for more complex CFGs
-has_exited syst st tid = 
-  let control = controlPart st
-      tid_cfg_sym = toThCFGSym st tid
-  in case M.lookup tid control of
-       Nothing  -> False
-       Just pos -> case M.lookup tid_cfg_sym (cfgs syst) of 
-         Nothing  -> error $ "has_exited fatal: tid " ++ show tid ++ " not found in cfgs"
-         Just cfg -> case succs cfg pos of
-           [] -> True
-           _ -> False 
  
 instance Collapsible IntState IntAct where
   is_enabled syst st tid =
@@ -278,14 +257,15 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
                     _ -> return $ strong_update (node_table fs_cfg) post (st ns,acts) 
              cfg' <- update_node_table node_table'
              let nwlist = if is_fix then wlist else (wlist ++ rwlst)
-             disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
-             -- @NOTE: If one the sucessors is not enabled then
-             -- simply mark it as a final node
-             if not $ null disabled_rwlst
-             then mytrace False ("worklist: non-global event!") $ do
-               add_mark it
-               worklist syst wlist
-             else worklist syst nwlist
+             worklist syst nwlist
+            -- disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
+            -- -- @NOTE: If one the sucessors is not enabled then
+            -- -- simply mark it as a final node
+            -- if not $ null disabled_rwlst
+            -- then mytrace False ("worklist: non-global event!") $ do
+            --   add_mark it
+            --   worklist syst wlist
+            -- else worklist syst nwlist
 
 -- | Returns true if the current edge is disabled
 check_enabledness_succ :: System IntState IntAct -> (NodeId, EdgeId, NodeId) -> FixOp Bool 
