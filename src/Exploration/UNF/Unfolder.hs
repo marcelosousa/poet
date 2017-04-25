@@ -202,8 +202,9 @@ extend e maxevs st th = do
   --      a global state (i.e. the state of the configuration) and 
   --      perform sound independence/interference reasoning
   lift $ showMStr "extend: calling collapse"
-  let new_events = GCS.collapse False (widening opts) syst st th 
+  let (warns,new_events) = GCS.collapse False (widening opts) syst st th 
   new_events `seq` lift $ showMStr ("extend: collapse result\n   " ++ show (map (\(a,b,c) -> (b,c)) new_events))
+  add_warns warns
   -- @ For each triple (new_state,pos,acts) given by execution engine, 
   --   generate events with that name and actions. 
   lift $ showMStr $ "extend: calling ext(" ++ show e ++ ")"

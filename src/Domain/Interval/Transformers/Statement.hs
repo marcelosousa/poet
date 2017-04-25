@@ -29,6 +29,7 @@ import Language.SimpleC.Util
 import Util.Generic hiding (safeLookup)
 import qualified Model.GCS as GCS
 import qualified Data.Map as M 
+import qualified Data.Set as S 
 
 -- | API for accessing the memory
 -- | get_addrs computes the address of the an expression 
@@ -47,7 +48,7 @@ get_addrs_expr st scope expr =
     Index lhs rhs  -> 
       let lhs_addrs = get_addrs_expr st scope lhs
           error_msg = error "get_addrs: called the transformer with missing information"
-          tr_st = IntTState scope st error_msg error_msg False 0
+          tr_st = IntTState scope st error_msg error_msg False 0 S.empty
           (val,_) = evalState (transformer rhs) tr_st
           -- need to filter from the lhs_addrs the interval given by val
           addrs = case lhs_addrs of 
@@ -269,7 +270,8 @@ call_transformer_name name args = case name of
        return (l `iJoin` u,lacts `join_act` uacts)
   "__VERIFIER_error" -> do
     s@IntTState{..} <- get
-    mytrace True ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot_act)
+    add_warn node_id
+    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot_act)
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot_act) 
 

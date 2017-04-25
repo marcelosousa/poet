@@ -10,10 +10,12 @@ import Control.Monad.State.Strict
 import Data.HashTable.IO 
 import Data.List
 import Data.Map (Map,fromList,empty)
-import qualified Data.HashTable.IO as H
-import qualified Model.GCS as GCS
+import Data.Set (Set)
 import Language.SimpleC.AST
 import Language.SimpleC.Flow
+import qualified Data.HashTable.IO as H
+import qualified Data.Set as S
+import qualified Model.GCS as GCS
 
 type Counter = Int
 
@@ -87,6 +89,7 @@ data UnfolderStats =
   , nr_evs_prefix     :: Counter  -- Size of prefix |U|
   , sum_size_max_conf :: Integer  -- Sum of sizes of maximal configurations
   , nr_evs_per_name   :: Map EventName Int -- Number of events per name 
+  , nr_warns          :: Set Int -- Warnings 
   }
   deriving (Show,Eq,Ord)
 

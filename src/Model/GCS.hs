@@ -11,15 +11,16 @@
 -------------------------------------------------------------------------------
 module Model.GCS where
 
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.Map as M 
+import Data.List
 import Data.Map hiding (foldr, filter, map, (\\), null)
+import Data.Set (Set)
 import Language.SimpleC.AST 
-import Language.SimpleC.Flow
 import Language.SimpleC.Converter
+import Language.SimpleC.Flow
 import Language.SimpleC.Util hiding (cfgs)
 import Util.Generic
-import Data.List
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.Map as M 
 
 -- A System is a collection of CFGs together with
 -- a representation of the frontier on the PCs 
@@ -81,10 +82,10 @@ class (Eq act, Eq st, Show act, Action act, Show st, Projection st) => Collapsib
     let control = controlPart st
         en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
     in M.keys en
-  collapse :: Bool -> Int -> System st act -> st -> TId -> [(st,Pos,act)]
+  collapse :: Bool -> Int -> System st act -> st -> TId -> (Set Int,[(st,Pos,act)])
   dcollapse :: Int -> System st act -> st -> (TId,Pos,SymId) -> (st,act)
   dcollapse wid syst st (tid,pos,_) =
-    let results = collapse True wid syst st tid
+    let results = snd $ collapse True wid syst st tid
         result = nub $ filter (\(s,p,a) -> p == pos) results
     in case result of
       [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"

@@ -5,6 +5,7 @@ import Control.Monad.ST
 import Control.Monad.State.Strict
 import Data.List
 import Data.Map (Map,fromList,empty)
+import Data.Set (Set)
 import Exploration.UNF.State
 import Language.SimpleC.AST
 import Language.SimpleC.Flow
@@ -13,6 +14,7 @@ import Util.Generic
 import qualified Data.HashTable.IO as H
 import qualified Data.Map as MA
 import qualified Data.Maybe as M
+import qualified Data.Set as S
 import qualified Debug.Trace as T
 import qualified Model.GCS as GCS
 
@@ -42,8 +44,9 @@ default_unf_stats =
      nr_evs_prefix = 1
      sum_size_max_conf = 0
      nr_evs_per_name = MA.singleton botName 1
+     nr_warns = S.empty
  in UnfStats nr_max_conf nr_cutoffs nr_evs_prefix
-             sum_size_max_conf nr_evs_per_name
+             sum_size_max_conf nr_evs_per_name nr_warns 
 
 -- @ Initial state of the unfolder
 i_unf_state :: GCS.Collapsible st a => Bool -> Bool -> Int -> GCS.System st a -> IO (UnfolderState st a)
@@ -273,6 +276,13 @@ inc_evs_per_name name = do
       stats' = stats { nr_evs_per_name = n_evs_per_name }
   put s{ stats = stats' }
 
+-- | add to the warning sets
+add_warns :: Set Int -> UnfolderOp st act ()
+add_warns warns = do 
+  s@UnfolderState{..} <- get
+  let _nr_warns = S.union warns $ nr_warns stats
+      stats' = stats { nr_warns = _nr_warns }
+  put s{ stats = stats' }
 {-
 inc_widen_map :: EventName -> UnfolderOp st act ()
 inc_widen_map ename = do 

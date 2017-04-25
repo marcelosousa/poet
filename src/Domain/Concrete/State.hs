@@ -11,18 +11,26 @@
 module Domain.Concrete.State where
 
 import Data.Hashable
+import Data.IntMap (IntMap)
 import Data.List
-import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Set (Set)
-import qualified Data.Set as S
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as IM
-import Model.GCS
-import Util.Generic hiding (safeLookup)
+import Domain.Util
+import Domain.MemAddr
 import Language.SimpleC.AST
 import Language.SimpleC.Util
-import Domain.Util
+import Model.GCS
+import Util.Generic hiding (safeLookup)
+import qualified Data.IntMap as IM
+import qualified Data.Map as M
+import qualified Data.Set as S
+
+-- | Concrete Action
+int ConAct = Act ConValue
+
+-- | Concrete Memory Addr
+type ConMAddr = MemAddr ConValue
+type ConMAddrs = MemAddrs ConValue
 
 type ConValues = [ConValue]
 

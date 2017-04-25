@@ -16,6 +16,8 @@ import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Flow
 import Language.SimpleC.Converter hiding (Scope(..))
 import Data.Map
+import Data.Set (Set)
+import qualified Data.Set as S
 
 -- | State of the abstract transformer
 data IntTState 
@@ -27,6 +29,7 @@ data IntTState
  , i_cfgs :: Graphs SymId () (IntState, IntAct)
  , cond :: Bool            -- is a condition? 
  , node_id :: Int 
+ , warns :: Set Int 
  }
 
 -- | Transformer operation 
@@ -36,4 +39,10 @@ set_state :: IntState -> IntTOp ()
 set_state nst = do
   s@IntTState{..} <- get
   put s { st = nst }
+
+add_warn :: Int -> IntTOp ()
+add_warn n = do 
+  s@IntTState{..} <- get
+  let _warns = S.insert n warns
+  put s { warns = _warns }
 

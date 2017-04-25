@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
 -- Module    :  Main
--- Copyright :  (c) 2015-16 Marcelo Sousa
+-- Copyright :  (c) 2015-17 Marcelo Sousa
 -------------------------------------------------------------------------------
 module Main where
 
@@ -34,6 +34,7 @@ import Util.CmdOpts
 import Util.Generic
 -- import Util.Printer
 import qualified Data.Map as M
+import qualified Data.Set as S 
 -- import qualified Domain.Concrete.Converter as CC
 import qualified Domain.Interval.Transformers.System as IC
 import qualified Exploration.UNF.API as US
@@ -108,27 +109,31 @@ interpret f dom = do
 explore :: FilePath -> Domain -> Bool -> Bool -> Int -> IO ()
 explore f dom stl cut wid = do
   case dom of
---    Concrete -> do
---      fe <- extract "" f
---      let syst = CC.convert fe 
---      ust <- unfolder stl cut syst
---      let (cntr, stats) = (US.cntr ust, US.stats ust)
---      -- putStrLn $ show syst 
---      putStrLn $ show (cntr, stats)
---      (_,_,_,dots) <- unfToDot ust 
---      writeFile (replaceExtension f ".dot") dots
---      putStrLn "explore end"
+    --Concrete -> do
+    --  fe <- extract "" f
+    --  let syst = CC.convert fe 
+    --  ust <- unfolder stl cut syst
+    --  let (cntr, stats) = (US.cntr ust, US.stats ust)
+    --  -- putStrLn $ show syst 
+    --  putStrLn $ "total number of events of the unfolding: " ++ show cntr 
+    --  putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
+    --  putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
+    --  putStrLn $ "average size of U at maximal configurations: " 
+    --  putStrLn "explore end"
     Interval -> do 
       fe <- extract "" f
       let syst = IC.convert fe
       ust <- unfolder stl cut wid syst
       let (cntr, stats) = (US.cntr ust, US.stats ust)
       -- putStrLn $ show syst 
+          outfile = replaceExtension f "log"
       putStrLn $ "total number of events of the unfolding: " ++ show cntr 
       putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
       putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
       putStrLn $ "average size of U at maximal configurations: " 
        ++ show (div (US.sum_size_max_conf stats) (toInteger $ US.nr_max_conf stats))
+      let warns = US.nr_warns stats
+      putStrLn $ show (S.size warns) ++ " warnings: " ++ show (US.nr_warns stats)
 --      putStrLn $ show (cntr, stats)
 --      (_,_,_,dots) <- unfToDot ust 
 --      writeFile (replaceExtension f ".dot") dots
@@ -197,7 +202,7 @@ ai :: FilePath -> IO ()
 ai f = do
   fe <- extract "" f
   let syst = IC.convert fe
-      res = collapse True 10 syst (gbst syst) 1
+      (warns,res) = collapse True 10 syst (gbst syst) 1
       sym_table = Language.SimpleC.symt fe -- get the symbol table
 --  putStrLn $ show (gbst syst) 
       fname = fst $ splitExtension f
@@ -205,6 +210,7 @@ ai f = do
       pdf_name = fname ++ ".pdf"
   writeFile dot_name $ P.pp_dot_graphs (Language.SimpleC.cfgs fe) M.empty -- sym_table
   putStrLn $ show_symt sym_table 
+  putStrLn $ "Warnings: " ++ show warns
   putStrLn $ showResultList res
   -- pdf <- readProcess "dot" ["-Tpdf",dot_name] []
   -- writeFile pdf_name pdf

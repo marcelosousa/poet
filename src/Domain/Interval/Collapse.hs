@@ -131,7 +131,7 @@ instance Collapsible IntState IntAct where
        let res = fixpt wid syst b tid cfgs symt th_cfg pos st
        in mytrace False "collapse: end" res
 
-fixpt :: Int -> System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> ResultList
+fixpt :: Int -> System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> (Set Int, ResultList)
 fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
   mytrace False ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
   -- reset the node table information with the information passed
@@ -139,7 +139,7 @@ fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
       i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty wid 
-      res = mytrace False ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist syst wlist) i_fix_st
+      res = mytrace False ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist S.empty syst wlist) i_fix_st
   in res 
 
 add_mark :: WItem -> FixOp ()
@@ -160,7 +160,7 @@ up_pc i@IntTState{..} t p =
   let st' = update_pc st t p
   in i {st = st'} 
 
-handle_mark :: WItem -> FixOp (IntState,Pos,IntAct)
+handle_mark :: WItem -> FixOp (Set Int, (IntState,Pos,IntAct))
 handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,post)) $ do
   fs@FixState{..} <- get
   let (node_st, pre_acts) = case get_node_info fs_cfg pre of
@@ -169,7 +169,7 @@ handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,pos
       -- get the edge info
       e@EdgeInfo{..} = mytrace False ("handle_mark: " ++ show node_st) $ get_edge_info fs_cfg eId
       -- construct the transformer state
-      tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags) pre
+      tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags) pre S.empty
       -- decide based on the type of edge which transformer to call
       (post_acts,_ns) = case edge_code of
         -- execute the transformer
@@ -192,31 +192,33 @@ handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,pos
       let rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
           e_act = exit_thread_act (SymId fs_tid) zero
       if (Exit `elem` edge_tags) || null rwlst
-      then return (res_st,post,res_act `join_act` e_act)
-      else return (res_st,post,res_act)
+      then return (warns, (res_st,post,res_act `join_act` e_act))
+      else return (warns, (res_st,post,res_act))
     _ -> error "handle_mark: unexcepted value in the final node_table"
 
-fixpt_result :: FixOp ResultList
-fixpt_result = do
+fixpt_result :: Set Int -> FixOp (Set Int, ResultList)
+fixpt_result _warns = do
   fs@FixState{..} <- get
   let marks = S.toList fs_mark
-  res <- mytrace False ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
+  _res <- mytrace False ("fixpt_result: marks = " ++ show marks) $ mapM handle_mark marks
+  let (ws,res) = unzip _res 
+      warns = S.unions (_warns:ws)
   if fs_mode
   then do 
     fs@FixState{..} <- get
     let table = node_table fs_cfg
         nodes = M.filterWithKey (\k _ -> not $ any (\(_,p,_) -> p == k) res) table
         nodes_res = M.foldWithKey (\p l r -> map (\(a,b) -> (a,p,b)) l ++ r) [] nodes 
-    return $ res ++ nodes_res 
-  else return $ res 
+    return (warns, res ++ nodes_res) 
+  else return (warns, res)
 
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
-worklist :: System IntState IntAct -> Worklist -> FixOp ResultList 
-worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
+worklist :: Set Int -> System IntState IntAct -> Worklist -> FixOp (Set Int, ResultList) 
+worklist _warns syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
   fs@FixState{..} <- get
   case _wlist of
-    [] -> fixpt_result 
+    [] -> fixpt_result _warns 
     (it@(pre,eId,post):wlist) -> do
       -- get the current state in the pre
       let (node_st, pre_acts) = case get_node_info fs_cfg pre of
@@ -225,7 +227,7 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
           -- get the edge info
           e@EdgeInfo{..} = get_edge_info fs_cfg eId
           -- construct the transformer state
-          tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags) pre
+          tr_st = IntTState (Local fs_tid) node_st fs_symt fs_cfgs (is_cond edge_tags) pre _warns
           -- decide based on the type of edge which transformer to call
           (post_acts,_ns) = case edge_code of
             -- execute the transformer
@@ -235,15 +237,16 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
           -- join the actions of the predecessors with the actions of the current edge
           acts = pre_acts `join_act` post_acts
           ns = up_pc _ns fs_tid post 
+          n_warns = warns _ns
       -- depending on whether the action is global or not;
       -- either add the results to the result list or update
       -- the cfg with them 
       if is_bot (st ns)
-      then mytrace False ("worklist: current edge returns bottom") $ worklist syst wlist
+      then mytrace False ("worklist: current edge returns bottom") $ worklist n_warns syst wlist
       else if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
            then mytrace False ("is a global operation") $ do
              add_mark it
-             worklist syst wlist
+             worklist n_warns syst wlist
            else mytrace False ("worklist: returned state\n" ++ show (st ns)) $ do 
              -- depending on the tags of the edge; the behaviour is different
              (is_fix,node_table') <-
@@ -257,7 +260,7 @@ worklist syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
                     _ -> return $ strong_update (node_table fs_cfg) post (st ns,acts) 
              cfg' <- update_node_table node_table'
              let nwlist = if is_fix then wlist else (wlist ++ rwlst)
-             worklist syst nwlist
+             worklist n_warns syst nwlist
             -- disabled_rwlst <- filterM (check_enabledness_succ syst) rwlst
             -- -- @NOTE: If one the sucessors is not enabled then
             -- -- simply mark it as a final node
