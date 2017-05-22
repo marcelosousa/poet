@@ -45,4 +45,3 @@ add_warn n = do
   s@IntTState{..} <- get
   let _warns = S.insert n warns
   put s { warns = _warns }
-

@@ -35,10 +35,11 @@ import Util.Generic
 -- import Util.Printer
 import qualified Data.Map as M
 import qualified Data.Set as S 
--- import qualified Domain.Concrete.Converter as CC
+import qualified Domain.Concrete.Transformers.System as CC
 import qualified Domain.Interval.Transformers.System as IC
 import qualified Exploration.UNF.API as US
 import qualified Exploration.UNF.State as US
+
 -- Newer version for stid
 -- import Domain.Synchron
 -- import Exploration.SUNF.Unfolder

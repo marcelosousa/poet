@@ -33,38 +33,6 @@ import qualified Model.GCS as GCS
 import Util.Generic hiding (safeLookup)
 import qualified Debug.Trace as T
 
--- | State of the concrete transformer
-data ConTState 
- = ConTState {
-   scope :: Scope
- , st :: CState            -- the set of states
- , cst :: Sigma            -- current state in the state 
- , sym :: Map SymId Symbol
- , cfgst :: Graphs SymId () (CState,Act)
- , cond :: Bool            -- is a condition? 
- , exit :: Bool            -- is an exit? 
- }
-
--- | Transformer operation 
-type ConTOp val = State ConTState val
-
-set_state :: CState -> ConTOp ()
-set_state nst = do
-  s@ConTState{..} <- get
-  put s { st = nst }
-
-join_state :: CState -> ConTOp ()
-join_state nst = do
-  s@ConTState{..} <- get
-  let fst = nst `join_cstate` st
-  put s { st = fst }
-
--- | Picks a state from the set and sets
---   as the current one
-set_single_state :: Sigma -> ConTOp () 
-set_single_state state = do
-  s@ConTState{..} <- get
-  put s { cst = state }
 
 -- | converts the front end into a system
 -- @REVISED: July'16

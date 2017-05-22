@@ -26,22 +26,14 @@ import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-{-
-  The memory layout of POET is quite simple:
-    The memory is a map from base memory addresses.
--}
-
 -- | Concrete Memory Cell
 type ConMCell = MemCell SymId () ConValue
 
 instance Show ConMCell where
   show (MCell ty val) = show val
 
--- Concrete offsets
-type ConOffs = Map ConValue ConValue
-
 -- | Concrete Heap
-type ConHeap = Map MemAddrBase ConOffs 
+type ConHeap = Map MemAddrBase ConMCell
 
 -- | Concrete state
 data ConState = 
@@ -56,7 +48,6 @@ data ConState =
 
 -- | A thread state is a control and local data
 type ThConStates = Map TId ThConState
-
 type Locals = Map SymId ConValue 
 data ThState =
   ThState

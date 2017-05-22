@@ -7,5 +7,8 @@
 module Domain.Concrete where
 
 import Domain.Concrete.Collapse
-import Domain.Concrete.Converter
+import Domain.Concrete.Transformers.State
+import Domain.Concrete.Transformers.Declaration
+import Domain.Concrete.Transformers.Expression
 import Domain.Concrete.State
+import Domain.Concrete.Value
