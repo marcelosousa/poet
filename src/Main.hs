@@ -18,7 +18,7 @@ import Model.GCS
 import Control.Monad.ST
 import Domain.Action
 -- import Domain.Concrete
--- import Domain.Concrete.State
+import Domain.Concrete.Collapse
 import Domain.Interval.Collapse
 import Domain.Interval
 import Exploration.UNF.Unfolder  
@@ -110,17 +110,19 @@ interpret f dom = do
 explore :: FilePath -> Domain -> Bool -> Bool -> Int -> IO ()
 explore f dom stl cut wid = do
   case dom of
-    --Concrete -> do
-    --  fe <- extract "" f
-    --  let syst = CC.convert fe 
-    --  ust <- unfolder stl cut syst
-    --  let (cntr, stats) = (US.cntr ust, US.stats ust)
-    --  -- putStrLn $ show syst 
-    --  putStrLn $ "total number of events of the unfolding: " ++ show cntr 
-    --  putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
-    --  putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
-    --  putStrLn $ "average size of U at maximal configurations: " 
-    --  putStrLn "explore end"
+	 -- Concrete Semantics
+    Concrete -> do
+      fe <- extract "" f
+      let syst = CC.convert fe 
+      ust <- unfolder stl cut wid syst
+      let (cntr, stats) = (US.cntr ust, US.stats ust)
+      -- putStrLn $ show syst 
+      putStrLn $ "total number of events of the unfolding: " ++ show cntr 
+      putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
+      putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
+      putStrLn $ "average size of U at maximal configurations: " 
+      putStrLn "explore end"
+	 -- Interval Semantics
     Interval -> do 
       fe <- extract "" f
       let syst = IC.convert fe

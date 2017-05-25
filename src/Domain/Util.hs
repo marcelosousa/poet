@@ -11,10 +11,17 @@
 module Domain.Util where
 
 import Data.Hashable
-import Model.GCS
+import Data.Map (Map)
 import Language.SimpleC.AST
+import Language.C.Syntax.Ops 
+import Language.SimpleC.AST hiding (Value)
+import Language.SimpleC.Converter hiding (Scope(..))
+import Language.SimpleC.Flow
 import Language.SimpleC.Util
- 
+import Model.GCS
+import Util.Generic hiding (safeLookup)
+import qualified Data.Map as M
+
 -- | Scope (of a transformer)
 --   It can either be global (if we processing
 --   for example global declarations and so we need
@@ -23,6 +30,50 @@ import Language.SimpleC.Util
 --   change the local state and the heap
 data Scope = Global | Local TId
   deriving (Show,Eq,Ord)
+
+-- | retrieves the entry node of the cfg of a function
+get_entry :: String -> Graphs SymId () a -> Map SymId Symbol -> (Pos, SymId)
+get_entry fnname graphs symt = 
+  case M.foldrWithKey aux_get_entry Nothing graphs of
+    Nothing -> error $ "get_entry: cant get entry for " ++ fnname
+    Just p -> p -- T.trace (show symt) p
+ where 
+   aux_get_entry sym cfg r = 
+     case r of 
+       Just res -> Just res
+       Nothing -> 
+         case M.lookup sym symt of
+           Nothing -> Nothing
+           Just s  -> if get_name s == fnname
+                      then Just (entry_node cfg, sym)
+                      else Nothing 
+  
+-- | can_get_addrs_expr :: SExpression -> Bool
+can_get_addrs_expr :: SExpression -> Bool
+can_get_addrs_expr expr = case expr of
+    Var id -> True 
+    Unary CAdrOp e -> True 
+    Index lhs rhs  -> True
+    _ -> False
+
+-- negates logical expression using De Morgan Laws
+negExp :: SExpression -> SExpression
+negExp expr = case expr of
+  Binary CLndOp l r -> Binary CLorOp (negExp l) (negExp r)
+  Binary CLorOp l r -> Binary CLndOp (negExp l) (negExp r)
+  Binary op l r -> Binary (negOp op) l r
+  Unary CNegOp e -> e
+  _ -> error $ "negExp: unsupported " ++ show expr
+
+negOp :: BinaryOp -> BinaryOp 
+negOp op = case op of
+  CLeOp -> CGeqOp
+  CGrOp -> CLeqOp
+  CLeqOp -> CGrOp
+  CGeqOp -> CLeOp
+  CEqOp -> CNeqOp
+  CNeqOp -> CEqOp
+  _ -> error $ "negOp: unsupported " ++ show op
 
 instance Hashable SymId where
   hash (SymId i) = hash i

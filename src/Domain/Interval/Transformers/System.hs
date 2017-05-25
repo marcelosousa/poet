@@ -18,7 +18,6 @@ import Domain.Interval.API (set_pos)
 import Domain.Interval.State
 import Domain.Interval.Transformers.State
 import Domain.Interval.Transformers.Declaration
-import Domain.Interval.Transformers.Util
 import Domain.Interval.Type
 import Domain.Interval.Value
 import Domain.MemAddr

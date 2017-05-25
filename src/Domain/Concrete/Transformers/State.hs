@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Concrete.Transformers.State
 -- Copyright :  (c) 2015-17 Marcelo Sousa
@@ -26,6 +27,7 @@ data ConTState
  , cfgst :: Graphs SymId () (ConState, ConAct)
  , cond  :: Bool            -- is a condition? 
  , exit  :: Bool            -- is an exit? 
+ , node_id :: Int 
  , warns :: Set Int
  }
 
@@ -37,13 +39,6 @@ set_state :: ConState -> ConTOp ()
 set_state nst = do
   s@ConTState{..} <- get
   put s { st = nst }
-
--- | Joins with input state 
-join_state :: ConState -> ConTOp ()
-join_state nst = do
-  s@ConTState{..} <- get
-  let fst = nst `join_cstate` st
-  put s { st = fst }
 
 -- | Adds a warning to the state
 add_warn :: Int -> ConTOp ()

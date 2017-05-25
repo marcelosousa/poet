@@ -16,7 +16,6 @@ import Domain.Action
 import Domain.Interval.API
 import Domain.Interval.State
 import Domain.Interval.Transformers.State
-import Domain.Interval.Transformers.Util
 import Domain.Interval.Type
 import Domain.Interval.Value
 import Domain.MemAddr
