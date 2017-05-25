@@ -4,10 +4,8 @@
 -- Module    :  Model.GCS 
 -- Copyright :  (c) 2016 Marcelo Sousa
 --
--- General Computation System Model
--- General collapse 
---  For simplicity, a thread is enabled if the control
---  state is non-negative.
+-- This module defines the model of computation and the main classes 
+-- that need to be defined in order to add a new domain to the unfolder.
 -------------------------------------------------------------------------------
 module Model.GCS where
 
@@ -64,17 +62,18 @@ main_tid = 0
 botID :: TId 
 botID = -1
 
--- | The control part of a state 
---   is a map from thread id to position 
---   in the CFG.
+-- | The control part of a state: 
+--   map from thread id to CFG node
 type Control = Map TId Pos
 
+-- Projection defines the API over the "state" 
 class Projection st where
   controlPart :: st -> Control 
-  subsumes :: st -> st -> Bool
-  isBottom :: st -> Bool
-  toThCFGSym :: st -> TId -> SymId
+  subsumes    :: st -> st -> Bool
+  isBottom    :: st -> Bool
+  toThCFGSym  :: st -> TId -> SymId
 
+-- Collapsible defines the API to run an interpreter
 class (Eq act, Eq st, Show act, Action act, Show st, Projection st) => Collapsible st act where
   is_enabled :: System st act -> st -> TId -> Bool
   enabled :: System st act -> st -> [TId]
@@ -93,18 +92,20 @@ class (Eq act, Eq st, Show act, Action act, Show st, Projection st) => Collapsib
       _ -> error $ "dcollapse: collapse produced several dataflow facts for desired location: pos = " ++ show pos ++ "\n" ++ show result
   simple_run :: Int -> System st act -> st -> (TId,Pos,SymId) -> st
   simple_run wid sys st name = fst $ dcollapse wid sys st name
- 
+
+-- Action defines the API to compute independence based on actions
 class (Eq act) => Action act where
-  isLock :: act -> Bool
-  isUnlock :: act -> Bool
-  isJoin :: act -> Bool
+  isLock     :: act -> Bool
+  isUnlock   :: act -> Bool
+  isJoin     :: act -> Bool
   -- Given two sets of actions a1 and a2,
   -- check if there exists in a2 an unlock 
   -- or lock with an address that is touched
   -- by a1.
   isUnlockOf :: act -> act -> Bool 
-  isLockOf :: act -> act -> Bool
+  isLockOf   :: act -> act -> Bool
   isCreateOf :: SymId -> act -> Bool 
   -- Two sets of actions are independent
   interferes :: act -> act -> Bool
-  isGlobal :: act -> Bool
+  isGlobal   :: act -> Bool
+   

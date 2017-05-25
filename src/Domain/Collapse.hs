@@ -2,9 +2,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 -------------------------------------------------------------------------------
 -- Module    :  Domain.Collapse
--- Copyright :  (c) 2016 Marcelo Sousa
+-- Copyright :  (c) 2017 Marcelo Sousa
 --
--- General collapse procedure:
+-- General thread analysis:
 --  Naive abstract interpretation fixpoint
 --  based on a worklist algorithm
 -------------------------------------------------------------------------------
@@ -15,42 +15,41 @@ import qualified Data.Map as M
 import Language.SimpleC.AST
 import Model.GCS
 
-
-type ConGraph = Graph SymId () (IntState,IntAct) 
-type ConGraphs = Graphs SymId () (IntState,IntAct)
-type WItem = (NodeId,EdgeId,NodeId)
-type Worklist = [WItem]
-type ResultList = [(IntState,Pos,IntAct)]
-type NodeTable = Map NodeId [(IntState,IntAct)]
-
-
-gen_collapse :: Graph SymId () (st,act) -> Pos -> a 
-gen_collapse cfg pos st  = undefined
+-- | General datatypes for the collapse
+type CGraph     s a = Graph  SymId () (s,a)
+type CGraphs    s a = Graphs SymId () (s,a)
+type ResultList s a = [(s,Pos,a)]
+type NodeTable  s a = Map NodeId [(s,a)]
+type WItem          = (NodeId,EdgeId,NodeId)
+type Worklist       = [WItem]
          
-data FixState =
+data FixState s a =
   FixState
   {
+  -- fs_mode=True returns the annotated CFG; fs_mode=False returns the final res
     fs_mode :: Bool 
+  -- thread/process/function ID 
   , fs_tid  :: TId 
-  , fs_cfgs :: IntGraphs
-  , fs_symt :: SymbolTable 
-  , fs_cfg  :: IntGraph
-  -- The final worklist: every edge in this worklist is a global action 
-  , fs_mark :: Set WItem 
-  -- Map from loop heads to counter of traversals.  
+  , fs_cfgs :: CGraphs s a
+  , fs_symt :: SymbolTable
+  , fs_cfg  :: CGraph s a
+  -- final worklist: every edge in this worklist is a global action 
+  , fs_mark :: Set WItem
+  -- map from loop heads to counter of traversals.  
   , fs_wide :: Map NodeId Int
-  -- Widening level
+  -- widening level
   , fs_wid  :: Int 
   }
 
-type FixOp val = State FixState val
+type FixOp s a val = State (FixState s a) val
 
-get_widening_level :: FixOp Int
+-- | API FOR STATE
+get_widening_level :: FixOp s a Int
 get_widening_level = do
   fs@FixState{..} <- get
   return fs_wid
 
-inc_wide_node :: NodeId -> FixOp ()
+inc_wide_node :: NodeId -> FixOp s a ()
 inc_wide_node node_id = do
   fs@FixState{..} <- get
   let fs_wide' = case M.lookup node_id fs_wide of
@@ -58,21 +57,34 @@ inc_wide_node node_id = do
         Just n  -> M.insert node_id (n+1) fs_wide
   put fs { fs_wide = fs_wide' } 
 
-get_wide_node :: NodeId -> FixOp Int
+get_wide_node :: NodeId -> FixOp s a Int
 get_wide_node node_id = do
   fs@FixState{..} <- get
   case M.lookup node_id fs_wide of
     Nothing -> return 0
     Just n  -> return n 
 
-showResultList :: ResultList -> String
-showResultList l = "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) -> 
-   let s_a = "CFG Node: " ++ show p ++ "\n"
-       s_r = s_a ++ show s
-   in (n+1, s_r ++ r))  (1,"") l)
+add_mark :: WItem -> FixOp s a ()
+add_mark i = do 
+  fs@FixState{..} <- get
+  let fs_mark' = S.insert i fs_mark
+  put fs { fs_mark = fs_mark' }
 
- 
-fixpt :: Int -> System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTable -> IntGraph -> Pos -> IntState -> (Set Int, ResultList)
+update_node_table :: NodeTable s a -> FixOp s a (CGraph s a)
+update_node_table node_table' = do 
+  fs@FixState{..} <- get
+  let cfg = fs_cfg { node_table = node_table' }
+  put fs { fs_cfg = cfg }
+  return cfg
+
+-- @TODO: PROBLEM HERE!
+up_pc :: s -> TId -> Pos -> s
+up_pc i@IntTState{..} t p =
+  let st' = update_pc st t p
+  in i {st = st'} 
+
+-- | main fixpoint function
+fixpt :: Show s => Int -> System s a -> Bool -> TId -> CGraphs s a -> SymbolTable -> CGraph s a -> Pos -> s -> (Set Int, ResultList s a)
 fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
   mytrace False ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
   -- reset the node table information with the information passed
@@ -83,23 +95,6 @@ fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
       res = mytrace False ("fixpt: cfg = " ++ show ( node_table' :: NodeTable )) $ evalState (worklist S.empty syst wlist) i_fix_st
   in res 
 
-add_mark :: WItem -> FixOp ()
-add_mark i = do 
-  fs@FixState{..} <- get
-  let fs_mark' = S.insert i fs_mark
-  put fs { fs_mark = fs_mark' }
-
-update_node_table :: NodeTable -> FixOp IntGraph
-update_node_table node_table' = do 
-  fs@FixState{..} <- get
-  let cfg = fs_cfg { node_table = node_table' }
-  put fs { fs_cfg = cfg }
-  return cfg
-
-up_pc :: IntTState -> TId -> Pos -> IntTState
-up_pc i@IntTState{..} t p =
-  let st' = update_pc st t p
-  in i {st = st'} 
 
 handle_mark :: WItem -> FixOp (Set Int, (IntState,Pos,IntAct))
 handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,post)) $ do
@@ -267,3 +262,11 @@ strong_update node_table node (st,act) = mytrace False ("strong_update: node = "
         then (True, node_table)
         else (False, M.insert node [(st,act `join_act` act')] node_table)
       _ -> error "strong_update: more than one state in the list" 
+      
+-- | Pretty Printing
+showResultList :: ResultList -> String
+showResultList l = 
+ "Data Flow Information:\n" ++ (snd $ foldr (\(s,p,a) (n,r) -> 
+   let s_a = "CFG Node: " ++ show p ++ "\n"
+       s_r = s_a ++ show s
+   in (n+1, s_r ++ r))  (1,"") l)

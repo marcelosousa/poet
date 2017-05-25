@@ -13,22 +13,23 @@ module Domain.MemAddr where
 
 import Data.Hashable
 import Data.List
+import Domain.Lattice
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Util
 
 -- | Memory Address
-data MemAddr v
+data MemAddr d
   = MemAddr 
   { base   :: SymId
-  , offset :: v 
+  , offset :: d 
   , level  :: Scope 
   }
   deriving (Show,Eq,Ord)
 
 data MemAddrBase
   = MemAddrBase
-  { _base :: SymId
+  { _base  :: SymId
   , _level :: Scope
   }
   deriving (Show,Eq,Ord)
@@ -51,6 +52,13 @@ data MemAddrs v
   | MemAddrs [MemAddr v]
   deriving (Eq)
 
+-- | Check if memory addresses are at the global scope
+--   Useful for? 
+is_global :: MemAddrs v -> Bool
+is_global maddr = case maddr of
+  MemAddrTop -> True
+  MemAddrs l -> any (\a@MemAddr{..} -> level == Global) l
+  
 instance Show v => Show (MemAddrs v) where
   show a = case a of
     MemAddrTop -> "MemAddrTop"
@@ -64,41 +72,21 @@ instance Ord v => Ord (MemAddrs v) where
     (MemAddrs l1,MemAddrs l2) ->
       all (\a -> a `elem` l2) l1 
 
--- | Bottom element
-bot_maddrs :: MemAddrs v
-bot_maddrs = MemAddrs []
-
--- | Check for bottom
-is_maddrs_bot :: MemAddrs v -> Bool
-is_maddrs_bot maddr =
-  case maddr of
-    MemAddrTop -> False
-    MemAddrs l -> null l
-
--- | Meet operation
-meet_maddrs :: Eq v => MemAddrs v -> MemAddrs v -> MemAddrs v
-meet_maddrs a1 a2 =
-  case (a1,a2) of
-    (MemAddrTop,_) -> a2
-    (_,MemAddrTop) -> a1
+-- Lattice definition
+instance (Eq v, Ord v) => Lattice (MemAddrs v) where
+   bot    = MemAddrs []
+   top    = MemAddrTop
+   meet a b = case (a,b) of
+    (MemAddrTop,_) -> b
+    (_,MemAddrTop) -> a
     (MemAddrs l1, MemAddrs l2) -> 
       MemAddrs (l1 `intersect` l2)
-
--- | Join operation
-join_maddrs :: Eq v => MemAddrs v -> MemAddrs v -> MemAddrs v
-join_maddrs a1 a2 =
-  case (a1,a2) of
-    (MemAddrTop,_) -> a1
-    (_,MemAddrTop) -> a2
+   join a b = case (a,b) of
+    (MemAddrTop,_) -> a
+    (_,MemAddrTop) -> b
     (MemAddrs l1, MemAddrs l2) ->
       MemAddrs (nub $ l1 ++ l2)
-
--- | Check if memory addresses are at the global scope
---   Useful for? 
-is_global :: MemAddrs v -> Bool
-is_global maddr = case maddr of
-  MemAddrTop -> True
-  MemAddrs l -> any (\a@MemAddr{..} -> level == Global) l
+   a <=. b = a <= b
 
 -- | Hashable instances
 instance Hashable v => Hashable (MemAddrs v) where

@@ -34,10 +34,10 @@ import Util.Generic
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-type ConGraph = Graph SymId () (IntState,IntAct) 
-type ConGraphs = Graphs SymId () (IntState,IntAct)
-type ResultList = [(IntState,Pos,IntAct)]
-type NodeTable = Map NodeId [(IntState,IntAct)]
+type ConGraph = Graph SymId () (ConState,ConAct) 
+type ConGraphs = Graphs SymId () (ConState,ConAct)
+type ResultList = [(ConState,Pos,ConAct)]
+type NodeTable = Map NodeId [(ConState,ConAct)]
 
 instance Collapsible ConState ConAct where
   -- checks if the thread tid is enabled at state st
