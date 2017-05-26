@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Transformers.Expression (transformer_expr) where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List 
 import Data.Map (Map)  
 import Data.Maybe
@@ -20,6 +20,7 @@ import Domain.Concrete.State
 import Domain.Concrete.Transformers.State
 import Domain.Concrete.Transformers.Statement
 import Domain.Concrete.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Constants
@@ -43,7 +44,7 @@ transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
     (val, act) <- bool_transformer_expr expr
     s@ConTState{..} <- get
     let res_st = case val of
-          ConBot -> set_cstate_bot st
+          ConBot -> bot
           _ -> st
     set_state res_st 
     mytrace False ("bool_transformer: result = " ++ show val) $ return act
@@ -67,7 +68,7 @@ apply_logic op lhs rhs = do
   (lhs_vals,lhs_acts) <- transformer lhs
   -- process the rhs (get the new state, values and actions)
   (rhs_vals,rhs_acts) <- transformer rhs
-  let res_acts = lhs_acts `join_act` rhs_acts 
+  let res_acts = lhs_acts `join` rhs_acts 
       res_val = case op of
         CLeOp  -> le_conval   lhs_vals rhs_vals 
         CGrOp  -> gr_conval   lhs_vals rhs_vals 

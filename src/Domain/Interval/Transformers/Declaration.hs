@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.Transformers.Declaration (transformer_decl) where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List 
 import Data.Map (Map)  
 import Data.Maybe
@@ -20,6 +20,7 @@ import Domain.Interval.Transformers.State
 import Domain.Interval.Transformers.Statement
 import Domain.Interval.Type
 import Domain.Interval.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Constants
@@ -37,12 +38,12 @@ import qualified Model.GCS as GCS
 transformer_decl :: SDeclaration -> IntTOp IntAct
 transformer_decl decl = mytrace False ("transformer_decl: " ++ show decl) $ do
   case decl of
-    TypeDecl ty -> return bot_act -- error "transformer_decl: not supported yet"
+    TypeDecl ty -> return bot -- error "transformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
       case declarator of
         Nothing -> 
           case initializer of 
-            Nothing -> return bot_act
+            Nothing -> return bot
             _ -> error "initializer w/ declarator" 
         Just d@Declr{..} ->
           case declr_ident of
@@ -68,7 +69,7 @@ transformer_init id ty minit = mytrace False ("transformer_init for " ++ show id
           st' = foldr (\(addr,val) _st -> write_memory_addr _st addr val) st id_addrs_vals
           acts = write_act_addr $ MemAddrs $ fst $ unzip id_addrs_vals 
       set_state st'
-      return $ acts `join_act` i_acts
+      return $ acts `join` i_acts
     Just i  -> case i of
       InitExpr expr -> do
         -- for each state, we need to apply the transformer
@@ -99,7 +100,7 @@ default_value (Ty declarators ty) =
      case val of
        InterVal (I n, I m) ->
          if n == m
-         then return (replicate n zero, bot_act) 
+         then return (replicate n zero, bot) 
          else error "default_value: unsupported interval for size expression" 
        _ -> error "default_value: unsupported value for size expression"  
-   _ -> return ([zero], bot_act)
+   _ -> return ([zero], bot)

@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.Transformers.Expression (transformer_expr) where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List 
 import Data.Map (Map)  
 import Data.Maybe
@@ -21,6 +21,7 @@ import Domain.Interval.Transformers.State
 import Domain.Interval.Transformers.Statement
 import Domain.Interval.Type
 import Domain.Interval.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Constants
@@ -45,7 +46,7 @@ transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
     (val, act) <- bool_transformer_expr expr
     s@IntTState{..} <- get
     let res_st = case val of
-          IntBot -> set_int_state_bot st
+          IntBot -> bot
           _ -> st
     set_state res_st 
     mytrace False ("bool_transformer: result = " ++ show val) $ return act
@@ -94,19 +95,19 @@ apply_logic op lhs rhs =
     CLndOp -> do
       (lhs_val, lhs_act) <- bool_transformer_expr lhs 
       (rhs_val, rhs_act) <- bool_transformer_expr rhs
-      let acts = lhs_act `join_act` rhs_act
-      if lhs_val /= IntBot && rhs_val /= IntBot
-      then return (lhs_val `iJoin` rhs_val, acts)
-      else return (IntBot, acts)
+      let acts = lhs_act `join` rhs_act
+      if lhs_val /= bot && rhs_val /= bot
+      then return (lhs_val `join` rhs_val, acts)
+      else return (bot, acts)
     CLorOp -> do
       (lhs_val, lhs_act) <- bool_transformer_expr lhs 
       (rhs_val, rhs_act) <- bool_transformer_expr rhs
-      let res_val = if lhs_val /= IntBot 
+      let res_val = if lhs_val /= bot 
                     then lhs_val
-                    else if rhs_val /= IntBot
+                    else if rhs_val /= bot
                          then rhs_val
-                         else IntBot
-      return (res_val, lhs_act `join_act` rhs_act)
+                         else bot
+      return (res_val, lhs_act `join` rhs_act)
 
 -- Logical Operations
 -- Need to update the variables
@@ -114,11 +115,11 @@ interval_leq :: SExpression -> SExpression -> IntTOp (IntValue, IntAct)
 interval_leq lhs rhs = mytrace False ("inter_leq: lhs = " ++ show lhs ++ ", rhs = " ++ show rhs) $ do
   (lhs_val, lhs_act) <- transformer lhs 
   (rhs_val, rhs_act) <- transformer rhs 
-  let acts = lhs_act `join_act` rhs_act
+  let acts = lhs_act `join` rhs_act
       (a,b) = (lowerBound lhs_val, upperBound lhs_val)
       (c,d) = (lowerBound rhs_val, upperBound rhs_val)
-  if lhs_val == IntBot || rhs_val == IntBot || a > d
-  then return (IntBot, acts)
+  if lhs_val == bot || rhs_val == bot || a > d
+  then return (bot, acts)
   else do
     s@IntTState{..} <- get
     -- Update the variables if we can 
@@ -128,12 +129,12 @@ interval_leq lhs rhs = mytrace False ("inter_leq: lhs = " ++ show lhs ++ ", rhs 
           if can_get_addrs_expr lhs 
           then let lhs_addr = get_addrs_expr st scope lhs
                in (write_memory st lhs_addr lhs_nval, write_act_addr lhs_addr)
-          else (st, bot_act)
+          else (st, bot)
         (rhs_st, rhs_nact) = 
           if can_get_addrs_expr rhs 
           then let rhs_addr = get_addrs_expr st scope rhs
                in (write_memory lhs_st rhs_addr rhs_nval, write_act_addr rhs_addr)
-          else (lhs_st, bot_act)
-        final_acts = acts `join_act` lhs_nact `join_act` rhs_nact
+          else (lhs_st, bot)
+        final_acts = acts `join` lhs_nact `join` rhs_nact
     set_state rhs_st
     trace ("interval_leq: lhs_val = " ++ show lhs_val ++ ", rhs_val = " ++ show rhs_val ++ ", lhs_nval = " ++ show lhs_nval ++ ", rhs_nval = " ++ show rhs_nval) $ return (lhs_nval, final_acts)

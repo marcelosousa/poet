@@ -86,7 +86,6 @@ instance (Eq v, Ord v) => Lattice (MemAddrs v) where
     (_,MemAddrTop) -> b
     (MemAddrs l1, MemAddrs l2) ->
       MemAddrs (nub $ l1 ++ l2)
-   a <=. b = a <= b
 
 -- | Hashable instances
 instance Hashable v => Hashable (MemAddrs v) where

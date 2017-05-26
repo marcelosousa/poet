@@ -110,7 +110,7 @@ interpret f dom = do
 explore :: FilePath -> Domain -> Bool -> Bool -> Int -> IO ()
 explore f dom stl cut wid = do
   case dom of
-	 -- Concrete Semantics
+    -- Concrete Semantics
     Concrete -> do
       fe <- extract "" f
       let syst = CC.convert fe 
@@ -122,7 +122,7 @@ explore f dom stl cut wid = do
       putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
       putStrLn $ "average size of U at maximal configurations: " 
       putStrLn "explore end"
-	 -- Interval Semantics
+    -- Interval Semantics
     Interval -> do 
       fe <- extract "" f
       let syst = IC.convert fe

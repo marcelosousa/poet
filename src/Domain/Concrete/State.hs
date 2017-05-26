@@ -16,6 +16,7 @@ import Data.List
 import Data.Map (Map)
 import Data.Set (Set)
 import Domain.Concrete.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.SimpleC.AST
@@ -28,7 +29,7 @@ import qualified Data.Set as S
 
 {-
   The memory layout of POET is quite simple:
-    The memory is a map from base memory addresses.
+    The memory is a map from base memory addresses to values.
 -}
 
 -- | Concrete Memory Cell
@@ -39,7 +40,7 @@ instance Show ConMCell where
 
 -- Concrete offsets
 type ConOffs = Map ConValue ConValue
-
+   
 -- | Concrete Heap
 type ConHeap = Map MemAddrBase ConOffs 
 
@@ -67,21 +68,25 @@ data ThState =
   } 
   deriving (Show,Eq,Ord)
 
--- Initial/Bottom values
-bot_th_state :: Pos -> SymId -> ThState
-bot_th_state pos id = ThState pos id M.empty
+-- | Initial value
+empty_th_state :: Pos -> SymId -> ThState
+empty_th_state pos id = ThState pos id M.empty
 
 -- | Initial state 
-bot_cstate :: ConState
-bot_cstate = ConState M.empty M.empty 1 False
+empty_cstate :: ConState
+empty_cstate = ConState M.empty M.empty 1 False
 
-set_cstate_bot :: ConState -> ConState
-set_cstate_bot i = i { cs_bot = True }
+instance Lattice ConState where
+   bot         = ConState M.empty M.empty 0 True
+   top         = error "top   for ConState"
+   join  s1 s2 = error "join  for ConState"
+   meet  s1 s2 = error "meet  for ConState"
+   widen s1 s2 = error "widen for ConState"
+   (?.)        = cs_bot
+   (<=.)       = (==)
 
 instance Projection ConState where
   controlPart st@ConState{..} = M.map th_pos cs_tstates
-  subsumes a b = a == b
-  isBottom = cs_bot 
   toThCFGSym st@ConState{..} tid = 
     case M.lookup tid cs_tstates of
       Nothing -> error $ "toThCFGSym: invalid tid " ++ show tid

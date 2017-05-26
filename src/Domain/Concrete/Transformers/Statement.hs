@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Transformers.Statement (transformer, get_addrs_expr, get_tid_expr, has_exited, is_locked) where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List
 import Data.Map (Map)  
 import Data.Maybe
@@ -17,6 +17,7 @@ import Domain.Concrete.API
 import Domain.Concrete.State
 import Domain.Concrete.Transformers.State
 import Domain.Concrete.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Ops 
@@ -39,7 +40,7 @@ transformer e = mytrace False ("transformer: " ++ show e) $
     Binary binaryOp lhs rhs -> binop_transformer binaryOp lhs rhs 
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
     Call fn args n -> call_transformer fn args  
-    Cast decl expr -> return (zero, bot_act)
+    Cast decl expr -> return (zero, bot)
     Comma exprs -> error "transformer: comma not supported" 
     CompoundLit decl initList -> error "transforemr: compound literal not supported" 
     Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
@@ -49,7 +50,7 @@ transformer e = mytrace False ("transformer: " ++ show e) $
     Member expr ident bool -> error "transformer: member not supported"
     SizeofExpr expr -> error "transformer: sizeof expression not supported" 
     SizeofType decl -> error "transformer: sizeof type not supported"
-    Skip -> return (zero, bot_act)
+    Skip -> return (zero, bot)
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> unop_transformer unaryOp expr 
     Var ident -> mytrace False ("calling var_trans" ++ show ident) $ var_transformer ident 
@@ -70,7 +71,7 @@ index_transformer lhs rhs = mytrace False ("index_transformer: lhs = " ++ show l
           val = case vals of
              [v] -> v
              x   -> error "index_transformer: error"
-          res_acts = read_act_addr addrs `join_act` rhs_acts 
+          res_acts = read_act_addr addrs `join` rhs_acts 
       mytrace False ("index_transformer: res_acts = " ++ show res_acts) $ return (val, res_acts) 
 
 -- | Transformer for an assignment expression.
@@ -83,17 +84,17 @@ assign_transformer op lhs rhs = do
   let res_vals = case op of
         CAssignOp -> rhs_vals
         -- arithmetic operations 
-        CMulAssOp -> lhs_vals `mult_conval` rhs_vals 
+        CMulAssOp -> lhs_vals * rhs_vals 
         CDivAssOp -> lhs_vals `divs_conval` rhs_vals 
         CRmdAssOp -> lhs_vals `rmdr_conval` rhs_vals 
-        CAddAssOp -> lhs_vals `add_conval`  rhs_vals 
-        CSubAssOp -> lhs_vals `sub_conval`  rhs_vals
+        CAddAssOp -> lhs_vals + rhs_vals 
+        CSubAssOp -> lhs_vals - rhs_vals
         -- bit-wise operations
         _ -> error "assign_transformer: not supported" 
   -- get the addresses of the left hand side
   s@ConTState{..} <- get
   let lhs_addrs = get_addrs_expr st scope lhs
-      res_acts = add_writes lhs_addrs (rhs_acts `join_act` lhs_acts)
+      res_acts = add_writes lhs_addrs (rhs_acts `join` lhs_acts)
   -- modify the state of the addresses with
   -- the result values 
   let res_st = write_memory st lhs_addrs res_vals
@@ -113,11 +114,11 @@ binop_transformer binOp lhs rhs = do
   -- process the rhs (get the new state, values and actions)
   (rhs_vals,rhs_acts) <- transformer rhs
   let res_vals = case binOp of
-        CMulOp -> lhs_vals `mult_conval` rhs_vals
+        CMulOp -> lhs_vals * rhs_vals
         CDivOp -> lhs_vals `divs_conval` rhs_vals
         CRmdOp -> lhs_vals `rmdr_conval` rhs_vals
-        CAddOp -> lhs_vals `add_conval`  rhs_vals 
-        CSubOp -> lhs_vals `sub_conval`  rhs_vals
+        CAddOp -> lhs_vals + rhs_vals 
+        CSubOp -> lhs_vals - rhs_vals
         -- boolean operations 
         -- bit-wise operations 
         CShlOp -> error "binop_transformer: CShlOp not supported"  
@@ -126,7 +127,7 @@ binop_transformer binOp lhs rhs = do
         CLndOp -> error "binop_transformer: CLndOp not supported" 
         CLorOp -> error "binop_transformer: CLorOp not supported"
         _ -> error "binop_transtranformer: not completed" -- apply_logic binOp lhs rhs
-      res_acts = lhs_acts `join_act` rhs_acts
+      res_acts = lhs_acts `join` rhs_acts
   return (res_vals,res_acts)
 
 -- | Transformer for call expression:
@@ -172,16 +173,16 @@ call_transformer_name name args = case name of
     s@ConTState{..} <- get
         -- write in the address of (args !! 0) of type
         -- pthread_t, the pid of the new thread
-    let (tid,s') = inc_num_th st
-        th_id = get_addrs_expr s' scope (args !! 0) 
-        s'' = write_memory s' th_id (ConVal (VInt tid)) 
+    let (tid,s')   = inc_num_th st
+        th_id      = get_addrs_expr s' scope (args !! 0) 
+        s''        = write_memory s' th_id (ConVal (VInt tid)) 
         -- retrieve the entry point of the thread code 
-        th_sym = get_expr_id $ args !! 2
-        th_name = get_symbol_name th_sym sym
+        th_sym     = get_expr_id $ args !! 2
+        th_name    = get_symbol_name th_sym sym
         (th_pos,_) = get_entry th_name cfgst sym
         --
-        i_th_st = bot_th_state th_pos th_sym
-        res_st = insert_thread s'' tid i_th_st 
+        i_th_st    = empty_th_state th_pos th_sym
+        res_st     = insert_thread s'' tid i_th_st 
     set_state res_st
     mytrace False ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (zero, create_thread_act (SymId tid) zero) 
   "pthread_join" -> do
@@ -191,8 +192,8 @@ call_transformer_name name args = case name of
     if has_exited cfgst st tid
     then return (zero, join_thread_act (SymId tid) zero) 
     else do
-      set_state $ set_cstate_bot st
-      return (zero, bot_act) 
+      set_state bot
+      return (zero, bot) 
   "pthread_exit" -> do
     s@ConTState{..} <- get
     case scope of
@@ -203,38 +204,38 @@ call_transformer_name name args = case name of
     s@ConTState{..} <- get
     if is_locked st scope (args !! 0)
     then do
-      set_state $ set_cstate_bot st
-      return (zero, bot_act)
+      set_state bot
+      return (zero, bot)
     else do 
       let mutex_addr = get_addrs_expr st scope (args !! 0)
-          res_st = write_memory st mutex_addr one 
+          res_st     = write_memory st mutex_addr one 
       set_state res_st
       return (one, lock_act_addr mutex_addr) 
   "pthread_mutex_unlock" -> do
     -- this transformer is only called if it is enabled 
     s@ConTState{..} <- get
     let mutex_addr = get_addrs_expr st scope (args !! 0)
-        res_st = write_memory st mutex_addr zero 
+        res_st     = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, unlock_act_addr mutex_addr) 
   "pthread_mutex_init" -> do
     -- this transformer is only called if it is enabled 
     s@ConTState{..} <- get
     let mutex_addr = get_addrs_expr st scope (args !! 0)
-        res_st = write_memory st mutex_addr zero 
+        res_st     = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, write_act_addr mutex_addr) 
   "__VERIFIER_nondet_int" -> error "NONDET not supporte in concrete sem"
   "__VERIFIER_error" -> do
     s@ConTState{..} <- get
     add_warn node_id
-    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot_act)
+    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot)
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
-     return (zero, bot_act) 
+     return (zero, bot) 
 
 -- | Transformer for constants.
 const_transformer :: Constant -> ConTOp (ConValue,ConAct)
-const_transformer k = return (ConVal (toValue k), bot_act)
+const_transformer k = return (ConVal (toValue k), bot)
 
 -- | Transformer for unary operations.
 unop_transformer :: UnaryOp -> SExpression -> ConTOp (ConValue,ConAct)

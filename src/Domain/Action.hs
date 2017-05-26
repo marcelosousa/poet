@@ -126,15 +126,6 @@ instance Ord v => Lattice (Act v) where
          j = tjoin   a `meet` tjoin b
          e = texit   a `meet` texit b
      in Act r w l u c j e 
-   a <=. b = 
-      let r = (rds     a) <=. (rds b    )
-          w = (wrs     a) <=. (wrs b    )
-          l = (locks   a) <=. (locks b  )
-          u = (unlocks a) <=. (unlocks b)
-          c = (tcreate a) <=. (tcreate b)
-          j = (tjoin   a) <=. (tjoin b  )
-          e = (texit   a) <=. (texit b  )
-      in and [r, w, l, u, c, j, e] 
       
 act_addrs :: (Eq v, Ord v) => Act v -> MemAddrs v
 act_addrs a@Act{..} = foldr join bot [rds,wrs,locks,unlocks,tcreate,tjoin,texit]

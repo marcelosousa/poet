@@ -8,12 +8,21 @@
 module Domain.Lattice where
    
 -- Lattice 
-class Eq a => Lattice a where
+class (Eq a, Ord a) => Lattice a where
    bot   :: a
    top   :: a
    join  :: a -> a -> a
    meet  :: a -> a -> a
    (<=.) :: a -> a -> Bool
+   (<=.) = (<=)
    --  Is bottom?
    (?.)  :: a -> Bool
    (?.) a = a == bot
+   -- Join List
+   joinL :: [a] -> a
+   joinL [] = error "joinL: empty list"
+   joinL [x] = x
+   joinL (x:xs) = x `join` (joinL xs)
+   -- Widening
+   widen :: a -> a -> a
+   widen = error "widening for this domain not implemented"

@@ -67,31 +67,36 @@ zero = k 0
 one :: ConValue
 one = k 1
 
--- Arithmetic operations in ConValue
-add_conval, sub_conval, mult_conval :: ConValue -> ConValue -> ConValue
-add_conval c1 c2 = case (c1,c2) of
-  (ConVal v1,ConVal v2) -> ConVal $ add_value v1 v2
-  _  -> error "add_conval: not ConVal"
-sub_conval c1 c2 = case (c1,c2) of
-  (ConVal v1,ConVal v2) -> ConVal $ sub_value v1 v2
-  _  -> error "sub_ConVal: not ConVal"
-mult_conval c1 c2 = case (c1,c2) of
-  (ConVal v1,ConVal v2) -> ConVal $ mult_value v1 v2
-  _  -> error "mult_ConVal: not ConVal"
+instance Num ConValue where
+  (+) c1 c2 = case (c1,c2) of
+    (ConVal v1,ConVal v2) -> ConVal $ add_value v1 v2
+    _  -> error "add_conval: not ConVal" 
+  (*) c1 c2 = case (c1,c2) of
+    (ConVal v1,ConVal v2) -> ConVal $ mult_value v1 v2
+    _  -> error "mult_ConVal: not ConVal"
+  (-) c1 c2 = case (c1,c2) of
+    (ConVal v1,ConVal v2) -> ConVal $ sub_value v1 v2
+    _  -> error "sub_ConVal: not ConVal"
+  negate c1 = 
+    case c1 of
+      ConVal v -> ConVal $ neg_value v
+  abs           = error "abs         for ConVal unsupported" 
+  signum        = error "signum      for ConVal unsupported"
+  fromInteger i = error "fromInteger for ConVal unsupported"
+  
 divs_conval c1 c2 = case (c1,c2) of
   (ConVal v1,ConVal v2) -> ConVal $ div_value v1 v2
   _  -> error "div_ConVal: not ConVal"
+  
 rmdr_conval c1 c2 = case (c1,c2) of
   (ConVal v1,ConVal v2) -> ConVal $ rmd_value v1 v2
   _  -> error "rmdr_ConVal: not ConVal"
+  
 minus_conval c1 = case c1 of
   ConVal v1 -> ConVal $ minus_value v1
   _ -> error "minus_conval: not ConVal"
 
 -- Boolean operations in ConValue
-neg_conval c1 = case c1 of
-  ConVal v -> ConVal $ neg_value v 
-
 le_conval c1 c2 = case (c1,c2) of
   (ConVal v1,ConVal v2) -> ConVal $ le_value v1 v2
   _ -> error "le_conval: not conVal" 

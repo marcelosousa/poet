@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.Collapse where
 
-import Control.Monad.State.Lazy
+import Control.Monad.State.Lazy hiding (join)
 import Data.List
 import Data.Map (Map)
 import Data.Set (Set)
@@ -22,6 +22,7 @@ import Domain.Interval.Transformers.Expression (transformer_expr)
 import Domain.Interval.Transformers.State
 import Domain.Interval.Transformers.Statement (get_addrs_expr, get_tid_expr, has_exited, is_locked)
 import Domain.Interval.Value
+import Domain.Lattice
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Converter (get_symbol_name)
@@ -135,7 +136,7 @@ fixpt :: Int -> System IntState IntAct -> Bool -> TId -> IntGraphs -> SymbolTabl
 fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
   mytrace False ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
   -- reset the node table information with the information passed
-  let node_table' = M.insert pos [(st,bot_act)] $ M.map (const []) node_table
+  let node_table' = M.insert pos [(st,bot)] $ M.map (const []) node_table
       cfg' = cfg { node_table = node_table' }
       wlist = map (\(a,b) -> (pos,a,b)) $ succs cfg' pos
       i_fix_st = FixState b tid cfgs symt cfg' S.empty M.empty wid 
@@ -176,7 +177,7 @@ handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,pos
         D decl -> runState (transformer_decl decl) tr_st 
         E expr -> runState (transformer_expr expr) tr_st
       ns@IntTState{..} = up_pc _ns fs_tid post 
-      acts = pre_acts `join_act` post_acts
+      acts = pre_acts `join` post_acts
   (is_fix,node_table') <- case edge_tags of
     -- loop head point 
     [LoopHead] -> loop_head_update (node_table fs_cfg) post (st,acts)
@@ -192,7 +193,7 @@ handle_mark (pre,eId,post) = mytrace False ("handle_mark: " ++ show (pre,eId,pos
       let rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
           e_act = exit_thread_act (SymId fs_tid) zero
       if (Exit `elem` edge_tags) || null rwlst
-      then return (warns, (res_st,post,res_act `join_act` e_act))
+      then return (warns, (res_st,post,res_act `join` e_act))
       else return (warns, (res_st,post,res_act))
     _ -> error "handle_mark: unexcepted value in the final node_table"
 
@@ -235,7 +236,7 @@ worklist _warns syst _wlist = mytrace False ("worklist: " ++ show _wlist) $ do
             E expr -> runState (transformer_expr expr) tr_st
           rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
           -- join the actions of the predecessors with the actions of the current edge
-          acts = pre_acts `join_act` post_acts
+          acts = pre_acts `join` post_acts
           ns = up_pc _ns fs_tid post 
           n_warns = warns _ns
       -- depending on whether the action is global or not;
@@ -292,8 +293,8 @@ loop_head_update node_table node (st,act) =  do
       Just lst -> case lst of
         [] -> error "loop_head_update: widening between a state and empty?" 
         [(st',act')] ->
-          let nst = st' `widen_intstate` st
-              nact = act `join_act` act'
+          let nst  = st' `widen` st
+              nact = act `join` act'
           in if nst == st'
              then return $ (True, node_table)
              else return $ (False, M.insert node [(nst,nact)] node_table)
@@ -308,8 +309,8 @@ join_update node_table node (st,act) =
     Just lst -> case lst of
       [] -> (False, M.insert node [(st,act)] node_table)
       [(st',act')] ->
-        let nst = st `join_intstate` st'
-            nact = act `join_act` act'
+        let nst  = st  `join` st'
+            nact = act `join` act'
         in mytrace False ("join_update: old state:\n" ++ show st' ++ "join_update: new state\n" ++ show st ++ "join_update:join state\n" ++ show nst) $ if nst == st'
            then (True, node_table)
            else (False, M.insert node [(nst,nact)] node_table)
@@ -324,5 +325,5 @@ strong_update node_table node (st,act) = mytrace False ("strong_update: node = "
       [(st',act')] ->
         if st == st'
         then (True, node_table)
-        else (False, M.insert node [(st,act `join_act` act')] node_table)
+        else (False, M.insert node [(st,act `join` act')] node_table)
       _ -> error "strong_update: more than one state in the list" 

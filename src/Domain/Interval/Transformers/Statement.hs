@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.Transformers.Statement (transformer, get_addrs_expr, get_tid_expr, has_exited, is_locked) where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List
 import Data.Map (Map)  
 import Data.Maybe
@@ -19,6 +19,7 @@ import Domain.Interval.Transformers.State
 import Domain.Interval.Type
 import Domain.Interval.Value
 import Domain.MemAddr
+import Domain.Lattice
 import Domain.Util
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
@@ -79,7 +80,7 @@ transformer e = mytrace False ("transformer: " ++ show e) $
     Binary binaryOp lhs rhs -> binop_transformer binaryOp lhs rhs 
     BuiltinExpr built -> error "transformer: built_in_expr not supported" 
     Call fn args n -> call_transformer fn args  
-    Cast decl expr -> return (IntVal [], bot_act) -- error "transformer: cast not supported"
+    Cast decl expr -> return (IntVal [], bot) -- error "transformer: cast not supported"
     Comma exprs -> error "transformer: comma not supported" 
     CompoundLit decl initList -> error "transforemr: compound literal not supported" 
     Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
@@ -89,7 +90,7 @@ transformer e = mytrace False ("transformer: " ++ show e) $
     Member expr ident bool -> error "transformer: member not supported"
     SizeofExpr expr -> error "transformer: sizeof expression not supported" 
     SizeofType decl -> error "transformer: sizeof type not supported"
-    Skip -> return (IntVal [],bot_act)
+    Skip -> return (IntVal [],bot)
     StatExpr stmt -> error "transformer: stat_expr not supported"
     Unary unaryOp expr -> unop_transformer unaryOp expr 
     Var ident -> mytrace False ("calling var_trans" ++ show ident) $ var_transformer ident 
@@ -107,8 +108,8 @@ index_transformer lhs rhs = mytrace False ("index_transformer: lhs = " ++ show l
       let l' = nub $ map (flip set_offset rhs_vals) l 
           addrs = MemAddrs l'
           vals = read_memory st addrs 
-          val = join_intval_list vals
-          res_acts = read_act_addr addrs `join_act` rhs_acts 
+          val = joinL vals
+          res_acts = read_act_addr addrs `join` rhs_acts 
       mytrace False ("index_transformer: res_acts = " ++ show res_acts) $ return (val, res_acts) 
 
 -- | Transformer for an assignment expression.
@@ -131,7 +132,7 @@ assign_transformer op lhs rhs = do
   -- get the addresses of the left hand side
   s@IntTState{..} <- get
   let lhs_addrs = get_addrs_expr st scope lhs
-      res_acts = add_writes lhs_addrs (rhs_acts `join_act` lhs_acts)
+      res_acts = add_writes lhs_addrs (rhs_acts `join` lhs_acts)
   -- modify the state of the addresses with
   -- the result values 
   let res_st = write_memory st lhs_addrs res_vals
@@ -161,7 +162,7 @@ binop_transformer binOp lhs rhs = do
         CLndOp -> error "binop_transformer: CLndOp not supported" 
         CLorOp -> error "binop_transformer: CLorOp not supported"
         _ -> error "binop_transtranformer: not completed" -- apply_logic binOp lhs rhs
-      res_acts = lhs_acts `join_act` rhs_acts
+      res_acts = lhs_acts `join` rhs_acts
   return (res_vals,res_acts)
 
 -- | Transformer for call expression:
@@ -183,7 +184,7 @@ call_transformer fn args = mytrace False ("call_transformer: " ++ show fn ++ " "
 -- wrong for more complex CFGs
 has_exited :: F.Graphs SymId () (IntState, IntAct) -> IntState -> GCS.TId -> Bool
 has_exited _cfgs st tid = 
-  let control = GCS.controlPart st
+  let control     = GCS.controlPart st
       tid_cfg_sym = GCS.toThCFGSym st tid
   in case M.lookup tid control of
        Nothing  -> False
@@ -226,8 +227,8 @@ call_transformer_name name args = case name of
     if has_exited i_cfgs st tid
     then return (IntVal [], join_thread_act (SymId tid) zero) 
     else do
-      set_state $ set_int_state_bot st
-      return (IntVal [], bot_act) 
+      set_state bot
+      return (IntVal [], bot) 
   "pthread_exit" -> do
     s@IntTState{..} <- get
     case scope of
@@ -238,25 +239,25 @@ call_transformer_name name args = case name of
     s@IntTState{..} <- get
     if is_locked st scope (args !! 0)
     then do
-      set_state $ set_int_state_bot st
-      return (IntVal [], bot_act)
+      set_state bot
+      return (IntVal [], bot)
     else do 
       let mutex_addr = get_addrs_expr st scope (args !! 0)
-          res_st = write_memory st mutex_addr one 
+          res_st     = write_memory st mutex_addr one 
       set_state res_st
       return (one, lock_act_addr mutex_addr) 
   "pthread_mutex_unlock" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get
     let mutex_addr = get_addrs_expr st scope (args !! 0)
-        res_st = write_memory st mutex_addr zero 
+        res_st     = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, unlock_act_addr mutex_addr) 
   "pthread_mutex_init" -> do
     -- this transformer is only called if it is enabled 
     s@IntTState{..} <- get
     let mutex_addr = get_addrs_expr st scope (args !! 0)
-        res_st = write_memory st mutex_addr zero 
+        res_st     = write_memory st mutex_addr zero 
     set_state res_st
     return (zero, write_act_addr mutex_addr) 
   "__VERIFIER_nondet_int" -> do 
@@ -264,15 +265,15 @@ call_transformer_name name args = case name of
     (uVal,uacts) <- transformer $ args !! 1
     case (lVal,uVal) of 
       (IntVal [VInt l],IntVal [VInt u]) -> 
-       return (InterVal (I l, I u),lacts `join_act` uacts)
+       return (InterVal (I l, I u),lacts `join` uacts)
       (l, u) -> 
-       return (l `iJoin` u,lacts `join_act` uacts)
+       return (l `join` u,lacts `join` uacts)
   "__VERIFIER_error" -> do
     s@IntTState{..} <- get
     add_warn node_id
-    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot_act)
+    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot)
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
-     return (zero, bot_act) 
+     return (zero, bot) 
 
 -- Need to apply the cut over the state
 -- for the cond + then expression
@@ -280,51 +281,12 @@ call_transformer_name name args = case name of
 -- and join both states
 cond_transformer :: SExpression -> Maybe SExpression -> SExpression -> IntTOp (IntValue,IntAct)
 cond_transformer cond mThen else_e = error "cond_transformer not supported"
-{- do
-  s <- get
-  -- Then part
-  cond_acts <- bool_transformer_expr cond
-  sCond <- get
-  (tState,tVal,t_) <- if is_bot sCond
-            then sCond -- bottom 
-            else case mThen of
-              Nothing -> error "cond_transformer: cond is true and there is not then"
-              Just e  -> transformer e >>= \(vt,at) -> get >>= \s -> return (s,vt,at)
-  -- Else part
-  put s
-  ncond_acts <- bool_transformer_expr $ Unary CNegOp cond
-  sElse <- get
-  eState <- if is_bot sElse
-            then sElse
-            else transformer else_e >> get
-  let ns = tState `join_intstate` eState
-  put ns
--}  
-{-
-do
-  (vals,acts) <- transformer cond
-  -- vals is both false and true 
-  let (isTrue,isFalse) = checkBoolVals vals
-  (tVal,tIntAct) <-
-    if isTrue
-    then case mThen of
-           Nothing -> error "cond_transformer: cond is true and there is not then"
-           Just e -> transformer e
-    else return ([],bot_act)
-  (eVal,eIntAct) <-
-    if isFalse
-    then transformer else_e
-    else return ([],bot_act)
-  let res_vals = tVal ++ eVal
-      res_acts = acts `join_act` tIntAct `join_act` eIntAct
-  return (res_vals,res_acts) 
--}
 
 -- | Transformer for constants.
 const_transformer :: Constant -> IntTOp (IntValue,IntAct)
 const_transformer const =
   case toValue const of
-    VInt i -> return (InterVal (I i, I i), bot_act)
+    VInt i -> return (InterVal (I i, I i), bot)
     _ -> error "const_transformer: not supported non-int constants"
 
 -- | Transformer for unary operations.
@@ -351,6 +313,6 @@ var_transformer sym_id = mytrace False ("var_transformer: sym_id = " ++ show sym
   let id_addr_base = MemAddrBase sym_id scope
       id_addrs = get_addrs st id_addr_base 
       vals = read_memory st id_addrs 
-      val = join_intval_list vals 
+      val = joinL vals 
       acts = read_act_addr id_addrs 
   return (val, acts)

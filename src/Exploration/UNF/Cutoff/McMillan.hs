@@ -2,9 +2,10 @@
 module Exploration.UNF.Cutoff.McMillan where
 
 import Control.Monad.State.Strict
-import qualified Data.Map as M
+import Domain.Lattice
 import Exploration.UNF.API
 import Exploration.UNF.State
+import qualified Data.Map as M
 import qualified Model.GCS as GCS
 
 -- @ Check if st is a cutoff
@@ -22,7 +23,7 @@ cutoff st si = do
 cutoffCheck :: GCS.Projection st => st -> Int -> [(st,Int)] -> Bool
 cutoffCheck st si [] = False
 cutoffCheck st si ((st',si'):r) =
-  (st' `GCS.subsumes` st && si' < si) || (cutoffCheck st si r)
+  (st' <=. st && si' < si) || (cutoffCheck st si r)
 {-
   mv <- lift $ H.lookup stas st
   case mv of

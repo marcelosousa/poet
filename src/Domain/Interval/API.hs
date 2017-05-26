@@ -11,12 +11,13 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.API (inc_num_th, insert_thread, get_addrs, read_memory, write_memory, write_memory_addr, set_pos, update_pc) where
 
-import Control.Monad.State.Lazy
 import Data.IntMap (IntMap)
 import Data.List
 import Data.Map (Map)
+import Domain.Interval.Offset
 import Domain.Interval.State
 import Domain.Interval.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.SimpleC.AST (SymId)
@@ -92,9 +93,9 @@ read_addr_from_region mem addr off = do
   case M.lookup off offs of
     Just val -> Just val 
     Nothing  ->
-      case M.elems $ M.filterWithKey (\k _ -> iMeet k off /= IntBot) offs of
+      case M.elems $ M.filterWithKey (\k _ -> meet k off /= IntBot) offs of
         [] -> Nothing
-        v  -> Just $ join_intval_list v 
+        v  -> Just $ joinL v 
 
 -- | API TO WRITE TO MEMORY
 -- | Write to memory: receives a IntMAddrs and a

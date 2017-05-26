@@ -12,6 +12,7 @@ module Model.GCS where
 import Data.List
 import Data.Map hiding (foldr, filter, map, (\\), null)
 import Data.Set (Set)
+import Domain.Lattice
 import Language.SimpleC.AST 
 import Language.SimpleC.Converter
 import Language.SimpleC.Flow
@@ -67,23 +68,21 @@ botID = -1
 type Control = Map TId Pos
 
 -- Projection defines the API over the "state" 
-class Projection st where
-  controlPart :: st -> Control 
-  subsumes    :: st -> st -> Bool
-  isBottom    :: st -> Bool
+class Lattice st => Projection st where
+  controlPart :: st -> Control
   toThCFGSym  :: st -> TId -> SymId
 
 -- Collapsible defines the API to run an interpreter
-class (Eq act, Eq st, Show act, Action act, Show st, Projection st) => Collapsible st act where
+class (Show act, Show st, Action act, Projection st) => Collapsible st act where
   is_enabled :: System st act -> st -> TId -> Bool
-  enabled :: System st act -> st -> [TId]
-  enabled syst st =
+  enabled    :: System st act -> st -> [TId]
+  enabled    syst st =
     let control = controlPart st
         en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
     in M.keys en
   collapse :: Bool -> Int -> System st act -> st -> TId -> (Set Int,[(st,Pos,act)])
-  dcollapse :: Int -> System st act -> st -> (TId,Pos,SymId) -> (st,act)
-  dcollapse wid syst st (tid,pos,_) =
+  dcollapse   :: Int -> System st act -> st -> (TId,Pos,SymId) -> (st,act)
+  dcollapse   wid syst st (tid,pos,_) =
     let results = snd $ collapse True wid syst st tid
         result = nub $ filter (\(s,p,a) -> p == pos) results
     in case result of

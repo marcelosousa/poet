@@ -5,6 +5,7 @@
 -- Implementation of the Interval Domain based on
 -- Cousot & Cousot ISOP'76
 -- http://www.di.ens.fr/~cousot/COUSOTpapers/publications.www/CousotCousot-ISOP-76-Dunod-p106--130-1976.pdf
+-- This module defines the interval bound and the API
 -------------------------------------------------------------------------------
 module Domain.Interval.Type where
 

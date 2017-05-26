@@ -7,6 +7,7 @@ import Control.Monad.State.Strict
 import Data.List
 import Data.Maybe hiding (catMaybes)
 import Data.Set (isSubsetOf)
+import Domain.Lattice
 import Exploration.UNF.API
 import Exploration.UNF.Cutoff.McMillan
 import Exploration.UNF.State
@@ -437,7 +438,7 @@ add_event is_in_conf stack dup name acts history = do
     then do
       let copyst = GCS.gbst syst
       gstlc <- st_local_conf copyst name localHistory
-      if GCS.isBottom gstlc
+      if (?.) gstlc
       then error "addEvent: the state of the local configuration is bottom"
       else do
         lift $ showMStr $ "========== FINISHED COMPUTING THE STATE OF LOCAL CONFIG ======"

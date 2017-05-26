@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Transformers.System where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List 
 import Data.Map (Map)  
 import Data.Maybe
@@ -19,6 +19,7 @@ import Domain.Concrete.State
 import Domain.Concrete.Transformers.State
 import Domain.Concrete.Transformers.Declaration
 import Domain.Concrete.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Constants
@@ -36,7 +37,7 @@ import qualified Model.GCS as GCS
 convert :: FrontEnd () (ConState,ConAct) -> GCS.System ConState ConAct
 convert fe = 
   let (pos_main,sym_main) = get_entry "main" (cfgs fe) (symt fe)
-      init_tstate = ConTState Global bot_cstate (symt fe) (cfgs fe) False False 0 S.empty
+      init_tstate = ConTState Global empty_cstate (symt fe) (cfgs fe) False False 0 S.empty
       (acts,s@ConTState{..}) = runState (transformer_decls $ decls $ ast fe) init_tstate
       st' = set_pos st (symId sym_main) sym_main pos_main  
   in mytrace False ("convert: initial state = " ++ show st) $ GCS.System st' acts (cfgs fe) (symt fe) [GCS.main_tid] 1
@@ -44,4 +45,4 @@ convert fe =
 -- | processes a list of declarations 
 transformer_decls :: [SDeclaration] -> ConTOp ConAct
 transformer_decls = mytrace False ("transformer_decls!!!!") $
-  foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
+  foldM (\a d -> transformer_decl d >>= \a' -> return $ a `join` a') bot

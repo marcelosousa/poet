@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 module Domain.Interval.Transformers.System where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join) 
 import Data.List 
 import Data.Map (Map)  
 import Data.Maybe
@@ -20,6 +20,7 @@ import Domain.Interval.Transformers.State
 import Domain.Interval.Transformers.Declaration
 import Domain.Interval.Type
 import Domain.Interval.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Constants
@@ -45,4 +46,4 @@ convert fe =
 -- | processes a list of declarations 
 transformer_decls :: [SDeclaration] -> IntTOp IntAct
 transformer_decls = mytrace False ("transformer_decls!!!!") $
-  foldM (\a d -> transformer_decl d >>= \a' -> return $ join_act a a') bot_act 
+  foldM (\a d -> transformer_decl d >>= \a' -> return $ a `join` a') bot 

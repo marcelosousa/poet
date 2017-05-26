@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 module Domain.Concrete.Transformers.Declaration (transformer_decl) where
 
-import Control.Monad.State.Lazy 
+import Control.Monad.State.Lazy hiding (join)
 import Data.List 
 import Data.Map (Map)  
 import Data.Maybe
@@ -19,6 +19,7 @@ import Domain.Concrete.State
 import Domain.Concrete.Transformers.State
 import Domain.Concrete.Transformers.Statement
 import Domain.Concrete.Value
+import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.C.Syntax.Constants
@@ -36,12 +37,12 @@ import qualified Model.GCS as GCS
 transformer_decl :: SDeclaration -> ConTOp ConAct
 transformer_decl decl = mytrace False ("transformer_decl: " ++ show decl) $ do
   case decl of
-    TypeDecl ty -> return bot_act -- error "transformer_decl: not supported yet"
+    TypeDecl ty -> return bot -- error "transformer_decl: not supported yet"
     Decl ty el@DeclElem{..} ->
       case declarator of
         Nothing -> 
           case initializer of 
-            Nothing -> return bot_act
+            Nothing -> return bot
             _ -> error "initializer w/ declarator" 
         Just d@Declr{..} ->
           case declr_ident of
@@ -67,7 +68,7 @@ transformer_init id ty minit = mytrace False ("transformer_init for " ++ show id
           st' = foldr (\(addr,val) _st -> write_memory_addr _st addr val) st id_addrs_vals
           acts = write_act_addr $ MemAddrs $ fst $ unzip id_addrs_vals 
       set_state st'
-      return $ acts `join_act` i_acts
+      return $ acts `join` i_acts
     Just i  -> case i of
       InitExpr expr -> do
         -- for each state, we need to apply the transformer
@@ -96,6 +97,6 @@ default_value (Ty declarators ty) =
    [ArrDeclr t (ArrSize b size_expr)] -> do
      (val, act) <- transformer size_expr
      case val of
-       ConVal (VInt n) -> return (replicate n zero, bot_act) 
+       ConVal (VInt n) -> return (replicate n zero, bot) 
        _ -> error "default_value: unsupported value for size expression"  
-   _ -> return ([zero], bot_act)
+   _ -> return ([zero], bot)
