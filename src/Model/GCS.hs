@@ -72,39 +72,10 @@ class Lattice st => Projection st where
   controlPart :: st -> Control
   toThCFGSym  :: st -> TId -> SymId
 
--- Collapsible defines the API to run an interpreter
-class (Show act, Show st, Action act, Projection st) => Collapsible st act where
-  is_enabled :: System st act -> st -> TId -> Bool
-  enabled    :: System st act -> st -> [TId]
-  enabled    syst st =
-    let control = controlPart st
-        en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
-    in M.keys en
-  collapse :: Bool -> Int -> System st act -> st -> TId -> (Set Int,[(st,Pos,act)])
-  dcollapse   :: Int -> System st act -> st -> (TId,Pos,SymId) -> (st,act)
-  dcollapse   wid syst st (tid,pos,_) =
-    let results = snd $ collapse True wid syst st tid
-        result = nub $ filter (\(s,p,a) -> p == pos) results
-    in case result of
-      [] -> error "dcollapse: collapse does not produce dataflow fact at desired location"
-      [(st,_,act)] -> (st,act)
-      _ -> error $ "dcollapse: collapse produced several dataflow facts for desired location: pos = " ++ show pos ++ "\n" ++ show result
-  simple_run :: Int -> System st act -> st -> (TId,Pos,SymId) -> st
-  simple_run wid sys st name = fst $ dcollapse wid sys st name
-
--- Action defines the API to compute independence based on actions
-class (Eq act) => Action act where
-  isLock     :: act -> Bool
-  isUnlock   :: act -> Bool
-  isJoin     :: act -> Bool
-  -- Given two sets of actions a1 and a2,
-  -- check if there exists in a2 an unlock 
-  -- or lock with an address that is touched
-  -- by a1.
-  isUnlockOf :: act -> act -> Bool 
-  isLockOf   :: act -> act -> Bool
-  isCreateOf :: SymId -> act -> Bool 
-  -- Two sets of actions are independent
-  interferes :: act -> act -> Bool
-  isGlobal   :: act -> Bool
-   
+-- Properties of Values
+class (Eq v, Ord v) => ToValue v where
+   kVal :: Int -> v
+   zero :: v
+   zero = kVal 0
+   one  :: v
+   one  = kVal 1

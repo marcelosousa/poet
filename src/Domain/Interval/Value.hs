@@ -17,7 +17,9 @@ import Domain.Interval.Type
 import Domain.MemAddr
 import Domain.Lattice
 import Domain.Util
+import Language.SimpleC.AST
 import Language.SimpleC.Util
+import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.Set as S
 
@@ -42,12 +44,8 @@ data IntValue
 i :: InterVal -> InterVal -> IntValue
 i a b = InterVal (a, b)
 
-k :: Int -> IntValue
-k n = i (I n) (I n)
-
-zero, one :: IntValue
-zero = k 0
-one  = k 1
+instance ToValue IntValue where
+   kVal n = i (I n) (I n)
 
 instance Ord IntValue where
   (<=) (IntVal i) (IntVal j) = (S.fromList i) `S.isSubsetOf` (S.fromList j)

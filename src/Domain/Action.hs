@@ -15,6 +15,24 @@ import Domain.Util
 import Model.GCS
 import qualified Debug.Trace as T
 
+-- Action defines the API to compute independence based on actions
+class (Eq act) => Action act where
+  isLock     :: act -> Bool
+  isUnlock   :: act -> Bool
+  isJoin     :: act -> Bool
+  -- Given two sets of actions a1 and a2,
+  -- check if there exists in a2 an unlock 
+  -- or lock with an address that is touched
+  -- by a1.
+  isUnlockOf :: act -> act -> Bool 
+  isLockOf   :: act -> act -> Bool
+  isCreateOf :: SymId -> act -> Bool 
+  -- Two sets of actions are independent
+  interferes :: act -> act -> Bool
+  isGlobal   :: act -> Bool
+  -- Builders
+  exit_act   :: SymId -> act
+
 -- Default implementation of an
 -- Action using read write sets
 -- over the memory addresses 
@@ -30,7 +48,7 @@ data Act v
   , texit   :: MemAddrs v -- phtread_exit
   }
   deriving (Eq,Ord)
-
+      
 instance Show v => Show (Act v) where
   show (Act r w l u c j e) = 
     "Act { r = " ++ show r ++ ", w = " ++ show w ++ ", lk = " ++ show l ++ ", ulk = " ++ show u ++ ", c = " ++ show c ++ ", j = " ++ show j ++ ", e = " ++ show e
@@ -61,16 +79,16 @@ join_thread_act :: Ord v => SymId -> v -> Act v
 join_thread_act tid offset = 
   Act bot bot bot bot bot (MemAddrs [MemAddr tid offset Global]) bot 
 
-exit_thread_act :: Ord v => SymId -> v -> Act v
-exit_thread_act tid offset = 
-  Act bot bot bot bot bot bot (MemAddrs [MemAddr tid offset Global]) 
+exit_thread_act :: ToValue v => SymId -> Act v
+exit_thread_act tid = 
+  Act bot bot bot bot bot bot (MemAddrs [MemAddr tid zero Global])
  
-add_writes :: (Eq v, Ord v) => MemAddrs v -> Act v -> Act v
+add_writes :: ToValue v => MemAddrs v -> Act v -> Act v
 add_writes ws act@Act{..} =
   let wrs' = ws `join` wrs
   in act { wrs = wrs' }
   
-instance (Eq v, Ord v) => Action (Act v) where
+instance ToValue v => Action (Act v) where
   isUnlock act@Act{..} = 
     not $ (?.) unlocks
   isLock act@Act{..} = 
@@ -103,9 +121,10 @@ instance (Eq v, Ord v) => Action (Act v) where
       MemAddrTop -> True
       MemAddrs at -> any (\a -> case a of 
          MemAddr tid_sym' _ Global -> tid_sym == tid_sym' 
-         _ -> False) at 
+         _ -> False) at
+  exit_act = exit_thread_act
 
-instance Ord v => Lattice (Act v) where
+instance ToValue v => Lattice (Act v) where
    bot = Act bot bot bot bot bot bot bot
    top = Act top top top top top top top
    join a b = 
@@ -127,5 +146,5 @@ instance Ord v => Lattice (Act v) where
          e = texit   a `meet` texit b
      in Act r w l u c j e 
       
-act_addrs :: (Eq v, Ord v) => Act v -> MemAddrs v
+act_addrs :: ToValue v => Act v -> MemAddrs v
 act_addrs a@Act{..} = foldr join bot [rds,wrs,locks,unlocks,tcreate,tjoin,texit]

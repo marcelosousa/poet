@@ -6,6 +6,8 @@ import Control.Monad.State.Strict
 import Data.List
 import Data.Map (Map,fromList,empty)
 import Data.Set (Set)
+import Domain.Action
+import Domain.Class
 import Exploration.UNF.State
 import Language.SimpleC.AST
 import Language.SimpleC.Flow
@@ -49,7 +51,7 @@ default_unf_stats =
              sum_size_max_conf nr_evs_per_name nr_warns 
 
 -- @ Initial state of the unfolder
-i_unf_state :: GCS.Collapsible st a => Bool -> Bool -> Int -> GCS.System st a -> IO (UnfolderState st a)
+i_unf_state :: Domain s a => Bool -> Bool -> Int -> GCS.System s a -> IO (UnfolderState s a)
 i_unf_state stl cut wid syst = do
   evts <- H.new
   H.insert evts botEID $ botEvent $ GCS.gbac syst
@@ -313,7 +315,7 @@ filterEvent e events = do
 
 -- | Splits between events that are dependent and independent of
 -- the event name and actions
-partition_dependent :: (Show act, GCS.Action act) => EventInfo act -> Events act -> (EventsID, EventsID) -> EventsID -> IO (EventsID, EventsID)
+partition_dependent :: (Show act, Action act) => EventInfo act -> Events act -> (EventsID, EventsID) -> EventsID -> IO (EventsID, EventsID)
 partition_dependent êinfo events (dep,indep) es = do
   case es of
     [] -> do
@@ -329,7 +331,7 @@ partition_dependent êinfo events (dep,indep) es = do
       then partition_dependent êinfo events (e:dep,indep) r
       else partition_dependent êinfo events (dep,e:indep) r
 
-is_independent :: (Show act, GCS.Action act) => EventID -> EventID -> Events act -> IO Bool
+is_independent :: (Show act, Action act) => EventID -> EventID -> Events act -> IO Bool
 is_independent e1 e2 evts =
   if e1 == GCS.botID || e2 == GCS.botID
   then return False
@@ -344,13 +346,13 @@ is_independent e1 e2 evts =
 -- Of course, one can emulate events of the same process
 -- in their actions (by for example considering Writes to 
 -- the PC variable) but this would be more expensive.
-is_dependent :: (Show act, GCS.Action act) => EventInfo act -> EventInfo act -> Bool
+is_dependent :: (Show act, Action act) => EventInfo act -> EventInfo act -> Bool
 is_dependent a@((pid,_,tid),acts) b@((pid',_,tid'),acts') = 
   let c1 = pid == GCS.botID || pid' == GCS.botID
       c2 = pid == pid' 
-      c3 = GCS.interferes acts acts'
-      c4 = GCS.isCreateOf (SymId pid) acts' 
-      c5 = GCS.isCreateOf (SymId pid') acts
+      c3 = interferes acts acts'
+      c4 = isCreateOf (SymId pid) acts' 
+      c5 = isCreateOf (SymId pid') acts
       r  = or [c1,c2,c3,c4,c5] 
   in r
 

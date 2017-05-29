@@ -19,7 +19,6 @@ import Control.Monad.ST
 import Domain.Action
 -- import Domain.Concrete
 import Domain.Concrete.Collapse
-import Domain.Interval.Collapse
 import Domain.Interval
 import Exploration.UNF.Unfolder  
 import Language.SimpleC

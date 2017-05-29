@@ -34,40 +34,32 @@ import Util.Generic
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-type ConGraph = Graph SymId () (ConState,ConAct) 
-type ConGraphs = Graphs SymId () (ConState,ConAct)
-type ResultList = [(ConState,Pos,ConAct)]
-type NodeTable = Map NodeId [(ConState,ConAct)]
+type ConGraph      = CGraph     ConState ConAct
+type ConGraphs     = CGraphs    ConState ConAct
+type ConResultList = ResultList ConState ConAct
+type ConNodeTable  = NodeTable  ConState ConAct
+type ConFixOp val  = FixOp      ConState ConAct val
 
-instance Collapsible ConState ConAct where
-  -- checks if the thread tid is enabled at state st
-  is_enabled syst st tid =
-    let control = controlPart st
-        tid_cfg_sym = toThCFGSym st tid
-    in case M.lookup tid control of
-         Nothing  -> False
-         Just pos -> case M.lookup tid_cfg_sym (cfgs syst) of 
-           Nothing -> 
-            error $ "is_enabled fatal: tid " ++ show tid ++ " not found in cfgs"
-           Just cfg -> case succs cfg pos of
-             [] -> False
-             s  -> all (\(eId,nId) -> is_live tid syst eId cfg st) s
-  -- call collapse on the thread tid
-  collapse b wid syst@System{..} st tid = 
-    let control = controlPart st
-        pos = case M.lookup tid control of
-          Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
-          Just p  -> p
-        th_cfg_sym = case M.lookup tid (cs_tstates st) of
-          Nothing -> error $ "collapse: cant find thread in " ++ show tid
-          Just th_st -> th_cfg_id th_st 
-        th_cfg = case M.lookup th_cfg_sym cfgs of
-          Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
-          Just cfg -> cfg 
-    in mytrace False ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
-       let res = undefined --fixpt wid syst b tid cfgs symt th_cfg pos st
-       in mytrace False "collapse: end" res
-
+instance Domain ConState ConAct where
+  is_enabled       = is_enabled_con
+  code_transformer = code_transformer_con
+  weak_update      = weak_update_con
+  strong_update    = strong_update_con
+  loop_head_update = loop_head_update_con   
+  run              = run_con
+  
+-- Enabledness transformer for Interval State
+is_enabled_con :: System ConState ConAct -> ConState -> TId -> Bool
+is_enabled_con syst st tid =
+  let control     = controlPart st
+      tid_cfg_sym = toThCFGSym st tid
+  in case M.lookup tid control of
+       Nothing  -> False
+       Just pos -> case M.lookup tid_cfg_sym (cfgs syst) of 
+         Nothing  -> error $ "is_enabled fatal: tid " ++ show tid ++ " not found in cfgs"
+         Just cfg -> case succs cfg pos of
+           [] -> False
+           s  -> any (\(eId,nId) -> is_live tid syst eId cfg st) s
 
 -- | Instead of just looking at the immediate edge, one needs to potentially
 --   traverse the graph until reaching a global action. Only at those leafs
@@ -89,4 +81,22 @@ is_live tid syst eId cfg st =
         "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
         _ -> True 
       _ -> True
-    _ -> True
+    _ -> True             
+       
+      
+  -- call collapse on the thread tid
+  collapse b wid syst@System{..} st tid = 
+    let control = controlPart st
+        pos = case M.lookup tid control of
+          Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
+          Just p  -> p
+        th_cfg_sym = case M.lookup tid (cs_tstates st) of
+          Nothing -> error $ "collapse: cant find thread in " ++ show tid
+          Just th_st -> th_cfg_id th_st 
+        th_cfg = case M.lookup th_cfg_sym cfgs of
+          Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
+          Just cfg -> cfg 
+    in mytrace False ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
+       let res = undefined --fixpt wid syst b tid cfgs symt th_cfg pos st
+       in mytrace False "collapse: end" res
+

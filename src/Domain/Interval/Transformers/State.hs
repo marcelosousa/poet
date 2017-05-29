@@ -23,13 +23,13 @@ import qualified Data.Set as S
 data IntTState 
  = IntTState 
  {
-   scope :: Scope
- , st :: IntState          -- the state
- , sym :: Map SymId Symbol
- , i_cfgs :: Graphs SymId () (IntState, IntAct)
- , cond :: Bool            -- is a condition? 
+   scope   :: Scope
+ , st      :: IntState          -- the state
+ , sym     :: Map SymId Symbol
+ , i_cfgs  :: Graphs SymId () (IntState, IntAct)
+ , cond    :: Bool            -- is a condition? 
  , node_id :: Int 
- , warns :: Set Int 
+ , warns   :: Set Int 
  }
 
 -- | Transformer operation 

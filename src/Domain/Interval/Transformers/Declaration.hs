@@ -29,10 +29,11 @@ import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Flow
 import Language.SimpleC.Util
+import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Model.GCS as GCS
+
 
 -- | transformer for a declaration:
 transformer_decl :: SDeclaration -> IntTOp IntAct
@@ -65,7 +66,7 @@ transformer_init id ty minit = mytrace False ("transformer_init for " ++ show id
     Nothing -> do
       s@IntTState{..} <- get
       (vals, i_acts) <- default_value ty
-      let id_addrs_vals = map (\(off,val) -> (MemAddr id (k off) scope, val)) $ zip [0..] vals 
+      let id_addrs_vals = map (\(off,val) -> (MemAddr id (kVal off) scope, val)) $ zip [0..] vals 
           st' = foldr (\(addr,val) _st -> write_memory_addr _st addr val) st id_addrs_vals
           acts = write_act_addr $ MemAddrs $ fst $ unzip id_addrs_vals 
       set_state st'

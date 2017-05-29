@@ -7,6 +7,8 @@
 -------------------------------------------------------------------------------
 module Domain.Lattice where
    
+import Data.List
+
 -- Lattice 
 class (Eq a, Ord a) => Lattice a where
    bot   :: a
@@ -26,3 +28,11 @@ class (Eq a, Ord a) => Lattice a where
    -- Widening
    widen :: a -> a -> a
    widen = error "widening for this domain not implemented"
+
+{-
+instance Ord a => Lattice [a] where
+   bot  = []
+   top  = error "No top element for a list"
+   join = (++) 
+   meet = intersect
+-}

@@ -27,7 +27,7 @@ import Language.SimpleC.Converter hiding (Scope(..))
 import qualified Language.SimpleC.Flow as F
 import Language.SimpleC.Util
 import Util.Generic hiding (safeLookup)
-import qualified Model.GCS as GCS
+import Model.GCS
 import qualified Data.Map as M 
 import qualified Data.Set as S 
 
@@ -59,7 +59,7 @@ get_addrs_expr st scope expr =
 
 -- | Get the tid associated with an expression
 --   This is typically to be used in the pthread_{create, join}
-get_tid_expr :: Scope -> IntState -> SExpression -> GCS.TId
+get_tid_expr :: Scope -> IntState -> SExpression -> TId
 get_tid_expr scope st expr = mytrace False ("get_tid_expr: " ++ show expr) $
   -- get the address(es) referenced by expr
   let th_addrs = get_addrs_expr st scope expr 
@@ -182,10 +182,10 @@ call_transformer fn args = mytrace False ("call_transformer: " ++ show fn ++ " "
 
 -- has_exited makes the assumptions that there is no sucessors of an exit node
 -- wrong for more complex CFGs
-has_exited :: F.Graphs SymId () (IntState, IntAct) -> IntState -> GCS.TId -> Bool
+has_exited :: F.Graphs SymId () (IntState, IntAct) -> IntState -> TId -> Bool
 has_exited _cfgs st tid = 
-  let control     = GCS.controlPart st
-      tid_cfg_sym = GCS.toThCFGSym st tid
+  let control     = controlPart st
+      tid_cfg_sym = toThCFGSym st tid
   in case M.lookup tid control of
        Nothing  -> False
        Just pos -> case M.lookup tid_cfg_sym _cfgs of 
@@ -233,7 +233,7 @@ call_transformer_name name args = case name of
     s@IntTState{..} <- get
     case scope of
       Global    -> error $ "pthread_exit: scope = Global"  
-      Local tid -> return (IntVal [], exit_thread_act (SymId tid) zero)
+      Local tid -> return (IntVal [], exit_act (SymId tid))
   "pthread_mutex_lock" -> do
     -- if the transformer is not enabled it returns the bottom state
     s@IntTState{..} <- get

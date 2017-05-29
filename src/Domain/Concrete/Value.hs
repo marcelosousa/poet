@@ -16,6 +16,7 @@ import Domain.Util
 import Domain.Action
 import Domain.MemAddr
 import Language.SimpleC.Util
+import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.Set as S
 
@@ -58,14 +59,8 @@ isFalse val = case val of
     _ -> False 
   _ -> False 
 
-k :: Int -> ConValue
-k = ConVal . VInt
-
-zero :: ConValue
-zero = k 0
-
-one :: ConValue
-one = k 1
+instance ToValue ConValue where
+   kVal = ConVal . VInt
 
 instance Num ConValue where
   (+) c1 c2 = case (c1,c2) of
