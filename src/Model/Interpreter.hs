@@ -11,6 +11,44 @@ import Model.Independence
 import System.IO.Unsafe
 import System.Random
 
+
+ai :: FilePath -> IO ()
+ai f = do
+  fe <- extract "" f
+  let syst = IC.convert fe
+      (warns,res) = run True 10 syst (gbst syst) 1
+      -- get the symbol table
+      sym_table = Language.SimpleC.symt fe 
+--  putStrLn $ show (gbst syst) 
+      fname = fst $ splitExtension f
+      dot_name = fname ++ ".dot"
+      pdf_name = fname ++ ".pdf"
+  writeFile dot_name $ P.pp_dot_graphs (Language.SimpleC.cfgs fe) M.empty -- sym_table
+  putStrLn $ show_symt sym_table 
+  putStrLn $ "Warnings: " ++ show warns
+  putStrLn $ showResultList res
+  -- pdf <- readProcess "dot" ["-Tpdf",dot_name] []
+  -- writeFile pdf_name pdf
+  putStrLn "explore end"
+
+execute :: FilePath -> Analysis -> Int -> IO ()
+execute = error "v2: working in progress"
+{-    
+execute f dom dseed = do
+  prog <- extract f
+  seed <- randomIO :: IO Int
+  print $ "Using seed = " ++ show (seed,dseed)
+  let (prog', fflow, flow, thcount) = frontEnd prog
+  print prog'
+  let gen = if dseed == 0
+            then mkStdGen seed
+            else mkStdGen dseed
+      log = case dom of 
+        Concrete -> exec gen thcount $ CC.convert prog' fflow flow thcount
+        Interval -> exec gen thcount $ IC.convert prog' fflow flow thcount
+  putStrLn log
+-}
+
 exec :: (Show st, Ord st) => StdGen -> Int -> (System st, UIndep) -> String
 exec gen thcount (sys,indep) = execIt gen thcount "" indep sys (initialState sys)
 

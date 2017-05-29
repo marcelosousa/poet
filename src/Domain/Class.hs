@@ -36,18 +36,18 @@ data FixState s a =
   FixState
   {
   -- fs_mode=True returns the annotated CFG; fs_mode=False returns the final res
-    fs_mode :: Bool 
+    fs_mode  :: Bool 
   -- thread/process/function ID 
-  , fs_tid  :: TId 
-  , fs_cfgs :: CGraphs s a
-  , fs_symt :: SymbolTable
-  , fs_cfg  :: CGraph s a
+  , fs_tid   :: TId 
+  , fs_cfgs  :: CGraphs s a
+  , fs_symt  :: SymbolTable
+  , fs_cfg   :: CGraph s a
   -- final worklist: every edge in this worklist is a global action 
-  , fs_mark :: Set WItem
+  , fs_mark  :: Set WItem
   -- map from loop heads to counter of traversals.  
-  , fs_wide :: Map NodeId Int
+  , fs_wide  :: Map NodeId Int
   -- widening level
-  , fs_wid  :: Int 
+  , fs_wid   :: Int 
   -- warnings
   , fs_warns :: Set Int
   }

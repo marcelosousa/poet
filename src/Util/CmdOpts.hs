@@ -59,42 +59,30 @@ instance Default Analysis where
   
 data Option 
   = Frontend  {inp :: FilePath}
-  | Execute   {inp :: FilePath, dom :: Analysis, seed :: Int}
-  | Interpret {inp :: FilePath, dom :: Analysis}
+  | Interpret {inp :: FilePath, dom :: Analysis, mode :: Int, seed :: Int, stf :: Int, cut :: Int, wid :: Int}
   | Explore   {inp :: FilePath, dom :: Analysis, stf :: Int, cut :: Int, wid :: Int}
   | Prime     {inp :: FilePath, dom :: Analysis, stf :: Int, cut :: Int}
   | Stid      {inp :: FilePath,                stf :: Int, cut :: Int}
-  | Debug     {inp :: FilePath, dom :: Analysis,              cut:: Int}
-  | Ai        {inp :: FilePath}
   | Test 
   deriving (Show, Data, Typeable, Eq)
 
 -- | Mode options
-frontend_mode, execute_mode, interpret_mode :: Option
+frontend_mode, interpret_mode :: Option
 frontend_mode =
   Frontend
   { inp = def &= args 
   } &= help _helpFE
 
-execute_mode =
-  Execute 
-  { inp  = def
-  , dom  = def
-  , seed = def &= help "seed for the scheduler"
-  } &= help _helpExec
-
 interpret_mode =
   Interpret 
   { inp = def
-  , dom = def &= args
+  , dom = def
+  , mode = def &= help "mode of the interpreter (0=Executes [default], 1=Step By Step)"
+  , seed = def &= help "seed for the scheduler"
+  , stf  = def &= help "stateful mode (0=False [default], 1=True)"
+  , cut  = def &= help "cut      mode (0=False [default], 1=True)"
+  , wid  = 10  &= help "widening"
   } &= help _helpInter
-
-debug_mode = 
-  Debug 
-  { inp = def
-  , dom = def 
-  , cut = def
-  } &= help _helpDebug
 
 explore_mode =
   Explore
@@ -120,18 +108,14 @@ stid_mode =
   , cut = def &= help "cut mode (0=False [default], 1=True)"
   } &= help _helpStid
 
-ai_mode =
-  Ai
-  { inp = def
-  } &= help _helpAi
 
 test_mode = Test {} &= help _helpTest
 
 prog_modes :: Mode (CmdArgs Option)
 prog_modes = 
-  cmdArgsMode $ modes [ frontend_mode, execute_mode, interpret_mode
-                      , explore_mode, test_mode, debug_mode
-                      , prime_mode, stid_mode, ai_mode ]
+  cmdArgsMode $ modes [ frontend_mode, interpret_mode
+                      , explore_mode, test_mode
+                      , prime_mode, stid_mode ]
          &= help _help
          &= program _program
          &= summary _summary
