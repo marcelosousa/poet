@@ -44,9 +44,8 @@ type ConFixOp val  = FixOp      ConState ConAct val
 instance Domain ConState ConAct where
   is_enabled       = is_enabled_con
   code_transformer = code_transformer_con
-  weak_update      = weak_update_con
-  strong_update    = strong_update_con
-  loop_head_update = loop_head_update_con   
+  weak_update      = strong_update
+  loop_head_update = strong_update
   run              = run_con
   
 -- Enabledness transformer for Interval State
@@ -82,28 +81,35 @@ is_live tid syst eId cfg st =
         "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
         _ -> True 
       _ -> True
-    _ -> True             
-       
-code_transformer_con       = undefined
-weak_update_con            = undefined
-strong_update_con          = undefined
-loop_head_update_con       = undefined
-run_con                    = undefined
-    
-{-      
-  -- call collapse on the thread tid
-  collapse b wid syst@System{..} st tid = 
-    let control = controlPart st
-        pos = case M.lookup tid control of
-          Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
-          Just p  -> p
-        th_cfg_sym = case M.lookup tid (cs_tstates st) of
-          Nothing -> error $ "collapse: cant find thread in " ++ show tid
-          Just th_st -> th_cfg_id th_st 
-        th_cfg = case M.lookup th_cfg_sym cfgs of
-          Nothing -> error $ "collapse: cant find thread " ++ show th_cfg_sym
-          Just cfg -> cfg 
-    in mytrace False ("collapse: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
-       let res = undefined --fixpt wid syst b tid cfgs symt th_cfg pos st
-       in mytrace False "collapse: end" res
--}
+    _ -> True                    
+
+-- | Calls the appropriated transformer depending on the type of edge
+code_transformer_con :: NodeId -> NodeId -> EdgeInfo SymId () -> ConState -> ConFixOp (ConAct, ConState, Set Int)
+code_transformer_con pre post e@EdgeInfo{..} node_st = do
+  fs@FixState{..} <- get      
+  let is_c = is_cond edge_tags
+      -- construct the transformer state
+      tr_st = ConTState (Local fs_tid) node_st fs_symt fs_cfgs is_c False pre fs_warns
+      -- decide based on the type of edge which transformer to call
+      (post_acts,n_tr_st) = case edge_code of
+        -- execute the transformer
+        D decl -> runState (transformer_decl decl) tr_st 
+        E expr -> runState (transformer_expr expr) tr_st
+      state  = st n_tr_st
+      state' = update_pc state fs_tid post
+  return (post_acts,state',warns n_tr_st)
+
+-- | Run the fixpoint computation
+run_con :: Bool -> Int -> System ConState ConAct -> ConState -> TId -> (Set Int,ConResultList)
+run_con b wid syst@System{..} st tid = 
+  let control = controlPart st
+      pos     = case M.lookup tid control of
+        Nothing -> error $ "collapse: tid " ++ show tid ++ " is not control"
+        Just p  -> p
+      th_cfg_sym = case M.lookup tid (cs_tstates st) of
+        Nothing    -> error $ "collapse: cant find thread in " ++ show tid
+        Just th_st -> th_cfg_id th_st 
+      th_cfg = case M.lookup th_cfg_sym cfgs of
+        Nothing  -> error $ "collapse: cant find thread " ++ show th_cfg_sym
+        Just cfg -> cfg 
+  in fixpt wid syst b tid cfgs symt th_cfg pos st

@@ -51,20 +51,20 @@ _helpTest = "poet test runs the explore mode over the set of examples in "
          ++ "Test/Examples."
 _helpAi = "poet ai -i=file.c runs the abstract interpreter for intervals"
 
-data Domain = Concrete | Interval
+data Analysis = Concrete | Interval
   deriving (Show, Data, Typeable, Eq, Enum)
                       
-instance Default Domain where
+instance Default Analysis where
   def = Concrete
   
 data Option 
   = Frontend  {inp :: FilePath}
-  | Execute   {inp :: FilePath, dom :: Domain, seed :: Int}
-  | Interpret {inp :: FilePath, dom :: Domain}
-  | Explore   {inp :: FilePath, dom :: Domain, stf :: Int, cut :: Int, wid :: Int}
-  | Prime     {inp :: FilePath, dom :: Domain, stf :: Int, cut :: Int}
+  | Execute   {inp :: FilePath, dom :: Analysis, seed :: Int}
+  | Interpret {inp :: FilePath, dom :: Analysis}
+  | Explore   {inp :: FilePath, dom :: Analysis, stf :: Int, cut :: Int, wid :: Int}
+  | Prime     {inp :: FilePath, dom :: Analysis, stf :: Int, cut :: Int}
   | Stid      {inp :: FilePath,                stf :: Int, cut :: Int}
-  | Debug     {inp :: FilePath, dom :: Domain,              cut:: Int}
+  | Debug     {inp :: FilePath, dom :: Analysis,              cut:: Int}
   | Ai        {inp :: FilePath}
   | Test 
   deriving (Show, Data, Typeable, Eq)

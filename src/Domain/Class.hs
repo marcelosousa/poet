@@ -68,8 +68,49 @@ class (Show a, Show s, Projection s, Lattice s, Lattice a, Action a) => Domain s
    -- Transformers for code
    code_transformer :: NodeId -> NodeId -> EdgeInfo SymId () -> s -> FixOp s a (a, s, Set Int)
    weak_update      :: NodeTable s a -> NodeId -> (s,a) -> FixOp s a (Bool, NodeTable s a)
+   weak_update node_table node (st,act) = 
+     case M.lookup node node_table of
+       Nothing  -> return (False, M.insert node [(st,act)] node_table)
+       Just lst -> case lst of
+         []           -> return (False, M.insert node [(st,act)] node_table)
+         [(st',act')] -> do
+           let nst  = st  `join` st'
+               nact = act `join` act'
+           if nst == st'
+           then return (True, node_table)
+           else return (False, M.insert node [(nst,nact)] node_table)
+         _ -> error "join_update: more than one state in the list"
    strong_update    :: NodeTable s a -> NodeId -> (s,a) -> FixOp s a (Bool, NodeTable s a)
-   loop_head_update :: NodeTable s a -> NodeId -> (s,a) -> FixOp s a (Bool, NodeTable s a)   
+   strong_update node_table node (st,act) =
+     case M.lookup node node_table of
+       Nothing  -> return (False, M.insert node [(st,act)] node_table) 
+       Just lst -> case lst of
+         []           -> return (False, M.insert node [(st,act)] node_table)
+         [(st',act')] ->
+           if st == st'
+           then return (True, node_table)
+           else return (False, M.insert node [(st,act `join` act')] node_table)
+         _ -> error "strong_update: more than one state in the list"    
+   loop_head_update :: NodeTable s a -> NodeId -> (s,a) -> FixOp s a (Bool, NodeTable s a)  
+   loop_head_update node_table node (st,act) =  do
+     c <- get_wide_node node
+     inc_wide_node node
+     w <- get_widening_level
+     if c >= w 
+     then mytrace False ("loop_head_update: going to apply widening") $ do 
+       case M.lookup node node_table of
+         -- error "loop_head_update: widening between a state and empty?" 
+         Nothing ->  return $ (False, M.insert node [(st,act)] node_table)
+         Just lst -> case lst of
+           [] -> error "loop_head_update: widening between a state and empty?" 
+           [(st',act')] ->
+             let nst  = st' `widen` st
+                 nact = act `join` act'
+             in if nst == st'
+                then return $ (True, node_table)
+                else return $ (False, M.insert node [(nst,nact)] node_table)
+           _ -> error "loop_head_update: widening between a state and several states?" 
+     else weak_update node_table node (st,act) 
    -- Fixpoint transformers: Chaotic worklist algorithm, Determistic Run
    -- Fixpoint 
    run  :: Bool -> Int -> System s a -> s -> TId -> (Set Int,ResultList s a)

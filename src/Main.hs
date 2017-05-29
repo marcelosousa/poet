@@ -17,8 +17,8 @@ import Model.GCS
 --import Unfolderful
 import Control.Monad.ST
 import Domain.Action
--- import Domain.Concrete
-import Domain.Concrete.Collapse
+import Domain.Class
+import Domain.Concrete
 import Domain.Interval
 import Exploration.UNF.Unfolder  
 import Language.SimpleC
@@ -40,7 +40,7 @@ import qualified Exploration.UNF.API as US
 import qualified Exploration.UNF.State as US
 
 -- Newer version for stid
--- import Domain.Synchron
+-- import Analysis.Synchron
 -- import Exploration.SUNF.Unfolder
 -- import Exploration.SUNF.APIStid
 -- import qualified Exploration.SUNF.State       as SS
@@ -75,7 +75,7 @@ frontend f = do
   putStrLn $ show_symt sym_table 
   putStrLn "frontend end"
 
-execute :: FilePath -> Domain -> Int -> IO ()
+execute :: FilePath -> Analysis -> Int -> IO ()
 execute = error "v2: working in progress"
 {-    
 execute f dom dseed = do
@@ -93,7 +93,7 @@ execute f dom dseed = do
   putStrLn log
 -}
 
-interpret :: FilePath -> Domain -> IO ()
+interpret :: FilePath -> Analysis -> IO ()
 interpret = error "v2: working in progress"
 {-
 interpret f dom = do
@@ -106,7 +106,7 @@ interpret f dom = do
   print res
 -}
 
-explore :: FilePath -> Domain -> Bool -> Bool -> Int -> IO ()
+explore :: FilePath -> Analysis -> Bool -> Bool -> Int -> IO ()
 explore f dom stl cut wid = do
   case dom of
     -- Concrete Semantics
@@ -147,7 +147,7 @@ explore f dom stl cut wid = do
   --  ++ M.foldWithKey (\tr ev r -> show (snd4 tr, ev) ++ "\n" ++ r) "" evPerTr
   -- writeFile (replaceExtension f ".dot") unfst
 
-prime :: FilePath -> Domain -> Bool -> Bool -> IO ()
+prime :: FilePath -> Analysis -> Bool -> Bool -> IO ()
 prime = error "v2: working on progress"
 {-
 prime f dom stl cut = do 
@@ -178,7 +178,7 @@ stid f stl cut = do
   putStrLn "explore end"
 -}
 
-debug :: FilePath -> Domain -> Bool -> IO ()
+debug :: FilePath -> Analysis -> Bool -> IO ()
 debug = error "v2: working in progress"
 {-
 debug f dom cutoffs = do 
@@ -204,8 +204,9 @@ ai :: FilePath -> IO ()
 ai f = do
   fe <- extract "" f
   let syst = IC.convert fe
-      (warns,res) = collapse True 10 syst (gbst syst) 1
-      sym_table = Language.SimpleC.symt fe -- get the symbol table
+      (warns,res) = run True 10 syst (gbst syst) 1
+      -- get the symbol table
+      sym_table = Language.SimpleC.symt fe 
 --  putStrLn $ show (gbst syst) 
       fname = fst $ splitExtension f
       dot_name = fname ++ ".dot"

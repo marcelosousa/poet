@@ -42,10 +42,7 @@ type IntFixOp val  = FixOp      IntState IntAct val
 
 instance Domain IntState IntAct where
   is_enabled       = is_enabled_int
-  code_transformer = code_transformer_int
-  weak_update      = weak_update_int
-  strong_update    = strong_update_int
-  loop_head_update = loop_head_update_int   
+  code_transformer = code_transformer_int   
   run              = run_int
 
 -- Enabledness transformer for Interval State
@@ -99,70 +96,19 @@ code_transformer_int pre post e@EdgeInfo{..} node_st = do
       state' = update_pc state fs_tid post
   return (post_acts,state',warns n_tr_st)
 
--- | Loop head update
-loop_head_update_int :: IntNodeTable -> NodeId -> (IntState, IntAct) -> IntFixOp (Bool, IntNodeTable)
-loop_head_update_int node_table node (st,act) =  do
-  c <- get_wide_node node
-  inc_wide_node node
-  w <- get_widening_level
-  if c >= w 
-  then mytrace False ("loop_head_update: going to apply widening") $ do 
-    case M.lookup node node_table of
-      -- error "loop_head_update: widening between a state and empty?" 
-      Nothing ->  return $ (False, M.insert node [(st,act)] node_table)
-      Just lst -> case lst of
-        [] -> error "loop_head_update: widening between a state and empty?" 
-        [(st',act')] ->
-          let nst  = st' `widen` st
-              nact = act `join` act'
-          in if nst == st'
-             then return $ (True, node_table)
-             else return $ (False, M.insert node [(nst,nact)] node_table)
-        _ -> error "loop_head_update: widening between a state and several states?" 
-  else weak_update node_table node (st,act) 
-
--- | Weak update
-weak_update_int :: IntNodeTable -> NodeId -> (IntState, IntAct) -> IntFixOp (Bool, IntNodeTable)
-weak_update_int node_table node (st,act) = 
-  case M.lookup node node_table of
-    Nothing  -> return (False, M.insert node [(st,act)] node_table)
-    Just lst -> case lst of
-      []           -> return (False, M.insert node [(st,act)] node_table)
-      [(st',act')] -> do
-        let nst  = st  `join` st'
-            nact = act `join` act'
-        if nst == st'
-        then return (True, node_table)
-        else return (False, M.insert node [(nst,nact)] node_table)
-      _ -> error "join_update: more than one state in the list"
- 
--- | Strong update
-strong_update_int :: IntNodeTable -> NodeId -> (IntState,IntAct) -> IntFixOp (Bool, IntNodeTable)
-strong_update_int node_table node (st,act) =
-  case M.lookup node node_table of
-    Nothing  -> return (False, M.insert node [(st,act)] node_table) 
-    Just lst -> case lst of
-      []           -> return (False, M.insert node [(st,act)] node_table)
-      [(st',act')] ->
-        if st == st'
-        then return (True, node_table)
-        else return (False, M.insert node [(st,act `join` act')] node_table)
-      _ -> error "strong_update: more than one state in the list" 
-
-
 -- | Run the fixpoint computation
-run_int :: Bool -> Int -> System IntState IntAct -> IntState -> TId -> (Set Int,ResultList IntState IntAct)
+run_int :: Bool -> Int -> System IntState IntAct -> IntState -> TId -> (Set Int,IntResultList)
 run_int b wid syst@System{..} st tid = 
-    let control = controlPart st
-        pos = case M.lookup tid control of
-          Nothing -> error $ "run: tid " ++ show tid ++ " is not control"
-          Just p  -> p
-        th_cfg_sym = case M.lookup tid (th_states st) of
-          Nothing -> error $ "run: cant find thread in the state " ++ show tid
-          Just th_st -> th_cfg_id th_st 
-        th_cfg = case M.lookup th_cfg_sym cfgs of
-          Nothing -> error $ "run: cant find thread " ++ show th_cfg_sym
-          Just cfg -> cfg 
-    in mytrace False ("run: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
-       let res = fixpt wid syst b tid cfgs symt th_cfg pos st
-       in mytrace False "run: end" res
+  let control = controlPart st
+      pos = case M.lookup tid control of
+        Nothing -> error $ "run: tid " ++ show tid ++ " is not control"
+        Just p  -> p
+      th_cfg_sym = case M.lookup tid (th_states st) of
+        Nothing -> error $ "run: cant find thread in the state " ++ show tid
+        Just th_st -> th_cfg_id th_st 
+      th_cfg = case M.lookup th_cfg_sym cfgs of
+        Nothing -> error $ "run: cant find thread " ++ show th_cfg_sym
+        Just cfg -> cfg 
+  in mytrace False ("run: fixpoint of thread "++show tid ++ ", position = " ++ show pos) $
+     let res = fixpt wid syst b tid cfgs symt th_cfg pos st
+     in mytrace False "run: end" res
