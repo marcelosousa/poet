@@ -1,17 +1,125 @@
-module Model.Interpreter where
+-------------------------------------------------------------------------------
+-- Module    :  Model.Interpreter
+-- Copyright :  (c) 2017 Marcelo Sousa
+--
+-- Interpreter with multiple modes for POET
+--  Multiple modes for single execution
+--  with different scheduling strategies; 
+--  Basic exploration ideas
+-------------------------------------------------------------------------------
+module Model.Interpreter (interpreter, toIPMode) where
 
-import Control.Monad.ST
-import qualified Data.ByteString.Char8 as BS
-import Data.Char
-import Data.List
-import qualified Data.Maybe as M
-import qualified Data.Vector as V
+import Domain.Action
+import Domain.Class
+import Domain.Concrete
+import Domain.Interval
 import Model.GCS
-import Model.Independence
 import System.IO.Unsafe
 import System.Random
+import Util.Generic
+import qualified Data.Map as M
 
+-- @TODO: Need to define STATE OF THE INTERPRETER
 
+toIPMode :: Int -> Analysis -> Int -> IPMode
+toIPMode 0 a _ = IPSingle     a
+toIPMode 1 a n = IPSingleRand a n
+toIPMode 2 a _ = IPDFS        a
+toIPMode 3 a _ = IPBFS        a
+
+data IPMode = IPSingle     Analysis 
+            | IPSingleRand Analysis Int 
+            | IPDFS        Analysis
+            | IPBFS        Analysis
+  deriving (Eq,Show)
+
+-- | Main interpreter function:
+--    Depending on the mode, select various back-ends
+interpreter :: Domain s a => System s a -> IPMode -> Bool -> Bool -> Int -> IO ()
+interpreter syst mode stl cut wid = 
+  case mode of 
+    IPSingle _ -> execute  mode syst (gbst syst)
+    IPBFS    _ -> bfs      mode syst (gbst syst)
+    IPDFS    _ -> dfs 1 [] mode syst [(0, gbst syst)]
+
+execute :: Domain s a => IPMode -> System s a -> s -> IO ()
+execute mode syst st = do
+  let ths = enabled syst st
+  case enabled syst st of
+    []    -> do 
+      putStrLn "executor: end of trace"
+      putStrLn $ "executor: " ++ foldr (\(tid,pos) r -> " \ttid = " ++ show tid ++ " \tpos = " ++ show pos ++ " \t " ++ r) "" (M.toList $ controlPart st)
+    (t:_) ->
+      let p = get_pre st t
+      in case run False 10000 syst st t of
+        (warns,[(s,pos,a)]) -> do
+          putStrLn $ "executor: tid = " ++ show t ++ " \tpre = " 
+                  ++ show p ++ " \tpos = " ++ show pos ++ " \t" ++ show a
+          execute mode syst s
+        (warns,r) -> error $ "executor: FATAL! tid = " ++ show t ++ " \tpre = " 
+                  ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)
+
+get_pre :: Projection s => s -> Int -> Int
+get_pre s pid = 
+  case M.lookup pid (controlPart s) of
+    Nothing -> error $ "get_pre: no information for " ++ show pid
+    Just p  -> p
+
+bfs :: Domain s a => IPMode -> System s a -> s -> IO ()
+bfs mode syst st = do
+  let ths = enabled syst st
+  case enabled syst st of
+    []    -> do 
+      putStrLn "bfs: end of trace"
+      putStrLn $ "bfs: " ++ foldr (\(tid,pos) r -> " \ttid = " ++ show tid ++ " \tpos = " ++ show pos ++ "\t" ++ r) "" (M.toList $ controlPart st)
+    ts -> mapM_ (\t -> do
+        let p = get_pre st t
+        case run False 10000 syst st t of
+          (warns,[(s,pos,a)]) -> do
+            putStrLn $ "bfs: tid = " ++ show t ++ " \tpre = " 
+              ++ show p ++ " \tpos = " ++ show pos ++ " \t" ++ show a
+            bfs mode syst s
+          (warns,r) -> error $ "bfs: FATAL! tid = " ++ show t ++ " \tpre = " 
+                    ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)) ts
+
+dfs :: Domain s a => Int -> [Int] -> IPMode -> System s a -> [(Int,s)] -> IO ()
+dfs n stack mode syst [] = return ()
+dfs n stack mode syst ((i,s):ss) = do
+  putStrLn $ "dfs: tid = " ++ show i ++ " "
+             ++ foldr (\(tid,pos) r -> " \t tid = " ++ show tid 
+                 ++ " \t pos = " ++ show pos ++ " \t " ++ r) "" (M.toList $ controlPart s)
+  let ths = enabled syst s
+  case enabled syst s of
+    []    -> do       
+      putStrLn $ "dfs: end of trace " ++ show n
+      dfs (n+1) stack mode syst ss
+    ts -> do
+      -- if length ts > 1 then putStrLn $ "dfs: branching " ++ show ts else return ()
+      ns <- mapM (\t -> do
+        let p = get_pre s t
+        case run False 10000 syst s t of
+          (warns,[(s',pos,a)]) -> return (t,s')
+          (warns,r) -> error $ "bfs: FATAL! stack = " ++ show (reverse stack) ++ "\t tid = " ++ show t ++ " \tpre = " 
+                    ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)) ts
+      dfs n (i:stack) mode syst (ns++ss)
+
+replay :: Domain s a => [Int] -> IPMode -> System s a -> s -> IO ()
+replay []     mode syst st = execute mode syst st
+replay (t:ts) mode syst st = do
+  let ths = enabled syst st
+      p   = get_pre st t
+  if t `elem` ths
+  then case run False 10000 syst st t of
+    (warns,[(s,pos,a)]) -> do
+      putStrLn $ "replay: tid = " ++ show t ++ " \tpre = " 
+              ++ show p ++ " \tpos = " ++ show pos ++ " \t" ++ show a
+      replay ts mode syst s
+    (warns,r) -> error $ "replay: FATAL! tid = " ++ show t ++ " \tpre = " 
+              ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)
+  else error $ "replay: FATAL! tid = " ++ show t  
+  
+
+{-
 ai :: FilePath -> IO ()
 ai f = do
   fe <- extract "" f
@@ -139,3 +247,4 @@ interpretIt step indep sys st =
 menu :: String
 menu = "\nChoose an enabled transition (by the position in the list, 'x' to quit):"
 --menu = unlines ["Choose a transition by position:", "(a): automatic mode", "(n): number of enabled transition", "(x): exit"]
+-}

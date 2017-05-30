@@ -61,8 +61,8 @@ negExp :: SExpression -> SExpression
 negExp expr = case expr of
   Binary CLndOp l r -> Binary CLorOp (negExp l) (negExp r)
   Binary CLorOp l r -> Binary CLndOp (negExp l) (negExp r)
-  Binary op l r -> Binary (negOp op) l r
-  Unary CNegOp e -> e
+  Binary op l r     -> Binary (negOp op) l r
+  Unary CNegOp e    -> e
   _ -> error $ "negExp: unsupported " ++ show expr
 
 negOp :: BinaryOp -> BinaryOp 

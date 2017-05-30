@@ -42,6 +42,7 @@ type IntFixOp val  = FixOp      IntState IntAct val
 
 instance Domain IntState IntAct where
   is_enabled       = is_enabled_int
+  is_live          = is_live_int
   code_transformer = code_transformer_int   
   run              = run_int
 
@@ -56,15 +57,15 @@ is_enabled_int syst st tid =
          Nothing  -> error $ "is_enabled fatal: tid " ++ show tid ++ " not found in cfgs"
          Just cfg -> case succs cfg pos of
            [] -> False
-           s  -> all (\(eId,nId) -> is_live tid syst eId cfg st) s
+           s  -> all (\(eId,nId) -> is_live tid syst eId nId cfg st) s
 
 -- | Instead of just looking at the immediate edge, one needs to potentially
 --   traverse the graph until reaching a global action. Only at those leafs
 --   one can compute the right result with respect to enabledness.
 --   I will opt to not implement such procedure and generate events that are 
 --   potentially only local.
-is_live :: TId -> System IntState IntAct -> EdgeId -> IntGraph -> IntState -> Bool
-is_live tid syst eId cfg st = 
+is_live_int :: TId -> System IntState IntAct -> EdgeId -> NodeId -> IntGraph -> IntState -> Bool
+is_live_int tid syst eId nId cfg st = 
   let EdgeInfo tags code = get_edge_info cfg eId 
   in case code of
     E (Call fname args _) -> case fname of

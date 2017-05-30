@@ -43,6 +43,7 @@ type ConFixOp val  = FixOp      ConState ConAct val
 
 instance Domain ConState ConAct where
   is_enabled       = is_enabled_con
+  is_live          = is_live_con
   code_transformer = code_transformer_con
   weak_update      = strong_update
   loop_head_update = strong_update
@@ -59,15 +60,15 @@ is_enabled_con syst st tid =
          Nothing  -> error $ "is_enabled fatal: tid " ++ show tid ++ " not found in cfgs"
          Just cfg -> case succs cfg pos of
            [] -> False
-           s  -> any (\(eId,nId) -> is_live tid syst eId cfg st) s
+           s  -> any (\(eId,nId) -> is_live_con tid syst eId nId cfg st) s
 
 -- | Instead of just looking at the immediate edge, one needs to potentially
 --   traverse the graph until reaching a global action. Only at those leafs
 --   one can compute the right result with respect to enabledness.
 --   I will opt to not implement such procedure and generate events that are 
 --   potentially only local.
-is_live :: TId -> System ConState ConAct -> EdgeId -> ConGraph -> ConState -> Bool
-is_live tid syst eId cfg st = 
+is_live_con :: TId -> System ConState ConAct -> EdgeId -> NodeId -> ConGraph -> ConState -> Bool
+is_live_con tid syst eId nId cfg st = 
   let EdgeInfo tags code = get_edge_info cfg eId 
   in case code of
     E (Call fname args _) -> case fname of
@@ -81,7 +82,7 @@ is_live tid syst eId cfg st =
         "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
         _ -> True 
       _ -> True
-    _ -> True                    
+    _ -> True
 
 -- | Calls the appropriated transformer depending on the type of edge
 code_transformer_con :: NodeId -> NodeId -> EdgeInfo SymId () -> ConState -> ConFixOp (ConAct, ConState, Set Int)

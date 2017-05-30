@@ -25,8 +25,11 @@ data MemAddr d
   , offset :: d 
   , level  :: Scope 
   }
-  deriving (Show,Eq,Ord)
+  deriving (Eq,Ord)
 
+instance Show d => Show (MemAddr d) where
+  show (MemAddr base offset level) = show base
+  
 data MemAddrBase
   = MemAddrBase
   { _base  :: SymId

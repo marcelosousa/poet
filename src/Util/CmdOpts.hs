@@ -8,6 +8,7 @@ module Util.CmdOpts where
 
 import System.Console.CmdArgs
 import System.FilePath.Posix
+import Util.Generic
 
 -- Command Line Options Strings
 _program, _summary :: String
@@ -50,9 +51,6 @@ _helpDebug = "poet debug receives a concurrent C program in a restricted "
 _helpTest = "poet test runs the explore mode over the set of examples in "
          ++ "Test/Examples."
 _helpAi = "poet ai -i=file.c runs the abstract interpreter for intervals"
-
-data Analysis = Concrete | Interval
-  deriving (Show, Data, Typeable, Eq, Enum)
                       
 instance Default Analysis where
   def = Concrete

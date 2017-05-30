@@ -34,28 +34,28 @@ import qualified Language.SimpleC.Flow as F
 transformer :: SExpression -> ConTOp (ConValue,ConAct)
 transformer e = mytrace False ("transformer: " ++ show e) $
   case e of 
-    AlignofExpr expr -> error "transformer: align_of_expr not supported"  
-    AlignofType decl -> error "transformer: align_of_type not supported"
-    Assign assignOp lhs rhs -> assign_transformer assignOp lhs rhs 
-    Binary binaryOp lhs rhs -> binop_transformer binaryOp lhs rhs 
-    BuiltinExpr built -> error "transformer: built_in_expr not supported" 
-    Call fn args n -> call_transformer fn args  
-    Cast decl expr -> return (zero, bot)
-    Comma exprs -> error "transformer: comma not supported" 
-    CompoundLit decl initList -> error "transforemr: compound literal not supported" 
+    AlignofExpr expr             -> error "transformer: align_of_expr not supported"  
+    AlignofType decl             -> error "transformer: align_of_type not supported"
+    Assign assignOp lhs rhs      -> assign_transformer assignOp lhs rhs 
+    Binary binaryOp lhs rhs      -> binop_transformer binaryOp lhs rhs 
+    BuiltinExpr built            -> error "transformer: built_in_expr not supported" 
+    Call fn args n               -> call_transformer fn args  
+    Cast decl expr               -> return (zero, bot)
+    Comma exprs                  -> error "transformer: comma not supported" 
+    CompoundLit decl initList    -> error "transforemr: compound literal not supported" 
     Cond cond mThenExpr elseExpr -> cond_transformer cond mThenExpr elseExpr 
-    Const const -> const_transformer const 
-    Index arr_expr index_expr -> index_transformer arr_expr index_expr 
-    LabAddrExpr ident -> error "transformer: labaddr not supported"
-    Member expr ident bool -> error "transformer: member not supported"
-    SizeofExpr expr -> error "transformer: sizeof expression not supported" 
-    SizeofType decl -> error "transformer: sizeof type not supported"
-    Skip -> return (zero, bot)
-    StatExpr stmt -> error "transformer: stat_expr not supported"
-    Unary unaryOp expr -> unop_transformer unaryOp expr 
-    Var ident -> mytrace False ("calling var_trans" ++ show ident) $ var_transformer ident 
-    ComplexReal expr -> error "transformer: complex op not supported" 
-    ComplexImag expr -> error "transformer: complex op not supported" 
+    Const const                  -> const_transformer const 
+    Index arr_expr index_expr    -> index_transformer arr_expr index_expr 
+    LabAddrExpr ident            -> error "transformer: labaddr not supported"
+    Member expr ident bool       -> error "transformer: member not supported"
+    SizeofExpr expr              -> error "transformer: sizeof expression not supported" 
+    SizeofType decl              -> error "transformer: sizeof type not supported"
+    Skip                         -> return (zero, bot)
+    StatExpr stmt                -> error "transformer: stat_expr not supported"
+    Unary unaryOp expr           -> unop_transformer unaryOp expr 
+    Var ident                    -> var_transformer ident 
+    ComplexReal expr             -> error "transformer: complex op not supported" 
+    ComplexImag expr             -> error "transformer: complex op not supported" 
 
 -- | Transformer for an index expression.
 index_transformer :: SExpression -> SExpression -> ConTOp (ConValue, ConAct)
@@ -124,11 +124,18 @@ binop_transformer binOp lhs rhs = do
         CShlOp -> error "binop_transformer: CShlOp not supported"  
         CShrOp -> error "binop_transformer: CShrOp not supported" 
         CXorOp -> error "binop_transformer: CXorOp not supported" 
-        CLndOp -> error "binop_transformer: CLndOp not supported" 
-        CLorOp -> error "binop_transformer: CLorOp not supported"
-        _ -> error "binop_transtranformer: not completed" -- apply_logic binOp lhs rhs
+
+        CLeOp  -> le_conval   lhs_vals rhs_vals 
+        CGrOp  -> gr_conval   lhs_vals rhs_vals 
+        CLeqOp -> leq_conval  lhs_vals rhs_vals 
+        CGeqOp -> geq_conval  lhs_vals rhs_vals 
+        CEqOp  -> eq_conval   lhs_vals rhs_vals 
+        CNeqOp -> neq_conval  lhs_vals rhs_vals 
+        CLndOp -> land_conval lhs_vals rhs_vals 
+        CLorOp -> lor_conval  lhs_vals rhs_vals         
+        _ -> error $ "binop_tranformer: not completed " ++ show binOp
       res_acts = lhs_acts `join` rhs_acts
-  return (res_vals,res_acts)
+  mytrace False ("binop_transformer: lhs = " ++ show lhs_vals ++ "\trhs = " ++ show rhs_vals ++ "\tres = " ++ show res_vals) $ return (res_vals,res_acts)
 
 -- | Transformer for call expression:
 --   Support for pthread API functions

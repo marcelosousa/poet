@@ -44,8 +44,8 @@ transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
     (val, act) <- bool_transformer_expr expr
     s@ConTState{..} <- get
     let res_st = case val of
-          ConBot -> bot
-          _ -> st
+          ConVal (VBool True) -> st
+          _ -> bot
     set_state res_st 
     mytrace False ("bool_transformer: result = " ++ show val) $ return act
   else do
@@ -54,7 +54,7 @@ transformer_expr expr = mytrace False ("transformer_expr: " ++ show expr) $ do
     
 -- eval logical expressions
 bool_transformer_expr :: SExpression -> ConTOp (ConValue, ConAct)
-bool_transformer_expr expr = 
+bool_transformer_expr expr = mytrace False ("bool_transformer_expr: " ++ show expr) $ 
  case expr of
   Binary op lhs rhs -> apply_logic op lhs rhs
   Unary CNegOp rhs ->
@@ -78,5 +78,5 @@ apply_logic op lhs rhs = do
         CNeqOp -> neq_conval  lhs_vals rhs_vals 
         CLndOp -> land_conval lhs_vals rhs_vals 
         CLorOp -> lor_conval  lhs_vals rhs_vals 
-  return (res_val,res_acts)
+  mytrace False ("apply_logic: lhs = " ++ show lhs_vals ++ "\t rhs = " ++ show rhs_vals) $ return  (res_val,res_acts)
 

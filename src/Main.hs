@@ -6,15 +6,12 @@
 -------------------------------------------------------------------------------
 module Main where
 
---import Benchmark
 --import Exploration.UNF.Prime
---import Frontend.PetriNet
-import Model.GCS 
---import Model.Interpreter
---import Printer
 --import Test.Examples
 --import Test.Tests
 --import Unfolderful
+--import Util.Printer
+--import Test.HUnit (runTestTT)
 import Control.Monad.ST
 import Domain.Action
 import Domain.Class
@@ -23,21 +20,21 @@ import Domain.Interval
 import Exploration.UNF.Unfolder  
 import Language.SimpleC
 import Language.SimpleC.Util
-import qualified Language.SimpleC.Printer as P
+import Model.GCS
+import Model.Interpreter
 import System.Console.CmdArgs
 import System.FilePath.Posix
-import System.Random
 import System.Process
-import Test.HUnit (runTestTT)
 import Util.CmdOpts
 import Util.Generic
--- import Util.Printer
-import qualified Data.Map as M
-import qualified Data.Set as S 
+
+import qualified Data.Map                            as M
+import qualified Data.Set                            as S 
 import qualified Domain.Concrete.Transformers.System as CC
 import qualified Domain.Interval.Transformers.System as IC
-import qualified Exploration.UNF.API as US
-import qualified Exploration.UNF.State as US
+import qualified Language.SimpleC.Printer            as P
+import qualified Exploration.UNF.API                 as US
+import qualified Exploration.UNF.State               as US
 
 -- Newer version for STEROIDS
 -- import Analysis.Synchron
@@ -73,49 +70,47 @@ frontend f = do
   putStrLn "frontend end"
 
 interpret :: FilePath -> Analysis -> Int -> Int -> Bool -> Bool -> Int -> IO ()
-interpret = error "v2: working in progress"
-{-
-interpret f dom = do
-  prog <- extract f
-  let (prog', fflow, flow, thcount) = frontEnd prog
-      res = case dom of 
-        Concrete -> interpret $ CC.convert prog' fflow flow thcount
-        Interval -> interpret $ IC.convert prog' fflow flow thcount
-  print prog'
-  print res
--}
+interpret f dom mode seed stl cut wid = case dom of
+  -- Concrete Semantics
+  Concrete -> do
+    fe <- extract "" f
+    let syst = CC.convert fe 
+    interpreter syst (toIPMode mode dom seed) stl cut wid 
+  Interval -> do
+    fe <- extract "" f
+    let syst = IC.convert fe 
+    interpreter syst (toIPMode mode dom seed) stl cut wid
 
 explore :: FilePath -> Analysis -> Bool -> Bool -> Int -> IO ()
-explore f dom stl cut wid = do
-  case dom of
-    -- Concrete Semantics
-    Concrete -> do
-      fe <- extract "" f
-      let syst = CC.convert fe 
-      ust <- unfolder stl cut wid syst
-      let (cntr, stats) = (US.cntr ust, US.stats ust)
-      -- putStrLn $ show syst 
-      putStrLn $ "total number of events of the unfolding: " ++ show cntr 
-      putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
-      putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
-      putStrLn $ "average size of U at maximal configurations: " 
-      putStrLn "explore end"
-    -- Interval Semantics
-    Interval -> do 
-      fe <- extract "" f
-      let syst = IC.convert fe
-      ust <- unfolder stl cut wid syst
-      let (cntr, stats) = (US.cntr ust, US.stats ust)
-      -- putStrLn $ show syst 
-          outfile = replaceExtension f "log"
-      putStrLn $ "total number of events of the unfolding: " ++ show cntr 
-      putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
-      putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
-      putStrLn $ "average size of U at maximal configurations: " 
-       ++ show (div (US.sum_size_max_conf stats) (toInteger $ US.nr_max_conf stats))
-      let warns = US.nr_warns stats
-      putStrLn $ show (S.size warns) ++ " warnings: " ++ show (US.nr_warns stats)
-      putStrLn "explore end"
+explore f dom stl cut wid = case dom of
+  -- Concrete Semantics
+  Concrete -> do
+    fe <- extract "" f
+    let syst = CC.convert fe 
+    ust <- unfolder stl cut wid syst
+    let (cntr, stats) = (US.cntr ust, US.stats ust)
+    -- putStrLn $ show syst 
+    putStrLn $ "total number of events of the unfolding: " ++ show cntr 
+    putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
+    putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
+    putStrLn $ "average size of U at maximal configurations: " 
+    putStrLn "explore end"
+  -- Interval Semantics
+  Interval -> do 
+    fe <- extract "" f
+    let syst = IC.convert fe
+    ust <- unfolder stl cut wid syst
+    let (cntr, stats) = (US.cntr ust, US.stats ust)
+    -- putStrLn $ show syst 
+        outfile = replaceExtension f "log"
+    putStrLn $ "total number of events of the unfolding: " ++ show cntr 
+    putStrLn $ "total number of maximal configurations: " ++ show (US.nr_max_conf stats) 
+    putStrLn $ "total number of cutoffs: " ++ show (US.nr_cutoffs stats) 
+    putStrLn $ "average size of U at maximal configurations: " 
+     ++ show (div (US.sum_size_max_conf stats) (toInteger $ US.nr_max_conf stats))
+    let warns = US.nr_warns stats
+    putStrLn $ show (S.size warns) ++ " warnings: " ++ show (US.nr_warns stats)
+    putStrLn "explore end"
 
 -- | Gets statistics regarding the prime unfolding
 prime :: FilePath -> Analysis -> Bool -> Bool -> IO ()
@@ -151,7 +146,7 @@ stid f stl cut = do
 -}
     
 test :: IO ()
-test = error "v2: working in progress"
+test = error "v1: need to update regression tests"
 {-
 test =  do
   succCount <- runTestTT tests

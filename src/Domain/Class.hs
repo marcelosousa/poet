@@ -60,6 +60,7 @@ class (Show a, Show s, Projection s, Lattice s, Lattice a, Action a) => Domain s
    -- state            :: FixOp s a s
    -- Enabledness Transformers
    is_enabled       :: System s a -> s -> TId -> Bool
+   is_live          :: TId -> System s a -> EdgeId -> NodeId -> CGraph s a -> s -> Bool
    enabled          :: System s a -> s -> [TId]
    enabled syst st =
      let control = controlPart st
@@ -165,7 +166,7 @@ update_node_table node_table' = do
   return cfg
 
 -- | main fixpoint function
-fixpt :: (Show s, Show a, Action a, Domain s a) => Int -> System s a -> Bool -> TId -> CGraphs s a -> SymbolTable -> CGraph s a -> Pos -> s -> (Set Int, ResultList s a)
+fixpt :: (Show s, Show a, Domain s a) => Int -> System s a -> Bool -> TId -> CGraphs s a -> SymbolTable -> CGraph s a -> Pos -> s -> (Set Int, ResultList s a)
 fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
   mytrace False ("fixpt: tid = " ++ show tid ++ " \n" ++ show st) $ 
       -- reset the node table information with the information passed
@@ -179,9 +180,9 @@ fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
 
 -- standard worklist algorithm
 --  we have reached a fixpoint when the worklist is empty
-worklist :: (Show s, Action a, Lattice s, Lattice a, Domain s a, Show a) => System s a -> Worklist -> FixOp s a (Set Int, ResultList s a) 
+worklist :: (Show s, Show a, Domain s a) => System s a -> Worklist -> FixOp s a (Set Int, ResultList s a) 
 worklist syst []                        = fixpt_result
-worklist syst (it@(pre,eId,post):wlist) = do
+worklist syst (it@(pre,eId,post):wlist) = mytrace False ("worklist: " ++ show it) $ do
   fs@FixState{..} <- get
       -- get the current state in the pre
   let (node_st, pre_acts) = 
@@ -194,7 +195,8 @@ worklist syst (it@(pre,eId,post):wlist) = do
   (post_acts,ns,warns) <- code_transformer pre post e node_st
   -- add the warnings to the state
   add_warns warns
-  let rwlst = map (\(a,b) -> (post,a,b)) $ succs fs_cfg post
+  let succs' = filter (\(a,b) -> is_live fs_tid syst a b fs_cfg ns) $ succs fs_cfg post
+      rwlst = map (\(a,b) -> (post,a,b)) succs'
       -- join the previous actions with the actions of the current edge
       acts  = pre_acts `join` post_acts
   -- depending on whether the action is global or not;

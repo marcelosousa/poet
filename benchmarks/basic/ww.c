@@ -6,15 +6,15 @@ pthread_mutex_t l;
 void *p(){
     int y=0;
     pthread_mutex_lock(l);
-    y = x;
-    x = 1;
+    //y = x;
+    //x = 1;
     pthread_mutex_unlock(l);
     //return NULL;
 }
 
 void *q(){
     pthread_mutex_lock(l);
-    x = 2;
+    //x = 2;
     pthread_mutex_unlock(l);
     //return NULL;
 }
@@ -34,9 +34,8 @@ int main(){
     pthread_join(p_t, NULL);
     pthread_join(q_t, NULL);
 
-
+     
     /* show the results  */
     //printf("x: %d\n", x);
-
-    //return 0;
+    // return 0;
 }

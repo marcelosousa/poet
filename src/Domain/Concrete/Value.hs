@@ -99,7 +99,7 @@ gr_conval c1 c2 = case (c1,c2) of
   (ConVal v1,ConVal v2) -> ConVal $ gr_value v1 v2
   _ -> error "gr_conval: not conVal"
 leq_conval c1 c2 = case (c1,c2) of
-  (ConVal v1,ConVal v2) -> ConVal $ lor_value (gr_value v1 v2) (eq_value v1 v2) 
+  (ConVal v1,ConVal v2) -> ConVal $ lor_value (le_value v1 v2) (eq_value v1 v2) 
   _ -> error "leq_conval: not conVal"
 geq_conval c1 c2 = case (c1,c2) of
   (ConVal v1,ConVal v2) -> ConVal $ lor_value (gr_value v1 v2) (eq_value v1 v2) 
