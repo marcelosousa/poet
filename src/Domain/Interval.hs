@@ -77,6 +77,7 @@ is_live_int tid syst eId nId cfg st =
           in has_exited (cfgs syst) st tid' 
          -- assume the mutex is declared globally 
         "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
+        "pthread_mutex_unlock" -> True
         _ -> True 
       _ -> True
     _ -> True

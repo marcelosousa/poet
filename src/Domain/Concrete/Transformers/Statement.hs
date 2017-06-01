@@ -23,6 +23,7 @@ import Domain.Util
 import Language.C.Syntax.Ops 
 import Language.SimpleC.AST hiding (Value)
 import Language.SimpleC.Converter hiding (Scope(..))
+import Language.SimpleC.Flow
 import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
@@ -167,16 +168,18 @@ has_exited _cfgs st tid =
            _ -> False 
 
 is_locked :: ConState -> Scope -> SExpression -> Bool
-is_locked st scope expr = mytrace False ("is_locked: scope = " ++ show scope ++ ", expr = " ++ show expr) $ 
+is_locked st scope expr =  
   let lk_addrs = get_addrs_expr st scope expr 
   in case read_memory st lk_addrs of
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
-    [val] -> val == one 
+    [val] -> let res = val == one 
+             in mytrace False ("is_locked: scope = " ++ show scope ++ ", expr = " ++ show expr ++ ", res = " ++ show res) $ res
     l -> error $ "is_locked fatal: lock has unsupported values " ++ show l 
 
 call_transformer_name :: String -> [SExpression] -> ConTOp (ConValue,ConAct)
 call_transformer_name name args = case name of
   "pthread_create" -> mytrace False ("call_transformer: pthread_create" ++ show args) $ do
+    (arg_val,arg_acts) <- transformer $ args !! 3
     s@ConTState{..} <- get
         -- write in the address of (args !! 0) of type
         -- pthread_t, the pid of the new thread
@@ -186,12 +189,20 @@ call_transformer_name name args = case name of
         -- retrieve the entry point of the thread code 
         th_sym     = get_expr_id $ args !! 2
         th_name    = get_symbol_name th_sym sym
-        (th_pos,_) = get_entry th_name cfgst sym
+        (th_pos,cfg_sym) = get_entry th_name cfgst sym
+        param      = 
+          case M.lookup cfg_sym cfgst of
+            Nothing  -> error "call_transformer_name: cant find cfg"
+            Just cfg -> let p = parameters cfg 
+                        in if length p == 1 
+                           then head p 
+                           else error $ "call_transformer_name: wrong parameter size " ++ show (length p) ++ " " ++ show th_name 
         --
-        i_th_st    = empty_th_state th_pos th_sym
+        i_th_st    = empty_th_state tid th_pos th_sym (param,arg_val)
         res_st     = insert_thread s'' tid i_th_st 
+        acts       = arg_acts `join` (create_thread_act (SymId tid) zero)
     set_state res_st
-    mytrace False ("STATE AFTER PTHREAD_CREATE\n" ++ show res_st) $  return (zero, create_thread_act (SymId tid) zero) 
+    mytrace False ("STATE AFTER PTHREAD_CREATE\n" ++ pp sym res_st) $  return (zero,acts) 
   "pthread_join" -> do
     -- if the transformer is not enabled it returns the bottom state
     s@ConTState{..} <- get
@@ -236,7 +247,7 @@ call_transformer_name name args = case name of
   "__VERIFIER_error" -> do
     s@ConTState{..} <- get
     add_warn node_id
-    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot)
+    mytrace True ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot)
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot) 
 

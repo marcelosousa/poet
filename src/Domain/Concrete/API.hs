@@ -6,7 +6,7 @@
 -- This module defines the API functions
 -- to manipulate concrete values and states 
 -------------------------------------------------------------------------------
-module Domain.Concrete.API (inc_num_th, insert_thread, get_addrs, read_memory, write_memory, write_memory_addr, set_pos, update_pc) where
+module Domain.Concrete.API (inc_num_th, insert_thread, empty_th_state, get_addrs, read_memory, write_memory, write_memory_addr, set_pos, update_pc) where
 
 import Control.Monad.State.Lazy
 import Data.IntMap (IntMap)
@@ -16,7 +16,7 @@ import Domain.Concrete.State
 import Domain.Concrete.Value
 import Domain.MemAddr
 import Domain.Util
-import Language.SimpleC.AST (SymId)
+import Language.SimpleC.AST 
 import Model.GCS
 import Util.Generic hiding (safeLookup)
 import qualified Data.Map as M
@@ -33,6 +33,22 @@ insert_thread :: ConState -> TId -> ThState -> ConState
 insert_thread s@ConState{..} tid th =
   let th_states = M.insert tid th cs_tstates
   in s { cs_tstates = th_states }
+
+-- | Initial state of a thread 
+empty_th_state :: TId -> Pos -> SymId -> (SDeclaration,ConValue) -> ThState
+empty_th_state tid pos id (decl,val) =
+  let locals = case decl of
+        TypeDecl ty -> error "empty_th_state: TypeDecl"
+        Decl ty el@DeclElem{..} ->
+          case declarator of
+            Nothing -> error "empty_th_state: Nothing Declaration" 
+            Just d@Declr{..} ->
+              case declr_ident of
+                Nothing -> error "empty_ty_state: no identifier" 
+                Just param_id -> 
+                  let param_addr = MemAddrBase param_id (Local tid)
+                  in write_region_addr M.empty param_addr (kVal 0) val  
+  in ThState pos id locals 
 
 -- | API TO GET FULL ADDRESSES FROM BASE ADDRESSES
 -- | Converts a map of sequences and a base address into the full set of addresses

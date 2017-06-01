@@ -5,10 +5,14 @@ pthread_mutex_t l;
 
 void *p(){
     int y=0;
-    pthread_mutex_lock(l);
+    for (int i = 0; i < 50; i++)
+    {
+      y++;
+    }
+   // pthread_mutex_lock(l);
     //y = x;
     //x = 1;
-    pthread_mutex_unlock(l);
+   // pthread_mutex_unlock(l);
     //return NULL;
 }
 

@@ -81,7 +81,7 @@ ite :: Eq a => String -> a -> a -> a
 ite e_str a b
   | a == b = a
   | otherwise = error e_str
-  
+
 instance Lattice ThState where
    bot   = error "bot for ThState"
    top   = error "top for ThState"
@@ -116,6 +116,10 @@ data IntState =
   , is_bot    :: Bool 
   }
   deriving Eq
+
+instance PP IntState where
+  pp symt (IntState heap ts _ _) = "@TODO: pp IntState"
+    
 
 -- | Domain operations
 -- | Initial state which is not bottom

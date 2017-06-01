@@ -31,6 +31,10 @@ import qualified Data.Map as M
 data Scope = Global | Local TId
   deriving (Show,Eq,Ord)
 
+ppScope :: Scope -> String
+ppScope Global = "@"
+ppScope (Local tid) = "$"++show tid
+
 -- | retrieves the entry node of the cfg of a function
 get_entry :: String -> Graphs SymId () a -> Map SymId Symbol -> (Pos, SymId)
 get_entry fnname graphs symt = 

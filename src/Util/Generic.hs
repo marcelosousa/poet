@@ -10,7 +10,7 @@ import qualified Data.HashTable.Class as H
 import Data.List
 import qualified Data.Maybe as M
 import qualified Data.HashTable.ST.Cuckoo as C
-import Language.SimpleC.AST (SymId)
+import Language.SimpleC.AST (SymId, Expression)
 import System.Console.CmdArgs
 import qualified Debug.Trace as T
 
@@ -21,6 +21,7 @@ data Analysis = Concrete | Interval
   deriving (Show, Data, Typeable, Eq, Enum)
   
 type Var = SymId -- BS.ByteString
+type Expr = Expression SymId ()
 type HashTable s k v = C.HashTable s k v
 
 allM :: Monad m => (a -> m Bool) -> [a] -> m Bool

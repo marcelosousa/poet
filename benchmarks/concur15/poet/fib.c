@@ -5,32 +5,26 @@
 int i=1; 
 int j=1;
 
-#define NUM 5
+// #define NUM 11
+#define NUM 9
+
+pthread_mutex_t l;
 
 void *t1()
 {
-  int k; 
-  k = 0;
-  int t;
-  int s;
-
-  for (k = 0; k < NUM; k=k+1){
-    t = j;
-    s = i + t; 
-    i= s;
+  for (int k = 0; k < NUM; k++){
+    // pthread_mutex_lock(l);
+    i += j;
+    // pthread_mutex_unlock(l);
   }
 }
 
 void *t2()
 {
-  int k;
-  k = 0;
-  int t;
-  int s;
-  for (k = 0; k < NUM; k=k+1){
-    t = j;
-    s = t + i;
-    j = s;
+  for (int k = 0; k < NUM; k++){
+    // pthread_mutex_lock(l);
+    j += i;
+    // pthread_mutex_unlock(l);
   }
 }
 
@@ -40,6 +34,8 @@ main()
   pthread_t id1;
   pthread_t id2;
 
+  // pthread_mutex_init(l, NULL);
+
   pthread_create(id1, NULL, t1, NULL);
   pthread_create(id2, NULL, t2, NULL);
 
@@ -47,7 +43,8 @@ main()
   pthread_join(id2,NULL);
 
   int l=i;
-  if (l > 144 || j > 144) { 
-      __poet_fail();
+  if (i > 46368 || j > 46368) {
+  // if (i >= 377 || j >= 377) {
+      __VERIFIER_error();
   } 
 }

@@ -6,8 +6,9 @@
 -- We usually use bottom-bounded lattices.
 -------------------------------------------------------------------------------
 module Domain.Lattice where
-   
+
 import Data.List
+import Language.SimpleC.Util hiding (cfgs,symt)
 
 -- Lattice 
 class (Eq a, Ord a) => Lattice a where
@@ -28,6 +29,9 @@ class (Eq a, Ord a) => Lattice a where
    -- Widening
    widen :: a -> a -> a
    widen = error "widening for this domain not implemented"
+
+class PP a where
+  pp :: SymbolTable -> a -> String
 
 {-
 instance Ord a => Lattice [a] where

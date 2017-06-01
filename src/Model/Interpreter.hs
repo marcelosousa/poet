@@ -9,14 +9,19 @@
 -------------------------------------------------------------------------------
 module Model.Interpreter (interpreter, toIPMode) where
 
+import Data.Hashable
+import Data.HashTable.IO hiding (mapM_)
+import Data.Map (Map)
 import Domain.Action
 import Domain.Class
 import Domain.Concrete
 import Domain.Interval
+import Domain.Lattice
 import Model.GCS
 import System.IO.Unsafe
 import System.Random
 import Util.Generic
+import qualified Data.HashTable.IO as H hiding (mapM_)
 import qualified Data.Map as M
 
 -- @TODO: Need to define STATE OF THE INTERPRETER
@@ -25,22 +30,29 @@ toIPMode :: Int -> Analysis -> Int -> IPMode
 toIPMode 0 a _ = IPSingle     a
 toIPMode 1 a n = IPSingleRand a n
 toIPMode 2 a _ = IPDFS        a
-toIPMode 3 a _ = IPBFS        a
+toIPMode 3 a _ = IPDFST       a
+toIPMode 4 a _ = IPBFS        a
 
 data IPMode = IPSingle     Analysis 
             | IPSingleRand Analysis Int 
             | IPDFS        Analysis
+            | IPDFST       Analysis
             | IPBFS        Analysis
+
   deriving (Eq,Show)
 
 -- | Main interpreter function:
 --    Depending on the mode, select various back-ends
-interpreter :: Domain s a => System s a -> IPMode -> Bool -> Bool -> Int -> IO ()
+interpreter :: (Hashable s, Domain s a) => System s a -> IPMode -> Bool -> Bool -> Int -> IO ()
 interpreter syst mode stl cut wid = 
   case mode of 
     IPSingle _ -> execute  mode syst (gbst syst)
     IPBFS    _ -> bfs      mode syst (gbst syst)
-    IPDFS    _ -> dfs 1 [] mode syst [(0, gbst syst)]
+    IPDFS    _ -> do 
+      stats <- H.new
+      dfs 0 1 1 [] stats syst [(0,gbst syst)]
+--      dfs 1 1 [] M.empty syst [(0, gbst syst)]
+    IPDFST   _ -> dfs_tree 1 [] mode syst [(0, gbst syst)]
 
 execute :: Domain s a => IPMode -> System s a -> s -> IO ()
 execute mode syst st = do
@@ -49,16 +61,24 @@ execute mode syst st = do
     []    -> do 
       putStrLn "executor: end of trace"
       putStrLn $ "executor: " ++ foldr (\(tid,pos) r -> " \ttid = " ++ show tid ++ " \tpos = " ++ show pos ++ " \t " ++ r) "" (M.toList $ controlPart st)
-    (t:_) ->
-      let p = get_pre st t
-      in case run False 10000 syst st t of
-        (warns,[(s,pos,a)]) -> do
-          putStrLn $ "executor: tid = " ++ show t ++ " \tpre = " 
-                  ++ show p ++ " \tpos = " ++ show pos ++ " \t" ++ show a
-          execute mode syst s
-        (warns,r) -> error $ "executor: FATAL! tid = " ++ show t ++ " \tpre = " 
-                  ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)
-
+    ts -> do
+      putStrLn $ pp (symt syst) st
+      putStrLn $ "Enabled threads: " ++ show ts
+      putStrLn $ "Pick a thread: "
+      num <- getLine 
+      let t = read num :: Int
+      if t `elem` ts
+      then do
+        let p = get_pre st t
+        case run False 10000 syst st t of
+          (warns,[(s,pos,a)]) -> do
+            putStrLn $ "executor: tid = " ++ show t ++ " \tpre = " 
+                    ++ show p ++ " \tpos = " ++ show pos ++ " \t" ++ show a
+            execute mode syst s
+          (warns,r) -> error $ "executor: FATAL! tid = " ++ show t ++ " \tpre = " 
+                    ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)
+      else putStrLn $ "executor: invalid tid, aborting!"
+        
 get_pre :: Projection s => s -> Int -> Int
 get_pre s pid = 
   case M.lookup pid (controlPart s) of
@@ -82,27 +102,76 @@ bfs mode syst st = do
           (warns,r) -> error $ "bfs: FATAL! tid = " ++ show t ++ " \tpre = " 
                     ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)) ts
 
-dfs :: Domain s a => Int -> [Int] -> IPMode -> System s a -> [(Int,s)] -> IO ()
-dfs n stack mode syst [] = return ()
-dfs n stack mode syst ((i,s):ss) = do
-  putStrLn $ "dfs: tid = " ++ show i ++ " "
-             ++ foldr (\(tid,pos) r -> " \t tid = " ++ show tid 
-                 ++ " \t pos = " ++ show pos ++ " \t " ++ r) "" (M.toList $ controlPart s)
+-- | Depth First Search over the computation tree;
+dfs_tree :: Domain s a => Int -> [Int] -> IPMode -> System s a -> [(Int,s)] -> IO ()
+dfs_tree n stack mode syst [] = do
+  putStrLn $ "dfs_tree: end of exploration"
+  putStrLn $ "dfs_tree: #traces  = " ++ show (n-1)
+dfs_tree n stack mode syst ((i,s):ss) = do
+  --putStrLn $ "dfs: tid = " ++ show i ++ " "
+  --           ++ foldr (\(tid,pos) r -> " \t tid = " ++ show tid 
+  --               ++ " \t pos = " ++ show pos ++ " \t " ++ r) "" (M.toList $ controlPart s)
   let ths = enabled syst s
   case enabled syst s of
-    []    -> do       
-      putStrLn $ "dfs: end of trace " ++ show n
-      dfs (n+1) stack mode syst ss
+    [] -> do       
+      -- putStrLn $ "dfs: end of trace " ++ show n
+      dfs_tree (n+1) stack mode syst ss
     ts -> do
       -- if length ts > 1 then putStrLn $ "dfs: branching " ++ show ts else return ()
       ns <- mapM (\t -> do
         let p = get_pre s t
         case run False 10000 syst s t of
           (warns,[(s',pos,a)]) -> return (t,s')
-          (warns,r) -> error $ "bfs: FATAL! stack = " ++ show (reverse stack) ++ "\t tid = " ++ show t ++ " \tpre = " 
+          (warns,r) -> error $ "dfs_tree: FATAL! stack = " ++ show (reverse stack) ++ "\t tid = " ++ show t ++ " \tpre = " 
                     ++ show p ++ " \t" ++ show (map (\(a,b,c) -> (b,c)) r)) ts
-      dfs n (i:stack) mode syst (ns++ss)
+      dfs_tree n (i:stack) mode syst (ns++ss)
 
+--type States s   = Map s ()
+type States s = CuckooHashTable Int s
+
+-- | Standard Depth First Search
+dfs :: (Hashable s, Domain s a) => Int -> Int -> Int -> [Int] -> States s -> System s a -> [(Int,s)] -> IO ()
+dfs tid n m stack visited syst []         = do 
+  putStrLn $ "dfs: end of exploration"
+  putStrLn $ "dfs: #traces  = " ++ show (n-1)
+  putStrLn $ "dfs: #cutoffs = " ++ show (m-1)
+dfs tid n m stack visited syst ((i,s):ss) = do
+  --putStrLn $ "dfs: tid = " ++ show i ++ " "
+  --           ++ foldr (\(tid,pos) r -> " \t tid = " ++ show tid 
+  --               ++ " \t pos = " ++ show pos ++ " \t " ++ r) "" (M.toList $ controlPart s)
+  -- check <- if tid == i then return False else s `isCutoff` visited
+  check <- s `isCutoff` visited
+  if check
+  then do
+   -- putStrLn $ "dfs: cutoff " ++ show m
+   -- putStrLn $ pp (symt syst) s
+    dfs i n (m+1) stack visited syst ss
+  else do
+    let ths = enabled syst s
+    case enabled syst s of
+      [] -> do       
+        -- putStrLn $ "dfs: end of trace " ++ show n
+        dfs i (n+1) m stack visited syst ss
+      ts -> do
+        ns <- mapM (\t -> do
+          let p = get_pre s t
+          case run False 10000 syst s t of
+            (warns,[(s',pos,a)]) -> return (t,s')
+            (warns,r) -> error $ "dfs: FATAL! stack = " ++ show (reverse stack) ++ ", tid = " 
+                         ++ show t ++ ", r = " ++ show r ++ ", ts = " ++ show ts++ "\n" ++ pp (symt syst) s) ts
+        -- Version with Map
+        -- dfs n m (i:stack) (M.insert s () visited) syst (ns++ss)                 
+        -- if tid == i then return () else H.insert visited (hash s) s
+        H.insert visited (hash s) s
+        dfs i n m (i:stack) visited syst (ns++ss)
+
+isCutoff :: (Hashable s, Ord s) => s -> States s -> IO Bool
+isCutoff s states = do
+  res <- H.lookup states (hash s)
+  case res of
+    Just s' -> return (s == s')
+    Nothing -> return False
+      
 replay :: Domain s a => [Int] -> IPMode -> System s a -> s -> IO ()
 replay []     mode syst st = execute mode syst st
 replay (t:ts) mode syst st = do

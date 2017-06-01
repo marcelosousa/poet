@@ -5,30 +5,25 @@ pthread_mutex_t  ma, mb;
 int data1, data2;
 
 void * thread1(void * arg)
-{ int aux=0;
+{ 
   pthread_mutex_lock(ma);
-  aux=data1;
-  data1=aux+1;
+  data1++;
   pthread_mutex_unlock(ma);
 
   pthread_mutex_lock(ma);
-  aux=data2;
-  data2=aux+1;
+  data2++;
   pthread_mutex_unlock(ma);
 }
 
 
 void * thread2(void * arg)
 { 
-  int aux=0;
   pthread_mutex_lock(ma);
-  aux=data1;
-  data1=aux+5;
+  data1+=5;
   pthread_mutex_unlock(ma);
 
   pthread_mutex_lock(ma);
-  aux=data2;
-  data2=aux-6;
+  data2-=6;
   pthread_mutex_unlock(ma);
 }
 
@@ -51,7 +46,7 @@ int main()
   int aux=data1;
   if (aux!=16 && data2!=5)
   {
-    __poet_fail();
+    __VERIFIER_error();
   }
 }
 

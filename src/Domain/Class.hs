@@ -53,9 +53,9 @@ data FixState s a =
   }
 
 type FixOp s a val = State (FixState s a) val
-
+  
 -- A domain is a lattice with transformers
-class (Show a, Show s, Projection s, Lattice s, Lattice a, Action a) => Domain s a where
+class (PP s, Show a, Show s, Projection s, Lattice s, Lattice a, Action a) => Domain s a where
    -- State Getter
    -- state            :: FixOp s a s
    -- Enabledness Transformers

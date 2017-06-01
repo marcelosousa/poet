@@ -73,20 +73,28 @@ is_live_con tid syst eId nId cfg st =
   in case code of
     E (Call fname args _) -> case fname of
       Var ident -> case get_symbol_name ident (symt syst) of
-        "pthread_join" ->
+        "pthread_create" -> True
+        "pthread_join"   ->
           let tid' = get_tid_expr (Local tid) st (args!!0) 
            -- not exited
           -- in not $ is_enabled syst st tid' 
           in has_exited (cfgs syst) st tid' 
          -- assume the mutex is declared globally 
-        "pthread_mutex_lock" -> not $ is_locked st (Local tid) (args!!0)
-        _ -> True 
-      _ -> True
-    _ -> True
+        "pthread_mutex_lock"   -> not $ is_locked st (Local tid) (args!!0)
+        "pthread_mutex_unlock" -> True
+        _ -> is_live_con_aux 
+      _ -> is_live_con_aux
+    _ -> is_live_con_aux
+  where 
+    is_live_con_aux =
+      case succs cfg nId of
+        [] -> True
+        s  -> any (\(eId,nId) -> is_live_con tid syst eId nId cfg st) s
+      
 
 -- | Calls the appropriated transformer depending on the type of edge
 code_transformer_con :: NodeId -> NodeId -> EdgeInfo SymId () -> ConState -> ConFixOp (ConAct, ConState, Set Int)
-code_transformer_con pre post e@EdgeInfo{..} node_st = do
+code_transformer_con pre post e@EdgeInfo{..} node_st = mytrace True ("transformer: " ++ show edge_code) $ do
   fs@FixState{..} <- get      
   let is_c = is_cond edge_tags
       -- construct the transformer state

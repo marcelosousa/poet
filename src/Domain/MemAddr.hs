@@ -17,6 +17,7 @@ import Domain.Lattice
 import Domain.Util
 import Language.SimpleC.AST
 import Language.SimpleC.Util
+import Language.SimpleC.Converter hiding (Scope(..))
 
 -- | Memory Address
 data MemAddr d
@@ -27,6 +28,10 @@ data MemAddr d
   }
   deriving (Eq,Ord)
 
+ppMemAddr :: Show d => SymbolTable -> MemAddr d -> String
+ppMemAddr symt (MemAddr base offset level) = 
+  ppScope level ++ "("++ get_symbol_name base symt ++ ")"
+  
 instance Show d => Show (MemAddr d) where
   show (MemAddr base offset level) = show base
   
@@ -37,6 +42,10 @@ data MemAddrBase
   }
   deriving (Show,Eq,Ord)
 
+ppMemAddrBase :: SymbolTable -> MemAddrBase -> String
+ppMemAddrBase symt (MemAddrBase base level) = 
+  ppScope level ++ "("++ get_symbol_name base symt ++ ")"
+  
 from_addr :: MemAddr v -> (MemAddrBase, v)
 from_addr a@MemAddr{..} = (MemAddrBase base level, offset)
 

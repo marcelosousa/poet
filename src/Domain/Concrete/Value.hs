@@ -59,6 +59,11 @@ isFalse val = case val of
     _ -> False 
   _ -> False 
 
+conValueToExpr :: ConValue -> Expr
+conValueToExpr c = case c of
+  ConVal v -> valueToExpr v
+  _        -> error $ "conValueToExpr: missing conversion for " ++ show c 
+
 instance ToValue ConValue where
    kVal = ConVal . VInt
 

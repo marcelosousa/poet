@@ -20,6 +20,7 @@ import Domain.Lattice
 import Domain.MemAddr
 import Domain.Util
 import Language.SimpleC.AST
+import Language.SimpleC.Converter hiding (Scope(..))
 import Language.SimpleC.Util
 import Model.GCS
 import Util.Generic hiding (safeLookup)
@@ -44,6 +45,31 @@ type ConOffs = Map ConValue ConValue
 -- | Concrete Heap
 type ConHeap = Map MemAddrBase ConOffs 
 
+ppConHeap :: SymbolTable -> ConHeap -> String
+ppConHeap symt m = ppConHeap' symt $ M.toList m
+
+ppConHeap' :: SymbolTable -> [(MemAddrBase,ConOffs)] -> String
+ppConHeap' symt [] = ""
+ppConHeap' symt ((addr,offs):rest) = 
+  let header = ppConOffs (ppMemAddrBase symt addr) offs
+      body   = ppConHeap' symt rest
+  in header ++ body
+
+ppConOffs :: String -> ConOffs -> String
+ppConOffs addr m = 
+  if (take 9 addr == "@(pthread" || addr == "@(printf)")
+  then ""
+  else case M.toList m of
+    [(ConVal (VInt 0),val)] -> addr ++ " = " ++ show val ++ "\n"
+    _ ->  ppConOffs' addr $ M.toList m
+
+ppConOffs' :: String -> [(ConValue,ConValue)] -> String
+ppConOffs' addr [] = ""
+ppConOffs' addr ((o,v):rest) = 
+  let header = addr ++ "[" ++ show o ++ "] = " ++ show v ++ "\n"
+      body   = ppConOffs' addr rest
+  in header ++ body
+    
 -- | Concrete state
 data ConState = 
   ConState 
@@ -55,6 +81,12 @@ data ConState =
   }
   deriving (Show,Eq,Ord)
 
+instance PP ConState where
+  pp symt (ConState heap ts _ _) = 
+    let tstr = M.foldWithKey (\tid th rest -> ppThState symt tid th ++ rest) "" ts 
+        hstr = "----------------HEAP----------------\n" ++ ppConHeap symt heap
+    in tstr ++ hstr
+    
 -- | A thread state is a control and local data
 type ThStates = Map TId ThState
 
@@ -68,10 +100,13 @@ data ThState =
   } 
   deriving (Show,Eq,Ord)
 
--- | Initial value
-empty_th_state :: Pos -> SymId -> ThState
-empty_th_state pos id = ThState pos id M.empty
-
+ppThState :: SymbolTable -> TId -> ThState -> String
+ppThState symt tid (ThState pos _ locals) = 
+  let h = "----------------THREAD " ++ show tid++ "----------------\n"
+      b = "Control Location: " ++ show pos ++ "\n"
+      r = ppConHeap symt locals
+  in h ++ b ++ r
+ 
 -- | Initial state 
 empty_cstate :: ConState
 empty_cstate = ConState M.empty M.empty 1 False
