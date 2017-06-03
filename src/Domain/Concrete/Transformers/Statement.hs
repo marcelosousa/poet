@@ -168,7 +168,7 @@ has_exited _cfgs st tid =
            _ -> False 
 
 is_locked :: ConState -> Scope -> SExpression -> Bool
-is_locked st scope expr =  
+is_locked st scope expr = mytrace False "is_locked" $  
   let lk_addrs = get_addrs_expr st scope expr 
   in case read_memory st lk_addrs of
     []    -> error $ "is_locked fatal: cant find info for lock " ++ show expr
@@ -247,7 +247,7 @@ call_transformer_name name args = case name of
   "__VERIFIER_error" -> do
     s@ConTState{..} <- get
     add_warn node_id
-    mytrace True ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot)
+    mytrace False ("__VERIFIER_error: position = " ++ show node_id) $ return (zero, bot)
   _ -> mytrace False ("call_transformer_name: calls to " ++ name ++ " being ignored") $
      return (zero, bot) 
 
@@ -259,7 +259,7 @@ const_transformer k = return (ConVal (toValue k), bot)
 unop_transformer :: UnaryOp -> SExpression -> ConTOp (ConValue,ConAct)
 unop_transformer unOp expr = do 
   case unOp of
-    CPreIncOp  -> error "unop_transformer: CPreIncOp  not supported"     
+    CPreIncOp  -> transformer $ Assign CAddAssOp expr (Const const_one) 
     CPreDecOp  -> error "unop_transformer: CPreDecOp  not supported"  
     CPostIncOp -> transformer $ Assign CAddAssOp expr (Const const_one)  
     CPostDecOp -> transformer $ Assign CSubAssOp expr (Const const_one)

@@ -59,13 +59,16 @@ class (PP s, Show a, Show s, Projection s, Lattice s, Lattice a, Action a) => Do
    -- State Getter
    -- state            :: FixOp s a s
    -- Enabledness Transformers
-   is_enabled       :: System s a -> s -> TId -> Bool
+   is_enabled       :: System s a -> s -> TId -> Maybe s 
    is_live          :: TId -> System s a -> EdgeId -> NodeId -> CGraph s a -> s -> Bool
-   enabled          :: System s a -> s -> [TId]
+   enabled          :: System s a -> s -> [(TId,s)]
    enabled syst st =
      let control = controlPart st
-         en = M.filterWithKey (\tid pos -> is_enabled syst st tid) control
-     in M.keys en
+         en = M.foldWithKey (\tid pos r -> 
+               case is_enabled syst st tid of
+                 Nothing -> r
+                 Just s  -> M.insert tid s r) M.empty control
+     in M.toList en
    -- Transformers for code
    code_transformer :: NodeId -> NodeId -> EdgeInfo SymId () -> s -> FixOp s a (a, s, Set Int)
    weak_update      :: NodeTable s a -> NodeId -> (s,a) -> FixOp s a (Bool, NodeTable s a)
@@ -182,7 +185,7 @@ fixpt wid syst b tid cfgs symt cfg@Graph{..} pos st =
 --  we have reached a fixpoint when the worklist is empty
 worklist :: (Show s, Show a, Domain s a) => System s a -> Worklist -> FixOp s a (Set Int, ResultList s a) 
 worklist syst []                        = fixpt_result
-worklist syst (it@(pre,eId,post):wlist) = mytrace False ("worklist: " ++ show it) $ do
+worklist syst (it@(pre,eId,post):wlist) = mytrace True ("worklist: " ++ show it) $ do
   fs@FixState{..} <- get
       -- get the current state in the pre
   let (node_st, pre_acts) = 
@@ -195,7 +198,7 @@ worklist syst (it@(pre,eId,post):wlist) = mytrace False ("worklist: " ++ show it
   (post_acts,ns,warns) <- code_transformer pre post e node_st
   -- add the warnings to the state
   add_warns warns
-  let succs' = filter (\(a,b) -> is_live fs_tid syst a b fs_cfg ns) $ succs fs_cfg post
+  let succs' = succs fs_cfg post -- filter (\(a,b) -> is_live fs_tid syst a b fs_cfg ns) $ succs fs_cfg post
       rwlst = map (\(a,b) -> (post,a,b)) succs'
       -- join the previous actions with the actions of the current edge
       acts  = pre_acts `join` post_acts
@@ -203,27 +206,27 @@ worklist syst (it@(pre,eId,post):wlist) = mytrace False ("worklist: " ++ show it
   -- either add the results to the result list or update
   -- the cfg with them 
   if (?.) ns
-  then worklist syst wlist
-  else if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
-       then do
+  then mytrace True ("worklist: " ++ show it ++ " not enabled") $ worklist syst wlist
+  else mytrace True ("worklist: " ++ show it ++ " enabled" ) $ if isGlobal acts || (Exit `elem` edge_tags) || null rwlst 
+       then mytrace False ("worklist: " ++ show it ++ " global") $ do
          add_mark it
          worklist syst wlist
-       else do
+       else mytrace False ("worklist: " ++ show it ++ " local") $ do
          -- get the node table
          let ntable = node_table fs_cfg
          -- update the node table according to the edge tags
          (is_fix,node_table') <-
            case edge_tags of
              -- loop head point 
-             [LoopHead] -> loop_head_update ntable post (ns,acts)
+             [LoopHead] -> mytrace False ("worklist: look head") $ loop_head_update ntable post (ns,acts)
              -- join point: join the info in the cfg 
-             [IfJoin]   -> weak_update      ntable post (ns,acts) 
+             [IfJoin]   -> mytrace False ("worklist: weak_update") $ weak_update      ntable post (ns,acts) 
              -- considering everything else the standard one: just replace 
              -- the information in the cfg and add the succs of post to the worklist
-             _          -> strong_update    ntable post (ns,acts) 
+             _          -> mytrace False ("worklist: strong update") $ strong_update    ntable post (ns,acts) 
          cfg' <- update_node_table node_table'
-         let nwlist = if is_fix then wlist else (wlist ++ rwlst)
-         worklist syst nwlist
+         let nwlist = if is_fix then wlist else (nub $ wlist ++ rwlst)
+         mytrace False ("worklist: call") $ worklist syst nwlist
   
 fixpt_result :: (Show a, Show s, Domain s a) => FixOp s a (Set Int, ResultList s a)
 fixpt_result = do

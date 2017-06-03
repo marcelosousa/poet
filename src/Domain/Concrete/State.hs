@@ -85,7 +85,8 @@ instance PP ConState where
   pp symt (ConState heap ts _ _) = 
     let tstr = M.foldWithKey (\tid th rest -> ppThState symt tid th ++ rest) "" ts 
         hstr = "----------------HEAP----------------\n" ++ ppConHeap symt heap
-    in tstr ++ hstr
+    -- in tstr ++ hstr
+    in hstr ++ tstr
     
 -- | A thread state is a control and local data
 type ThStates = Map TId ThState

@@ -57,9 +57,10 @@ bool_transformer_expr :: SExpression -> ConTOp (ConValue, ConAct)
 bool_transformer_expr expr = mytrace False ("bool_transformer_expr: " ++ show expr) $ 
  case expr of
   Binary op lhs rhs -> apply_logic op lhs rhs
-  Unary CNegOp rhs ->
-    let rhs' = negExp rhs
-    in bool_transformer_expr rhs' 
+  Unary CNegOp rhs  -> do
+    (conValue, acts) <- bool_transformer_expr rhs
+    return (negate conValue, acts)
+  Const k -> return (ConVal $ toBoolVal $ toValue k, bot)
   _ -> error $ "bool_transformer_expr: not supported " ++ show expr
 
 apply_logic :: BinaryOp -> SExpression -> SExpression -> ConTOp (ConValue,ConAct)

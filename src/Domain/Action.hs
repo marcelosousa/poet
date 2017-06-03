@@ -114,8 +114,8 @@ instance ToValue v => Action (Act v) where
   isGlobal act@Act{..} =
     let acts = act_addrs act
     -- version where any access to the heap is considered a global action
-    in is_global acts || not (all (?.) [locks,unlocks,tcreate,tjoin])
-    -- in not (all (?.) [locks,unlocks,tcreate,tjoin])
+    -- in is_global acts || not (all (?.) [locks,unlocks,tcreate,tjoin])
+    in not (all (?.) [locks,unlocks,tcreate,tjoin])
   isCreateOf tid_sym a1@Act{..} =
     case tcreate of
       MemAddrTop -> True

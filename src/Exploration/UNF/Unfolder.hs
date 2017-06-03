@@ -52,7 +52,7 @@ initial_ext = do
   let e    = botEID
       cevs = [e]
       st   = GCS.gbst syst
-      trs  = enabled syst st
+      trs  = fst $ unzip $ enabled syst st
   lift $ showMStr ("initial_ext: enabled threads " ++ show trs)
   enevs <- foldM (\en tr -> extend e cevs st tr >>= \es -> return $! (es++en)) [] trs
   s@UnfolderState{..} <- get 
@@ -152,7 +152,7 @@ unfold conf@Conf{..} e = do
   itrs   <- lift $ mapM (\e -> get_tid e evts) senevs 
   -- - compute the set of enabled threads at the new state
   lift $ showMStr ("unfold: computing enabled threads at state\n" ++ show nstc)
-  let entrs = enabled syst nstc 
+  let entrs = fst $ unzip $ enabled syst nstc 
   -- - filter the enabled threads that are dependent with h(e); 
       netrs = entrs \\ itrs 
   lift $ showMStr $ "unfold: enabled threads = " ++ show entrs

@@ -45,6 +45,7 @@ data MemAddrBase
 ppMemAddrBase :: SymbolTable -> MemAddrBase -> String
 ppMemAddrBase symt (MemAddrBase base level) = 
   ppScope level ++ "("++ get_symbol_name base symt ++ ")"
+--ppScope level ++ "("++ show base ++ ")"
   
 from_addr :: MemAddr v -> (MemAddrBase, v)
 from_addr a@MemAddr{..} = (MemAddrBase base level, offset)

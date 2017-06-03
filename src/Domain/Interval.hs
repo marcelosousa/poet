@@ -47,8 +47,14 @@ instance Domain IntState IntAct where
   run              = run_int
 
 -- Enabledness transformer for Interval State
-is_enabled_int :: System IntState IntAct -> IntState -> TId -> Bool
+is_enabled_int :: System IntState IntAct -> IntState -> TId -> Maybe IntState 
 is_enabled_int syst st tid =
+  let (warns,res) = run False 10000 syst st tid
+  in case res of
+       []  -> Nothing
+       [(s,_,_)] -> Just s
+       _   -> error "is_enabled_int: more than one state returned" 
+{-
   let control     = controlPart st
       tid_cfg_sym = toThCFGSym st tid
   in case M.lookup tid control of
@@ -58,7 +64,7 @@ is_enabled_int syst st tid =
          Just cfg -> case succs cfg pos of
            [] -> False
            s  -> all (\(eId,nId) -> is_live tid syst eId nId cfg st) s
-
+-}
 -- | Instead of just looking at the immediate edge, one needs to potentially
 --   traverse the graph until reaching a global action. Only at those leafs
 --   one can compute the right result with respect to enabledness.

@@ -104,7 +104,7 @@ read_addr_from_region mem addr off = do
   offs <- M.lookup addr mem
   case M.lookup off offs of
     Just val -> Just val 
-    Nothing  -> error $ "read_addr_from_region: "
+    Nothing  -> error $ "read_addr_from_region: addr = " ++ show addr ++ ", off = " ++ show off ++ ", " ++ show offs
 
 -- | API TO WRITE TO MEMORY
 -- | Write to memory: receives a IntMAddrs and a
