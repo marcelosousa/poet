@@ -11,7 +11,7 @@ the main motivation of this project.
 
 ## Wiki
 
-For stable versions and reproducing experimental results from research papers please consult [POET's wiki](https://github.com/marcelosousa/poet/wiki)
+For stable versions and to reproduce experimental results in research papers please consult [POET's wiki](https://github.com/marcelosousa/poet/wiki)
 
 ## Installation (@master)
 
