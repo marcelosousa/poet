@@ -1,11 +1,6 @@
-POET (Partial Order Exploration Tools)
-======
+# POET (Partial Order Exploration Tools)
 
-Contact: Marcelo Sousa (msousa at cs dot ox dot ac dot uk). University of Oxford, UK.  
-Overview
--------------------------------------------------
-
-POET (Partial Order Exploration Tools) is a 
+**POET** (Partial Order Exploration Tools) is a 
 set of state-of-the-art exploration techniques
 that use partial orders to compactly
 represent the state space of programs.
@@ -14,33 +9,27 @@ Partial order representations are particularly
 relevant for exploration of concurrent systems, 
 the main motivation of this project.
 
-The two main techniques implemented are:
- - Unfoldings:
-   Inspired by Petri Net unfoldings, the goal
-   is to efficiently explore a partial order 
-   semantics known as prime event structures.
- - Partial Order Reduction:
-   Based on Abdulla et al. ODPOR@POPL'14.
+## Wiki
 
-Installation Notes
--------------------
+For stable versions and reproducing experimental results from research papers please consult [POET's wiki](https://github.com/marcelosousa/poet/wiki)
 
-1. Install the Haskell Platform (https://www.haskell.org/platform/).  
-  Make sure you can run the commands *ghc*, *cabal*, and *happy*.
+## Installation (@master)
+
+1. Install the [Haskell Platform](https://www.haskell.org/platform/).  
+   Make sure you can run the commands *ghc*, *cabal*, and *happy*.
    
-2. Install the simple-c package:
-   git clone git@github.com:marcelosousa/simplec.git
-   cd simplec
-   cabal install
+2. Install the [simple-c package](https://github.com/marcelosousa/simplec)
+ 
 3. Install poet:
    git clone git@github.com:marcelosousa/poet.git
    cd poet
    cabal install
   
-This will create an executable *poet* at dist/build/poet/
+This will create the executable **poet** @ dist/build/poet/
 
-Running Poet
--------------
+Note that it is likely that master is currently unstable. 
+
+## More info
   
   There are several available modes:
    1. poet frontend - prints the result of the front-end
@@ -53,22 +42,9 @@ Note:
  Due to a difference in the Haskell library for command arguments, 
  it may be the case for some operating systems it is required to prefix
  the input file with -i=.
- 
-Versions
----------
 
-poet-v0.1@03'2015
+Also check the repository [con-benchmarks](https://github.com/marcelosousa/con-benchmarks) for a collection of benchmarks used during the development of **POET**.
 
- CONCUR 2015: DFS-stateless exploration of deterministic programs
-
-poet-v0.2@09'2015
- 
- Abstract Unfolding: Support for API that connects to an abstract domain
- 
-poet-v0.3@04-2016
-
- Beginning Prime Unfolding Exploration
-
-poet-v0.4@04-2016
-
- Abstract Unfoldings 
+### Contact
+Marcelo Sousa (msousa at cs dot ox dot ac dot uk). 
+University of Oxford, UK.  
