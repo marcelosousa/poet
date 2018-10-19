@@ -20,7 +20,7 @@ Executable poet
                     , vector
                     , hashtables
                     , language-c
-                    , simplec
+                    , simplec==1.0
                     , HUnit
                     , random
                     , hashable 
